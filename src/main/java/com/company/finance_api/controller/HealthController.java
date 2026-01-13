@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 public class HealthController {
@@ -17,7 +19,17 @@ public class HealthController {
     }
 
     @GetMapping("/health")
-    public ApiResponse<String> health() {
-        return ApiResponse.success("OK");
+    public ApiResponse<Map<String, Object>> health() {
+
+        Map<String, Object> status = new HashMap<>();
+        status.put("application", "UP");
+
+        try (Connection connection = dataSource.getConnection()) {
+            status.put("database", "UP");
+        } catch (Exception e) {
+            status.put("database", "DOWN");
+        }
+
+        return ApiResponse.success(status);
     }
 }
