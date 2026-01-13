@@ -1,5 +1,6 @@
 package com.company.finance_api.controller;
 
+import com.company.finance_api.common.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,11 +17,7 @@ public class HealthController {
     }
 
     @GetMapping("/health")
-    public String health() {
-        try (Connection connection = dataSource.getConnection()) {
-            return "OK - DB CONNECTED";
-        } catch (Exception e) {
-            return "DB ERROR: " + e.getMessage();
-        }
+    public ApiResponse<String> health() {
+        return ApiResponse.success("OK");
     }
 }
