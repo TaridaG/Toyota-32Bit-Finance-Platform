@@ -1,12 +1,16 @@
 package com.company.finance_api.alarm;
 
 import com.company.finance_api.domain.AlarmRule;
+import com.company.finance_api.domain.enums.AlarmCondition;
 
 import java.math.BigDecimal;
 
 public class GreaterThanAlarmEvaluator implements AlarmEvaluator {
 
-
+    @Override
+    public AlarmCondition supports() {
+        return AlarmCondition.GREATER_THAN;
+    }
 
     @Override
     public boolean isTriggered(AlarmRule rule, BigDecimal currentPrice) {
