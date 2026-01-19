@@ -9,3 +9,12 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
+
+  task:
+    scheduling:
+      pool:
+        size: 2 # Aynı anda çalışabilecek scheduler sayısı
+
+  scheduler:
+    market-price:
+      delay-ms: 60000 # Default değeri buradan yönetiriim
