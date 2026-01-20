@@ -1,10 +1,13 @@
 package com.company.finance_api.alarm;
 
 import com.company.finance_api.domain.AlarmRule;
+import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.AlarmCondition;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+@Component
 public class LessThanAlarmEvaluator implements AlarmEvaluator {
 
     @Override
@@ -13,7 +16,8 @@ public class LessThanAlarmEvaluator implements AlarmEvaluator {
     }
 
     @Override
-    public boolean isTriggered(AlarmRule rule, BigDecimal currentPrice) {
-        return currentPrice.compareTo(rule.getThreshold()) < 0;
+    public boolean evaluate(AlarmRule alarm, InstrumentPrice latestPrice) {
+        return latestPrice.getPrice()
+                .compareTo(alarm.getThreshold()) < 0;
     }
 }
