@@ -1,5 +1,7 @@
 package com.company.finance_api.service.impl;
 
+import com.company.finance_api.alarm.AlarmEvaluator;
+import com.company.finance_api.alarm.AlarmEvaluatorFactory;
 import com.company.finance_api.domain.AlarmRule;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
@@ -18,9 +20,11 @@ import java.util.List;
 public class AlarmServiceImpl implements AlarmService {
 
     private final AlarmRuleRepository alarmRuleRepository;
+    private final AlarmEvaluatorFactory evaluatorFactory;
 
-    public AlarmServiceImpl(AlarmRuleRepository alarmRuleRepository) {
+    public AlarmServiceImpl(AlarmRuleRepository alarmRuleRepository,AlarmEvaluatorFactory evaluatorFactory) {
         this.alarmRuleRepository = alarmRuleRepository;
+        this.evaluatorFactory = evaluatorFactory;
     }
 
     @Override
@@ -35,8 +39,13 @@ public class AlarmServiceImpl implements AlarmService {
         List<AlarmRule> triggeredAlarms = new ArrayList<>();
 
         for (AlarmRule alarm : activeAlarms) {
-            if (isTriggered(alarm, latestPrice.getPrice())) {
-                alarm.deactivate();               // tek seferlik alarm
+            AlarmEvaluator evaluator =
+                    evaluatorFactory.getEvaluator(alarm.getCondition());
+
+            boolean triggered = evaluator.evaluate(alarm, latestPrice);
+
+            if (triggered) {
+                alarm.deactivate();
                 triggeredAlarms.add(alarm);
             }
         }
