@@ -6,14 +6,21 @@ import com.company.finance_api.domain.AlarmRule;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.event.AlarmTriggeredEvent;
 import com.company.finance_api.repository.AlarmRuleRepository;
 import com.company.finance_api.service.AlarmService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 @Transactional
@@ -21,10 +28,14 @@ public class AlarmServiceImpl implements AlarmService {
 
     private final AlarmRuleRepository alarmRuleRepository;
     private final AlarmEvaluatorFactory evaluatorFactory;
+    private final ApplicationEventPublisher eventPublisher;
+    private static final Logger log =
+            LoggerFactory.getLogger(AlarmServiceImpl.class);
 
-    public AlarmServiceImpl(AlarmRuleRepository alarmRuleRepository,AlarmEvaluatorFactory evaluatorFactory) {
+    public AlarmServiceImpl(AlarmRuleRepository alarmRuleRepository, AlarmEvaluatorFactory evaluatorFactory, ApplicationEventPublisher eventPublisher) {
         this.alarmRuleRepository = alarmRuleRepository;
         this.evaluatorFactory = evaluatorFactory;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -42,27 +53,32 @@ public class AlarmServiceImpl implements AlarmService {
             AlarmEvaluator evaluator =
                     evaluatorFactory.getEvaluator(alarm.getCondition());
 
-            boolean triggered = evaluator.evaluate(alarm, latestPrice);
-
-            if (triggered) {
-                alarm.deactivate();
+            if (evaluator.evaluate(alarm, latestPrice)) {
+                alarm.deactivate();          // tek seferlik alarm
                 triggeredAlarms.add(alarm);
+
+                eventPublisher.publishEvent(
+                        new AlarmTriggeredEvent(
+                                alarm.getId(),
+                                alarm.getUser().getId(),
+                                alarm.getInstrument().getSymbol(),
+                                alarm.getCondition().name(),
+                                latestPrice.getPrice().toString(),
+                                Instant.now()
+                        )
+                );
+
+                log.info("ALARM_TRIGGERED user={}, instrument={}, price={}",
+                        alarm.getUser().getId(),
+                        alarm.getInstrument().getSymbol(),
+                        latestPrice.getPrice()
+                );
+
             }
         }
 
         return triggeredAlarms;
     }
 
-    private boolean isTriggered(AlarmRule alarm, BigDecimal currentPrice) {
 
-        BigDecimal threshold = alarm.getThreshold();
-
-        return switch (alarm.getCondition()) {
-            case GREATER_THAN -> currentPrice.compareTo(threshold) > 0;
-            case LESS_THAN -> currentPrice.compareTo(threshold) < 0;
-            case EQUAL -> currentPrice.compareTo(threshold) == 0;
-            case PERCENT_CHANGE_UP, PERCENT_CHANGE_DOWN ->
-                    false; // % logic ileride eklenecek
-        };
-    }
 }
