@@ -7,6 +7,7 @@ import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.dto.AlarmResponse;
 import com.company.finance_api.event.AlarmTriggeredEvent;
 import com.company.finance_api.repository.AlarmRuleRepository;
 import com.company.finance_api.repository.InstrumentRepository;
@@ -68,6 +69,27 @@ public class AlarmServiceImpl implements AlarmService {
         );
 
         alarmRuleRepository.save(alarm);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<AlarmResponse> getUserAlarms(UUID userId) {
+
+        List<AlarmRule> alarms =
+                alarmRuleRepository.findByUserAndActiveTrue(
+                        userRepository.findById(userId)
+                                .orElseThrow(() -> new IllegalStateException("User not found"))
+                );
+
+        return alarms.stream()
+                .map(alarm -> new AlarmResponse(
+                        alarm.getId(),
+                        alarm.getInstrument().getSymbol(),
+                        alarm.getCondition(),
+                        alarm.getThreshold(),
+                        alarm.isActive(),
+                        alarm.getCreatedAt()
+                ))
+                .toList();
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.company.finance_api.domain.AlarmRule;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.dto.AlarmResponse;
 
 import java.util.List;
 
@@ -25,5 +26,6 @@ public interface AlarmService {
             BigDecimal threshold
     );
     List<AlarmRule> getActiveAlarmsForUser(UUID userId);
+    List<AlarmResponse> getUserAlarms(UUID userId);
 
 }
