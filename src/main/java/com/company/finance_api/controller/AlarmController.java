@@ -31,7 +31,7 @@ public class AlarmController {
                         .map(alarm -> new AlarmResponse(
                                 alarm.getId(),
                                 alarm.getInstrument().getSymbol(),
-                                alarm.getCondition().name(),
+                                alarm.getCondition(),
                                 alarm.getThreshold(),
                                 alarm.isActive(),
                                 alarm.getCreatedAt()

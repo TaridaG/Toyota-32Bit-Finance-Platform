@@ -14,7 +14,8 @@ import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.service.AlarmService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import com.company.finance_api.event.publisher.AlarmEventPublisher;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -33,19 +34,19 @@ public class AlarmServiceImpl implements AlarmService {
 
     private final AlarmRuleRepository alarmRuleRepository;
     private final AlarmEvaluatorFactory evaluatorFactory;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AlarmEventPublisher alarmEventPublisher;
     private final InstrumentRepository instrumentRepository;
     private final UserRepository userRepository;
     private static final Logger log =
             LoggerFactory.getLogger(AlarmServiceImpl.class);
 
-    public AlarmServiceImpl(AlarmRuleRepository alarmRuleRepository, AlarmEvaluatorFactory evaluatorFactory, ApplicationEventPublisher eventPublisher
-    ,InstrumentRepository instrumentRepository, UserRepository userRepository) {
+    public AlarmServiceImpl(AlarmRuleRepository alarmRuleRepository, AlarmEvaluatorFactory evaluatorFactory, AlarmEventPublisher alarmEventPublisher,InstrumentRepository instrumentRepository, UserRepository userRepository) {
         this.alarmRuleRepository = alarmRuleRepository;
         this.evaluatorFactory = evaluatorFactory;
+        this.alarmEventPublisher = alarmEventPublisher;
         this.instrumentRepository = instrumentRepository;
         this.userRepository = userRepository;
-        this.eventPublisher = eventPublisher;
+
     }
 
     @Override
@@ -111,13 +112,13 @@ public class AlarmServiceImpl implements AlarmService {
                 alarm.deactivate();          // tek seferlik alarm
                 triggeredAlarms.add(alarm);
 
-                eventPublisher.publishEvent(
+                alarmEventPublisher.publish(
                         new AlarmTriggeredEvent(
                                 alarm.getId(),
                                 alarm.getUser().getId(),
                                 alarm.getInstrument().getSymbol(),
                                 alarm.getCondition().name(),
-                                latestPrice.getPrice().toString(),
+                                latestPrice.getPrice().toPlainString(),
                                 Instant.now()
                         )
                 );
