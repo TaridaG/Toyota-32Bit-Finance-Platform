@@ -5,6 +5,8 @@ import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.service.PriceService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,10 @@ public class PriceServiceImpl implements PriceService {
         this.priceRepository = priceRepository;
     }
 
+    @Cacheable(
+            value = "latestPrice",
+            key = "#instrument.id + ':' + #priceType"
+    )
     @Override
     public Optional<InstrumentPrice> getLatestPrice(
             Instrument instrument,
@@ -50,6 +56,10 @@ public class PriceServiceImpl implements PriceService {
                 );
     }
 
+    @CacheEvict(
+            value = "latestPrice",
+            key = "#price.instrument.id + ':' + #price.priceType"
+    )
     @Override
     @Transactional
     public InstrumentPrice savePrice(InstrumentPrice price) {
