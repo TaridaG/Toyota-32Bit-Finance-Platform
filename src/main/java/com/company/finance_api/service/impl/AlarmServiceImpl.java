@@ -9,10 +9,13 @@ import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.AlarmCondition;
 import com.company.finance_api.dto.AlarmResponse;
 import com.company.finance_api.event.AlarmTriggeredEvent;
+import com.company.finance_api.exception.AccessDeniedBusinessException;
+import com.company.finance_api.exception.ResourceNotFoundException;
 import com.company.finance_api.repository.AlarmRuleRepository;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.service.AlarmService;
+
 import lombok.extern.slf4j.Slf4j;
 import com.company.finance_api.event.publisher.AlarmEventPublisher;
 
@@ -47,6 +50,27 @@ public class AlarmServiceImpl implements AlarmService {
         this.instrumentRepository = instrumentRepository;
         this.userRepository = userRepository;
 
+    }
+
+    @Override
+    public void deactivateAlarm(Long alarmId,UUID currentUserId) {
+
+        AlarmRule alarm = alarmRuleRepository.findById(alarmId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Alarm not found: " + alarmId)
+                );
+
+        if (!alarm.isOwnedBy(currentUserId)) {
+            throw new AccessDeniedBusinessException(
+                    "You are not allowed to deactivate this alarm"
+            );
+        }
+
+        alarm.deactivate();
+        alarmRuleRepository.save(alarm);
+
+        log.info("ALARM_DEACTIVATED alarmId={}, userId={}",
+                alarmId, currentUserId);
     }
 
     @Override

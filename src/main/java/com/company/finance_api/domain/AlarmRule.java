@@ -2,6 +2,7 @@ package com.company.finance_api.domain;
 
 import com.company.finance_api.domain.enums.AlarmCondition;
 import jakarta.persistence.*;
+import java.util.UUID;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -71,7 +72,14 @@ public class AlarmRule {
     public boolean isActive() { return active; }
     public Instant getCreatedAt() { return createdAt; }
 
+    public boolean isOwnedBy(UUID userId) {
+        return this.user.getId().equals(userId);
+    }
+
     public void deactivate() {
+        if (!this.active) {
+            throw new IllegalStateException("Alarm is already inactive");
+        }
         this.active = false;
     }
 }

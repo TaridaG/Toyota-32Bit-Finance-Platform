@@ -2,6 +2,7 @@ package com.company.finance_api.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+
 import com.company.finance_api.domain.AlarmRule;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
@@ -19,6 +20,10 @@ public interface AlarmService {
             Instrument instrument,
             InstrumentPrice latestPrice
     );
+
+    void deactivateAlarm(Long alarmId,UUID currentUserId);
+
+
     void createAlarm(
             UUID userId,
             Long instrumentId,

@@ -33,4 +33,19 @@ public class GlobalExceptionHandler {
         ApiError error = new ApiError("CONFLICT_ERROR", ex.getMessage());
         return ApiResponse.error(error);
     }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNotFound(ResourceNotFoundException ex) {
+        return ApiResponse.error(
+                new ApiError("NOT_FOUND", ex.getMessage())
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedBusinessException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<Void> handleAccessDenied(AccessDeniedBusinessException ex) {
+        return ApiResponse.error(
+                new ApiError("ACCESS_DENIED", ex.getMessage())
+        );
+    }
 }

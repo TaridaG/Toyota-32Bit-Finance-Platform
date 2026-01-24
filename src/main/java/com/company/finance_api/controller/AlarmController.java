@@ -58,4 +58,13 @@ public class AlarmController {
 
         return ApiResponse.success(null);
     }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deactivateAlarm(
+            @PathVariable Long id,
+            @RequestHeader("X-USER-ID") UUID userId
+    ) {
+        alarmService.deactivateAlarm(id, userId);
+        return ApiResponse.success(null);
+    }
 }
