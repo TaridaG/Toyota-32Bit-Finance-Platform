@@ -3,6 +3,7 @@ package com.company.finance_api.controller;
 import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.dto.AlarmResponse;
 import com.company.finance_api.dto.CreateAlarmRequest;
+import com.company.finance_api.security.CurrentUserResolver;
 import com.company.finance_api.service.AlarmService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class AlarmController {
 
     private final AlarmService alarmService;
+    private final CurrentUserResolver currentUserResolver;
 
-    public AlarmController(AlarmService alarmService) {
+    public AlarmController(AlarmService alarmService, CurrentUserResolver currentUserResolver) {
         this.alarmService = alarmService;
+        this.currentUserResolver = currentUserResolver;
     }
 
     @GetMapping
@@ -50,7 +53,7 @@ public class AlarmController {
             @Valid @RequestBody CreateAlarmRequest request
     ) {
         alarmService.createAlarm(
-                userId,
+                currentUserResolver.getCurrentUserId(),
                 request.getInstrumentId(),
                 request.getCondition(),
                 request.getThreshold()
@@ -60,11 +63,11 @@ public class AlarmController {
     }
 
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> deactivateAlarm(
-            @PathVariable Long id,
-            @RequestHeader("X-USER-ID") UUID userId
-    ) {
-        alarmService.deactivateAlarm(id, userId);
+    public ApiResponse<Void> deactivateAlarm(@PathVariable Long id) {
+        alarmService.deactivateAlarm(
+                id,
+                currentUserResolver.getCurrentUserId()
+        );
         return ApiResponse.success(null);
     }
 }
