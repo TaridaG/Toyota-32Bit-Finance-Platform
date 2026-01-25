@@ -1,5 +1,6 @@
 package com.company.finance_api.service.impl;
 
+import com.company.finance_api.cache.PriceCacheService;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.PriceType;
@@ -19,9 +20,11 @@ import java.util.Optional;
 public class PriceServiceImpl implements PriceService {
 
     private final InstrumentPriceRepository priceRepository;
+    private final PriceCacheService priceCacheService;
 
-    public PriceServiceImpl(InstrumentPriceRepository priceRepository) {
+    public PriceServiceImpl(InstrumentPriceRepository priceRepository, PriceCacheService priceCacheService) {
         this.priceRepository = priceRepository;
+        this.priceCacheService = priceCacheService;
     }
 
     @Cacheable(
