@@ -32,5 +32,13 @@
       volumes:
         - kafka_data:/bitnami/kafka
 
+    notification-service:
+      build: ./notification-service
+      container_name: notification-service
+      depends_on:
+        - kafka
+      environment:
+        - SPRING_PROFILES_ACTIVE=default
+
   volumes:
     finance_pg_data:kafka_data:
