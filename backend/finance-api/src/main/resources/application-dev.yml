@@ -2,13 +2,14 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/finance
     username: finance
-    password: finance
+    password: 123456
     driver-class-name: org.postgresql.Driver
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: true
 
   task:
     scheduling:
