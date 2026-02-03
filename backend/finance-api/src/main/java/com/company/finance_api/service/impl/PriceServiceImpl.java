@@ -4,10 +4,12 @@ import com.company.finance_api.cache.PriceCacheService;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.event.PriceUpdatedEvent;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.service.PriceService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +23,13 @@ public class PriceServiceImpl implements PriceService {
 
     private final InstrumentPriceRepository priceRepository;
     private final PriceCacheService priceCacheService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public PriceServiceImpl(InstrumentPriceRepository priceRepository, PriceCacheService priceCacheService) {
+    public PriceServiceImpl(InstrumentPriceRepository priceRepository, PriceCacheService priceCacheService,
+                            ApplicationEventPublisher eventPublisher, ApplicationEventPublisher eventPublisher1) {
         this.priceRepository = priceRepository;
         this.priceCacheService = priceCacheService;
+        this.eventPublisher = eventPublisher1;
     }
 
 
@@ -78,8 +83,9 @@ public class PriceServiceImpl implements PriceService {
 
         InstrumentPrice saved = priceRepository.save(price);
 
-        // 🔄 Cache refresh
-        priceCacheService.putLatestPrice(saved);
+        eventPublisher.publishEvent(
+                PriceUpdatedEvent.of(saved)
+        );
 
         return saved;
     }
