@@ -5,4 +5,5 @@ public final class KafkaTopics {
     private KafkaTopics() {}
 
     public static final String ALARM_TRIGGERED = "alarm-triggered";
+    public static final String TRANSACTION_EXECUTED = "transaction-executed";
 }
