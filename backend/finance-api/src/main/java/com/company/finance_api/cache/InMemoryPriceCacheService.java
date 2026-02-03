@@ -4,13 +4,14 @@ import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.PriceType;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
-@Profile({"dev", "test"})
+@Service
+@Profile("cache-in-memory")
 public class InMemoryPriceCacheService implements PriceCacheService {
 
     private final Map<String, InstrumentPrice> cache = new ConcurrentHashMap<>();

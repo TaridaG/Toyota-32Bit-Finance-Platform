@@ -1,15 +1,25 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/finance
+    url: jdbc:postgresql://postgres:5432/finance
     username: finance
     password: 123456
     driver-class-name: org.postgresql.Driver
-
+    hikari:
+      initialization-fail-timeout: 15000
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
+    open-in-view: false
+
+
 
   task:
     scheduling:
