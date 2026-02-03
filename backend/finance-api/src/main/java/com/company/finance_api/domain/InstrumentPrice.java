@@ -2,6 +2,7 @@ package com.company.finance_api.domain;
 
 import com.company.finance_api.domain.enums.PriceType;
 import jakarta.persistence.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,6 +15,7 @@ import java.time.Instant;
                 @Index(name = "idx_price_timestamp", columnList = "timestamp")
         }
 )
+@Builder
 public class InstrumentPrice {
 
     @Id
