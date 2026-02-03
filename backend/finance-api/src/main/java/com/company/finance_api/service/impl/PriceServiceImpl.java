@@ -27,21 +27,33 @@ public class PriceServiceImpl implements PriceService {
         this.priceCacheService = priceCacheService;
     }
 
-    @Cacheable(
-            value = "latestPrice",
-            key = "#instrument.id + ':' + #priceType"
-    )
+
     @Override
     public Optional<InstrumentPrice> getLatestPrice(
             Instrument instrument,
             PriceType priceType
     ) {
-        return priceRepository
-                .findTopByInstrumentAndPriceTypeOrderByTimestampDesc(
+        // 1️⃣ Cache
+        Optional<InstrumentPrice> cached =
+                priceCacheService.getLatestPrice(instrument.getId(), priceType);
+
+        if (cached.isPresent()) {
+            return cached;
+        }
+
+        // 2️⃣ DB fallback
+        Optional<InstrumentPrice> fromDb =
+                priceRepository.findTopByInstrumentAndPriceTypeOrderByTimestampDesc(
                         instrument,
                         priceType
                 );
+
+        // 3️⃣ Cache write
+        fromDb.ifPresent(priceCacheService::putLatestPrice);
+
+        return fromDb;
     }
+
 
     @Override
     public List<InstrumentPrice> getPriceHistory(
@@ -59,13 +71,16 @@ public class PriceServiceImpl implements PriceService {
                 );
     }
 
-    @CacheEvict(
-            value = "latestPrice",
-            key = "#price.instrument.id + ':' + #price.priceType"
-    )
+
     @Override
     @Transactional
     public InstrumentPrice savePrice(InstrumentPrice price) {
-        return priceRepository.save(price);
+
+        InstrumentPrice saved = priceRepository.save(price);
+
+        // 🔄 Cache refresh
+        priceCacheService.putLatestPrice(saved);
+
+        return saved;
     }
 }
