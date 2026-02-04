@@ -5,5 +5,5 @@ public enum PriceType {
     OPEN,       // açılış
     CLOSE,      // kapanış
     HIGH,       // en yüksek
-    LOW         // en düşük
+    MARKET, LOW         // en düşük
 }

@@ -37,6 +37,17 @@ public class DemoBalance {
         this.currency = currency;
     }
 
+    public void decrease(BigDecimal amount) {
+        if (balance.compareTo(amount) < 0) {
+            throw new IllegalStateException("Insufficient demo balance");
+        }
+        this.balance = this.balance.subtract(amount);
+    }
+
+    public void increase(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
+
     public UUID getId() {
         return id;
     }

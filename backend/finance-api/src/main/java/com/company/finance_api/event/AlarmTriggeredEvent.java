@@ -1,7 +1,9 @@
 package com.company.finance_api.event;
 
+import com.company.finance_api.domain.enums.AlarmCondition;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -11,16 +13,16 @@ public class AlarmTriggeredEvent {
     private final Long alarmId;
     private final UUID userId;
     private final String instrumentSymbol;
-    private final String condition;
-    private final String price;
+    private final AlarmCondition condition;
+    private final BigDecimal price;
     private final Instant triggeredAt;
 
-    public AlarmTriggeredEvent(
+    private AlarmTriggeredEvent(
             Long alarmId,
             UUID userId,
             String instrumentSymbol,
-            String condition,
-            String price,
+            AlarmCondition condition,
+            BigDecimal price,
             Instant triggeredAt
     ) {
         this.alarmId = alarmId;
@@ -31,4 +33,21 @@ public class AlarmTriggeredEvent {
         this.triggeredAt = triggeredAt;
     }
 
+    // ✅ FACTORY METHOD (BEST PRACTICE)
+    public static AlarmTriggeredEvent of(
+            Long alarmId,
+            UUID userId,
+            String instrumentSymbol,
+            AlarmCondition condition,
+            BigDecimal price
+    ) {
+        return new AlarmTriggeredEvent(
+                alarmId,
+                userId,
+                instrumentSymbol,
+                condition,
+                price,
+                Instant.now()
+        );
+    }
 }
