@@ -1,3 +1,16 @@
 spring:
   profiles:
     active: dev
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+
+otel:
+  exporter:
+    logging:
+      enabled: true
