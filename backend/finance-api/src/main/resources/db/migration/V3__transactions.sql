@@ -1,6 +1,6 @@
 CREATE TABLE transactions (
                               id BIGSERIAL PRIMARY KEY,
-                              user_id BIGINT NOT NULL,
+                              user_id UUID NOT NULL,
                               instrument_id BIGINT NOT NULL,
                               type VARCHAR(10) NOT NULL,
                               price NUMERIC(19,6) NOT NULL,

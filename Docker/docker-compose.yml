@@ -17,6 +17,9 @@ services:
       retries: 5
     volumes:
       - finance_pg_data:/var/lib/postgresql/data
+    networks:
+      - finance-net
+
 
   kafka:
     image: apache/kafka:3.7.0
@@ -40,6 +43,8 @@ services:
       - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
     volumes:
       - kafka_data:/var/lib/kafka/data # Bitnami değil apache/kafka kullandığım için burayı da güncelledim
+    networks:
+      - finance-net
 
   finance-api:
     build:
@@ -62,13 +67,15 @@ services:
       - SPRING_REDIS_PORT=6379
     ports:
       - "8080:8080"
+    networks:
+      - finance-net
 
   opensearch:
     image: opensearchproject/opensearch:2.12.0
     container_name: opensearch
     environment:
       - discovery.type=single-node
-      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=142536otuzikibit!@TOYOTA
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
@@ -81,11 +88,16 @@ services:
     ports:
       - "5601:5601"
     environment:
-      - OPENSEARCH_HOSTS=http://opensearch:9200
+      - OPENSEARCH_HOSTS=https://opensearch:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTA
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     depends_on:
       - opensearch
     networks:
       - finance-net
+
+
 
   redis:
     image: redis:7-alpine
@@ -93,7 +105,8 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-
+    networks:
+      - finance-net
 
   notification-service:
     build:
@@ -104,6 +117,9 @@ services:
       - kafka
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - finance-net
+
 
 networks:
   finance-net:
