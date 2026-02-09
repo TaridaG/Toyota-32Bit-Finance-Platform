@@ -137,13 +137,12 @@ public class AlarmServiceImpl implements AlarmService {
                 triggeredAlarms.add(alarm);
 
                 alarmEventPublisher.publish(
-                        new AlarmTriggeredEvent(
+                        AlarmTriggeredEvent.of(
                                 alarm.getId(),
                                 alarm.getUser().getId(),
                                 alarm.getInstrument().getSymbol(),
-                                alarm.getCondition().name(),
-                                latestPrice.getPrice().toPlainString(),
-                                Instant.now()
+                                alarm.getCondition(),
+                                latestPrice.getPrice()
                         )
                 );
 

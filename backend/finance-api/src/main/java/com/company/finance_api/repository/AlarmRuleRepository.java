@@ -14,4 +14,9 @@ public interface AlarmRuleRepository extends JpaRepository<AlarmRule, Long> {
 
     // Bir enstrüman için tüm aktif alarmlar (scheduler burayı kullanır)
     List<AlarmRule> findByInstrumentAndActiveTrue(Instrument instrument);
+
+    List<AlarmRule> findByUserAndInstrumentAndActiveTrue(
+            User user,
+            Instrument instrument
+    );
 }
