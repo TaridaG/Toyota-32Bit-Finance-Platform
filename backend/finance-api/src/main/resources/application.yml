@@ -14,3 +14,7 @@ otel:
   exporter:
     logging:
       enabled: true
+
+scheduler:
+  market-price:
+    delay-ms: 60000

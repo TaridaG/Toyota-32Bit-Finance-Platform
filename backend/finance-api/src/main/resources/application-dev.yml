@@ -28,4 +28,4 @@ spring:
 
   scheduler:
     market-price:
-      delay-ms: 60000 # Default değeri buradan yönetiriim
+      delay-ms: 15000
