@@ -2,7 +2,10 @@ package com.company.finance_api.domain;
 
 import com.company.finance_api.domain.enums.PriceType;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -16,6 +19,7 @@ import java.time.Instant;
         }
 )
 @Builder
+@AllArgsConstructor // Lombok'un Builder için ihtiyaç duyduğu tüm parametreli constructor
 public class InstrumentPrice {
 
     @Id
