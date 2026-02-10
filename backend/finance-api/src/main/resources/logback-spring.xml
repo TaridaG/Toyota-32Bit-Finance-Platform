@@ -2,8 +2,6 @@
 
     <property name="APP_NAME" value="finance-api"/>
 
-    <property name="APP_NAME" value="finance-api"/>
-
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
 

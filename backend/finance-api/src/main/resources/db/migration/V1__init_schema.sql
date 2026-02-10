@@ -16,7 +16,7 @@ create table users (
 create table instruments (
                              id bigserial primary key,
                              symbol varchar(50) not null unique,
-                             name varchar(255) not null,
+                              name varchar(255) not null,
                              type varchar(50) not null,
                              exchange varchar(50) not null,
                              active boolean not null

@@ -25,9 +25,9 @@ public class AlarmController {
 
     @GetMapping
     public ApiResponse<List<AlarmResponse>> getUserAlarms(
-            @RequestParam UUID userId
-    ) {
 
+    ) {
+        UUID userId = currentUserResolver.getCurrentUserId();
         List<AlarmResponse> response =
                 alarmService.getActiveAlarmsForUser(userId)
                         .stream()

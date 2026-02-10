@@ -1,6 +1,7 @@
 package com.company.finance_api.config.kafka;
 
 import com.company.finance_api.event.AlarmTriggeredEvent;
+import com.company.finance_api.event.TransactionExecutedEvent;
 import com.company.finance_api.event.kafka.KafkaTopics;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,21 +18,38 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@Profile("kafka")
 public class KafkaProducerConfig {
 
-    @Bean
-    public ProducerFactory<String, AlarmTriggeredEvent> producerFactory() {
-
+    private Map<String, Object> baseProps() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return props;
+    }
 
-        return new DefaultKafkaProducerFactory<>(props);
+    // 🔔 ALARM
+    @Bean
+    public ProducerFactory<String, AlarmTriggeredEvent> alarmProducerFactory() {
+        return new DefaultKafkaProducerFactory<>(baseProps());
     }
 
     @Bean
-    public KafkaTemplate<String, AlarmTriggeredEvent> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+    public KafkaTemplate<String, AlarmTriggeredEvent> alarmKafkaTemplate() {
+        return new KafkaTemplate<>(alarmProducerFactory());
+    }
+
+    // 💸 TRANSACTION
+    @Bean
+    public ProducerFactory<String, TransactionExecutedEvent> transactionProducerFactory() {
+        return new DefaultKafkaProducerFactory<>(baseProps());
+    }
+
+    @Bean
+    public KafkaTemplate<String, TransactionExecutedEvent> transactionKafkaTemplate() {
+        return new KafkaTemplate<>(transactionProducerFactory());
     }
 }
+
+
