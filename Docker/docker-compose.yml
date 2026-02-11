@@ -75,7 +75,7 @@ services:
     container_name: opensearch
     environment:
       - discovery.type=single-node
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=142536otuzikibit!@TOYOTA
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=142536otuzikibit!@TOYOTAa
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
@@ -90,7 +90,7 @@ services:
     environment:
       - OPENSEARCH_HOSTS=https://opensearch:9200
       - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTA
+      - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTAa
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     depends_on:
       - opensearch
