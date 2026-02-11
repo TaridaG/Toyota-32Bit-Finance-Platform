@@ -133,7 +133,8 @@ public class AlarmServiceImpl implements AlarmService {
                     evaluatorFactory.getEvaluator(alarm.getCondition());
 
             if (evaluator.evaluate(alarm, latestPrice)) {
-                alarm.deactivate();          // tek seferlik alarm
+                alarm.deactivate();
+                alarmRuleRepository.save(alarm);
                 triggeredAlarms.add(alarm);
 
                 alarmEventPublisher.publish(
