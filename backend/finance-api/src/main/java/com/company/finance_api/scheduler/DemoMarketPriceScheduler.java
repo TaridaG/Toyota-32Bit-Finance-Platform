@@ -66,15 +66,5 @@ public class DemoMarketPriceScheduler {
 
         priceService.savePrice(instrumentPrice);
 
-        var triggeredAlarms =
-                alarmService.checkAlarms(instrument, instrumentPrice);
-
-        if (!triggeredAlarms.isEmpty()) {
-            log.info("Triggered {} alarms for instrument {} at price {}",
-                    triggeredAlarms.size(),
-                    instrument.getSymbol(),
-                    price
-            );
-        }
     }
 }
