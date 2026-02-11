@@ -2,6 +2,7 @@ package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.*;
 import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.event.TransactionExecutedEvent;
 import com.company.finance_api.event.publisher.TransactionEventPublisher;
 import com.company.finance_api.repository.*;
@@ -39,6 +40,7 @@ public class TradeServiceImpl implements TradeService {
 
         Instrument instrument = instrumentRepository.findById(instrumentId)
                 .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
+
 
         InstrumentPrice price = priceService
                 .getLatestPrice(instrument, PriceType.MARKET)
@@ -90,6 +92,19 @@ public class TradeServiceImpl implements TradeService {
         Instrument instrument = instrumentRepository.findById(instrumentId)
                 .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
 
+        // 🔥 POSITION CHECK
+        BigDecimal netQuantity = transactionRepository
+                .findByUserAndInstrument(user, instrument)
+                .stream()
+                .map(tx -> tx.getType().name().equals("BUY")
+                        ? tx.getQuantity()
+                        : tx.getQuantity().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (netQuantity.compareTo(quantity) < 0) {
+            throw new IllegalStateException("Insufficient position for sell");
+        }
+
         InstrumentPrice price = priceService
                 .getLatestPrice(instrument, PriceType.MARKET)
                 .orElseThrow(() -> new IllegalStateException("Price not available"));
@@ -105,10 +120,8 @@ public class TradeServiceImpl implements TradeService {
                 Transaction.sell(user, instrument, price.getPrice(), quantity);
 
         demoBalanceRepository.save(balance);
-
         Transaction saved = transactionRepository.save(transaction);
 
-// 🔥 EVENT
         transactionEventPublisher.publish(
                 TransactionExecutedEvent.of(
                         user.getId(),
@@ -122,4 +135,5 @@ public class TradeServiceImpl implements TradeService {
 
         return saved;
     }
+
 }
