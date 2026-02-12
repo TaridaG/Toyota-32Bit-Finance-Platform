@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class KafkaMarketEventPublisher implements MarketEventPublisher {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, MarketPriceUpdatedEvent> kafkaTemplate;
 
     @Override
     public void publishMarketPriceUpdated(MarketPriceUpdatedEvent event) {
