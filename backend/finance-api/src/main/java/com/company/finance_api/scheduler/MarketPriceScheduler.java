@@ -9,6 +9,7 @@ import com.company.finance_api.service.price.PriceProvider;
 import com.company.finance_api.service.price.PriceProviderResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Slf4j
 @Component
+@Profile("demo-prices")
 @RequiredArgsConstructor
 public class MarketPriceScheduler {
 

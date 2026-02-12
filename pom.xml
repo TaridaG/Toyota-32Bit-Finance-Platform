@@ -15,8 +15,7 @@
     <modules>
         <module>backend/finance-api</module>
         <module>notification-service</module>
-        <!-- ileride eklenir -->
-        <!-- <module>frontend/web-app</module> -->
+        <module>market-data-service</module>
     </modules>
     <dependencies>
         <dependency>
