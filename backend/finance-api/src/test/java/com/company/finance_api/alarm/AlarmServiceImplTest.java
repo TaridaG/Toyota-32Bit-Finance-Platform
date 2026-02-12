@@ -1,4 +1,4 @@
-package com.company.finance_api.service;
+package com.company.finance_api.alarm;
 
 import com.company.finance_api.alarm.AlarmEvaluator;
 import com.company.finance_api.alarm.AlarmEvaluatorFactory;
@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
