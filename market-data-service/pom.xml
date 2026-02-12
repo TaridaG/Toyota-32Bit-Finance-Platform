@@ -6,11 +6,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.company</groupId>
-    <artifactId>notification-service</artifactId>
+    <artifactId>market-data-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>notification-service</name>
+    <name>market-data-service</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -25,10 +25,10 @@
 
     <dependencies>
 
-        <!-- Core -->
+        <!-- WebClient -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <!-- Kafka -->
@@ -37,9 +37,10 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
+        <!-- Actuator -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <!-- Logging -->
@@ -48,11 +49,24 @@
             <artifactId>spring-boot-starter-logging</artifactId>
         </dependency>
 
-        <!-- Lombok (opsiyonel) -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

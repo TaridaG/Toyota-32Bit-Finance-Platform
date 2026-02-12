@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.Random;
 
 @Component
-@Profile("dev")
-
+@Profile("demo-prices")
 public class DemoMarketPriceScheduler {
 
     private static final Logger log =
