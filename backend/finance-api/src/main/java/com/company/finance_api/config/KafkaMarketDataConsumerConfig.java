@@ -23,6 +23,7 @@ public class KafkaMarketDataConsumerConfig {
         JsonDeserializer<MarketPriceUpdatedEvent> deserializer =
                 new JsonDeserializer<>(MarketPriceUpdatedEvent.class);
         deserializer.addTrustedPackages("*");
+        deserializer.ignoreTypeHeaders();
 
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
