@@ -21,3 +21,19 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+market:
+  tracked-symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+    - XRPUSDT
+  provider: binance
+
+resilience:
+  retry:
+    max-attempts: 3
+    delay-ms: 500
+  timeout:
+    seconds: 3
