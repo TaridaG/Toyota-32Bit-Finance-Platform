@@ -1,0 +1,7 @@
+server:
+  port: 8080
+
+gateway:
+  services:
+    finance-base-uri: http://finance-api:8080
+    market-base-uri: http://market-data-service:8080
