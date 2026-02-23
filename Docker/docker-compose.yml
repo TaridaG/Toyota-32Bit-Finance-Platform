@@ -1,4 +1,18 @@
 services:
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    depends_on:
+      finance-api:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8080:8080"
+    networks:
+      - finance-net
 
   postgres:
     image: postgres:15
@@ -66,8 +80,6 @@ services:
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    ports:
-      - "8080:8080"
     networks:
       - finance-net
 
@@ -107,8 +119,6 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - kafka
-    ports:
-      - "8082:8080"
     networks:
       - finance-net
 

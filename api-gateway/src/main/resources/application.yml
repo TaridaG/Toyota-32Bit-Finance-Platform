@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+
+gateway:
+  services:
+    finance-base-uri: http://finance-api:8080
+    market-base-uri: http://market-data-service:8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

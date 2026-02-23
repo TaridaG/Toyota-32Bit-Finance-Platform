@@ -1,0 +1,7 @@
+server:
+  port: 9090
+
+gateway:
+  services:
+    finance-base-uri: http://localhost:8080
+    market-base-uri: http://localhost:8082
