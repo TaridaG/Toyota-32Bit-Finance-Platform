@@ -2,10 +2,14 @@ package com.company.gateway.filter;
 
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+
+import java.util.stream.Collectors;
 
 @Component
 public class UserContextHeaderFilter implements GlobalFilter, Ordered {
@@ -16,19 +20,32 @@ public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
         return ReactiveSecurityContextHolder.getContext()
                 .map(ctx -> ctx.getAuthentication())
-                .cast(JwtAuthenticationToken.class)
-                .map(jwtAuth -> jwtAuth.getToken().getSubject()) // sub = user id
-                .defaultIfEmpty("")
-                .flatMap(sub -> {
-                    var mutated = exchange.getRequest().mutate()
-                            .header("X-USER-ID", sub)
-                            .build();
-                    return chain.filter(exchange.mutate().request(mutated).build());
-                });
+                .flatMap(auth -> mutateRequestWithUser(auth, exchange, chain));
+    }
+
+    private Mono<Void> mutateRequestWithUser(Authentication auth,
+                                             org.springframework.web.server.ServerWebExchange exchange,
+                                             org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+
+        if (!(auth instanceof JwtAuthenticationToken jwtAuth)) {
+            return chain.filter(exchange);
+        }
+
+        String userId = jwtAuth.getToken().getSubject(); // sub
+        String roles = jwtAuth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
+        var mutatedRequest = exchange.getRequest().mutate()
+                .header("X-USER-ID", userId)
+                .header("X-ROLES", roles)
+                .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
     }
 
     @Override
     public int getOrder() {
-        return -800; // correlation (-1000) ve logging(-900) sonrası
+        return -800; // correlation(-1000), logging(-900) sonra
     }
 }
