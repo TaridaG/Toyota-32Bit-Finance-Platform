@@ -2,6 +2,7 @@ package com.company.gateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
@@ -11,12 +12,13 @@ public class WebSecurityConfig {
     @Bean
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
-                        .anyExchange().permitAll() // Aşama 2'de JWT zorunlu yapacağız
+                        .pathMatchers("/actuator/**", "/health").permitAll()
+                        .anyExchange().authenticated()
                 )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .build();
     }
 }
