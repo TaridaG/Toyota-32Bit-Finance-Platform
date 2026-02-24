@@ -4,13 +4,17 @@ services:
       context: ..
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
       finance-api:
         condition: service_started
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      market-data-service:
+        condition: service_started
+      keycloak:
+        condition: service_started
     ports:
-      - "8080:8080"
+      - "8080:8080"   # dışa tek açık port budur
     networks:
       - finance-net
 
@@ -57,6 +61,20 @@ services:
       - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
     volumes:
       - kafka_data:/var/lib/kafka/data # Bitnami değil apache/kafka kullandığım için burayı da güncelledim
+    networks:
+      - finance-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    container_name: keycloak
+    command: [ "start-dev", "--import-realm" ]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8085:8080"  # host'ta çakışmasın diye 8085 veriyorum
+    volumes:
+      - ./keycloak/realm-finance.json:/opt/keycloak/data/import/realm-finance.json:ro
     networks:
       - finance-net
 

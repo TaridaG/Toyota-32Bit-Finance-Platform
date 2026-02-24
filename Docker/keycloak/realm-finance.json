@@ -1,0 +1,34 @@
+{
+  "realm": "finance",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "finance-gateway",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "protocol": "openid-connect"
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "USER" },
+      { "name": "ADMIN" }
+    ]
+  },
+  "users": [
+    {
+      "username": "user1",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "123456", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "123456", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}
