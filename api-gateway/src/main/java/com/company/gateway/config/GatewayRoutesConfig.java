@@ -1,6 +1,8 @@
 package com.company.gateway.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +10,12 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class GatewayRoutesConfig {
+    public GatewayRoutesConfig(RedisRateLimiter apiRateLimiter, KeyResolver userIdKeyResolver) {
+        this.apiRateLimiter = apiRateLimiter;
+        this.userIdKeyResolver = userIdKeyResolver;
+    }
+    private final RedisRateLimiter apiRateLimiter;
+    private final KeyResolver userIdKeyResolver;
 
     @Value("${gateway.services.finance-base-uri}")
     private String financeBaseUri;
@@ -22,7 +30,14 @@ public class GatewayRoutesConfig {
                 .route("finance-api", r -> r.path("/api/**", "/health")
                         .filters(f -> f
                                 .preserveHostHeader()
-                                .removeRequestHeader("X-USER-ID") // spoof engeli
+                                .removeRequestHeader("X-USER-ID")
+                                .requestRateLimiter(rl -> rl
+                                        .setRateLimiter(apiRateLimiter)
+                                        .setKeyResolver(userIdKeyResolver)
+                                )
+                                .circuitBreaker(cb -> cb
+                                        .setName("financeCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/finance"))
                         )
                         .uri(financeBaseUri))
 
@@ -30,6 +45,9 @@ public class GatewayRoutesConfig {
                         .filters(f -> f
                                 .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}")
                                 .preserveHostHeader()
+                                .circuitBreaker(cb -> cb
+                                        .setName("marketCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/market"))
                         )
                         .uri(marketBaseUri))
 
