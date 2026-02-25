@@ -18,10 +18,14 @@ public class HeaderCurrentUserResolver implements CurrentUserResolver {
 
     @Override
     public UUID getCurrentUserId() {
-        String userId = request.getHeader(USER_HEADER);
-        if (userId == null) {
-            throw new IllegalStateException("Missing X-USER-ID header");
+        String raw = request.getHeader(USER_HEADER);
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalStateException("Missing required header: " + USER_HEADER);
         }
-        return UUID.fromString(userId);
+        try {
+            return UUID.fromString(raw.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid X-USER-ID format (must be UUID): " + raw);
+        }
     }
 }
