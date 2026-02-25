@@ -1,51 +1,134 @@
 package com.company.gateway.filter;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.*;
 import java.util.stream.Collectors;
+
 
 @Component
 public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
-    @Override
-    public Mono<Void> filter(org.springframework.web.server.ServerWebExchange exchange,
-                             org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+    public static final String HDR_USER_ID = "X-USER-ID";
+    public static final String HDR_USER_ROLES = "X-USER-ROLES";
 
-        return ReactiveSecurityContextHolder.getContext()
-                .map(ctx -> ctx.getAuthentication())
-                .flatMap(auth -> mutateRequestWithUser(auth, exchange, chain));
+    private final String userIdClaim;
+    private final String rolesClaim;
+    private final String rolesPath; // optional: "realm_access.roles" like structure
+
+    public UserContextHeaderFilter(
+            @Value("${gateway.user-context.user-id-claim:sub}") String userIdClaim,
+            @Value("${gateway.user-context.roles-claim:roles}") String rolesClaim,
+            @Value("${gateway.user-context.roles-path:realm_access.roles}") String rolesPath
+    ) {
+        this.userIdClaim = userIdClaim;
+        this.rolesClaim = rolesClaim;
+        this.rolesPath = rolesPath;
     }
 
-    private Mono<Void> mutateRequestWithUser(Authentication auth,
-                                             org.springframework.web.server.ServerWebExchange exchange,
-                                             org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
 
-        if (!(auth instanceof JwtAuthenticationToken jwtAuth)) {
-            return chain.filter(exchange);
-        }
 
-        String userId = jwtAuth.getToken().getSubject(); // sub
-        String roles = jwtAuth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
-
-        var mutatedRequest = exchange.getRequest().mutate()
-                .header("X-USER-ID", userId)
-                .header("X-ROLES", roles)
+        ServerHttpRequest sanitized = exchange.getRequest().mutate()
+                .headers(h -> {
+                    h.remove(HDR_USER_ID);
+                    h.remove(HDR_USER_ROLES);
+                })
                 .build();
 
-        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+        return exchange.getPrincipal()
+                .cast(Authentication.class)
+                .flatMap(auth -> buildEnrichedOrSanitized(auth, sanitized, exchange, chain))
+                .switchIfEmpty(Mono.defer(() -> chain.filter(exchange.mutate().request(sanitized).build())));
+    }
+
+    private Mono<Void> buildEnrichedOrSanitized(
+            Authentication auth,
+            ServerHttpRequest sanitized,
+            ServerWebExchange exchange,
+            org.springframework.cloud.gateway.filter.GatewayFilterChain chain) {
+
+        if (!(auth instanceof JwtAuthenticationToken jwtAuth)) {
+            return chain.filter(exchange.mutate().request(sanitized).build());
+        }
+
+        Jwt jwt = jwtAuth.getToken();
+        String userId = readStringClaim(jwt, userIdClaim);
+        if (userId == null || userId.isBlank()) {
+            return chain.filter(exchange.mutate().request(sanitized).build());
+        }
+
+        Set<String> roles = new LinkedHashSet<>();
+        roles.addAll(readRolesFromSimpleClaim(jwt, rolesClaim));
+        roles.addAll(readRolesFromPath(jwt, rolesPath));
+
+        String rolesHeader = roles.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .collect(Collectors.joining(","));
+
+        ServerHttpRequest enriched = sanitized.mutate()
+                .header(HDR_USER_ID, userId)
+                .headers(h -> {
+                    if (!rolesHeader.isBlank()) {
+                        h.set(HDR_USER_ROLES, rolesHeader);
+                    }
+                })
+                .build();
+
+        return chain.filter(exchange.mutate().request(enriched).build());
+    }
+
+    private String readStringClaim(Jwt jwt, String claim) {
+        Object v = jwt.getClaims().get(claim);
+        return v == null ? null : String.valueOf(v);
+    }
+
+    private Set<String> readRolesFromSimpleClaim(Jwt jwt, String claim) {
+        Object v = jwt.getClaims().get(claim);
+        if (v instanceof Collection<?> col) {
+            return col.stream().map(String::valueOf).collect(Collectors.toCollection(LinkedHashSet::new));
+        }
+        if (v instanceof String s && s.contains(",")) {
+            return Arrays.stream(s.split(",")).map(String::trim).collect(Collectors.toCollection(LinkedHashSet::new));
+        }
+        if (v instanceof String s && !s.isBlank()) {
+            return new LinkedHashSet<>(List.of(s.trim()));
+        }
+        return Collections.emptySet();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> readRolesFromPath(Jwt jwt, String path) {
+        // supports "realm_access.roles" structure from Keycloak
+        String[] parts = path.split("\\.");
+        Object current = jwt.getClaims();
+        for (String p : parts) {
+            if (!(current instanceof Map<?, ?> map)) return Collections.emptySet();
+            current = map.get(p);
+            if (current == null) return Collections.emptySet();
+        }
+        if (current instanceof Collection<?> col) {
+            return col.stream().map(String::valueOf).collect(Collectors.toCollection(LinkedHashSet::new));
+        }
+        return Collections.emptySet();
     }
 
     @Override
     public int getOrder() {
-        return -800; // correlation(-1000), logging(-900) sonra
+        // run early but after correlation-id if you want; keep it quite early
+        return -900;
     }
 }

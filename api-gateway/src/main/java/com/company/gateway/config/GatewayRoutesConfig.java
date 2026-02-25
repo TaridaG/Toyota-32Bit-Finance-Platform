@@ -30,7 +30,6 @@ public class GatewayRoutesConfig {
                 .route("finance-api", r -> r.path("/api/**", "/health")
                         .filters(f -> f
                                 .preserveHostHeader()
-                                .removeRequestHeader("X-USER-ID")
                                 .requestRateLimiter(rl -> rl
                                         .setRateLimiter(apiRateLimiter)
                                         .setKeyResolver(userIdKeyResolver)
