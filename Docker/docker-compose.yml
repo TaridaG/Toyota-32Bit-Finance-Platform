@@ -162,6 +162,22 @@ services:
     networks:
       - finance-net
 
+  log-consumer-service:
+    build:
+      context: ../log-consumer-service
+    container_name: log-consumer-service
+    depends_on:
+      - kafka
+      - opensearch
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - APP_LOGS_TOPIC=app.logs
+      - OPENSEARCH_HOST=opensearch
+      - OPENSEARCH_PORT=9200
+      - OPENSEARCH_INDEX_PREFIX=application-logs
+    networks:
+      - finance-net
+
 
 networks:
   finance-net:
