@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -129,8 +130,11 @@ public class AlarmServiceImpl implements AlarmService {
         List<AlarmRule> triggeredAlarms = new ArrayList<>();
 
         for (AlarmRule alarm : activeAlarms) {
-            AlarmEvaluator evaluator =
-                    evaluatorFactory.getEvaluator(alarm.getCondition());
+            Optional<AlarmEvaluator> evaluatorOpt = evaluatorFactory.getEvaluator(alarm.getCondition());            if (evaluatorOpt.isEmpty()) {
+                continue; // unsupported rule -> skip
+            }
+
+            AlarmEvaluator evaluator = evaluatorOpt.get();
 
             if (evaluator.evaluate(alarm, latestPrice)) {
                 alarm.deactivate();
