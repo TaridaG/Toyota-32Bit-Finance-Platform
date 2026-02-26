@@ -60,7 +60,7 @@ class AlarmServiceImplTest {
                 .thenReturn(List.of(rule));
 
         when(evaluatorFactory.getEvaluator(AlarmCondition.GREATER_THAN))
-                .thenReturn(evaluator);
+                .thenReturn(Optional.of(evaluator));
 
         when(evaluator.evaluate(rule, price))
                 .thenReturn(true);
