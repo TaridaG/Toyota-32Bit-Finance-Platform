@@ -29,7 +29,7 @@ public class AppLogsKafkaConsumer {
         } catch (Exception ex) {
             // Poison message riskini yönetmek için:
             // Şimdilik loglayıp ACK vermiyoruz -> retry olur.
-            // İstersen burada DLQ ekleriz (bir sonraki adım).
+            //  burada DLQ ekleriz (bir sonraki adımda yaparım belki).
             log.error("Failed to process log event. raw={}", rawJson, ex);
         }
     }
