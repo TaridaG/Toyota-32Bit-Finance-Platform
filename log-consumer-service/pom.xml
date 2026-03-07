@@ -8,6 +8,7 @@
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.5</version>
         <relativePath/>
+
     </parent>
     <groupId>com.company</groupId>
     <artifactId>log-consumer-service</artifactId>
@@ -46,6 +47,12 @@
             <artifactId>opensearch-java</artifactId>
             <version>2.14.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-rest-client</artifactId>
+            <version>2.14.0</version>
+        </dependency>
+
 
         <!-- Logging -->
         <dependency>

@@ -19,18 +19,22 @@ import java.util.stream.Collectors;
 public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
     public static final String HDR_USER_ID = "X-USER-ID";
+    public static final String HDR_USERNAME = "X-USERNAME";
     public static final String HDR_USER_ROLES = "X-USER-ROLES";
 
     private final String userIdClaim;
+    private final String usernameClaim;
     private final String rolesClaim;
     private final String rolesPath; // optional: "realm_access.roles" like structure
 
     public UserContextHeaderFilter(
             @Value("${gateway.user-context.user-id-claim:sub}") String userIdClaim,
             @Value("${gateway.user-context.roles-claim:roles}") String rolesClaim,
+            @Value("${gateway.user-context.username-claim:preferred_username}") String usernameClaim,
             @Value("${gateway.user-context.roles-path:realm_access.roles}") String rolesPath
     ) {
         this.userIdClaim = userIdClaim;
+        this.usernameClaim = usernameClaim;
         this.rolesClaim = rolesClaim;
         this.rolesPath = rolesPath;
     }
@@ -42,6 +46,7 @@ public class UserContextHeaderFilter implements GlobalFilter, Ordered {
         ServerHttpRequest sanitized = exchange.getRequest().mutate()
                 .headers(h -> {
                     h.remove(HDR_USER_ID);
+                    h.remove(HDR_USERNAME);
                     h.remove(HDR_USER_ROLES);
                 })
                 .build();
@@ -64,6 +69,10 @@ public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
         Jwt jwt = jwtAuth.getToken();
         String userId = readStringClaim(jwt, userIdClaim);
+        String username = readStringClaim(jwt, usernameClaim);
+        if (username == null || username.isBlank()) {
+            username = userId; // fallback
+        }
         if (userId == null || userId.isBlank()) {
             return chain.filter(exchange.mutate().request(sanitized).build());
         }
@@ -81,6 +90,7 @@ public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
         ServerHttpRequest enriched = sanitized.mutate()
                 .header(HDR_USER_ID, userId)
+                .header(HDR_USERNAME, username)
                 .headers(h -> {
                     if (!rolesHeader.isBlank()) {
                         h.set(HDR_USER_ROLES, rolesHeader);
@@ -112,7 +122,6 @@ public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
     @SuppressWarnings("unchecked")
     private Set<String> readRolesFromPath(Jwt jwt, String path) {
-        // supports "realm_access.roles" structure from Keycloak
         String[] parts = path.split("\\.");
         Object current = jwt.getClaims();
         for (String p : parts) {
@@ -128,7 +137,6 @@ public class UserContextHeaderFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // run early but after correlation-id if you want; keep it quite early
         return -900;
     }
 }
