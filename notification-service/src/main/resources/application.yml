@@ -1,6 +1,18 @@
+server:
+  port: 8086
+
 spring:
   application:
     name: notification-service
 
   kafka:
     bootstrap-servers: kafka:9092
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}

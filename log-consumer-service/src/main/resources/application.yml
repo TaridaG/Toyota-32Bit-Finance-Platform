@@ -13,3 +13,12 @@ opensearch:
   host: ${OPENSEARCH_HOST:opensearch}
   port: ${OPENSEARCH_PORT:9200}
   index-prefix: ${OPENSEARCH_INDEX_PREFIX:application-logs}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
