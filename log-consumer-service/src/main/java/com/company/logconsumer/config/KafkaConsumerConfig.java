@@ -14,11 +14,14 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.util.backoff.FixedBackOff;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
 public class KafkaConsumerConfig {
+    private static final Logger log = LoggerFactory.getLogger(KafkaConsumerConfig.class);
 
     @Bean
     public DefaultKafkaConsumerFactory<String, String> consumerFactory(
@@ -34,6 +37,9 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 200);
+        props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 600_000);
+        props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30_000);
+        props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 10_000);
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
@@ -65,7 +71,12 @@ public class KafkaConsumerConfig {
 
         FixedBackOff backOff = new FixedBackOff(2000L, 3L);
 
-        return new DefaultErrorHandler(recoverer, backOff);
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
+        errorHandler.setRetryListeners((record, ex, deliveryAttempt) ->
+                log.warn("Retry attempt {} for topic={} key={} exception={}",
+                        deliveryAttempt, record.topic(), record.key(), ex.getMessage())
+        );
+        return errorHandler;
     }
 
     @Bean
