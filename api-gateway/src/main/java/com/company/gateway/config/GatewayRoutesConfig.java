@@ -23,6 +23,9 @@ public class GatewayRoutesConfig {
     @Value("${gateway.services.market-base-uri}")
     private String marketBaseUri;
 
+    @Value("${gateway.services.news-base-uri}")
+    private String newsBaseUri;
+
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
@@ -49,6 +52,15 @@ public class GatewayRoutesConfig {
                                         .setFallbackUri("forward:/fallback/market"))
                         )
                         .uri(marketBaseUri))
+
+                .route("news-service", r -> r.path("/api/news/**")
+                        .filters(f -> f
+                                .preserveHostHeader()
+                                .circuitBreaker(cb -> cb
+                                        .setName("newsCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/news"))
+                        )
+                        .uri(newsBaseUri))
 
                 .build();
     }
