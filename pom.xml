@@ -33,6 +33,7 @@
         <module>market-data-service</module>
         <module>api-gateway</module>
         <module>log-consumer-service</module>
+        <module>news-service</module>
     </modules>
 
     <dependencyManagement>

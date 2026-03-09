@@ -1,0 +1,47 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: news-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:finance}
+    username: ${DB_USERNAME:finance}
+    password: ${DB_PASSWORD:finance}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+news:
+  scheduler:
+    enabled: true
+    delay-ms: 300000
+
+  feeds:
+    - name: "Investing"
+      url: "https://www.investing.com/rss/news_25.rss"
+      category: GENERAL_ECONOMY
+
+    - name: "CoinDesk"
+      url: "https://www.coindesk.com/arc/outboundfeeds/rss/"
+      category: CRYPTO
+
+    - name: "MarketWatch"
+      url: "https://feeds.content.dowjones.io/public/rss/mw_topstories"
+      category: STOCK
