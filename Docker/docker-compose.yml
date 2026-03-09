@@ -162,6 +162,22 @@ services:
     networks:
       - finance-net
 
+  news-service:
+    build:
+      context: ..
+      dockerfile: news-service/Dockerfile
+    container_name: news-service
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=finance
+      - DB_USERNAME=finance
+      - DB_PASSWORD=finance
+    depends_on:
+      - postgres
+    networks:
+      - finance-net
+
   log-consumer-service:
     build:
       context: ../log-consumer-service
