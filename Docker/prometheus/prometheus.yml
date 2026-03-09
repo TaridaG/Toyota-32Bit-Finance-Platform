@@ -1,0 +1,34 @@
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+
+  - job_name: finance-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['finance-api:8080']
+
+  - job_name: market-data-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['market-data-service:8080']
+
+  - job_name: news-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['news-service:8082']
+
+  - job_name: api-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['api-gateway:8080']
+
+  - job_name: notification-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['notification-service:8086']
+
+  - job_name: log-consumer-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['log-consumer-service:8087']

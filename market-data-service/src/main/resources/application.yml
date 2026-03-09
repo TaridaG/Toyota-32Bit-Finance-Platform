@@ -11,6 +11,8 @@ spring:
 providers:
   binance:
     base-url: https://api.binance.com
+  coingecko:
+    base-url: https://api.coingecko.com/api/v3
 
 scheduler:
   binance:
@@ -20,7 +22,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
 
 market:
   tracked-symbols:
@@ -29,11 +31,28 @@ market:
     - BNBUSDT
     - SOLUSDT
     - XRPUSDT
-  provider: binance
-
+  provider: composite
 resilience:
-  retry:
-    max-attempts: 3
-    delay-ms: 500
-  timeout:
-    seconds: 3
+  providers:
+    binance:
+      retry:
+        max-attempts: 3
+        delay-ms: 500
+      timeout:
+        millis: 3000
+      circuit-breaker:
+        failure-rate-threshold: 50
+        sliding-window-size: 10
+        wait-duration-in-open-state-ms: 30000
+        permitted-number-of-calls-in-half-open-state: 3
+    coingecko:
+      retry:
+        max-attempts: 2
+        delay-ms: 700
+      timeout:
+        millis: 4000
+      circuit-breaker:
+        failure-rate-threshold: 50
+        sliding-window-size: 10
+        wait-duration-in-open-state-ms: 30000
+        permitted-number-of-calls-in-half-open-state: 3

@@ -1,45 +1,76 @@
 package com.company.marketdataservice.provider;
 
+import com.company.marketdataservice.config.ResilienceProperties;
+import com.company.marketdataservice.metrics.PriceProviderMetrics;
 import com.company.marketdataservice.provider.health.ProviderHealthTracker;
-import lombok.RequiredArgsConstructor;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.RetryRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Component
 @Primary
-@RequiredArgsConstructor
 public class CompositePriceProvider implements PriceProvider {
 
-    private final List<PriceProvider> providers;
+    private final List<ResilientPriceProvider> resilientProviders;
     private final ProviderHealthTracker healthTracker;
+    private final PriceProviderMetrics metrics;
+
+    public CompositePriceProvider(
+            List<PriceProvider> providers,
+            ProviderHealthTracker healthTracker,
+            CircuitBreakerRegistry circuitBreakerRegistry,
+            RetryRegistry retryRegistry,
+            ResilienceProperties resilienceProperties,
+            ExecutorService resilienceExecutorService,
+            PriceProviderMetrics metrics
+    ) {
+        this.healthTracker = healthTracker;
+        this.metrics = metrics;
+
+        this.resilientProviders = providers.stream()
+                .filter(provider -> !(provider instanceof CompositePriceProvider))
+                .map(provider -> new ResilientPriceProvider(
+                        provider,
+                        circuitBreakerRegistry,
+                        retryRegistry,
+                        resilienceProperties,
+                        resilienceExecutorService
+                ))
+                .toList();
+    }
 
     @Override
     public BigDecimal fetchPrice(String symbol) {
-
-        for (PriceProvider provider : providers) {
+        for (PriceProvider provider : resilientProviders) {
+            var timer = metrics.startTimer();
             try {
                 BigDecimal price = provider.fetchPrice(symbol);
-
                 healthTracker.recordSuccess(provider.source());
+                metrics.recordSuccess(provider.source());
+                metrics.recordLatency(provider.source(), timer);
 
                 log.info("PROVIDER_SUCCESS provider={}, symbol={}, price={}",
                         provider.source(), symbol, price);
 
                 return price;
 
-            } catch (Exception e) {
-
+            } catch (Exception ex) {
                 healthTracker.recordFailure(provider.source());
+                metrics.recordFailure(provider.source());
+                metrics.recordLatency(provider.source(), timer);
 
                 log.warn("PROVIDER_FAILED provider={}, symbol={}, reason={}",
-                        provider.source(), symbol, e.getMessage());
+                        provider.source(), symbol, ex.getMessage());
             }
         }
+
         throw new RuntimeException("All providers failed for symbol=" + symbol);
     }
 

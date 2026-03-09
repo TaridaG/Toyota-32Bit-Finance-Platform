@@ -13,6 +13,8 @@ services:
         condition: service_started
       keycloak:
         condition: service_started
+      news-service:
+        condition: service_started
     ports:
       - "8080:8080"   # dışa tek açık port budur
     networks:
@@ -174,7 +176,8 @@ services:
       - DB_USERNAME=finance
       - DB_PASSWORD=finance
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - finance-net
 
@@ -194,7 +197,34 @@ services:
     networks:
       - finance-net
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - finance-api
+      - market-data-service
+      - news-service
+      - api-gateway
+      - notification-service
+      - log-consumer-service
+    networks:
+      - finance-net
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - finance-net
 networks:
   finance-net:
     driver: bridge
