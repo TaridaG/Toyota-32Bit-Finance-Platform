@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.math.BigDecimal;
 import java.util.Map;
 
-@Component
+@Component("coingecko")
 @RequiredArgsConstructor
 public class CoinGeckoPriceProvider implements PriceProvider {
 
@@ -20,19 +20,26 @@ public class CoinGeckoPriceProvider implements PriceProvider {
 
     @Override
     public BigDecimal fetchPrice(String symbol) {
-
-        // BTCUSDT → btc
         String id = symbol.replace("USDT", "").toLowerCase();
 
-        Map response = webClient.get()
+        Map<?, ?> response = webClient.get()
                 .uri(baseUrl + "/simple/price?ids=" + id + "&vs_currencies=usd")
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
 
-        Map priceMap = (Map) response.get(id);
+        if (response == null || response.get(id) == null) {
+            throw new IllegalStateException("CoinGecko response is null for symbol=" + symbol);
+        }
 
-        return new BigDecimal(priceMap.get("usd").toString());
+        Map<?, ?> priceMap = (Map<?, ?>) response.get(id);
+        Object usd = priceMap.get("usd");
+
+        if (usd == null) {
+            throw new IllegalStateException("CoinGecko USD price is null for symbol=" + symbol);
+        }
+
+        return new BigDecimal(usd.toString());
     }
 
     @Override
