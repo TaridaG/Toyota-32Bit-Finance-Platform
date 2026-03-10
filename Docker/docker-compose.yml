@@ -197,6 +197,22 @@ services:
     networks:
       - finance-net
 
+  analytics-service:
+    build:
+      context: ..
+      dockerfile: analytics-service/Dockerfile
+    container_name: analytics-service
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
+      - SPRING_DATASOURCE_USERNAME=finance
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    networks:
+      - finance-net
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -211,6 +227,7 @@ services:
       - api-gateway
       - notification-service
       - log-consumer-service
+      - analytics-service
     networks:
       - finance-net
 
