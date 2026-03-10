@@ -4,9 +4,10 @@ server:
 spring:
   application:
     name: notification-service
-
   kafka:
     bootstrap-servers: kafka:9092
+    listener:
+      observation-enabled: true
 
 management:
   endpoints:
@@ -16,3 +17,9 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces
