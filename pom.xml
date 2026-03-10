@@ -44,6 +44,7 @@
         <module>api-gateway</module>
         <module>log-consumer-service</module>
         <module>news-service</module>
+        <module>analytics-service</module>
     </modules>
 
     <dependencyManagement>
