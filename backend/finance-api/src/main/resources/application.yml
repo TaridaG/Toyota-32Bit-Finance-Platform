@@ -1,6 +1,12 @@
 spring:
   profiles:
     active: dev
+  kafka:
+    listener:
+      observation-enabled: true
+    template:
+      observation-enabled: true
+
 management:
   endpoints:
     web:
@@ -12,11 +18,9 @@ management:
   tracing:
     sampling:
       probability: 1.0
-
-otel:
-  exporter:
-    logging:
-      enabled: true
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces
 
 scheduler:
   market-price:

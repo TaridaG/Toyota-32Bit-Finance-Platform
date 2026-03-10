@@ -214,6 +214,15 @@ services:
     networks:
       - finance-net
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    networks:
+      - finance-net
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
