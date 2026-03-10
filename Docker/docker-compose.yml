@@ -227,6 +227,7 @@ services:
       - api-gateway
       - notification-service
       - log-consumer-service
+      - analytics-service
     networks:
       - finance-net
 
