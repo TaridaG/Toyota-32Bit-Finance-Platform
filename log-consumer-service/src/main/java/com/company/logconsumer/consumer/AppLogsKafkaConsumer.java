@@ -1,5 +1,6 @@
 package com.company.logconsumer.consumer;
 
+import com.company.logconsumer.metrics.KafkaProcessingMetrics;
 import com.company.logconsumer.model.AppLogEvent;
 import com.company.logconsumer.service.OpenSearchLogIndexer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,12 +22,14 @@ public class AppLogsKafkaConsumer {
 
     private final ObjectMapper objectMapper;
     private final OpenSearchLogIndexer indexer;
+    private final KafkaProcessingMetrics metrics;
 
     @KafkaListener(
             topics = "${log-consumer.topic}",
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void consume(ConsumerRecord<String, String> record, Acknowledgment ack) {
+        var timer = metrics.startTimer();
         try {
             // correlationId header → MDC (distributed tracing)
             Header correlationHeader = record.headers().lastHeader("correlationId");
@@ -37,8 +40,10 @@ public class AppLogsKafkaConsumer {
             }
             AppLogEvent event = objectMapper.readValue(record.value(), AppLogEvent.class);
             indexer.index(event);
+            metrics.recordSuccess(timer);
             ack.acknowledge();
         } catch (Exception ex) {
+            metrics.recordFailure(timer);
             log.error("Failed to process log event. raw={}", record.value(), ex);
             throw new RuntimeException("Log event processing failed", ex);
         } finally {
