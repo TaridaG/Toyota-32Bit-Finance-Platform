@@ -1,6 +1,7 @@
 package com.company.analytics.infrastructure.kafka;
 
 import com.company.analytics.application.AnalyticsAggregationService;
+import com.company.analytics.application.CandleAggregationService;
 import com.company.analytics.application.EventIdempotencyService;
 import com.company.analytics.event.TransactionExecutedEvent;
 import lombok.RequiredArgsConstructor;
@@ -14,29 +15,33 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionExecutedConsumer {
 
-    private final AnalyticsAggregationService aggregationService;
-    private final EventIdempotencyService idempotencyService;
+    private final AnalyticsAggregationService analyticsAggregationService;
+    private final CandleAggregationService candleAggregationService;
+    private final EventIdempotencyService eventIdempotencyService;
 
     @KafkaListener(
             topics = "transaction-executed",
-            groupId = "analytics-service"
+            groupId = "analytics-service",
+            containerFactory = "analyticsKafkaListenerContainerFactory"
     )
-    public void consume(
-            ConsumerRecord<String, TransactionExecutedEvent> record
-    ) {
+    public void consume(ConsumerRecord<String, TransactionExecutedEvent> record) {
+        String eventKey = record.topic()
+                + "-" + record.partition()
+                + "-" + record.offset();
 
-        String eventKey =
-                record.topic() + "-" +
-                        record.partition() + "-" +
-                        record.offset();
-
-        if (idempotencyService.isProcessed(eventKey)) {
-            log.info("duplicate event skipped {}", eventKey);
+        if (eventIdempotencyService.isProcessed(eventKey)) {
+            log.info("Duplicate analytics event skipped: {}", eventKey);
             return;
         }
 
-        aggregationService.process(record.value());
+        TransactionExecutedEvent event = record.value();
 
-        idempotencyService.markProcessed(eventKey);
+        analyticsAggregationService.process(event);
+        candleAggregationService.process(event);
+
+        eventIdempotencyService.markProcessed(eventKey);
+
+        log.info("Analytics processed event for symbol={} eventKey={}",
+                event.getInstrumentSymbol(), eventKey);
     }
 }

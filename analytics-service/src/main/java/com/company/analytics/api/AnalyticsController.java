@@ -1,14 +1,13 @@
 package com.company.analytics.api;
 
 import com.company.analytics.application.AnalyticsQueryService;
-import com.company.analytics.dto.AnalyticsSummaryResponse;
 import com.company.analytics.common.ApiResponse;
+import com.company.analytics.dto.AnalyticsSummaryResponse;
+import com.company.analytics.dto.CandleResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -16,14 +15,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnalyticsController {
 
-    private final AnalyticsQueryService queryService;
+    private final AnalyticsQueryService analyticsQueryService;
 
     @GetMapping("/instruments/{symbol}/daily")
     public ApiResponse<List<AnalyticsSummaryResponse>> getDaily(
             @PathVariable String symbol
     ) {
+        return ApiResponse.success(analyticsQueryService.getDaily(symbol));
+    }
+
+    @GetMapping("/instruments/{symbol}/candles")
+    public ApiResponse<List<CandleResponse>> getCandles(
+            @PathVariable String symbol,
+            @RequestParam LocalDate from,
+            @RequestParam LocalDate to
+    ) {
         return ApiResponse.success(
-                queryService.getDaily(symbol)
+                analyticsQueryService.getCandles(symbol, from, to)
         );
     }
 }
