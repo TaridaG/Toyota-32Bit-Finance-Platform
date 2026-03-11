@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
@@ -86,6 +87,9 @@ public class AnalyticsKafkaConsumerConfig {
 
         factory.setConsumerFactory(analyticsConsumerFactory);
         factory.setCommonErrorHandler(analyticsKafkaErrorHandler);
+        factory.setConcurrency(3);
+        factory.getContainerProperties()
+                .setAckMode(ContainerProperties.AckMode.RECORD);
 
         return factory;
     }
