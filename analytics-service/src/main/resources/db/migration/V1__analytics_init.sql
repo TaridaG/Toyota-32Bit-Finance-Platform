@@ -12,3 +12,5 @@ CREATE TABLE analytics_trade_aggregate_daily
     min_price NUMERIC,
     max_price NUMERIC
 );
+CREATE INDEX idx_analytics_symbol_date
+    ON analytics_trade_aggregate_daily (instrument_symbol, trade_date);
