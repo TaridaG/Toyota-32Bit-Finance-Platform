@@ -2,8 +2,7 @@ package com.company.analytics.api;
 
 import com.company.analytics.application.AnalyticsQueryService;
 import com.company.analytics.common.ApiResponse;
-import com.company.analytics.dto.AnalyticsSummaryResponse;
-import com.company.analytics.dto.CandleResponse;
+import com.company.analytics.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +31,26 @@ public class AnalyticsController {
     ) {
         return ApiResponse.success(
                 analyticsQueryService.getCandles(symbol, from, to)
+        );
+    }
+    @GetMapping("/instruments/{symbol}/moving-average")
+    public ApiResponse<List<MovingAverageResponse>> getMovingAverage(
+            @PathVariable String symbol
+    ){
+        return ApiResponse.success(
+                analyticsQueryService.getMovingAverage(symbol)
+        );
+    }
+    @GetMapping("/instruments/{symbol}/vwap")
+    public ApiResponse<List<VWAPResponse>> getVWAP(@PathVariable String symbol) {
+        return ApiResponse.success(analyticsQueryService.getVWAP(symbol));
+    }
+    @GetMapping("/instruments/{symbol}/rsi")
+    public ApiResponse<List<RSIResponse>> getRSI(
+            @PathVariable String symbol
+    ){
+        return ApiResponse.success(
+                analyticsQueryService.getRSI(symbol)
         );
     }
 }
