@@ -1,14 +1,13 @@
 package com.company.analytics.infrastructure.kafka;
 
-import com.company.analytics.application.AnalyticsAggregationService;
-import com.company.analytics.application.CandleAggregationService;
-import com.company.analytics.application.EventIdempotencyService;
+import com.company.analytics.application.*;
 import com.company.analytics.event.TransactionExecutedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -18,7 +17,11 @@ public class TransactionExecutedConsumer {
     private final AnalyticsAggregationService analyticsAggregationService;
     private final CandleAggregationService candleAggregationService;
     private final EventIdempotencyService eventIdempotencyService;
+    private final VWAPAggregationService vwapAggregationService;
+    private final MovingAverageService movingAverageService;
+    private final RSIService rsiService;
 
+    @Transactional
     @KafkaListener(
             topics = "transaction-executed",
             groupId = "analytics-service",
@@ -38,8 +41,10 @@ public class TransactionExecutedConsumer {
 
         analyticsAggregationService.process(event);
         candleAggregationService.process(event);
-
+        vwapAggregationService.process(event);
         eventIdempotencyService.markProcessed(eventKey);
+        movingAverageService.process(event);
+        rsiService.process(event);
 
         log.info("Analytics processed event for symbol={} eventKey={}",
                 event.getInstrumentSymbol(), eventKey);
