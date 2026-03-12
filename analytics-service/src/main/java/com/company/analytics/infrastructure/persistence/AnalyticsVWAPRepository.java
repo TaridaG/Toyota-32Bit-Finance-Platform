@@ -16,4 +16,5 @@ public interface AnalyticsVWAPRepository
     );
 
     List<AnalyticsVWAPDaily> findByInstrumentSymbol(String instrumentSymbol);
+    List<AnalyticsVWAPDaily> findByInstrumentSymbolOrderByTradeDateAsc(String instrumentSymbol);
 }

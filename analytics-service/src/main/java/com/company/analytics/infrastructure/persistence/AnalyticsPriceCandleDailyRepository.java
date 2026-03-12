@@ -22,4 +22,5 @@ public interface AnalyticsPriceCandleDailyRepository
             LocalDate from,
             LocalDate to
     );
+
 }

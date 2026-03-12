@@ -20,6 +20,7 @@ public class TransactionExecutedConsumer {
     private final VWAPAggregationService vwapAggregationService;
     private final MovingAverageService movingAverageService;
     private final RSIService rsiService;
+    private final TrendMetricService trendMetricService;
 
     @Transactional
     @KafkaListener(
@@ -45,6 +46,7 @@ public class TransactionExecutedConsumer {
         eventIdempotencyService.markProcessed(eventKey);
         movingAverageService.process(event);
         rsiService.process(event);
+        trendMetricService.process(event);
 
         log.info("Analytics processed event for symbol={} eventKey={}",
                 event.getInstrumentSymbol(), eventKey);

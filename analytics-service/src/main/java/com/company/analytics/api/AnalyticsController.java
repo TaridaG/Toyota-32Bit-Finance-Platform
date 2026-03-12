@@ -53,4 +53,12 @@ public class AnalyticsController {
                 analyticsQueryService.getRSI(symbol)
         );
     }
+    @GetMapping("/instruments/{symbol}/trend")
+    public ApiResponse<List<TrendMetricResponse>> getTrendMetrics(
+            @PathVariable String symbol
+    ) {
+        return ApiResponse.success(
+                analyticsQueryService.getTrendMetrics(symbol)
+        );
+    }
 }
