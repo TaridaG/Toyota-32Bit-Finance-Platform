@@ -26,6 +26,9 @@ public class GatewayRoutesConfig {
     @Value("${gateway.services.news-base-uri}")
     private String newsBaseUri;
 
+    @Value("${gateway.services.reporting-base-uri}")
+    private String reportingBaseUri;
+
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
@@ -62,6 +65,14 @@ public class GatewayRoutesConfig {
                         )
                         .uri(newsBaseUri))
 
+                .route("reporting-service", r -> r.path("/api/reports/**")
+                        .filters(f -> f
+                                .preserveHostHeader()
+                                .circuitBreaker(cb -> cb
+                                        .setName("reportingCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/reporting"))
+                        )
+                        .uri(reportingBaseUri))
                 .build();
     }
 }

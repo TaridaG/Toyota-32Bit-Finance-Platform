@@ -142,6 +142,24 @@ services:
     networks:
       - finance-net
 
+  reporting-service:
+    build:
+      context: ..
+      dockerfile: reporting-service/Dockerfile
+    container_name: reporting-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      analytics-service:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
+      - SPRING_DATASOURCE_USERNAME=finance
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - ANALYTICS_BASE_URL=http://analytics-service:8080
+    networks:
+      - finance-net
+
 
   redis:
     image: redis:7-alpine
