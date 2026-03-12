@@ -12,4 +12,5 @@ public interface AnalyticsQueryService {
     List<VWAPResponse> getVWAP(String symbol);
     List<MovingAverageResponse> getMovingAverage(String symbol);
     List<RSIResponse> getRSI(String symbol);
+    List<TrendMetricResponse> getTrendMetrics(String symbol);
 }

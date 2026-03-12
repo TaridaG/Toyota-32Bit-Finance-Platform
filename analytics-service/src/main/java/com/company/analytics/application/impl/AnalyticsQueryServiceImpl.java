@@ -18,6 +18,7 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
     private final AnalyticsVWAPRepository vwapRepository;
     private final AnalyticsMovingAverageRepository movingAverageRepository;
     private final AnalyticsRSIRepository rsiRepository;
+    private final AnalyticsTrendMetricRepository trendMetricRepository;
 
     @Override
     public List<AnalyticsSummaryResponse> getDaily(String symbol) {
@@ -76,6 +77,14 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
                                 .rsi14(r.getRsi14())
                                 .build()
                 )
+                .toList();
+    }
+    @Override
+    public List<TrendMetricResponse> getTrendMetrics(String symbol) {
+        return trendMetricRepository
+                .findByInstrumentSymbolOrderByTradeDateAsc(symbol)
+                .stream()
+                .map(TrendMetricResponse::from)
                 .toList();
     }
 }
