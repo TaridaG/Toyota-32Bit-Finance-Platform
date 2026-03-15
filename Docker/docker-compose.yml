@@ -141,6 +141,18 @@ services:
       - kafka
     networks:
       - finance-net
+  minio:
+    image: minio/minio
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - finance-net
 
   reporting-service:
     build:
@@ -158,6 +170,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=123456
       - ANALYTICS_BASE_URL=http://analytics-service:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - FINANCE_BASE_URL=http://finance-api:8080
     networks:
       - finance-net
 
