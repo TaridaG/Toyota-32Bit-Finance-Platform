@@ -6,6 +6,7 @@ import com.company.reporting.domain.enums.ExportFormat;
 import com.company.reporting.dto.ReportContentResponse;
 import com.company.reporting.dto.ReportMetadataResponse;
 import com.company.reporting.infrastructure.persistence.ReportMetadataRepository;
+import com.company.reporting.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class ReportQueryServiceImpl implements ReportQueryService {
 
     private final ReportMetadataRepository repository;
+    private final FileStorageService fileStorageService;
 
 
     @Override
@@ -31,16 +33,17 @@ public class ReportQueryServiceImpl implements ReportQueryService {
         ReportMetadata metadata = repository.findByReportUuid(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found"));
 
-        if (metadata.getContent() == null || metadata.getContent().length == 0) {
+        if (metadata.getFileKey() == null || metadata.getFileKey().isBlank()) {
             throw new IllegalArgumentException("Report content is not ready yet");
         }
 
+        byte[] content = fileStorageService.download(metadata.getFileKey());
         String mediaType = resolveMediaType(metadata.getExportFormat());
 
         return ReportContentResponse.builder()
                 .fileName(metadata.getGeneratedFileName())
                 .mediaType(mediaType)
-                .content(metadata.getContent())
+                .content(content)
                 .build();
     }
     private String resolveMediaType(ExportFormat exportFormat) {

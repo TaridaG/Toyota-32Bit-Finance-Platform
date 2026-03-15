@@ -5,6 +5,7 @@ import com.company.reporting.application.ReportRequestPublisher;
 import com.company.reporting.domain.ReportMetadata;
 import com.company.reporting.domain.enums.ReportType;
 import com.company.reporting.dto.CreateInstrumentReportRequest;
+import com.company.reporting.dto.CreatePortfolioReportRequest;
 import com.company.reporting.dto.ReportMetadataResponse;
 import com.company.reporting.event.ReportRequestedEvent;
 import com.company.reporting.infrastructure.persistence.ReportMetadataRepository;
@@ -37,6 +38,30 @@ public class ReportGenerationServiceImpl implements ReportGenerationService {
                 request.getSymbol(),
                 request.getFrom(),
                 request.getTo()
+        );
+
+        reportRequestPublisher.publish(event);
+
+        return ReportMetadataResponse.from(metadata);
+    }
+
+    @Override
+    public ReportMetadataResponse generatePortfolioReport(CreatePortfolioReportRequest request) {
+        ReportMetadata metadata = ReportMetadata.create(
+                ReportType.PORTFOLIO,
+                request.getExportFormat(),
+                null
+        );
+
+        reportMetadataRepository.save(metadata);
+
+        ReportRequestedEvent event = new ReportRequestedEvent(
+                metadata.getReportUuid(),
+                ReportType.PORTFOLIO,
+                request.getExportFormat(),
+                null,
+                null,
+                null
         );
 
         reportRequestPublisher.publish(event);
