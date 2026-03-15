@@ -8,6 +8,6 @@ import lombok.Getter;
 public class ReportContentResponse {
 
     private String fileName;
-    private String contentType;
+    private String mediaType;
     private byte[] content;
 }
