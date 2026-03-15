@@ -1,5 +1,6 @@
 package com.company.reporting.domain.enums;
 
 public enum ReportType {
-    INSTRUMENT
+    INSTRUMENT,
+    PORTFOLIO
 }
