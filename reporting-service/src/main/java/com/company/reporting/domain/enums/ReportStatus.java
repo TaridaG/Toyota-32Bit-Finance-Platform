@@ -4,5 +4,6 @@ public enum ReportStatus {
     QUEUED,
     CREATED,
     COMPLETED,
-    FAILED
+    FAILED,
+    PROCESSING
 }
