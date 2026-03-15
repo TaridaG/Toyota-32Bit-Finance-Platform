@@ -18,6 +18,13 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      ack-mode: record
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
 
 logging:
   pattern:
