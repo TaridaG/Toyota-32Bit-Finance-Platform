@@ -38,9 +38,8 @@ public class ReportMetadata {
     @Column(name = "instrument_symbol", length = 32)
     private String instrumentSymbol;
 
-    @Lob
-    @Column(name = "content")
-    private byte[] content;
+    @Column(name = "file_key")
+    private String fileKey;
 
     @Column(name = "generated_file_name", length = 255)
     private String generatedFileName;
@@ -65,7 +64,7 @@ public class ReportMetadata {
         metadata.setReportUuid(UUID.randomUUID());
         metadata.setReportType(reportType);
         metadata.setExportFormat(exportFormat);
-        metadata.setStatus(ReportStatus.CREATED);
+        metadata.setStatus(ReportStatus.QUEUED);
         metadata.setInstrumentSymbol(instrumentSymbol);
         metadata.setCreatedAt(now);
         metadata.setUpdatedAt(now);
@@ -73,8 +72,13 @@ public class ReportMetadata {
         return metadata;
     }
 
+    public void markProcessing() {
+        this.status = ReportStatus.PROCESSING;
+        this.updatedAt = Instant.now();
+    }
+
     public void markCompleted(byte[] content, String generatedFileName) {
-        this.content = content;
+        this.fileKey = fileKey;
         this.generatedFileName = generatedFileName;
         this.status = ReportStatus.COMPLETED;
         this.updatedAt = Instant.now();
