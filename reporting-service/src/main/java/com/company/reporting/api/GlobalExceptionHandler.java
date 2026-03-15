@@ -28,4 +28,14 @@ public class GlobalExceptionHandler {
                 new ApiError("INTERNAL_ERROR", "Unexpected server error")
         );
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ApiResponse<Void> handleIllegalState(IllegalStateException ex) {
+
+        log.warn("Illegal state: {}", ex.getMessage());
+
+        return ApiResponse.error(
+                new ApiError("ILLEGAL_STATE", ex.getMessage())
+        );
+    }
 }
