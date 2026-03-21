@@ -77,7 +77,7 @@ public class ReportMetadata {
         this.updatedAt = Instant.now();
     }
 
-    public void markCompleted(byte[] content, String generatedFileName) {
+    public void markCompleted(String fileKey, String generatedFileName) {
         this.fileKey = fileKey;
         this.generatedFileName = generatedFileName;
         this.status = ReportStatus.COMPLETED;
