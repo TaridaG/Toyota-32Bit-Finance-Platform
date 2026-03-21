@@ -16,6 +16,8 @@ public class ReportCompletedEvent {
     private final String fileName;
     private final String fileKey;
     private final String instrumentSymbol;
+    private final UUID userId;
+    private final String userEmail;
     private final Instant completedAt;
 
     public ReportCompletedEvent(
@@ -25,6 +27,8 @@ public class ReportCompletedEvent {
             String fileName,
             String fileKey,
             String instrumentSymbol,
+            UUID userId,
+            String userEmail,
             Instant completedAt
     ) {
         this.reportId = reportId;
@@ -33,6 +37,8 @@ public class ReportCompletedEvent {
         this.fileName = fileName;
         this.fileKey = fileKey;
         this.instrumentSymbol = instrumentSymbol;
+        this.userId = userId;
+        this.userEmail = userEmail;
         this.completedAt = completedAt;
     }
 }

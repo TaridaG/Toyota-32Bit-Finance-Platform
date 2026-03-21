@@ -18,6 +18,8 @@ public class ReportRequestedEvent {
     private String symbol;
     private LocalDate from;
     private LocalDate to;
+    private UUID userId;
+    private String userEmail;
 
     public ReportRequestedEvent(
             UUID reportId,
@@ -25,7 +27,9 @@ public class ReportRequestedEvent {
             ExportFormat exportFormat,
             String symbol,
             LocalDate from,
-            LocalDate to
+            LocalDate to,
+            UUID userId,
+            String userEmail
     ) {
         this.reportId = reportId;
         this.reportType = reportType;
@@ -33,5 +37,7 @@ public class ReportRequestedEvent {
         this.symbol = symbol;
         this.from = from;
         this.to = to;
+        this.userId = userId;
+        this.userEmail = userEmail;
     }
 }

@@ -22,7 +22,9 @@ public class LogReportNotificationHandler implements ReportNotificationHandler {
                 "REPORT_COMPLETED reportId={} type={} format={}",
                 event.getReportId(),
                 event.getReportType(),
-                event.getExportFormat()
+                event.getExportFormat(),
+                event.getUserId(),
+                event.getUserEmail()
         );
 
         String subject =
@@ -32,7 +34,7 @@ public class LogReportNotificationHandler implements ReportNotificationHandler {
                 emailTemplateService.buildCompletedBody(event);
 
         emailService.sendEmail(
-                "user@email.com",
+                event.getUserEmail(),
                 subject,
                 body
         );
@@ -44,7 +46,9 @@ public class LogReportNotificationHandler implements ReportNotificationHandler {
         log.warn(
                 "REPORT_FAILED reportId={} reason={}",
                 event.getReportId(),
-                event.getReason()
+                event.getReason(),
+                event.getUserId(),
+                event.getUserEmail()
         );
 
         String subject =
@@ -54,7 +58,7 @@ public class LogReportNotificationHandler implements ReportNotificationHandler {
                 emailTemplateService.buildFailedBody(event);
 
         emailService.sendEmail(
-                "user@email.com",
+                event.getUserEmail(),
                 subject,
                 body
         );

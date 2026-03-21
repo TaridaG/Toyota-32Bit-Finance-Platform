@@ -14,5 +14,7 @@ public class ReportCompletedEvent {
     private String fileName;
     private String fileKey;
     private String instrumentSymbol;
+    private UUID userId;
+    private String userEmail;
     private Instant completedAt;
 }

@@ -71,6 +71,8 @@ public class ReportProcessingServiceImpl implements ReportProcessingService {
                             metadata.getGeneratedFileName(),
                             metadata.getFileKey(),
                             metadata.getInstrumentSymbol(),
+                            event.getUserId(),
+                            event.getUserEmail(),
                             Instant.now()
                     )
             );
@@ -87,6 +89,8 @@ public class ReportProcessingServiceImpl implements ReportProcessingService {
                             metadata.getExportFormat(),
                             metadata.getInstrumentSymbol(),
                             ex.getMessage(),
+                            event.getUserId(),
+                            event.getUserEmail(),
                             Instant.now()
                     )
             );
@@ -120,7 +124,7 @@ public class ReportProcessingServiceImpl implements ReportProcessingService {
         String contentType = event.getExportFormat() == ExportFormat.CSV ? "text/csv" : "application/pdf";
         String fileKey = fileStorageService.upload(fileName, content, contentType);
 
-        metadata.markCompleted(content, fileName);
+        metadata.markCompleted(fileKey, fileName);
         reportMetadataRepository.save(metadata);
     }
 
@@ -143,7 +147,7 @@ public class ReportProcessingServiceImpl implements ReportProcessingService {
         String contentType = event.getExportFormat() == ExportFormat.CSV ? "text/csv" : "application/pdf";
         String fileKey = fileStorageService.upload(fileName, content, contentType);
 
-        metadata.markCompleted(content, fileName);
+        metadata.markCompleted(fileKey, fileName);
         reportMetadataRepository.save(metadata);
     }
 }

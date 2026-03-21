@@ -37,7 +37,9 @@ public class ReportGenerationServiceImpl implements ReportGenerationService {
                 request.getExportFormat(),
                 request.getSymbol(),
                 request.getFrom(),
-                request.getTo()
+                request.getTo(),
+                request.getUserId(),
+                request.getUserEmail()
         );
 
         reportRequestPublisher.publish(event);
@@ -61,7 +63,9 @@ public class ReportGenerationServiceImpl implements ReportGenerationService {
                 request.getExportFormat(),
                 null,
                 null,
-                null
+                null,
+                request.getUserId(),
+                request.getUserEmail()
         );
 
         reportRequestPublisher.publish(event);

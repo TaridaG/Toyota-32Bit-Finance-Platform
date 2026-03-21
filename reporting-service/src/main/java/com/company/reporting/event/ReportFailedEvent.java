@@ -15,6 +15,8 @@ public class ReportFailedEvent {
     private final ExportFormat exportFormat;
     private final String instrumentSymbol;
     private final String reason;
+    private final UUID userId;
+    private final String userEmail;
     private final Instant failedAt;
 
     public ReportFailedEvent(
@@ -23,6 +25,8 @@ public class ReportFailedEvent {
             ExportFormat exportFormat,
             String instrumentSymbol,
             String reason,
+            UUID userId,
+            String userEmail,
             Instant failedAt
     ) {
         this.reportId = reportId;
@@ -30,6 +34,8 @@ public class ReportFailedEvent {
         this.exportFormat = exportFormat;
         this.instrumentSymbol = instrumentSymbol;
         this.reason = reason;
+        this.userId = userId;
+        this.userEmail = userEmail;
         this.failedAt = failedAt;
     }
 }
