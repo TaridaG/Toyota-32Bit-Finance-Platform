@@ -13,5 +13,7 @@ public class ReportFailedEvent {
     private String exportFormat;
     private String instrumentSymbol;
     private String reason;
+    private UUID userId;
+    private String userEmail;
     private Instant failedAt;
 }

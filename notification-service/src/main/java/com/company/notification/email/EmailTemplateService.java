@@ -27,7 +27,9 @@ public class EmailTemplateService {
                 event.getReportId(),
                 event.getReportType(),
                 event.getExportFormat(),
-                event.getFileName()
+                event.getFileName(),
+                event.getUserId(),
+                event.getUserEmail()
         );
     }
 
@@ -48,7 +50,9 @@ public class EmailTemplateService {
                 """.formatted(
                 event.getReportId(),
                 event.getReportType(),
-                event.getReason()
+                event.getReason(),
+                event.getUserId(),
+                event.getUserEmail()
         );
     }
 }
