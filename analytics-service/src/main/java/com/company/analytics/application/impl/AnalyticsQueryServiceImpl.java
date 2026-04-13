@@ -1,54 +1,68 @@
 package com.company.analytics.application.impl;
 
 import com.company.analytics.application.AnalyticsQueryService;
+import com.company.analytics.domain.enums.CandleInterval;
 import com.company.analytics.dto.*;
 import com.company.analytics.infrastructure.persistence.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
 
-    private final AnalyticsTradeAggregateRepository aggregateRepository;
     private final AnalyticsPriceCandleDailyRepository candleRepository;
-    private final AnalyticsVWAPRepository vwapRepository;
+    private final AnalyticsPriceCandleRepository multiIntervalCandleRepository;
     private final AnalyticsMovingAverageRepository movingAverageRepository;
     private final AnalyticsRSIRepository rsiRepository;
     private final AnalyticsTrendMetricRepository trendMetricRepository;
 
     @Override
-    public List<AnalyticsSummaryResponse> getDaily(String symbol) {
-        return aggregateRepository.findByInstrumentSymbol(symbol)
-                .stream()
-                .map(AnalyticsSummaryResponse::from)
-                .toList();
-    }
-
-    @Override
     public List<CandleResponse> getCandles(String symbol, LocalDate from, LocalDate to) {
+        if (from == null || to == null) {
+            return candleRepository
+                    .findByInstrumentSymbolOrderByCandleDateAsc(symbol)
+                    .stream()
+                    .map(CandleResponse::from)
+                    .toList();
+        }
         return candleRepository
                 .findByInstrumentSymbolAndCandleDateBetweenOrderByCandleDateAsc(symbol, from, to)
                 .stream()
                 .map(CandleResponse::from)
                 .toList();
     }
+
     @Override
-    public List<VWAPResponse> getVWAP(String symbol) {
-        return vwapRepository
-                .findByInstrumentSymbol(symbol)
-                .stream()
-                .map(v -> VWAPResponse.builder()
-                        .symbol(v.getInstrumentSymbol())
-                        .date(v.getTradeDate())
-                        .vwap(v.getVwap())
-                        .build()
+    public List<CandleResponse> getCandlesByInterval(
+            String symbol,
+            CandleInterval interval,
+            LocalDate from,
+            LocalDate to
+    ) {
+        if (from == null || to == null) {
+            return multiIntervalCandleRepository
+                    .findByInstrumentSymbolAndCandleIntervalOrderByOpenTimeAsc(symbol, interval)
+                    .stream()
+                    .map(CandleResponse::from)
+                    .toList();
+        }
+        Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().minusSeconds(1);
+        return multiIntervalCandleRepository
+                .findByInstrumentSymbolAndCandleIntervalAndOpenTimeBetweenOrderByOpenTimeAsc(
+                        symbol, interval, fromInstant, toInstant
                 )
+                .stream()
+                .map(CandleResponse::from)
                 .toList();
     }
+
     @Override
     public List<MovingAverageResponse> getMovingAverage(String symbol) {
         return movingAverageRepository
@@ -68,7 +82,7 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
     @Override
     public List<RSIResponse> getRSI(String symbol) {
         return rsiRepository
-                .findByInstrumentSymbol(symbol)
+                .findByInstrumentSymbolOrderByTradeDateAsc(symbol)
                 .stream()
                 .map(r ->
                         RSIResponse.builder()

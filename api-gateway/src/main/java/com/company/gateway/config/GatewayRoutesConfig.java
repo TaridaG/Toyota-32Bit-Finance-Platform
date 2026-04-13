@@ -29,22 +29,12 @@ public class GatewayRoutesConfig {
     @Value("${gateway.services.reporting-base-uri}")
     private String reportingBaseUri;
 
+    @Value("${gateway.services.analytics-base-uri}")
+    private String analyticsBaseUri;
+
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
-
-                .route("finance-api", r -> r.path("/api/**", "/health")
-                        .filters(f -> f
-                                .preserveHostHeader()
-                                .requestRateLimiter(rl -> rl
-                                        .setRateLimiter(apiRateLimiter)
-                                        .setKeyResolver(userIdKeyResolver)
-                                )
-                                .circuitBreaker(cb -> cb
-                                        .setName("financeCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/finance"))
-                        )
-                        .uri(financeBaseUri))
 
                 .route("market-data-service", r -> r.path("/market/**")
                         .filters(f -> f
@@ -73,6 +63,28 @@ public class GatewayRoutesConfig {
                                         .setFallbackUri("forward:/fallback/reporting"))
                         )
                         .uri(reportingBaseUri))
+
+                .route("analytics-service", r -> r.path("/api/analytics/**")
+                        .filters(f -> f
+                                .preserveHostHeader()
+                                .circuitBreaker(cb -> cb
+                                        .setName("analyticsCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/analytics"))
+                        )
+                        .uri(analyticsBaseUri))
+
+                .route("finance-api", r -> r.path("/api/**", "/health")
+                        .filters(f -> f
+                                .preserveHostHeader()
+                                .requestRateLimiter(rl -> rl
+                                        .setRateLimiter(apiRateLimiter)
+                                        .setKeyResolver(userIdKeyResolver)
+                                )
+                                .circuitBreaker(cb -> cb
+                                        .setName("financeCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/finance"))
+                        )
+                        .uri(financeBaseUri))
                 .build();
     }
 }

@@ -5,7 +5,7 @@ import com.company.analytics.domain.AnalyticsMovingAverage;
 import com.company.analytics.domain.AnalyticsPriceCandleDaily;
 import com.company.analytics.domain.AnalyticsTrendMetric;
 import com.company.analytics.domain.enums.TrendDirection;
-import com.company.analytics.event.TransactionExecutedEvent;
+import com.company.analytics.event.AnalyticsMarketPriceEvent;
 import com.company.analytics.infrastructure.persistence.AnalyticsMovingAverageRepository;
 import com.company.analytics.infrastructure.persistence.AnalyticsPriceCandleDailyRepository;
 import com.company.analytics.infrastructure.persistence.AnalyticsTrendMetricRepository;
@@ -33,14 +33,14 @@ public class TrendMetricServiceImpl implements TrendMetricService {
     private final AnalyticsTrendMetricRepository trendMetricRepository;
 
     @Override
-    public void process(TransactionExecutedEvent event) {
-        LocalDate tradeDate = event.getExecutedAt()
+    public void process(AnalyticsMarketPriceEvent event) {
+        LocalDate tradeDate = event.occurredAt()
                 .atZone(ZoneOffset.UTC)
                 .toLocalDate();
 
         Optional<AnalyticsPriceCandleDaily> currentCandleOpt =
                 candleRepository.findByInstrumentIdAndCandleDate(
-                        event.getInstrumentId(),
+                        event.instrumentId(),
                         tradeDate
                 );
 
@@ -51,27 +51,27 @@ public class TrendMetricServiceImpl implements TrendMetricService {
         AnalyticsPriceCandleDaily currentCandle = currentCandleOpt.get();
 
         TrendDirection trendDirection = resolveTrendDirection(
-                event.getInstrumentId(),
+                event.instrumentId(),
                 tradeDate
         );
 
         BigDecimal momentum = calculateMomentum(
-                event.getInstrumentSymbol(),
+                event.instrumentSymbol(),
                 tradeDate,
                 currentCandle.getClosePrice()
         );
 
         BigDecimal slope = calculateSlope(
-                event.getInstrumentSymbol(),
+                event.instrumentSymbol(),
                 tradeDate,
                 currentCandle.getClosePrice()
         );
 
         AnalyticsTrendMetric metric = trendMetricRepository
-                .findByInstrumentIdAndTradeDate(event.getInstrumentId(), tradeDate)
+                .findByInstrumentIdAndTradeDate(event.instrumentId(), tradeDate)
                 .orElseGet(() -> AnalyticsTrendMetric.create(
-                        event.getInstrumentId(),
-                        event.getInstrumentSymbol(),
+                        event.instrumentId(),
+                        event.instrumentSymbol(),
                         tradeDate
                 ));
 

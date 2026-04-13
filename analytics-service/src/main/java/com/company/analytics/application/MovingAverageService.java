@@ -1,9 +1,9 @@
 package com.company.analytics.application;
 
-import com.company.analytics.event.TransactionExecutedEvent;
+import com.company.analytics.event.AnalyticsMarketPriceEvent;
 
 public interface MovingAverageService {
 
-    void process(TransactionExecutedEvent event);
+    void process(AnalyticsMarketPriceEvent event);
 
 }

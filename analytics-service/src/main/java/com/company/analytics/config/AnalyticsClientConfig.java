@@ -1,0 +1,14 @@
+package com.company.analytics.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
+
+@Configuration
+public class AnalyticsClientConfig {
+
+    @Bean
+    public RestClient financeRestClient() {
+        return RestClient.builder().build();
+    }
+}

@@ -3,7 +3,7 @@ package com.company.analytics.application.impl;
 import com.company.analytics.application.MovingAverageService;
 import com.company.analytics.domain.AnalyticsMovingAverage;
 import com.company.analytics.domain.AnalyticsPriceCandleDaily;
-import com.company.analytics.event.TransactionExecutedEvent;
+import com.company.analytics.event.AnalyticsMarketPriceEvent;
 import com.company.analytics.infrastructure.persistence.AnalyticsMovingAverageRepository;
 import com.company.analytics.infrastructure.persistence.AnalyticsPriceCandleDailyRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,17 +26,17 @@ public class MovingAverageServiceImpl implements MovingAverageService {
 
     @Transactional
     @Override
-    public void process(TransactionExecutedEvent event) {
+    public void process(AnalyticsMarketPriceEvent event) {
 
         LocalDate tradeDate =
-                event.getExecutedAt()
+                event.occurredAt()
                         .atZone(ZoneOffset.UTC)
                         .toLocalDate();
 
         List<AnalyticsPriceCandleDaily> candles =
                 candleRepository
                         .findByInstrumentSymbolOrderByCandleDateAsc(
-                                event.getInstrumentSymbol()
+                                event.instrumentSymbol()
                         );
 
         BigDecimal ma7 = calculateMA(candles,7);
@@ -45,12 +45,12 @@ public class MovingAverageServiceImpl implements MovingAverageService {
 
         AnalyticsMovingAverage ma =
                 repository.findByInstrumentIdAndTradeDate(
-                        event.getInstrumentId(),
+                        event.instrumentId(),
                         tradeDate
                 ).orElseGet(AnalyticsMovingAverage::new);
 
-        ma.setInstrumentId(event.getInstrumentId());
-        ma.setInstrumentSymbol(event.getInstrumentSymbol());
+        ma.setInstrumentId(event.instrumentId());
+        ma.setInstrumentSymbol(event.instrumentSymbol());
         ma.setTradeDate(tradeDate);
 
         ma.setMa7(ma7);
