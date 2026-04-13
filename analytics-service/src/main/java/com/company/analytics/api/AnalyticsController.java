@@ -2,6 +2,7 @@ package com.company.analytics.api;
 
 import com.company.analytics.application.AnalyticsQueryService;
 import com.company.analytics.common.ApiResponse;
+import com.company.analytics.domain.enums.CandleInterval;
 import com.company.analytics.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,19 +17,18 @@ public class AnalyticsController {
 
     private final AnalyticsQueryService analyticsQueryService;
 
-    @GetMapping("/instruments/{symbol}/daily")
-    public ApiResponse<List<AnalyticsSummaryResponse>> getDaily(
-            @PathVariable String symbol
-    ) {
-        return ApiResponse.success(analyticsQueryService.getDaily(symbol));
-    }
-
     @GetMapping("/instruments/{symbol}/candles")
     public ApiResponse<List<CandleResponse>> getCandles(
             @PathVariable String symbol,
-            @RequestParam LocalDate from,
-            @RequestParam LocalDate to
+            @RequestParam(required = false) CandleInterval interval,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
     ) {
+        if (interval != null) {
+            return ApiResponse.success(
+                    analyticsQueryService.getCandlesByInterval(symbol, interval, from, to)
+            );
+        }
         return ApiResponse.success(
                 analyticsQueryService.getCandles(symbol, from, to)
         );
@@ -40,10 +40,6 @@ public class AnalyticsController {
         return ApiResponse.success(
                 analyticsQueryService.getMovingAverage(symbol)
         );
-    }
-    @GetMapping("/instruments/{symbol}/vwap")
-    public ApiResponse<List<VWAPResponse>> getVWAP(@PathVariable String symbol) {
-        return ApiResponse.success(analyticsQueryService.getVWAP(symbol));
     }
     @GetMapping("/instruments/{symbol}/rsi")
     public ApiResponse<List<RSIResponse>> getRSI(
