@@ -3,7 +3,7 @@ package com.company.analytics.application.impl;
 import com.company.analytics.application.RSIService;
 import com.company.analytics.domain.AnalyticsPriceCandleDaily;
 import com.company.analytics.domain.AnalyticsRSI;
-import com.company.analytics.event.TransactionExecutedEvent;
+import com.company.analytics.event.AnalyticsMarketPriceEvent;
 import com.company.analytics.infrastructure.persistence.AnalyticsPriceCandleDailyRepository;
 import com.company.analytics.infrastructure.persistence.AnalyticsRSIRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,17 +26,17 @@ public class RSIServiceImpl implements RSIService {
 
     @Transactional
     @Override
-    public void process(TransactionExecutedEvent event) {
+    public void process(AnalyticsMarketPriceEvent event) {
 
         LocalDate tradeDate =
-                event.getExecutedAt()
+                event.occurredAt()
                         .atZone(ZoneOffset.UTC)
                         .toLocalDate();
 
         List<AnalyticsPriceCandleDaily> candles =
                 candleRepository
                         .findByInstrumentSymbolOrderByCandleDateAsc(
-                                event.getInstrumentSymbol()
+                                event.instrumentSymbol()
                         );
 
         if(candles.size() < 15) return;
@@ -88,12 +88,12 @@ public class RSIServiceImpl implements RSIService {
 
         AnalyticsRSI entity =
                 repository.findByInstrumentIdAndTradeDate(
-                        event.getInstrumentId(),
+                        event.instrumentId(),
                         tradeDate
                 ).orElseGet(AnalyticsRSI::new);
 
-        entity.setInstrumentId(event.getInstrumentId());
-        entity.setInstrumentSymbol(event.getInstrumentSymbol());
+        entity.setInstrumentId(event.instrumentId());
+        entity.setInstrumentSymbol(event.instrumentSymbol());
         entity.setTradeDate(tradeDate);
         entity.setRsi14(rsi);
 

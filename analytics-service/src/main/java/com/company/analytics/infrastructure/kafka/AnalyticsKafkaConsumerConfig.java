@@ -1,6 +1,6 @@
 package com.company.analytics.infrastructure.kafka;
 
-import com.company.analytics.event.TransactionExecutedEvent;
+import com.company.analytics.event.MarketPriceUpdatedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -23,11 +23,11 @@ import java.util.Map;
 public class AnalyticsKafkaConsumerConfig {
 
     @Bean
-    public ConsumerFactory<String, TransactionExecutedEvent> analyticsConsumerFactory(
+    public ConsumerFactory<String, MarketPriceUpdatedEvent> analyticsConsumerFactory(
             @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
     ) {
-        JsonDeserializer<TransactionExecutedEvent> deserializer =
-                new JsonDeserializer<>(TransactionExecutedEvent.class);
+        JsonDeserializer<MarketPriceUpdatedEvent> deserializer =
+                new JsonDeserializer<>(MarketPriceUpdatedEvent.class);
         deserializer.addTrustedPackages("*");
         deserializer.setUseTypeHeaders(false);
 
@@ -77,12 +77,12 @@ public class AnalyticsKafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, TransactionExecutedEvent>
+    public ConcurrentKafkaListenerContainerFactory<String, MarketPriceUpdatedEvent>
     analyticsKafkaListenerContainerFactory(
-            ConsumerFactory<String, TransactionExecutedEvent> analyticsConsumerFactory,
+            ConsumerFactory<String, MarketPriceUpdatedEvent> analyticsConsumerFactory,
             DefaultErrorHandler analyticsKafkaErrorHandler
     ) {
-        ConcurrentKafkaListenerContainerFactory<String, TransactionExecutedEvent> factory =
+        ConcurrentKafkaListenerContainerFactory<String, MarketPriceUpdatedEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(analyticsConsumerFactory);
