@@ -3,5 +3,8 @@ server:
 
 gateway:
   services:
-    finance-base-uri: http://localhost:8080
-    market-base-uri: http://localhost:8082
+    finance-base-uri: ${FINANCE_BASE_URI:http://localhost:8080}
+    market-base-uri: ${MARKET_BASE_URI:http://localhost:8082}
+    news-base-uri: ${NEWS_BASE_URI:http://localhost:8083}
+    reporting-base-uri: ${REPORTING_BASE_URI:http://localhost:8084}
+    analytics-base-uri: ${ANALYTICS_BASE_URI:http://localhost:8085}

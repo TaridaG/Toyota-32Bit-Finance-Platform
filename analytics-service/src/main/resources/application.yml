@@ -45,3 +45,7 @@ management:
   metrics:
     tags:
       application: analytics-service
+
+clients:
+  finance:
+    base-url: ${FINANCE_BASE_URL:http://finance-api:8080}
