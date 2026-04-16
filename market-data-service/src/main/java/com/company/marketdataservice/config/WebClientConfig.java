@@ -16,27 +16,28 @@ import java.util.concurrent.TimeUnit;
 public class WebClientConfig {
 
     @Bean
-    public WebClient webClient(ResilienceProperties resilienceProperties) {
+    public WebClient webClient(ResilienceProperties resilienceProperties, MarketDataProperties marketDataProperties) {
+
+        String provider = marketDataProperties.getProvider();
+        if ("composite".equalsIgnoreCase(provider)) {
+            provider = "binance"; // composite ise default bir provider seçicem kontrol sonra
+        }
+
+        long timeoutMillis = resilienceProperties
+                .getRequiredProvider(provider)
+                .getTimeout()
+                .getMillis();
 
         HttpClient httpClient =
                 HttpClient.create()
-                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                                resilienceProperties.getTimeout().getSeconds() * 1000)
-                        .responseTimeout(
-                                Duration.ofSeconds(resilienceProperties.getTimeout().getSeconds())
-                        )
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) timeoutMillis)
+                        .responseTimeout(Duration.ofMillis(timeoutMillis))
                         .doOnConnected(conn ->
                                 conn.addHandlerLast(
-                                                new ReadTimeoutHandler(
-                                                        resilienceProperties.getTimeout().getSeconds(),
-                                                        TimeUnit.SECONDS
-                                                )
+                                                new ReadTimeoutHandler(timeoutMillis, TimeUnit.MILLISECONDS)
                                         )
                                         .addHandlerLast(
-                                                new WriteTimeoutHandler(
-                                                        resilienceProperties.getTimeout().getSeconds(),
-                                                        TimeUnit.SECONDS
-                                                )
+                                                new WriteTimeoutHandler(timeoutMillis, TimeUnit.MILLISECONDS)
                                         )
                         );
 
