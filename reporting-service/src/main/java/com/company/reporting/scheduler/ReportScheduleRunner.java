@@ -53,6 +53,8 @@ public class ReportScheduleRunner {
                     schedule.getExportFormat(),
                     null,
                     null,
+                    null,
+                    null,
                     null
             );
 

@@ -3,7 +3,6 @@ package com.company.gateway.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -49,7 +48,6 @@ public class WebSecurityConfig {
     }
 
 
-    @Bean
     public Converter<Jwt, Mono<AbstractAuthenticationToken>> reactiveJwtAuthConverter() {
         return jwt -> Mono.just(new JwtAuthenticationToken(jwt, extractAuthorities(jwt)));
     }
