@@ -38,7 +38,7 @@ public class KafkaProducerConfig {
         return props;
     }
 
-    // 🔔 ALARM
+    //  ALARM
     @Bean
     public ProducerFactory<String, AlarmTriggeredEvent> alarmProducerFactory() {
         return new DefaultKafkaProducerFactory<>(baseProps());
@@ -49,7 +49,7 @@ public class KafkaProducerConfig {
         return new KafkaTemplate<>(alarmProducerFactory());
     }
 
-    // 💸 TRANSACTION
+    //  TRANSACTION
     @Bean
     public ProducerFactory<String, TransactionExecutedEvent> transactionProducerFactory() {
         return new DefaultKafkaProducerFactory<>(baseProps());

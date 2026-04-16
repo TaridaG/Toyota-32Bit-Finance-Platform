@@ -8,7 +8,7 @@ import java.util.UUID;
 public record MarketPriceUpdatedEvent(
         String eventId,
         String instrumentSymbol,   // "BTCUSDT"
-        BigDecimal price,          // 62500.12
+        BigDecimal price,          // 62500.12 gibi gibi
         String priceType,          // "MARKET"
         String source,             // "BINANCE"
         Instant occurredAt

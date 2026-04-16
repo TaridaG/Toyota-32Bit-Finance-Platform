@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,26 +34,39 @@ public class RssNewsProvider implements NewsProvider {
         List<ProviderNewsItem> items = new ArrayList<>();
 
         for (NewsProperties.Feed feedConfig : newsProperties.getFeeds()) {
-            try (InputStream inputStream = URI.create(feedConfig.getUrl()).toURL().openStream()) {
+            HttpURLConnection connection = null;
+            try {
+                connection = (HttpURLConnection) URI.create(feedConfig.getUrl()).toURL().openConnection();
+                connection.setConnectTimeout(newsProperties.getRss().getConnectTimeoutMs());
+                connection.setReadTimeout(newsProperties.getRss().getReadTimeoutMs());
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("User-Agent", newsProperties.getRss().getUserAgent());
 
-                SyndFeed feed = new SyndFeedInput().build(new com.rometools.rome.io.XmlReader(inputStream));
+                try (InputStream inputStream = connection.getInputStream()) {
 
-                for (SyndEntry entry : feed.getEntries()) {
-                    items.add(new ProviderNewsItem(
-                            entry.getUri(),
-                            safe(entry.getTitle()),
-                            safe(entry.getDescription() != null ? entry.getDescription().getValue() : null),
-                            safe(entry.getLink()),
-                            feedConfig.getName(),
-                            feedConfig.getCategory(),
-                            entry.getPublishedDate() != null
-                                    ? entry.getPublishedDate().toInstant()
-                                    : Instant.now()
-                    ));
+                    SyndFeed feed = new SyndFeedInput().build(new com.rometools.rome.io.XmlReader(inputStream));
+
+                    int maxEntries = Math.max(newsProperties.getRss().getMaxEntriesPerFeed(), 1);
+                    for (SyndEntry entry : feed.getEntries().stream().limit(maxEntries).toList()) {
+                        items.add(new ProviderNewsItem(
+                                entry.getUri(),
+                                safe(entry.getTitle()),
+                                safe(entry.getDescription() != null ? entry.getDescription().getValue() : null),
+                                safe(entry.getLink()),
+                                feedConfig.getName(),
+                                feedConfig.getCategory(),
+                                entry.getPublishedDate() != null
+                                        ? entry.getPublishedDate().toInstant()
+                                        : Instant.now()
+                        ));
+                    }
                 }
-
             } catch (Exception ex) {
                 log.warn("RSS fetch failed. feedName={}, url={}", feedConfig.getName(), feedConfig.getUrl(), ex);
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
             }
         }
 

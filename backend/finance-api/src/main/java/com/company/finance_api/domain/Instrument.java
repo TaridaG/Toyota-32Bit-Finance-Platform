@@ -16,7 +16,7 @@ public class Instrument {
     private String symbol;   // BTCUSDT, ASELS, USDTRY
 
     @Column(nullable = false)
-    private String name;     // Bitcoin, Aselsan, US Dollar
+    private String name;     // Bitcoin, Aselsan, US Dollarııı
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
