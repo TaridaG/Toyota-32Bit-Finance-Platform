@@ -15,6 +15,7 @@ import java.util.List;
 public class NewsProperties {
 
     private Scheduler scheduler = new Scheduler();
+    private Rss rss = new Rss();
     private List<Feed> feeds = new ArrayList<>();
 
     @Getter
@@ -34,5 +35,14 @@ public class NewsProperties {
         private String url;
 
         private NewsCategory category = NewsCategory.OTHER;
+    }
+
+    @Getter
+    @Setter
+    public static class Rss {
+        private int connectTimeoutMs = 5000;
+        private int readTimeoutMs = 10000;
+        private int maxEntriesPerFeed = 100;
+        private String userAgent = "finance-news-service/1.0";
     }
 }

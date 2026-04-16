@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:finance}
     username: ${DB_USERNAME:finance}
-    password: ${DB_PASSWORD:finance}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -38,6 +38,11 @@ news:
   scheduler:
     enabled: true
     delay-ms: 300000
+  rss:
+    connect-timeout-ms: ${NEWS_RSS_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${NEWS_RSS_READ_TIMEOUT_MS:10000}
+    max-entries-per-feed: ${NEWS_RSS_MAX_ENTRIES_PER_FEED:100}
+    user-agent: ${NEWS_RSS_USER_AGENT:finance-news-service/1.0}
 
   feeds:
     - name: "Investing"
