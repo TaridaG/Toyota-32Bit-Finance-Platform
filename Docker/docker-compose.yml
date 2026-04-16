@@ -1,25 +1,7 @@
 services:
-  api-gateway:
-    build:
-      context: ..
-      dockerfile: api-gateway/Dockerfile
-    container_name: api-gateway
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      finance-api:
-        condition: service_started
-      market-data-service:
-        condition: service_started
-      keycloak:
-        condition: service_started
-      news-service:
-        condition: service_healthy
-    ports:
-      - "8080:8080"   # dışa tek açık port budur
-    networks:
-      - finance-net
-
+  # -----------------------------
+  # Core infrastructure
+  # -----------------------------
   postgres:
     image: postgres:15
     container_name: finance-postgres
@@ -31,21 +13,34 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U finance -d finance" ]
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 5s
     volumes:
       - finance_pg_data:/var/lib/postgresql/data
     networks:
       - finance-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: finance-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - finance-net
 
   kafka:
     image: apache/kafka:3.7.0
     container_name: kafka
-    depends_on:
-      - postgres
     ports:
       - "9092:9092"
     environment:
@@ -62,44 +57,34 @@ services:
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_LOG_DIRS=/tmp/kraft-combined-logs
     volumes:
-      - kafka_data:/var/lib/kafka/data # Bitnami değil apache/kafka kullandığım için burayı da güncelledim
+      - kafka_data:/var/lib/kafka/data
     networks:
       - finance-net
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
     container_name: keycloak
-    command: [ "start-dev", "--import-realm" ]
+    command: ["start-dev", "--import-realm"]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
-      - "8085:8080"  # host'ta çakışmasın diye 8085 veriyorum
+      - "8085:8080"
     volumes:
       - ./keycloak/realm-finance.json:/opt/keycloak/data/import/realm-finance.json:ro
     networks:
       - finance-net
 
-  finance-api:
-    build:
-      context: ..
-      dockerfile: backend/finance-api/Dockerfile
-    container_name: finance-api
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      redis:
-        condition: service_started
+  minio:
+    image: minio/minio
+    container_name: minio
+    command: server /data --console-address ":9001"
     environment:
-      - SPRING_PROFILES_ACTIVE=kafka,cache-redis
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
-      - SPRING_DATASOURCE_USERNAME=finance
-      - SPRING_DATASOURCE_PASSWORD=123456
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     networks:
       - finance-net
 
@@ -126,7 +111,46 @@ services:
       - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTAa
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
     depends_on:
-      - opensearch
+      opensearch:
+        condition: service_started
+    networks:
+      - finance-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    networks:
+      - finance-net
+
+  # -----------------------------
+  # Backend application services
+  # -----------------------------
+  finance-api:
+    build:
+      context: ../backend/finance-api
+      dockerfile: Dockerfile
+    container_name: finance-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      - SPRING_PROFILES_ACTIVE=kafka,cache-redis
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
+      - SPRING_DATASOURCE_USERNAME=finance
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_FLYWAY_TABLE=finance_flyway_schema_history
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     networks:
       - finance-net
 
@@ -134,73 +158,96 @@ services:
     build:
       context: ../market-data-service
       dockerfile: Dockerfile
+    container_name: market-data-service
+    depends_on:
+      kafka:
+        condition: service_started
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - kafka
-    networks:
-      - finance-net
-  minio:
-    image: minio/minio
-    container_name: minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     networks:
       - finance-net
 
-  reporting-service:
+  analytics-service:
     build:
-      context: ..
-      dockerfile: reporting-service/Dockerfile
-    container_name: reporting-service
+      context: ../analytics-service
+      dockerfile: Dockerfile
+    container_name: analytics-service
     depends_on:
       postgres:
         condition: service_healthy
-      analytics-service:
+      kafka:
+        condition: service_started
+      finance-api:
         condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
       - SPRING_DATASOURCE_USERNAME=finance
       - SPRING_DATASOURCE_PASSWORD=123456
-      - ANALYTICS_BASE_URL=http://analytics-service:8080
+      - SPRING_FLYWAY_TABLE=analytics_flyway_schema_history
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
+      - SPRING_FLYWAY_ENABLED=false
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - FINANCE_BASE_URL=http://finance-api:8080
     networks:
       - finance-net
 
-
-  redis:
-    image: redis:7-alpine
-    container_name: finance-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
+  reporting-service:
+    build:
+      context: ../reporting-service
+      dockerfile: Dockerfile
+    container_name: reporting-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      finance-api:
+        condition: service_started
+      minio:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
+      - SPRING_DATASOURCE_USERNAME=finance
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_FLYWAY_TABLE=reporting_flyway_schema_history
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
+      - SPRING_FLYWAY_ENABLED=false
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
+      - ANALYTICS_BASE_URL=http://analytics-service:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - FINANCE_BASE_URL=http://finance-api:8080
+      - MINIO_URL=http://minio:9000
     networks:
       - finance-net
 
   notification-service:
     build:
-      context: ..
-      dockerfile: notification-service/Dockerfile
+      context: ../notification-service
+      dockerfile: Dockerfile
     container_name: notification-service
     depends_on:
-      - kafka
+      kafka:
+        condition: service_started
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     networks:
       - finance-net
 
   news-service:
     build:
-      context: ..
-      dockerfile: news-service/Dockerfile
+      context: ../news-service
+      dockerfile: Dockerfile
     container_name: news-service
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -212,15 +259,6 @@ services:
       - NEWS_RSS_MAX_ENTRIES_PER_FEED=${NEWS_RSS_MAX_ENTRIES_PER_FEED:-100}
       - NEWS_RSS_USER_AGENT=${NEWS_RSS_USER_AGENT:-finance-news-service/1.0}
       - JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=/tmp -XX:MaxRAMPercentage=75.0
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health >/dev/null || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 25s
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -235,10 +273,13 @@ services:
   log-consumer-service:
     build:
       context: ../log-consumer-service
+      dockerfile: Dockerfile
     container_name: log-consumer-service
     depends_on:
-      - kafka
-      - opensearch
+      kafka:
+        condition: service_started
+      opensearch:
+        condition: service_started
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - APP_LOGS_TOPIC=app.logs
@@ -248,22 +289,47 @@ services:
     networks:
       - finance-net
 
-  analytics-service:
+  api-gateway:
     build:
-      context: ..
-      dockerfile: analytics-service/Dockerfile
-    container_name: analytics-service
+      context: ../api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
     depends_on:
-      - kafka
-      - postgres
+      finance-api:
+        condition: service_started
+      market-data-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      reporting-service:
+        condition: service_started
+      news-service:
+        condition: service_started
+      keycloak:
+        condition: service_started
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
-      - SPRING_DATASOURCE_USERNAME=finance
-      - SPRING_DATASOURCE_PASSWORD=123456
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
     networks:
       - finance-net
 
+  frontend-web:
+    build:
+      context: ../frontend-web
+      dockerfile: Dockerfile
+    container_name: frontend-web
+    depends_on:
+      api-gateway:
+        condition: service_started
+    ports:
+      - "5173:5173"
+    networks:
+      - finance-net
+
+  # -----------------------------
+  # Observability
+  # -----------------------------
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -272,22 +338,22 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
-      - finance-api
-      - market-data-service
-      - news-service
-      - api-gateway
-      - notification-service
-      - log-consumer-service
-      - analytics-service
-    networks:
-      - finance-net
-
-  jaeger:
-    image: jaegertracing/all-in-one:1.55
-    container_name: jaeger
-    ports:
-      - "16686:16686"
-      - "4318:4318"
+      finance-api:
+        condition: service_started
+      market-data-service:
+        condition: service_started
+      news-service:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      log-consumer-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      reporting-service:
+        condition: service_started
     networks:
       - finance-net
 
@@ -299,12 +365,15 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_started
     networks:
       - finance-net
+
 networks:
   finance-net:
     driver: bridge
+
 volumes:
   finance_pg_data:
   kafka_data:
