@@ -33,7 +33,7 @@ public class AlarmTriggeredEvent {
         this.triggeredAt = triggeredAt;
     }
 
-    // ✅ FACTORY METHOD (BEST PRACTICE)
+    //  FACTORY METHOD İÇİN BURASI
     public static AlarmTriggeredEvent of(
             Long alarmId,
             UUID userId,

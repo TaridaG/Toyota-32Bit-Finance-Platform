@@ -66,7 +66,7 @@ public class TradeServiceImpl implements TradeService {
 
         Transaction saved = transactionRepository.save(transaction);
 
-// 🔥 EVENT
+//  EVENT
         transactionEventPublisher.publish(
                 TransactionExecutedEvent.of(
                         user.getId(),
