@@ -324,6 +324,12 @@ services:
         condition: service_started
     ports:
       - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ../frontend-web:/app
+      - /app/node_modules
     networks:
       - finance-net
 
