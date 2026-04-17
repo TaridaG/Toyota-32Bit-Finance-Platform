@@ -1,12 +1,14 @@
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
+import { useTranslation } from 'react-i18next'
 
 export function SimulationPage() {
-  useDocumentTitle('Simülasyon | Finans Platformu')
+  const { t } = useTranslation()
+  useDocumentTitle(t('simulation.titleDoc'))
 
   return (
     <section>
-      <h2>Simülasyon</h2>
-      <p>Simülasyon modülü yakında eklenecek.</p>
+      <h2>{t('simulation.title')}</h2>
+      <p>{t('simulation.lead')}</p>
     </section>
   )
 }
