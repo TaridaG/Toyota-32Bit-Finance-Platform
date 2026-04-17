@@ -1,12 +1,14 @@
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
+import { useTranslation } from 'react-i18next'
 
 export function DashboardPage() {
-  useDocumentTitle('Ana Sayfa | Finans Platformu')
+  const { t } = useTranslation()
+  useDocumentTitle(t('dashboard.titleDoc'))
 
   return (
     <section>
-      <h2>Ana Sayfa</h2>
-      <p>Genel özet bileşenleri burada yer alacak.</p>
+      <h2>{t('dashboard.title')}</h2>
+      <p>{t('dashboard.lead')}</p>
     </section>
   )
 }
