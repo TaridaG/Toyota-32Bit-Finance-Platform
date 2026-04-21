@@ -10,28 +10,38 @@ type PortalHeaderProps = {
   onLogout?: () => void
 }
 
-const appNavItems = [
-  { to: '/app', labelKey: 'header.navApp.markets', end: true },
+type AppNavItem = {
+  to: string
+  labelKey: string
+  end?: boolean
+}
+
+type PublicNavItem = {
+  labelKey: string
+  to?: string
+  href?: string
+}
+
+const appNavItems: AppNavItem[] = [
+  { to: '/app/markets', labelKey: 'header.navApp.markets' },
+  { to: '/app/my-portfolio', labelKey: 'header.navApp.myPortfolio' },
+  { to: '/app/analysis', labelKey: 'header.navApp.analysis' },
   { to: '/app/portfolio', labelKey: 'header.navApp.portfolio' },
   { to: '/app/simulation', labelKey: 'header.navApp.simulation' },
 ]
 
-const publicNavItems = [
-  { labelKey: 'header.navPublic.cryptoBuy', href: '#' },
-  { labelKey: 'header.navPublic.markets', href: '#' },
-  { labelKey: 'header.navPublic.trade', href: '#' },
-  { labelKey: 'header.navPublic.futures', href: '#' },
-  { labelKey: 'header.navPublic.earn', href: '#' },
+const publicNavItems: PublicNavItem[] = [
+  { labelKey: 'header.navPublic.markets', to: '/markets' },
+  { labelKey: 'header.navPublic.myPortfolio', to: '/my-portfolio' },
+  { labelKey: 'header.navPublic.analysis', to: '/analysis' },
+  { labelKey: 'header.navPublic.news', to: '/news' },
 ]
 
-const mobileNavItemKeys = [
-  'header.navPublic.cryptoBuy',
-  'header.navPublic.markets',
-  'header.navPublic.trade',
-  'header.navPublic.futures',
-  'header.navPublic.earn',
-  'header.navPublic.square',
-  'header.navPublic.more',
+const mobileNavItems: PublicNavItem[] = [
+  { labelKey: 'header.navPublic.markets', to: '/markets' },
+  { labelKey: 'header.navPublic.myPortfolio', to: '/my-portfolio' },
+  { labelKey: 'header.navPublic.analysis', to: '/analysis' },
+  { labelKey: 'header.navPublic.news', to: '/news' },
 ]
 
 const currencyItems = ['USD-$', 'EUR-€', 'TRY-₺', 'GBP-£', 'JPY-¥', 'AED-د.إ']
@@ -144,17 +154,31 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                 </NavLink>
               ))
             : publicNavItems.map((item) => (
-                <a
-                  key={item.labelKey}
-                  href={item.href}
-                  className="portal-nav-link"
-                  onClick={() => {
-                    closeMenu()
-                    closeDesktopPanels()
-                  }}
-                >
-                  {t(item.labelKey)}
-                </a>
+                item.to ? (
+                  <Link
+                    key={item.labelKey}
+                    to={item.to}
+                    className="portal-nav-link"
+                    onClick={() => {
+                      closeMenu()
+                      closeDesktopPanels()
+                    }}
+                  >
+                    {t(item.labelKey)}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.labelKey}
+                    href={item.href ?? '#'}
+                    className="portal-nav-link"
+                    onClick={() => {
+                      closeMenu()
+                      closeDesktopPanels()
+                    }}
+                  >
+                    {t(item.labelKey)}
+                  </a>
+                )
               ))}
         </nav>
 
@@ -329,12 +353,20 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                       <span className="portal-mobile-item-arrow">›</span>
                     </NavLink>
                   ))
-                : mobileNavItemKeys.map((labelKey) => (
-                    <a key={labelKey} href="#" onClick={closeMenu} className="portal-mobile-item">
-                      <span className="portal-mobile-item-icon" />
-                      <span>{t(labelKey)}</span>
-                      <span className="portal-mobile-item-arrow">›</span>
-                    </a>
+                : mobileNavItems.map((item) => (
+                    item.to ? (
+                      <Link key={item.labelKey} to={item.to} onClick={closeMenu} className="portal-mobile-item">
+                        <span className="portal-mobile-item-icon" />
+                        <span>{t(item.labelKey)}</span>
+                        <span className="portal-mobile-item-arrow">›</span>
+                      </Link>
+                    ) : (
+                      <a key={item.labelKey} href={item.href ?? '#'} onClick={closeMenu} className="portal-mobile-item">
+                        <span className="portal-mobile-item-icon" />
+                        <span>{t(item.labelKey)}</span>
+                        <span className="portal-mobile-item-arrow">›</span>
+                      </a>
+                    )
                   ))}
             </nav>
 
