@@ -4,6 +4,10 @@ import { RootLayout } from '../../shared/components/layout/RootLayout'
 import { DashboardPage } from '../../pages/dashboard/DashboardPage'
 import { ExternalPortfolioPage } from '../../pages/external-portfolio/ExternalPortfolioPage'
 import { SimulationPage } from '../../pages/simulation/SimulationPage'
+import { MarketsPage } from '../../pages/markets/MarketsPage'
+import { MyPortfolioPage } from '../../pages/my-portfolio/MyPortfolioPage'
+import { NewsPage } from '../../pages/news/NewsPage'
+import { AnalysisPage } from '../../pages/analysis/AnalysisPage'
 import { LandingPage } from '../../pages/public/LandingPage'
 import { LoginPage } from '../../pages/public/LoginPage'
 import { RegisterPage } from '../../pages/public/RegisterPage'
@@ -39,6 +43,22 @@ export const appRouter = createBrowserRouter([
         ),
       },
       {
+        path: 'markets',
+        element: <MarketsPage />,
+      },
+      {
+        path: 'my-portfolio',
+        element: <MyPortfolioPage />,
+      },
+      {
+        path: 'news',
+        element: <NewsPage />,
+      },
+      {
+        path: 'analysis',
+        element: <AnalysisPage />,
+      },
+      {
         path: 'app',
         element: (
           <RequireAuth>
@@ -46,7 +66,12 @@ export const appRouter = createBrowserRouter([
           </RequireAuth>
         ),
         children: [
-          { index: true, element: <DashboardPage /> },
+          { index: true, element: <Navigate to="/app/markets" replace /> },
+          { path: 'markets', element: <MarketsPage /> },
+          { path: 'my-portfolio', element: <MyPortfolioPage /> },
+          { path: 'news', element: <NewsPage /> },
+          { path: 'analysis', element: <AnalysisPage /> },
+          { path: 'dashboard', element: <DashboardPage /> },
           { path: 'portfolio', element: <ExternalPortfolioPage /> },
           { path: 'simulation', element: <SimulationPage /> },
         ],
