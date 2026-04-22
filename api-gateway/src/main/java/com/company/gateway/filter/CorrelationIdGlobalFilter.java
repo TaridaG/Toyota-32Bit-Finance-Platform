@@ -11,6 +11,8 @@ import java.util.UUID;
 @Component
 public class CorrelationIdGlobalFilter implements GlobalFilter, Ordered {
 
+    public static final int ORDER = -1000;
+
     public static final String CORRELATION_ID = "X-Correlation-Id";
 
     @Override
@@ -26,13 +28,15 @@ public class CorrelationIdGlobalFilter implements GlobalFilter, Ordered {
                 .header(CORRELATION_ID, correlationId)
                 .build();
 
-        exchange.getResponse().getHeaders().set(CORRELATION_ID, correlationId);
+        if (!exchange.getResponse().isCommitted()) {
+            exchange.getResponse().getHeaders().set(CORRELATION_ID, correlationId);
+        }
 
         return chain.filter(exchange.mutate().request(mutated).build());
     }
 
     @Override
     public int getOrder() {
-        return -1000; // en erken çalışsın
+        return ORDER;
     }
 }

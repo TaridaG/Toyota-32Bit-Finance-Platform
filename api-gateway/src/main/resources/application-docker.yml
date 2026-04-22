@@ -1,6 +1,19 @@
 server:
   port: 8080
 
+app:
+  security:
+    jwt:
+      issuer-uri: ${JWT_ISSUER_URI:http://localhost:8085/realms/finance}
+      jwk-set-uri: ${APP_SECURITY_JWT_JWK_SET_URI:http://keycloak:8080/realms/finance/protocol/openid-connect/certs}
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${app.security.jwt.issuer-uri}
+
 gateway:
   services:
     finance-base-uri: ${FINANCE_BASE_URI:http://finance-api:8080}
@@ -8,10 +21,3 @@ gateway:
     news-base-uri: ${NEWS_BASE_URI:http://news-service:8082}
     reporting-base-uri: ${REPORTING_BASE_URI:http://reporting-service:8080}
     analytics-base-uri: ${ANALYTICS_BASE_URI:http://analytics-service:8080}
-
-spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://keycloak:8080/realms/finance

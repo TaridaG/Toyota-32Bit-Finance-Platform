@@ -91,6 +91,20 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!-- Spring Cloud Gateway 4.1 (2023.0.x) expects Spring Framework 6.2 HttpHeaders APIs while Boot 3.2 ships 6.1. -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>6.2.5</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -114,9 +128,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencyManagement>
-
-    </dependencyManagement>
 
 </project>
