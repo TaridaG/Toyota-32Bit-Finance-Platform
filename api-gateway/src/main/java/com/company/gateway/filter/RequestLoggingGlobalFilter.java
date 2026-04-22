@@ -2,6 +2,7 @@ package com.company.gateway.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
@@ -18,7 +19,6 @@ public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
 
         String method = exchange.getRequest().getMethod().name();
         String path = exchange.getRequest().getURI().getPath();
-        String correlationId = exchange.getRequest().getHeaders().getFirst(CorrelationIdGlobalFilter.CORRELATION_ID);
 
         long start = System.currentTimeMillis();
 
@@ -28,13 +28,21 @@ public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
                     ? exchange.getResponse().getStatusCode().value()
                     : 0;
 
-            log.info("gateway_request method={} path={} status={} tookMs={} correlationId={}",
-                    method, path, status, tookMs, correlationId);
+            String correlationId = exchange.getRequest().getHeaders().getFirst(CorrelationIdGlobalFilter.CORRELATION_ID);
+            if (correlationId != null && !correlationId.isBlank()) {
+                MDC.put("correlationId", correlationId);
+            }
+            try {
+                log.info("gateway_request method={} path={} status={} tookMs={} outcome={}",
+                        method, path, status, tookMs, signal.name());
+            } finally {
+                MDC.remove("correlationId");
+            }
         });
     }
 
     @Override
     public int getOrder() {
-        return -900;
+        return -880;
     }
 }

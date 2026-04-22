@@ -1,6 +1,18 @@
 server:
   port: 9090
 
+app:
+  security:
+    jwt:
+      issuer-uri: ${JWT_ISSUER_URI:http://localhost:8085/realms/finance}
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${app.security.jwt.issuer-uri}
+
 gateway:
   services:
     finance-base-uri: ${FINANCE_BASE_URI:http://localhost:8080}

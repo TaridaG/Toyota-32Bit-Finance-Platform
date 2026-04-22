@@ -7,8 +7,10 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("!test")
 public class GatewayRoutesConfig {
     public GatewayRoutesConfig(RedisRateLimiter apiRateLimiter, KeyResolver userIdKeyResolver) {
         this.apiRateLimiter = apiRateLimiter;
@@ -39,7 +41,6 @@ public class GatewayRoutesConfig {
                 .route("market-data-service", r -> r.path("/market/**")
                         .filters(f -> f
                                 .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}")
-                                .preserveHostHeader()
                                 .circuitBreaker(cb -> cb
                                         .setName("marketCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/market"))
@@ -48,7 +49,6 @@ public class GatewayRoutesConfig {
 
                 .route("news-service", r -> r.path("/api/news/**")
                         .filters(f -> f
-                                .preserveHostHeader()
                                 .circuitBreaker(cb -> cb
                                         .setName("newsCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/news"))
@@ -57,7 +57,6 @@ public class GatewayRoutesConfig {
 
                 .route("reporting-service", r -> r.path("/api/reports/**")
                         .filters(f -> f
-                                .preserveHostHeader()
                                 .circuitBreaker(cb -> cb
                                         .setName("reportingCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/reporting"))
@@ -66,7 +65,6 @@ public class GatewayRoutesConfig {
 
                 .route("analytics-service", r -> r.path("/api/analytics/**")
                         .filters(f -> f
-                                .preserveHostHeader()
                                 .circuitBreaker(cb -> cb
                                         .setName("analyticsCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/analytics"))
@@ -75,7 +73,6 @@ public class GatewayRoutesConfig {
 
                 .route("finance-api", r -> r.path("/api/**", "/health")
                         .filters(f -> f
-                                .preserveHostHeader()
                                 .requestRateLimiter(rl -> rl
                                         .setRateLimiter(apiRateLimiter)
                                         .setKeyResolver(userIdKeyResolver)

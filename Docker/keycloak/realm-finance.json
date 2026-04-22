@@ -4,11 +4,21 @@
   "clients": [
     {
       "clientId": "finance-gateway",
+      "name": "finance-gateway",
       "enabled": true,
       "publicClient": true,
-      "directAccessGrantsEnabled": true,
-      "standardFlowEnabled": false,
-      "protocol": "openid-connect"
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": ["web-origins", "role_list", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"]
     }
   ],
   "roles": {
@@ -21,12 +31,16 @@
     {
       "username": "user1",
       "enabled": true,
+      "email": "user1@example.com",
+      "emailVerified": true,
       "credentials": [{ "type": "password", "value": "123456", "temporary": false }],
       "realmRoles": ["USER"]
     },
     {
       "username": "admin1",
       "enabled": true,
+      "email": "admin1@example.com",
+      "emailVerified": true,
       "credentials": [{ "type": "password", "value": "123456", "temporary": false }],
       "realmRoles": ["ADMIN"]
     }

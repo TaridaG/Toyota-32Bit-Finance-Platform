@@ -3,8 +3,20 @@ spring:
     name: api-gateway
   main:
     web-application-type: reactive
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${app.security.jwt.issuer-uri}
+
+app:
+  security:
+    jwt:
+      issuer-uri: ${JWT_ISSUER_URI:http://localhost:8085/realms/finance}
 
 gateway:
+  cors:
+    allowed-origins: ${GATEWAY_CORS_ALLOWED_ORIGINS:http://localhost:5173}
   services:
     finance-base-uri: ${FINANCE_BASE_URI:http://finance-api:8080}
     market-base-uri: ${MARKET_BASE_URI:http://market-data-service:8080}
@@ -16,6 +28,11 @@ gateway:
     username-claim: preferred_username
     roles-claim: roles
     roles-path: realm_access.roles
+    email-claim: email
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [%X{correlationId:-}] --- [%t] %-40.40logger{39} : %m%n%wEx"
 
 management:
   endpoints:
