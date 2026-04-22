@@ -31,6 +31,7 @@ public class FinanceInstrumentClient {
         try {
             Map<String, Object> response = financeRestClient.get()
                     .uri(financeBaseUrl + "/api/instruments")
+                    .header("X-USERNAME", "analytics-service")
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {
                     });

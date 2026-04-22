@@ -243,6 +243,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - MANAGEMENT_HEALTH_MAIL_ENABLED=false
     networks:
       - finance-net
 
@@ -291,6 +292,9 @@ services:
       - APP_LOGS_TOPIC=app.logs
       - OPENSEARCH_HOST=opensearch
       - OPENSEARCH_PORT=9200
+      - OPENSEARCH_SCHEME=https
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTAa
       - OPENSEARCH_INDEX_PREFIX=application-logs
     networks:
       - finance-net
@@ -313,8 +317,13 @@ services:
         condition: service_started
       keycloak:
         condition: service_started
+      redis:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      JWT_ISSUER_URI: http://keycloak:8080/realms/finance
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "8080:8080"
     networks:

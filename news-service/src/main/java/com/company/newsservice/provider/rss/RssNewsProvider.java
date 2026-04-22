@@ -13,9 +13,12 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -23,6 +26,8 @@ import java.util.List;
 public class RssNewsProvider implements NewsProvider {
 
     private final NewsProperties newsProperties;
+    private final Map<String, Instant> lastRssErrorAt = new ConcurrentHashMap<>();
+    private static final Duration RSS_ERROR_LOG_WINDOW = Duration.ofMinutes(5);
 
     @Override
     public String providerType() {
@@ -62,7 +67,18 @@ public class RssNewsProvider implements NewsProvider {
                     }
                 }
             } catch (Exception ex) {
-                log.warn("RSS fetch failed. feedName={}, url={}", feedConfig.getName(), feedConfig.getUrl(), ex);
+                String feedKey = feedConfig.getUrl();
+                Instant now = Instant.now();
+                Instant lastLoggedAt = lastRssErrorAt.get(feedKey);
+                boolean shouldWarn = lastLoggedAt == null ||
+                        Duration.between(lastLoggedAt, now).compareTo(RSS_ERROR_LOG_WINDOW) >= 0;
+                if (shouldWarn) {
+                    lastRssErrorAt.put(feedKey, now);
+                    log.warn("RSS fetch failed. feedName={}, url={}", feedConfig.getName(), feedConfig.getUrl(), ex);
+                } else {
+                    log.debug("RSS fetch failed (suppressed). feedName={}, url={}",
+                            feedConfig.getName(), feedConfig.getUrl());
+                }
             } finally {
                 if (connection != null) {
                     connection.disconnect();

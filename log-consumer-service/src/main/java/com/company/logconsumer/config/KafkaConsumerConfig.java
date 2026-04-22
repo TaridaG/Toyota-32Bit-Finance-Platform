@@ -1,5 +1,6 @@
 package com.company.logconsumer.config;
 
+import com.company.logconsumer.metrics.KafkaProcessingMetrics;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.TopicPartition;
@@ -18,10 +19,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Configuration
 public class KafkaConsumerConfig {
     private static final Logger log = LoggerFactory.getLogger(KafkaConsumerConfig.class);
+    private static final Pattern EVENT_ID_PATTERN =
+            Pattern.compile("\"eventId\"\\s*:\\s*\"([^\"]+)\"");
 
     @Bean
     public DefaultKafkaConsumerFactory<String, String> consumerFactory(
@@ -62,11 +67,28 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, Object> dlqKafkaTemplate) {
+    public DefaultErrorHandler kafkaErrorHandler(
+            KafkaTemplate<String, Object> dlqKafkaTemplate,
+            KafkaProcessingMetrics kafkaProcessingMetrics
+    ) {
         DeadLetterPublishingRecoverer recoverer =
                 new DeadLetterPublishingRecoverer(
                         dlqKafkaTemplate,
-                        (record, ex) -> new TopicPartition(record.topic() + ".dlq", record.partition())
+                        (record, ex) -> {
+                            TopicPartition dlqPartition =
+                                    new TopicPartition(record.topic() + ".dlq", record.partition());
+                            String eventId = extractEventId(record.value());
+                            String reason = ex.getClass().getSimpleName();
+                            kafkaProcessingMetrics.recordDlqPublished("unknown", reason);
+                            log.warn("dlq_publish topic={} dlq_topic={} partition={} eventId={} reason={} key={}",
+                                    record.topic(),
+                                    dlqPartition.topic(),
+                                    dlqPartition.partition(),
+                                    eventId,
+                                    reason,
+                                    record.key());
+                            return dlqPartition;
+                        }
                 );
 
         FixedBackOff backOff = new FixedBackOff(2000L, 3L);
@@ -74,7 +96,7 @@ public class KafkaConsumerConfig {
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
         errorHandler.setRetryListeners((record, ex, deliveryAttempt) ->
                 log.warn("Retry attempt {} for topic={} key={} exception={}",
-                        deliveryAttempt, record.topic(), record.key(), ex.getMessage())
+                        deliveryAttempt, record.topic(), record.key(), ex.getMessage(), ex)
         );
         return errorHandler;
     }
@@ -88,9 +110,18 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.getContainerProperties().setAckMode(
-                org.springframework.kafka.listener.ContainerProperties.AckMode.RECORD
+                org.springframework.kafka.listener.ContainerProperties.AckMode.MANUAL_IMMEDIATE
         );
         factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
+    }
+
+    private String extractEventId(Object value) {
+        if (value == null) {
+            return "unknown";
+        }
+        String raw = String.valueOf(value);
+        Matcher matcher = EVENT_ID_PATTERN.matcher(raw);
+        return matcher.find() ? matcher.group(1) : "unknown";
     }
 }
