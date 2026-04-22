@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -56,6 +57,11 @@ public class MovingAverageServiceImpl implements MovingAverageService {
         ma.setMa7(ma7);
         ma.setMa30(ma30);
         ma.setMa90(ma90);
+        Instant now = Instant.now();
+        if (ma.getCreatedAt() == null) {
+            ma.setCreatedAt(now);
+        }
+        ma.setUpdatedAt(now);
 
         repository.save(ma);
 
