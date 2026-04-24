@@ -1,7 +1,6 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.*;
-import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.event.TransactionExecutedEvent;
 import com.company.finance_api.event.publisher.TransactionEventPublisher;
@@ -43,7 +42,7 @@ public class TradeServiceImpl implements TradeService {
 
 
         InstrumentPrice price = priceService
-                .getLatestPrice(instrument, PriceType.MARKET)
+                .getLatestValuationPrice(instrument)
                 .orElseThrow(() -> new IllegalStateException("Price not available"));
 
         DemoBalance balance =
@@ -106,7 +105,7 @@ public class TradeServiceImpl implements TradeService {
         }
 
         InstrumentPrice price = priceService
-                .getLatestPrice(instrument, PriceType.MARKET)
+                .getLatestValuationPrice(instrument)
                 .orElseThrow(() -> new IllegalStateException("Price not available"));
 
         DemoBalance balance = demoBalanceRepository.findByUser(user)

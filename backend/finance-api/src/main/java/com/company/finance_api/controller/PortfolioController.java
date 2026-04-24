@@ -4,8 +4,10 @@ import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.domain.PortfolioSnapshot;
 import com.company.finance_api.dto.PortfolioPositionResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
+import com.company.finance_api.dto.PortfolioValuationResponse;
 import com.company.finance_api.service.PortfolioService;
 import com.company.finance_api.service.PortfolioSnapshotService;
+import com.company.finance_api.service.PortfolioValuationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ public class PortfolioController {
 
     private final PortfolioService portfolioService;
     private final PortfolioSnapshotService portfolioSnapshotService;
+    private final PortfolioValuationService portfolioValuationService;
 
     @GetMapping
     public ApiResponse<List<PortfolioPositionResponse>> myPortfolio() {
@@ -30,6 +33,11 @@ public class PortfolioController {
         return ApiResponse.success(
                 portfolioService.getPortfolioSummary()
         );
+    }
+
+    @GetMapping("/valuation")
+    public ApiResponse<PortfolioValuationResponse> valuation() {
+        return ApiResponse.success(portfolioValuationService.getMyValuation());
     }
     @GetMapping("/snapshots")
     public ApiResponse<List<PortfolioSnapshot>> snapshots() {
