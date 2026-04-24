@@ -1,5 +1,6 @@
 package com.company.finance_api.service;
 
+import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.dto.*;
 
 import java.time.Instant;
@@ -10,7 +11,8 @@ public interface ChartService {
     List<CandlestickResponse> getCandlesticks(
             Long instrumentId,
             Instant from,
-            Instant to
+            Instant to,
+            PriceType priceType
     );
 
     List<TradeMarkerResponse> getMyTrades(

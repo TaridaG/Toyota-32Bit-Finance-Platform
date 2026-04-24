@@ -35,8 +35,8 @@ public class RSIServiceImpl implements RSIService {
 
         List<AnalyticsPriceCandleDaily> candles =
                 candleRepository
-                        .findByInstrumentSymbolOrderByCandleDateAsc(
-                                event.instrumentSymbol()
+                        .findByInstrumentIdOrderByCandleDateAsc(
+                                event.instrumentId()
                         );
 
         if(candles.size() < 15) return;

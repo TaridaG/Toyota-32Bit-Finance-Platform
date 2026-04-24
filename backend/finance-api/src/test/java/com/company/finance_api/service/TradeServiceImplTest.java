@@ -53,7 +53,7 @@ class TradeServiceImplTest {
         when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(instrumentRepository.findById(1L)).thenReturn(Optional.of(instrument));
-        when(priceService.getLatestPrice(instrument, PriceType.MARKET))
+        when(priceService.getLatestValuationPrice(instrument))
                 .thenReturn(Optional.of(price));
         when(demoBalanceRepository.findByUser(user)).thenReturn(Optional.of(balance));
         when(balance.getBalance()).thenReturn(BigDecimal.valueOf(1000));
@@ -83,7 +83,7 @@ class TradeServiceImplTest {
         when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(instrumentRepository.findById(1L)).thenReturn(Optional.of(instrument));
-        when(priceService.getLatestPrice(instrument, PriceType.MARKET))
+        when(priceService.getLatestValuationPrice(instrument))
                 .thenReturn(Optional.of(price));
         when(demoBalanceRepository.findByUser(user)).thenReturn(Optional.of(balance));
         when(balance.getBalance()).thenReturn(BigDecimal.valueOf(10));

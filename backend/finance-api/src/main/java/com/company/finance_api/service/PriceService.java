@@ -16,6 +16,8 @@ public interface PriceService {
             PriceType priceType
     );
 
+    Optional<InstrumentPrice> getLatestValuationPrice(Instrument instrument);
+
     // Grafik için zaman serisi
     List<InstrumentPrice> getPriceHistory(
             Instrument instrument,

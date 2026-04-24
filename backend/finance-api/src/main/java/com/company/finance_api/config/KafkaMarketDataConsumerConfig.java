@@ -1,5 +1,7 @@
 package com.company.finance_api.config;
 
+import com.company.finance_api.kafka.event.FundSnapshotUpdatedEvent;
+import com.company.finance_api.kafka.event.FxSnapshotUpdatedEvent;
 import com.company.finance_api.kafka.event.MarketPriceUpdatedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -60,6 +62,67 @@ public class KafkaMarketDataConsumerConfig {
         factory.setCommonErrorHandler(errorHandler);
         return factory;
     }
+
+    @Bean
+    public ConsumerFactory<String, FxSnapshotUpdatedEvent> fxSnapshotConsumerFactory() {
+        JsonDeserializer<FxSnapshotUpdatedEvent> deserializer =
+                new JsonDeserializer<>(FxSnapshotUpdatedEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.ignoreTypeHeaders();
+        ErrorHandlingDeserializer<FxSnapshotUpdatedEvent> errorHandling =
+                new ErrorHandlingDeserializer<>(deserializer);
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"));
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "finance-api-fx-snapshot-consumer");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                errorHandling
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, FxSnapshotUpdatedEvent>
+    fxSnapshotKafkaListenerContainerFactory(DefaultErrorHandler errorHandler) {
+        ConcurrentKafkaListenerContainerFactory<String, FxSnapshotUpdatedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(fxSnapshotConsumerFactory());
+        factory.setCommonErrorHandler(errorHandler);
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, FundSnapshotUpdatedEvent> fundSnapshotConsumerFactory() {
+        JsonDeserializer<FundSnapshotUpdatedEvent> deserializer =
+                new JsonDeserializer<>(FundSnapshotUpdatedEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.ignoreTypeHeaders();
+        ErrorHandlingDeserializer<FundSnapshotUpdatedEvent> errorHandling =
+                new ErrorHandlingDeserializer<>(deserializer);
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"));
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "finance-api-fund-snapshot-consumer");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                errorHandling
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, FundSnapshotUpdatedEvent>
+    fundSnapshotKafkaListenerContainerFactory(DefaultErrorHandler errorHandler) {
+        ConcurrentKafkaListenerContainerFactory<String, FundSnapshotUpdatedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(fundSnapshotConsumerFactory());
+        factory.setCommonErrorHandler(errorHandler);
+        return factory;
+    }
+
     @Bean
     public ProducerFactory<String, Object> dlqProducerFactory() {
         Map<String, Object> props = new HashMap<>();

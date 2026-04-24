@@ -1,7 +1,6 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.*;
-import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.dto.PortfolioPositionResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
@@ -61,7 +60,7 @@ public class PortfolioServiceImpl implements PortfolioService {
             }
             BigDecimal avgPrice = totalCost.divide(quantity, 6, RoundingMode.HALF_UP);
             InstrumentPrice currentPrice = priceService
-                    .getLatestPrice(instrument, PriceType.MARKET)
+                    .getLatestValuationPrice(instrument)
                     .orElseThrow();
             BigDecimal currentValue = currentPrice.getPrice().multiply(quantity);
             BigDecimal unrealizedPnl = currentValue.subtract(totalCost);

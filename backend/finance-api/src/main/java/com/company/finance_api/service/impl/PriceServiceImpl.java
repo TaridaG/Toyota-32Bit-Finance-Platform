@@ -7,8 +7,6 @@ import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.event.PriceUpdatedEvent;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.service.PriceService;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +19,24 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class PriceServiceImpl implements PriceService {
 
+    private static final List<PriceType> VALUATION_PRICE_TYPES = List.of(
+            PriceType.MARKET,
+            PriceType.FX_MID,
+            PriceType.FUND_NAV
+    );
+
     private final InstrumentPriceRepository priceRepository;
     private final PriceCacheService priceCacheService;
     private final ApplicationEventPublisher eventPublisher;
 
-    public PriceServiceImpl(InstrumentPriceRepository priceRepository, PriceCacheService priceCacheService,
-                            ApplicationEventPublisher eventPublisher, ApplicationEventPublisher eventPublisher1) {
+    public PriceServiceImpl(
+            InstrumentPriceRepository priceRepository,
+            PriceCacheService priceCacheService,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.priceRepository = priceRepository;
         this.priceCacheService = priceCacheService;
-        this.eventPublisher = eventPublisher1;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -59,6 +66,16 @@ public class PriceServiceImpl implements PriceService {
         return fromDb;
     }
 
+    @Override
+    public Optional<InstrumentPrice> getLatestValuationPrice(Instrument instrument) {
+        for (PriceType priceType : VALUATION_PRICE_TYPES) {
+            Optional<InstrumentPrice> found = getLatestPrice(instrument, priceType);
+            if (found.isPresent()) {
+                return found;
+            }
+        }
+        return Optional.empty();
+    }
 
     @Override
     public List<InstrumentPrice> getPriceHistory(

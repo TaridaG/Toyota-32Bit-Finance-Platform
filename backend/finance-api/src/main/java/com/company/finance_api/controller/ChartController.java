@@ -3,6 +3,7 @@ package com.company.finance_api.controller;
 import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.dto.*;
 import com.company.finance_api.service.ChartService;
+import com.company.finance_api.web.PriceTypeParamResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,10 +21,16 @@ public class ChartController {
     public ApiResponse<List<CandlestickResponse>> candles(
             @PathVariable Long instrumentId,
             @RequestParam Instant from,
-            @RequestParam Instant to
+            @RequestParam Instant to,
+            @RequestParam(required = false) String priceType
     ) {
         return ApiResponse.success(
-                chartService.getCandlesticks(instrumentId, from, to)
+                chartService.getCandlesticks(
+                        instrumentId,
+                        from,
+                        to,
+                        PriceTypeParamResolver.resolve(priceType)
+                )
         );
     }
 

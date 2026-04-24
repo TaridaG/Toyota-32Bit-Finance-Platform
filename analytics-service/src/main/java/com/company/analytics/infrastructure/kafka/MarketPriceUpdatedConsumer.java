@@ -8,6 +8,7 @@ import com.company.analytics.application.TrendMetricService;
 import com.company.analytics.client.FinanceInstrumentClient;
 import com.company.analytics.event.AnalyticsMarketPriceEvent;
 import com.company.analytics.event.MarketPriceUpdatedEvent;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -19,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -45,6 +48,12 @@ public class MarketPriceUpdatedConsumer {
     private final Set<String> distinctMissingSymbols = ConcurrentHashMap.newKeySet();
     private final ConcurrentMap<String, ConcurrentLinkedDeque<Instant>> missingInstrumentEvents =
             new ConcurrentHashMap<>();
+    private final Set<String> analyticsEventWithInstrumentIdLogged = ConcurrentHashMap.newKeySet();
+    private final Set<String> analyticsEventLegacySymbolWarned = ConcurrentHashMap.newKeySet();
+    private final Set<String> dataQualityAlertKeys = ConcurrentHashMap.newKeySet();
+    private final Set<String> instrumentSymbolMismatchWarned = ConcurrentHashMap.newKeySet();
+    private final AtomicLong priceEventsTotal = new AtomicLong();
+    private final AtomicLong priceEventsWithInstrumentIdField = new AtomicLong();
 
     public MarketPriceUpdatedConsumer(
             CandleAggregationService candleAggregationService,
@@ -63,6 +72,10 @@ public class MarketPriceUpdatedConsumer {
         this.financeInstrumentClient = financeInstrumentClient;
         this.meterRegistry = meterRegistry;
         meterRegistry.gauge("analytics_kafka_missing_instrument_distinct", distinctMissingSymbols, Set::size);
+        Gauge.builder("instrument_id_coverage_ratio", this, c -> {
+            long total = c.priceEventsTotal.get();
+            return total == 0 ? 0.0 : c.priceEventsWithInstrumentIdField.get() / (double) total;
+        }).tag("service", "analytics-service").register(meterRegistry);
     }
 
     @Transactional
@@ -82,7 +95,9 @@ public class MarketPriceUpdatedConsumer {
             return;
         }
 
-        Long instrumentId = financeInstrumentClient.resolveInstrumentId(m.instrumentSymbol()).orElse(null);
+        recordCoverage(m);
+
+        Long instrumentId = resolveInstrumentId(m);
         if (instrumentId == null) {
             handleMissingInstrument(m);
             return;
@@ -102,8 +117,66 @@ public class MarketPriceUpdatedConsumer {
         trendMetricService.process(event);
         eventIdempotencyService.markProcessed(event.eventId());
 
-        log.info("Analytics processed market event for symbol={} eventId={}",
-                event.instrumentSymbol(), event.eventId());
+        log.info("Analytics processed market event for symbol={} instrumentId={} eventId={}",
+                event.instrumentSymbol(), event.instrumentId(), event.eventId());
+    }
+
+    private void recordCoverage(MarketPriceUpdatedEvent m) {
+        priceEventsTotal.incrementAndGet();
+        if (m.instrumentId() != null) {
+            priceEventsWithInstrumentIdField.incrementAndGet();
+        }
+    }
+
+    private Long resolveInstrumentId(MarketPriceUpdatedEvent m) {
+        if (m.instrumentId() != null) {
+            Optional<String> dbSymbol = financeInstrumentClient.getSymbolForInstrumentId(m.instrumentId());
+            if (dbSymbol.isEmpty()) {
+                meterRegistry.counter(
+                        "invalid_instrument_reference_total",
+                        "service", "analytics-service",
+                        "reason", "not_in_finance_catalog"
+                ).increment();
+                if (dataQualityAlertKeys.add("invalid_ref|analytics-service|" + m.instrumentId())) {
+                    log.warn("DATA_QUALITY_ALERT service=analytics-service kind=invalid_instrument_reference instrumentId={} symbol={} eventId={}",
+                            m.instrumentId(), m.instrumentSymbol(), m.eventId());
+                }
+                return financeInstrumentClient.resolveInstrumentId(m.instrumentSymbol()).orElse(null);
+            }
+            String eventSymbol = m.instrumentSymbol();
+            if (eventSymbol != null && !eventSymbol.isBlank() && !dbSymbol.get().equals(eventSymbol)) {
+                meterRegistry.counter(
+                        "instrument_symbol_mismatch_total",
+                        "service", "analytics-service",
+                        "reason", "symbol_mismatch"
+                ).increment();
+                String mismatchKey = "mismatch|analytics-service|" + m.instrumentId() + "|" + eventSymbol;
+                if (instrumentSymbolMismatchWarned.add(mismatchKey)) {
+                    log.warn("instrument_symbol_mismatch_total service=analytics-service eventSymbol={} catalogSymbol={} instrumentId={} eventId={}",
+                            eventSymbol, dbSymbol.get(), m.instrumentId(), m.eventId());
+                    log.warn("DATA_QUALITY_ALERT service=analytics-service kind=symbol_mismatch eventSymbol={} catalogSymbol={} instrumentId={} eventId={}",
+                            eventSymbol, dbSymbol.get(), m.instrumentId(), m.eventId());
+                }
+            }
+            if (analyticsEventWithInstrumentIdLogged.add("id:" + m.instrumentId())) {
+                log.info("ANALYTICS_EVENT_WITH_INSTRUMENT_ID service=analytics-service instrumentId={} symbol={} eventId={}",
+                        m.instrumentId(), m.instrumentSymbol(), m.eventId());
+            }
+            return m.instrumentId();
+        }
+        meterRegistry.counter(
+                "analytics_price_event_without_instrument_id_total",
+                "service", "analytics-service",
+                "symbol", m.instrumentSymbol() == null ? "unknown" : m.instrumentSymbol(),
+                "instrumentId", "n/a",
+                "reason", "instrument_id_absent"
+        ).increment();
+        String legacyKey = m.instrumentSymbol() == null ? "unknown" : m.instrumentSymbol();
+        if (analyticsEventLegacySymbolWarned.add(legacyKey)) {
+            log.warn("ANALYTICS_EVENT_LEGACY_SYMBOL service=analytics-service symbol={} eventId={}",
+                    m.instrumentSymbol(), m.eventId());
+        }
+        return financeInstrumentClient.resolveInstrumentId(m.instrumentSymbol()).orElse(null);
     }
 
     private void onDeserializationFailed(ConsumerRecord<String, MarketPriceUpdatedEvent> record) {
