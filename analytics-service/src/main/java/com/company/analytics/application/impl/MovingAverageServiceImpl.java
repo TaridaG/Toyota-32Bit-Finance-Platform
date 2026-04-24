@@ -36,8 +36,8 @@ public class MovingAverageServiceImpl implements MovingAverageService {
 
         List<AnalyticsPriceCandleDaily> candles =
                 candleRepository
-                        .findByInstrumentSymbolOrderByCandleDateAsc(
-                                event.instrumentSymbol()
+                        .findByInstrumentIdOrderByCandleDateAsc(
+                                event.instrumentId()
                         );
 
         BigDecimal ma7 = calculateMA(candles,7);

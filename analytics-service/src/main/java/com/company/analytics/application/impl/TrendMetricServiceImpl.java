@@ -56,13 +56,13 @@ public class TrendMetricServiceImpl implements TrendMetricService {
         );
 
         BigDecimal momentum = calculateMomentum(
-                event.instrumentSymbol(),
+                event.instrumentId(),
                 tradeDate,
                 currentCandle.getClosePrice()
         );
 
         BigDecimal slope = calculateSlope(
-                event.instrumentSymbol(),
+                event.instrumentId(),
                 tradeDate,
                 currentCandle.getClosePrice()
         );
@@ -108,12 +108,12 @@ public class TrendMetricServiceImpl implements TrendMetricService {
     }
 
     private BigDecimal calculateMomentum(
-            String symbol,
+            Long instrumentId,
             LocalDate tradeDate,
             BigDecimal currentClose
     ) {
         List<AnalyticsPriceCandleDaily> candles =
-                candleRepository.findByInstrumentSymbolOrderByCandleDateAsc(symbol);
+                candleRepository.findByInstrumentIdOrderByCandleDateAsc(instrumentId);
 
         int currentIndex = indexOfDate(candles, tradeDate);
         if (currentIndex < 0) {
@@ -130,12 +130,12 @@ public class TrendMetricServiceImpl implements TrendMetricService {
     }
 
     private BigDecimal calculateSlope(
-            String symbol,
+            Long instrumentId,
             LocalDate tradeDate,
             BigDecimal currentClose
     ) {
         List<AnalyticsPriceCandleDaily> candles =
-                candleRepository.findByInstrumentSymbolOrderByCandleDateAsc(symbol);
+                candleRepository.findByInstrumentIdOrderByCandleDateAsc(instrumentId);
 
         int currentIndex = indexOfDate(candles, tradeDate);
         if (currentIndex < 0) {

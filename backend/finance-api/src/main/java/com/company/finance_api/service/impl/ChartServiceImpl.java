@@ -29,7 +29,8 @@ public class ChartServiceImpl implements ChartService {
     public List<CandlestickResponse> getCandlesticks(
             Long instrumentId,
             Instant from,
-            Instant to
+            Instant to,
+            PriceType priceType
     ) {
 
         Instrument instrument = instrumentRepository.findById(instrumentId)
@@ -38,12 +39,11 @@ public class ChartServiceImpl implements ChartService {
         List<InstrumentPrice> prices =
                 priceRepository.findByInstrumentAndPriceTypeAndTimestampBetweenOrderByTimestampAsc(
                         instrument,
-                        PriceType.MARKET,
+                        priceType,
                         from,
                         to
                 );
 
-        // Demo için basit 1-price = 1 candle
         return prices.stream()
                 .map(p ->
                         new CandlestickResponse(

@@ -9,6 +9,7 @@ public record MarketPriceUpdatedEvent(
         BigDecimal price,
         String priceType,
         String source,
-        Instant occurredAt
+        Instant occurredAt,
+        Long instrumentId
 ) {
 }

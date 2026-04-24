@@ -168,9 +168,16 @@ services:
     depends_on:
       kafka:
         condition: service_started
+      postgres:
+        condition: service_healthy
+      finance-api:
+        condition: service_started
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
+      - SPRING_DATASOURCE_USERNAME=finance
+      - SPRING_DATASOURCE_PASSWORD=123456
     networks:
       - finance-net
 

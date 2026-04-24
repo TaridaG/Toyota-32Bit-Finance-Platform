@@ -6,6 +6,7 @@ import io.github.resilience4j.retry.RetryRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
@@ -28,7 +29,7 @@ public class ResilientPriceProvider implements PriceProvider {
         this.delegate = delegate;
         this.executorService = executorService;
 
-        String providerKey = delegate.source().toLowerCase();
+        String providerKey = delegate.source().toLowerCase(Locale.ROOT);
         ResilienceProperties.ProviderConfig providerConfig =
                 resilienceProperties.getRequiredProvider(providerKey);
 

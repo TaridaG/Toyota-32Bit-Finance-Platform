@@ -15,6 +15,8 @@ public interface AnalyticsPriceCandleDailyRepository
             LocalDate candleDate
     );
 
+    List<AnalyticsPriceCandleDaily> findByInstrumentIdOrderByCandleDateAsc(Long instrumentId);
+
     List<AnalyticsPriceCandleDaily> findByInstrumentSymbolOrderByCandleDateAsc(String instrumentSymbol);
 
     List<AnalyticsPriceCandleDaily> findByInstrumentSymbolAndCandleDateBetweenOrderByCandleDateAsc(

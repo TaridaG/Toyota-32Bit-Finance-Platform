@@ -1,5 +1,6 @@
 package com.company.analytics.infrastructure.kafka;
 
+import com.company.analytics.event.FxSnapshotUpdatedEvent;
 import com.company.analytics.event.MarketPriceUpdatedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -94,6 +95,42 @@ public class AnalyticsKafkaConsumerConfig {
         factory.getContainerProperties()
                 .setAckMode(ContainerProperties.AckMode.RECORD);
 
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, FxSnapshotUpdatedEvent> analyticsFxSnapshotConsumerFactory(
+            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
+    ) {
+        JsonDeserializer<FxSnapshotUpdatedEvent> deserializer =
+                new JsonDeserializer<>(FxSnapshotUpdatedEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.setUseTypeHeaders(false);
+        ErrorHandlingDeserializer<FxSnapshotUpdatedEvent> errorHandling =
+                new ErrorHandlingDeserializer<>(deserializer);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "analytics-service-fx-snapshot");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), errorHandling);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, FxSnapshotUpdatedEvent>
+    analyticsFxSnapshotKafkaListenerContainerFactory(
+            ConsumerFactory<String, FxSnapshotUpdatedEvent> analyticsFxSnapshotConsumerFactory,
+            DefaultErrorHandler analyticsKafkaErrorHandler
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, FxSnapshotUpdatedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(analyticsFxSnapshotConsumerFactory);
+        factory.setCommonErrorHandler(analyticsKafkaErrorHandler);
+        factory.setConcurrency(1);
+        factory.getContainerProperties()
+                .setAckMode(ContainerProperties.AckMode.RECORD);
         return factory;
     }
 }
