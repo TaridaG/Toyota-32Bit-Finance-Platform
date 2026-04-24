@@ -13,12 +13,15 @@ import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.kafka.MarketDataTopics;
 
 import com.company.finance_api.kafka.event.MarketPriceUpdatedEvent;
+import com.company.finance_api.kafka.support.SemanticPriceWriteMetrics;
 
 import com.company.finance_api.repository.InstrumentRepository;
 
 import com.company.finance_api.repository.ProcessedEventRepository;
 
 import com.company.finance_api.service.PriceService;
+
+import io.micrometer.core.instrument.Gauge;
 
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -42,7 +45,11 @@ import java.nio.charset.StandardCharsets;
 
 import java.time.Instant;
 
+import java.util.Optional;
+
 import java.util.Set;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -81,11 +88,27 @@ public class MarketPriceUpdatedConsumer {
 
     private final MeterRegistry meterRegistry;
 
+    private final SemanticPriceWriteMetrics semanticPriceWriteMetrics;
+
     private final Set<String> distinctMissingSymbols = ConcurrentHashMap.newKeySet();
 
     private final ConcurrentMap<String, ConcurrentLinkedDeque<Instant>> missingInstrumentEvents =
 
             new ConcurrentHashMap<>();
+
+    private final Set<String> priceEventLegacySymbolWarned = ConcurrentHashMap.newKeySet();
+
+    private final Set<String> priceEventInvalidInstrumentIdWarned = ConcurrentHashMap.newKeySet();
+
+    private final Set<String> dataQualityAlertKeys = ConcurrentHashMap.newKeySet();
+
+    private final Set<String> instrumentSymbolMismatchWarned = ConcurrentHashMap.newKeySet();
+
+    private final Set<String> priceEventWithInstrumentIdLogged = ConcurrentHashMap.newKeySet();
+
+    private final AtomicLong priceEventsTotal = new AtomicLong();
+
+    private final AtomicLong priceEventsWithInstrumentIdField = new AtomicLong();
 
 
 
@@ -97,7 +120,9 @@ public class MarketPriceUpdatedConsumer {
 
             ProcessedEventRepository processedEventRepository,
 
-            MeterRegistry meterRegistry
+            MeterRegistry meterRegistry,
+
+            SemanticPriceWriteMetrics semanticPriceWriteMetrics
 
     ) {
 
@@ -109,7 +134,17 @@ public class MarketPriceUpdatedConsumer {
 
         this.meterRegistry = meterRegistry;
 
+        this.semanticPriceWriteMetrics = semanticPriceWriteMetrics;
+
         meterRegistry.gauge("finance_kafka_missing_instrument_distinct", distinctMissingSymbols, Set::size);
+
+        Gauge.builder("instrument_id_coverage_ratio", this, c -> {
+
+            long total = c.priceEventsTotal.get();
+
+            return total == 0 ? 0.0 : c.priceEventsWithInstrumentIdField.get() / (double) total;
+
+        }).tag("service", "finance-api").register(meterRegistry);
 
     }
 
@@ -147,9 +182,11 @@ public class MarketPriceUpdatedConsumer {
 
         }
 
+        recordCoverage(event);
 
 
-        Instrument instrument = instrumentRepository.findBySymbol(event.instrumentSymbol()).orElse(null);
+
+        Instrument instrument = resolveInstrument(event);
 
         if (instrument == null) {
 
@@ -181,9 +218,201 @@ public class MarketPriceUpdatedConsumer {
 
         priceService.savePrice(price);
 
+        semanticPriceWriteMetrics.record("market_" + event.priceType().trim(), event.source());
+
 
 
         processedEventRepository.save(new ProcessedEvent(event.eventId()));
+
+    }
+
+
+
+    private Instrument resolveInstrument(MarketPriceUpdatedEvent event) {
+
+        Long instrumentId = event.instrumentId();
+
+        if (instrumentId != null) {
+
+            Optional<Instrument> byId = instrumentRepository.findById(instrumentId);
+
+            if (byId.isPresent()) {
+
+                Instrument candidate = byId.get();
+
+                if (candidate.isActive()) {
+
+                    validateInstrumentSymbolMatchesEvent(candidate, event);
+
+                    if (priceEventWithInstrumentIdLogged.add("id:" + instrumentId)) {
+
+                        log.info("PRICE_EVENT_WITH_INSTRUMENT_ID service=finance-api instrumentId={} symbol={} eventId={}",
+
+                                instrumentId, event.instrumentSymbol(), event.eventId());
+
+                    } else {
+
+                        log.debug("PRICE_EVENT_WITH_INSTRUMENT_ID service=finance-api instrumentId={} symbol={} eventId={}",
+
+                                instrumentId, event.instrumentSymbol(), event.eventId());
+
+                    }
+
+                    return candidate;
+
+                }
+
+                faultInvalidInstrumentId(instrumentId, event, "inactive");
+
+            } else {
+
+                faultInvalidInstrumentId(instrumentId, event, "not_found");
+
+            }
+
+        } else {
+
+            meterRegistry.counter(
+
+                    "finance_price_event_without_instrument_id_total",
+
+                    "service", "finance-api",
+
+                    "symbol", event.instrumentSymbol() == null ? "unknown" : event.instrumentSymbol(),
+
+                    "instrumentId", "n/a",
+
+                    "reason", "instrument_id_absent"
+
+            ).increment();
+
+            String legacyKey = event.instrumentSymbol() == null ? "unknown" : event.instrumentSymbol();
+
+            if (priceEventLegacySymbolWarned.add(legacyKey)) {
+
+                log.warn("PRICE_EVENT_LEGACY_SYMBOL service=finance-api symbol={} eventId={}",
+
+                        event.instrumentSymbol(), event.eventId());
+
+            }
+
+        }
+
+        return instrumentRepository.findBySymbol(event.instrumentSymbol()).orElse(null);
+
+    }
+
+
+
+    private void faultInvalidInstrumentId(long instrumentId, MarketPriceUpdatedEvent event, String reason) {
+
+        String symbolTag = event.instrumentSymbol() == null ? "unknown" : event.instrumentSymbol();
+
+        meterRegistry.counter(
+
+                "finance_price_event_invalid_instrument_id_total",
+
+                "service", "finance-api",
+
+                "reason", reason,
+
+                "symbol", symbolTag,
+
+                "instrumentId", String.valueOf(instrumentId)
+
+        ).increment();
+
+        meterRegistry.counter(
+
+                "invalid_instrument_reference_total",
+
+                "service", "finance-api",
+
+                "reason", reason
+
+        ).increment();
+
+        String key = instrumentId + "|" + reason;
+
+        if (priceEventInvalidInstrumentIdWarned.add(key)) {
+
+            log.warn("PRICE_EVENT_INVALID_INSTRUMENT_ID service=finance-api instrumentId={} reason={} symbol={} eventId={}",
+
+                    instrumentId, reason, event.instrumentSymbol(), event.eventId());
+
+        }
+
+        if (dataQualityAlertKeys.add("invalid_ref|finance-api|" + instrumentId + "|" + reason)) {
+
+            log.warn("DATA_QUALITY_ALERT service=finance-api kind=invalid_instrument_reference instrumentId={} reason={} symbol={} eventId={}",
+
+                    instrumentId, reason, event.instrumentSymbol(), event.eventId());
+
+        }
+
+    }
+
+
+
+    private void recordCoverage(MarketPriceUpdatedEvent event) {
+
+        priceEventsTotal.incrementAndGet();
+
+        if (event.instrumentId() != null) {
+
+            priceEventsWithInstrumentIdField.incrementAndGet();
+
+        }
+
+    }
+
+
+
+    private void validateInstrumentSymbolMatchesEvent(Instrument instrument, MarketPriceUpdatedEvent event) {
+
+        if (event.instrumentId() == null) {
+
+            return;
+
+        }
+
+        String eventSymbol = event.instrumentSymbol();
+
+        if (eventSymbol == null || eventSymbol.isBlank()) {
+
+            return;
+
+        }
+
+        if (eventSymbol.equals(instrument.getSymbol())) {
+
+            return;
+
+        }
+
+        meterRegistry.counter(
+
+                "instrument_symbol_mismatch_total",
+
+                "service", "finance-api",
+
+                "reason", "symbol_mismatch"
+
+        ).increment();
+
+        String key = "mismatch|finance-api|" + event.instrumentId() + "|" + eventSymbol;
+
+        if (instrumentSymbolMismatchWarned.add(key)) {
+
+            log.warn("instrument_symbol_mismatch_total service=finance-api eventSymbol={} dbSymbol={} instrumentId={} eventId={}",
+
+                    eventSymbol, instrument.getSymbol(), event.instrumentId(), event.eventId());
+
+            log.warn("DATA_QUALITY_ALERT service=finance-api kind=symbol_mismatch eventSymbol={} dbSymbol={} instrumentId={} eventId={}",
+
+                    eventSymbol, instrument.getSymbol(), event.instrumentId(), event.eventId());
+
+        }
 
     }
 
