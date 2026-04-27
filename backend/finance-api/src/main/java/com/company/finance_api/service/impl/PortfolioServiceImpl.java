@@ -1,14 +1,14 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.*;
-import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.dto.PortfolioPositionResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
+import com.company.finance_api.portfolio.PortfolioPosition;
+import com.company.finance_api.portfolio.PortfolioPositionBuilder;
 import com.company.finance_api.repository.TransactionRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.security.CurrentUserResolver;
 import com.company.finance_api.service.PortfolioService;
-import com.company.finance_api.service.PriceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 public class PortfolioServiceImpl implements PortfolioService {
 
     private final TransactionRepository transactionRepository;
-    private final PriceService priceService;
     private final CurrentUserResolver currentUserResolver;
     private final UserRepository userRepository;
+    private final PortfolioPositionBuilder portfolioPositionBuilder;
 
     @Override
     public List<PortfolioPositionResponse> getMyPortfolio() {
@@ -44,35 +44,20 @@ public class PortfolioServiceImpl implements PortfolioService {
         for (Map.Entry<Instrument, List<Transaction>> entry : byInstrument.entrySet()) {
             Instrument instrument = entry.getKey();
             List<Transaction> txs = entry.getValue();
-            BigDecimal quantity = BigDecimal.ZERO;
-            BigDecimal totalCost = BigDecimal.ZERO;
-            for (Transaction tx : txs) {
-                if (tx.getType() == TransactionType.BUY) {
-                    quantity = quantity.add(tx.getQuantity());
-                    totalCost = totalCost.add(tx.getTotalAmount());
-                } else {
-                    quantity = quantity.subtract(tx.getQuantity());
-                    totalCost = totalCost.subtract(tx.getTotalAmount());
-                }
-            }
-            if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            Optional<PortfolioPosition> positionOpt = portfolioPositionBuilder.build(instrument, txs);
+            if (positionOpt.isEmpty()) {
                 continue;
             }
-            BigDecimal avgPrice = totalCost.divide(quantity, 6, RoundingMode.HALF_UP);
-            InstrumentPrice currentPrice = priceService
-                    .getLatestValuationPrice(instrument)
-                    .orElseThrow();
-            BigDecimal currentValue = currentPrice.getPrice().multiply(quantity);
-            BigDecimal unrealizedPnl = currentValue.subtract(totalCost);
+            PortfolioPosition position = positionOpt.get();
             positions.add(new PortfolioPositionResponse(
-                    instrument.getId(),
-                    instrument.getSymbol(),
-                    quantity,
-                    avgPrice,
-                    currentPrice.getPrice(),
-                    totalCost,
-                    currentValue,
-                    unrealizedPnl
+                    position.instrument().getId(),
+                    position.instrument().getSymbol(),
+                    position.quantity(),
+                    position.averageCost(),
+                    position.currentPrice(),
+                    position.totalCost(),
+                    position.currentValue(),
+                    position.unrealizedPnl()
             ));
         }
         return positions;
