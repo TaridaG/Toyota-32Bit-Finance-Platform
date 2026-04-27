@@ -35,6 +35,7 @@ public class WebSecurityConfig {
                         .pathMatchers("/", "/health").permitAll()
                         .pathMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .pathMatchers("/market/**").permitAll()
+                        .pathMatchers("/api/news/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/news/**").permitAll()
                         .pathMatchers("/public/**").permitAll()
                         .pathMatchers("/fallback/**").permitAll()
