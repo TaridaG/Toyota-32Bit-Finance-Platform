@@ -56,3 +56,7 @@ clients:
     base-url: ${ANALYTICS_BASE_URL:http://analytics-service:8080}
   finance:
     base-url: ${FINANCE_BASE_URL:http://finance-api:8080}
+    auth:
+      mode: ${CLIENTS_FINANCE_AUTH_MODE:header}
+      header-username: ${CLIENTS_FINANCE_HEADER_USERNAME:reporting-service}
+      bearer-token: ${CLIENTS_FINANCE_BEARER_TOKEN:}

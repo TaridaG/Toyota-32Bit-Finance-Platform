@@ -1,6 +1,11 @@
 spring:
   profiles:
     active: dev
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:}
   kafka:
     listener:
       observation-enabled: true
@@ -25,3 +30,7 @@ management:
 scheduler:
   market-price:
     delay-ms: 60000
+
+app:
+  security:
+    allow-header-user-fallback: ${APP_SECURITY_ALLOW_HEADER_USER_FALLBACK:true}

@@ -4,7 +4,9 @@ import com.company.gateway.support.GatewayOidcIssuerStub;
 import com.company.gateway.support.NoopRedisRateLimiterTestConfig;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -59,6 +61,8 @@ class GatewaySecurityTests {
     static void props(DynamicPropertyRegistry r) throws Exception {
         ensureMocksStarted();
         GatewayOidcIssuerStub.registerIssuerUri(r);
+        r.add("spring.cloud.gateway.forwarded.enabled", () -> "false");
+        r.add("spring.cloud.gateway.x-forwarded.enabled", () -> "false");
         r.add("gateway.services.news-base-uri", () -> "http://127.0.0.1:" + newsMock.getPort());
         r.add("gateway.services.market-base-uri", () -> "http://127.0.0.1:" + marketMock.getPort());
         r.add("gateway.services.finance-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
@@ -94,6 +98,48 @@ class GatewaySecurityTests {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
+    }
+
+    @Test
+    void news_admin_ingest_should_return_401_without_token() {
+        webTestClient.post()
+                .uri("/api/news/admin/ingest")
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
+    @Test
+    void news_admin_ingest_should_return_403_for_user_role() throws Exception {
+        String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
+                .subject("user-123")
+                .claim("realm_access", Map.of("roles", List.of("USER"))));
+
+        webTestClient.post()
+                .uri("/api/news/admin/ingest")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    void news_admin_ingest_should_allow_admin_role() throws Exception {
+        newsMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
+                .subject("admin-123")
+                .claim("realm_access", Map.of("roles", List.of("ADMIN"))));
+
+        webTestClient.post()
+                .uri("/api/news/admin/ingest")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"ok\":true}");
+
+        RecordedRequest recorded = newsMock.takeRequest();
+        Assertions.assertEquals("/api/news/admin/ingest", recorded.getPath());
+        Assertions.assertEquals("POST", recorded.getMethod());
     }
 
     @Test

@@ -1,20 +1,19 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.Transaction;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.InstrumentType;
-import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.dto.PortfolioValuationAssetDto;
 import com.company.finance_api.dto.PortfolioValuationResponse;
+import com.company.finance_api.portfolio.PortfolioPosition;
+import com.company.finance_api.portfolio.PortfolioPositionBuilder;
 import com.company.finance_api.repository.TransactionRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.security.CurrentUserResolver;
 import com.company.finance_api.dto.InsightDto;
 import com.company.finance_api.service.PortfolioInsightService;
 import com.company.finance_api.service.PortfolioValuationService;
-import com.company.finance_api.service.PriceService;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,11 +39,11 @@ public class PortfolioValuationServiceImpl implements PortfolioValuationService 
     private static final Set<Long> MISSING_PRICE_LOGGED = ConcurrentHashMap.newKeySet();
 
     private final TransactionRepository transactionRepository;
-    private final PriceService priceService;
     private final CurrentUserResolver currentUserResolver;
     private final UserRepository userRepository;
     private final MeterRegistry meterRegistry;
     private final PortfolioInsightService portfolioInsightService;
+    private final PortfolioPositionBuilder portfolioPositionBuilder;
 
     @Override
     public PortfolioValuationResponse getMyValuation() {
@@ -62,22 +61,12 @@ public class PortfolioValuationServiceImpl implements PortfolioValuationService 
         for (Map.Entry<Instrument, List<Transaction>> entry : byInstrument.entrySet()) {
             Instrument instrument = entry.getKey();
             List<Transaction> txs = entry.getValue();
-            BigDecimal quantity = BigDecimal.ZERO;
-            BigDecimal totalCost = BigDecimal.ZERO;
-            for (Transaction tx : txs) {
-                if (tx.getType() == TransactionType.BUY) {
-                    quantity = quantity.add(tx.getQuantity());
-                    totalCost = totalCost.add(tx.getTotalAmount());
-                } else {
-                    quantity = quantity.subtract(tx.getQuantity());
-                    totalCost = totalCost.subtract(tx.getTotalAmount());
-                }
-            }
-            if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            var positionOpt = portfolioPositionBuilder.build(instrument, txs);
+            if (positionOpt.isEmpty()) {
                 continue;
             }
-            var priceOpt = priceService.getLatestValuationPrice(instrument);
-            if (priceOpt.isEmpty()) {
+            PortfolioPosition position = positionOpt.get();
+            if (!position.hasPrice()) {
                 meterRegistry.counter("portfolio_asset_missing_price_total").increment();
                 if (MISSING_PRICE_LOGGED.add(instrument.getId())) {
                     log.warn("MISSING_PRICE_FOR_PORTFOLIO instrumentId={}", instrument.getId());
@@ -85,10 +74,7 @@ public class PortfolioValuationServiceImpl implements PortfolioValuationService 
                 lines.add(new ValuationLine(instrument, BigDecimal.ZERO, BigDecimal.ZERO, false));
                 continue;
             }
-            InstrumentPrice currentPrice = priceOpt.get();
-            BigDecimal currentValue = currentPrice.getPrice().multiply(quantity);
-            BigDecimal pnl = currentValue.subtract(totalCost);
-            lines.add(new ValuationLine(instrument, currentValue, pnl, true));
+            lines.add(new ValuationLine(instrument, position.currentValue(), position.unrealizedPnl(), true));
         }
 
         BigDecimal totalValue = lines.stream()
