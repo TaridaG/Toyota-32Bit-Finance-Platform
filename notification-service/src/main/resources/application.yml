@@ -4,6 +4,18 @@ server:
 spring:
   application:
     name: notification-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/finance}
+    username: ${SPRING_DATASOURCE_USERNAME:finance}
+    password: ${SPRING_DATASOURCE_PASSWORD:123456}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    table: notification_flyway_schema_history
+    locations: classpath:db/migration
   kafka:
     bootstrap-servers: kafka:9092
     listener:
@@ -34,3 +46,8 @@ management:
   otlp:
     tracing:
       endpoint: http://jaeger:4318/v1/traces
+
+notification:
+  insight:
+    threshold: ${NOTIFICATION_INSIGHT_THRESHOLD:0.08}
+    aggregation-interval-ms: ${NOTIFICATION_INSIGHT_AGGREGATION_INTERVAL_MS:21600000}
