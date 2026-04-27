@@ -27,4 +27,16 @@ public interface AnalyticsPriceCandleRepository extends JpaRepository<AnalyticsP
             Instant from,
             Instant to
     );
+
+    List<AnalyticsPriceCandle> findTop60ByInstrumentIdAndCandleIntervalAndOpenTimeLessThanEqualOrderByOpenTimeDesc(
+            Long instrumentId,
+            CandleInterval candleInterval,
+            Instant to
+    );
+
+    List<AnalyticsPriceCandle> findTop2ByInstrumentIdAndCandleIntervalAndOpenTimeLessThanEqualOrderByOpenTimeDesc(
+            Long instrumentId,
+            CandleInterval candleInterval,
+            Instant to
+    );
 }

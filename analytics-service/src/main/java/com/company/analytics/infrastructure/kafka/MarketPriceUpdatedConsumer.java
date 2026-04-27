@@ -1,7 +1,10 @@
 package com.company.analytics.infrastructure.kafka;
 
 import com.company.analytics.application.CandleAggregationService;
+import com.company.analytics.application.AnalyticsProcessingDecision;
+import com.company.analytics.application.AnalyticsProcessingRouter;
 import com.company.analytics.application.EventIdempotencyService;
+import com.company.analytics.application.FeatureExtractionService;
 import com.company.analytics.application.MovingAverageService;
 import com.company.analytics.application.RSIService;
 import com.company.analytics.application.TrendMetricService;
@@ -17,6 +20,7 @@ import org.apache.kafka.common.header.Headers;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -43,8 +47,11 @@ public class MarketPriceUpdatedConsumer {
     private final MovingAverageService movingAverageService;
     private final RSIService rsiService;
     private final TrendMetricService trendMetricService;
+    private final AnalyticsProcessingRouter processingRouter;
+    private final FeatureExtractionService featureExtractionService;
     private final FinanceInstrumentClient financeInstrumentClient;
     private final MeterRegistry meterRegistry;
+    private final boolean processingPolicyEnforced;
     private final Set<String> distinctMissingSymbols = ConcurrentHashMap.newKeySet();
     private final ConcurrentMap<String, ConcurrentLinkedDeque<Instant>> missingInstrumentEvents =
             new ConcurrentHashMap<>();
@@ -61,16 +68,22 @@ public class MarketPriceUpdatedConsumer {
             MovingAverageService movingAverageService,
             RSIService rsiService,
             TrendMetricService trendMetricService,
+            AnalyticsProcessingRouter processingRouter,
+            FeatureExtractionService featureExtractionService,
             FinanceInstrumentClient financeInstrumentClient,
-            MeterRegistry meterRegistry
+            MeterRegistry meterRegistry,
+            @Value("${analytics.processing.policy-enforced:true}") boolean processingPolicyEnforced
     ) {
         this.candleAggregationService = candleAggregationService;
         this.eventIdempotencyService = eventIdempotencyService;
         this.movingAverageService = movingAverageService;
         this.rsiService = rsiService;
         this.trendMetricService = trendMetricService;
+        this.processingRouter = processingRouter;
+        this.featureExtractionService = featureExtractionService;
         this.financeInstrumentClient = financeInstrumentClient;
         this.meterRegistry = meterRegistry;
+        this.processingPolicyEnforced = processingPolicyEnforced;
         meterRegistry.gauge("analytics_kafka_missing_instrument_distinct", distinctMissingSymbols, Set::size);
         Gauge.builder("instrument_id_coverage_ratio", this, c -> {
             long total = c.priceEventsTotal.get();
@@ -108,13 +121,21 @@ public class MarketPriceUpdatedConsumer {
                 instrumentId,
                 m.instrumentSymbol(),
                 m.price(),
-                m.occurredAt()
+                m.occurredAt(),
+                m.priceType()
         );
-
-        candleAggregationService.process(event);
-        movingAverageService.process(event);
-        rsiService.process(event);
-        trendMetricService.process(event);
+        String normalizedPriceType = processingRouter.normalizePriceType(event.priceType());
+        meterRegistry.counter(
+                "analytics_event_received_total",
+                "service", "analytics-service",
+                "priceType", normalizedPriceType,
+                "sourceConsumer", "market_price"
+        ).increment();
+        AnalyticsProcessingDecision decision = processingRouter.decide(event.priceType());
+        if (decision.processCandle()) {
+            featureExtractionService.extract(event, normalizedPriceType);
+        }
+        processByDecision(event, normalizedPriceType, decision);
         eventIdempotencyService.markProcessed(event.eventId());
 
         log.info("Analytics processed market event for symbol={} instrumentId={} eventId={}",
@@ -253,5 +274,30 @@ public class MarketPriceUpdatedConsumer {
             }
         }
         return null;
+    }
+
+    private void processByDecision(
+            AnalyticsMarketPriceEvent event,
+            String normalizedPriceType,
+            AnalyticsProcessingDecision decision
+    ) {
+        invokeProcessor("candle", normalizedPriceType, decision.processCandle(), () -> candleAggregationService.process(event));
+        invokeProcessor("moving_average", normalizedPriceType, decision.processMovingAverage(), () -> movingAverageService.process(event));
+        invokeProcessor("rsi", normalizedPriceType, decision.processRsi(), () -> rsiService.process(event));
+        invokeProcessor("trend", normalizedPriceType, decision.processTrend(), () -> trendMetricService.process(event));
+    }
+
+    private void invokeProcessor(String processor, String priceType, boolean allowed, Runnable runnable) {
+        boolean shouldProcess = allowed || !processingPolicyEnforced;
+        meterRegistry.counter(
+                "analytics_processing_decision_total",
+                "service", "analytics-service",
+                "priceType", priceType,
+                "processor", processor,
+                "decision", shouldProcess ? "processed" : "skipped"
+        ).increment();
+        if (shouldProcess) {
+            runnable.run();
+        }
     }
 }

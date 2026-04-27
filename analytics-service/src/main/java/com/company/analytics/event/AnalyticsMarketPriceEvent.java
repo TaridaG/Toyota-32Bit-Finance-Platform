@@ -8,6 +8,16 @@ public record AnalyticsMarketPriceEvent(
         Long instrumentId,
         String instrumentSymbol,
         BigDecimal price,
-        Instant occurredAt
+        Instant occurredAt,
+        String priceType
 ) {
+    public AnalyticsMarketPriceEvent(
+            String eventId,
+            Long instrumentId,
+            String instrumentSymbol,
+            BigDecimal price,
+            Instant occurredAt
+    ) {
+        this(eventId, instrumentId, instrumentSymbol, price, occurredAt, "MARKET");
+    }
 }
