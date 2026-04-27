@@ -20,6 +20,9 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 import com.company.notification.event.ReportCompletedEvent;
 import com.company.notification.event.ReportFailedEvent;
+import com.company.notification.event.AnalyticsInsightEvent;
+import com.company.notification.event.WatchlistItemAddedEvent;
+import com.company.notification.event.WatchlistItemRemovedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,6 +160,102 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, ReportFailedEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(reportFailedConsumerFactory);
+        factory.setCommonErrorHandler(kafkaErrorHandler);
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, WatchlistItemAddedEvent> watchlistItemAddedConsumerFactory(
+            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
+    ) {
+        JsonDeserializer<WatchlistItemAddedEvent> deserializer =
+                new JsonDeserializer<>(WatchlistItemAddedEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.setUseTypeHeaders(false);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-service-watchlist-projection");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, WatchlistItemAddedEvent>
+    watchlistItemAddedKafkaListenerContainerFactory(
+            ConsumerFactory<String, WatchlistItemAddedEvent> watchlistItemAddedConsumerFactory,
+            DefaultErrorHandler kafkaErrorHandler
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, WatchlistItemAddedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(watchlistItemAddedConsumerFactory);
+        factory.setCommonErrorHandler(kafkaErrorHandler);
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, WatchlistItemRemovedEvent> watchlistItemRemovedConsumerFactory(
+            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
+    ) {
+        JsonDeserializer<WatchlistItemRemovedEvent> deserializer =
+                new JsonDeserializer<>(WatchlistItemRemovedEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.setUseTypeHeaders(false);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-service-watchlist-projection");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, WatchlistItemRemovedEvent>
+    watchlistItemRemovedKafkaListenerContainerFactory(
+            ConsumerFactory<String, WatchlistItemRemovedEvent> watchlistItemRemovedConsumerFactory,
+            DefaultErrorHandler kafkaErrorHandler
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, WatchlistItemRemovedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(watchlistItemRemovedConsumerFactory);
+        factory.setCommonErrorHandler(kafkaErrorHandler);
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, AnalyticsInsightEvent> analyticsInsightConsumerFactory(
+            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
+    ) {
+        JsonDeserializer<AnalyticsInsightEvent> deserializer =
+                new JsonDeserializer<>(AnalyticsInsightEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.setUseTypeHeaders(false);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-service-insight-simple");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, AnalyticsInsightEvent>
+    analyticsInsightKafkaListenerContainerFactory(
+            ConsumerFactory<String, AnalyticsInsightEvent> analyticsInsightConsumerFactory,
+            DefaultErrorHandler kafkaErrorHandler
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, AnalyticsInsightEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(analyticsInsightConsumerFactory);
         factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
     }

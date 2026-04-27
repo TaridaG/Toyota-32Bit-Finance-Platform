@@ -1,6 +1,8 @@
 package com.company.analytics.infrastructure.kafka;
 
 import com.company.analytics.application.CandleAggregationService;
+import com.company.analytics.application.AnalyticsProcessingDecision;
+import com.company.analytics.application.AnalyticsProcessingRouter;
 import com.company.analytics.application.EventIdempotencyService;
 import com.company.analytics.application.MovingAverageService;
 import com.company.analytics.application.RSIService;
@@ -10,12 +12,12 @@ import com.company.analytics.event.AnalyticsMarketPriceEvent;
 import com.company.analytics.event.FxSnapshotUpdatedEvent;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -23,7 +25,6 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class FxSnapshotUpdatedConsumer {
 
     private final CandleAggregationService candleAggregationService;
@@ -31,8 +32,32 @@ public class FxSnapshotUpdatedConsumer {
     private final MovingAverageService movingAverageService;
     private final RSIService rsiService;
     private final TrendMetricService trendMetricService;
+    private final AnalyticsProcessingRouter processingRouter;
     private final FinanceInstrumentClient financeInstrumentClient;
     private final MeterRegistry meterRegistry;
+    private final boolean processingPolicyEnforced;
+
+    public FxSnapshotUpdatedConsumer(
+            CandleAggregationService candleAggregationService,
+            EventIdempotencyService eventIdempotencyService,
+            MovingAverageService movingAverageService,
+            RSIService rsiService,
+            TrendMetricService trendMetricService,
+            AnalyticsProcessingRouter processingRouter,
+            FinanceInstrumentClient financeInstrumentClient,
+            MeterRegistry meterRegistry,
+            @Value("${analytics.processing.policy-enforced:true}") boolean processingPolicyEnforced
+    ) {
+        this.candleAggregationService = candleAggregationService;
+        this.eventIdempotencyService = eventIdempotencyService;
+        this.movingAverageService = movingAverageService;
+        this.rsiService = rsiService;
+        this.trendMetricService = trendMetricService;
+        this.processingRouter = processingRouter;
+        this.financeInstrumentClient = financeInstrumentClient;
+        this.meterRegistry = meterRegistry;
+        this.processingPolicyEnforced = processingPolicyEnforced;
+    }
 
     @Transactional
     @KafkaListener(
@@ -69,12 +94,20 @@ public class FxSnapshotUpdatedConsumer {
                 instrumentId,
                 symbol,
                 priceOpt.get(),
-                occurredAt
+                occurredAt,
+                "FX_MID"
         );
-        candleAggregationService.process(event);
-        movingAverageService.process(event);
-        rsiService.process(event);
-        trendMetricService.process(event);
+        String normalizedPriceType = processingRouter.normalizePriceType(event.priceType());
+        meterRegistry.counter(
+                "analytics_event_received_total",
+                Tags.of(
+                        "service", "analytics-service",
+                        "priceType", normalizedPriceType,
+                        "sourceConsumer", "fx_snapshot"
+                )
+        ).increment();
+        AnalyticsProcessingDecision decision = processingRouter.decide(event.priceType());
+        processByDecision(event, normalizedPriceType, decision);
         eventIdempotencyService.markProcessed(e.eventId());
         meterRegistry.counter(
                 "analytics_fx_snapshot_consumed_total",
@@ -113,5 +146,32 @@ public class FxSnapshotUpdatedConsumer {
             return Optional.of(e.ask());
         }
         return Optional.empty();
+    }
+
+    private void processByDecision(
+            AnalyticsMarketPriceEvent event,
+            String normalizedPriceType,
+            AnalyticsProcessingDecision decision
+    ) {
+        invokeProcessor("candle", normalizedPriceType, decision.processCandle(), () -> candleAggregationService.process(event));
+        invokeProcessor("moving_average", normalizedPriceType, decision.processMovingAverage(), () -> movingAverageService.process(event));
+        invokeProcessor("rsi", normalizedPriceType, decision.processRsi(), () -> rsiService.process(event));
+        invokeProcessor("trend", normalizedPriceType, decision.processTrend(), () -> trendMetricService.process(event));
+    }
+
+    private void invokeProcessor(String processor, String priceType, boolean allowed, Runnable runnable) {
+        boolean shouldProcess = allowed || !processingPolicyEnforced;
+        meterRegistry.counter(
+                "analytics_processing_decision_total",
+                Tags.of(
+                        "service", "analytics-service",
+                        "priceType", priceType,
+                        "processor", processor,
+                        "decision", shouldProcess ? "processed" : "skipped"
+                )
+        ).increment();
+        if (shouldProcess) {
+            runnable.run();
+        }
     }
 }

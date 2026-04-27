@@ -49,3 +49,17 @@ management:
 clients:
   finance:
     base-url: ${FINANCE_BASE_URL:http://finance-api:8080}
+    auth:
+      mode: ${CLIENTS_FINANCE_AUTH_MODE:header}
+      header-username: ${CLIENTS_FINANCE_HEADER_USERNAME:analytics-service}
+      bearer-token: ${CLIENTS_FINANCE_BEARER_TOKEN:}
+
+analytics:
+  processing:
+    policy-enforced: ${ANALYTICS_PROCESSING_POLICY_ENFORCED:true}
+  features:
+    enabled: ${ANALYTICS_FEATURES_ENABLED:true}
+
+notification:
+  insight:
+    threshold: ${NOTIFICATION_INSIGHT_THRESHOLD:0.08}
