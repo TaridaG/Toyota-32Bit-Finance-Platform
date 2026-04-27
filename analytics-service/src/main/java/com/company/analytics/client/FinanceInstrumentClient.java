@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClient.RequestHeadersSpec;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,15 @@ public class FinanceInstrumentClient {
 
     @Value("${clients.finance.catalog-ttl-ms:90000}")
     private long catalogTtlMs;
+
+    @Value("${clients.finance.auth.mode:header}")
+    private String financeAuthMode;
+
+    @Value("${clients.finance.auth.header-username:analytics-service}")
+    private String financeHeaderUsername;
+
+    @Value("${clients.finance.auth.bearer-token:}")
+    private String financeBearerToken;
 
     private final Map<String, Long> symbolToIdCache = new ConcurrentHashMap<>();
     private final Map<Long, String> idToSymbolCache = new ConcurrentHashMap<>();
@@ -75,9 +86,9 @@ public class FinanceInstrumentClient {
 
     private boolean loadCatalogFromFinanceApi() {
         try {
-            Map<String, Object> response = financeRestClient.get()
-                    .uri(financeBaseUrl + "/api/instruments")
-                    .header("X-USERNAME", "analytics-service")
+            RequestHeadersSpec<?> request = financeRestClient.get()
+                    .uri(financeBaseUrl + "/api/instruments");
+            Map<String, Object> response = applyAuth(request)
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {
                     });
@@ -111,5 +122,16 @@ public class FinanceInstrumentClient {
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    private RequestHeadersSpec<?> applyAuth(RequestHeadersSpec<?> request) {
+        String mode = financeAuthMode == null ? "header" : financeAuthMode.trim().toLowerCase();
+        if ("bearer".equals(mode) && StringUtils.hasText(financeBearerToken)) {
+            return request.header("Authorization", "Bearer " + financeBearerToken.trim());
+        }
+        if ("none".equals(mode)) {
+            return request;
+        }
+        return request.header("X-USERNAME", financeHeaderUsername);
     }
 }
