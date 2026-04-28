@@ -3,6 +3,7 @@ package com.company.marketdataservice.config;
 import com.company.marketdataservice.fund.CompositeFundProvider;
 import com.company.marketdataservice.fund.FundBatchTelemetry;
 import com.company.marketdataservice.fund.FundProvider;
+import com.company.marketdataservice.fund.TefasFundPriceProvider;
 import com.company.marketdataservice.fund.TefasHttpProvider;
 import com.company.marketdataservice.fund.TefasProvider;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -21,11 +22,18 @@ public class FundProviderConfiguration {
     @Bean
     @Primary
     public FundProvider fundProvider(
+            TefasFundPriceProvider tefasFundPriceProvider,
             TefasHttpProvider tefasHttpProvider,
             TefasProvider tefasMockFundProvider,
             MeterRegistry meterRegistry,
             FundBatchTelemetry fundBatchTelemetry
     ) {
-        return new CompositeFundProvider(tefasHttpProvider, tefasMockFundProvider, meterRegistry, fundBatchTelemetry);
+        return new CompositeFundProvider(
+                tefasFundPriceProvider,
+                tefasHttpProvider,
+                tefasMockFundProvider,
+                meterRegistry,
+                fundBatchTelemetry
+        );
     }
 }

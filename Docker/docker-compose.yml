@@ -205,6 +205,8 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=none
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - FINANCE_BASE_URL=http://finance-api:8080
+      - CLIENTS_FINANCE_AUTH_MODE=${CLIENTS_FINANCE_AUTH_MODE:-bearer}
+      - CLIENTS_FINANCE_BEARER_TOKEN=${CLIENTS_FINANCE_BEARER_TOKEN:-dev-static-token}
     networks:
       - finance-net
 
@@ -237,6 +239,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - FINANCE_BASE_URL=http://finance-api:8080
       - MINIO_URL=http://minio:9000
+      - CLIENTS_FINANCE_AUTH_MODE=${CLIENTS_FINANCE_AUTH_MODE:-bearer}
+      - CLIENTS_FINANCE_BEARER_TOKEN=${CLIENTS_FINANCE_BEARER_TOKEN:-dev-static-token}
     networks:
       - finance-net
 

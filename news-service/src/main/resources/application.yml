@@ -5,6 +5,9 @@ spring:
   application:
     name: news-service
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:finance}
     username: ${DB_USERNAME:finance}
@@ -41,6 +44,22 @@ management:
       endpoint: http://jaeger:4318/v1/traces
 
 news:
+  instrument:
+    keywords:
+      BTCUSDT:
+        - bitcoin
+        - btc
+      ETHUSDT:
+        - ethereum
+        - eth
+      USDTRY:
+        - usd
+        - dolar
+      GARAN:
+        - garanti
+      THYAO:
+        - thy
+        - turkish airlines
   scheduler:
     enabled: true
     delay-ms: 300000
@@ -62,3 +81,31 @@ news:
     - name: "MarketWatch"
       url: "https://feeds.content.dowjones.io/public/rss/mw_topstories"
       category: STOCK
+
+    - name: "CoinTelegraph"
+      url: "https://cointelegraph.com/rss"
+      category: CRYPTO
+
+    - name: "Binance Blog"
+      url: "https://www.binance.com/en/blog/rss"
+      category: CRYPTO
+
+    - name: "Reuters Economy"
+      url: "https://www.reuters.com/markets/europe/rss"
+      category: GENERAL_ECONOMY
+
+    - name: "Bloomberg Markets"
+      url: "https://feeds.bloomberg.com/markets/news.rss"
+      category: GENERAL_ECONOMY
+
+    - name: "AA Ekonomi"
+      url: "https://www.aa.com.tr/tr/rss/default?cat=ekonomi"
+      category: GENERAL_ECONOMY
+
+    - name: "Bigpara"
+      url: "https://bigpara.hurriyet.com.tr/rss"
+      category: STOCK
+
+    - name: "Investing FX"
+      url: "https://www.investing.com/rss/news_95.rss"
+      category: FX

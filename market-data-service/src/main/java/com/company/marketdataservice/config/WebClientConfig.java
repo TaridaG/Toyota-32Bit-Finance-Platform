@@ -67,6 +67,27 @@ public class WebClientConfig {
                 .build();
     }
 
+    @Bean("investingStockWebClient")
+    public WebClient investingStockWebClient(ResilienceProperties resilienceProperties) {
+        long timeoutMillis = resilienceProperties.getRequiredProvider("investing_stock").getTimeout().getMillis();
+        HttpClient httpClient =
+                HttpClient.create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) timeoutMillis)
+                        .responseTimeout(Duration.ofMillis(timeoutMillis))
+                        .doOnConnected(conn ->
+                                conn.addHandlerLast(
+                                                new ReadTimeoutHandler(timeoutMillis, TimeUnit.MILLISECONDS)
+                                        )
+                                        .addHandlerLast(
+                                                new WriteTimeoutHandler(timeoutMillis, TimeUnit.MILLISECONDS)
+                                        )
+                        );
+
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
     @Bean("tefasWebClient")
     public WebClient tefasWebClient() {
         long timeoutMillis = 20_000L;

@@ -48,6 +48,12 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
+		<!-- Kafka (news → notification) -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+
 		<!-- Actuator -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

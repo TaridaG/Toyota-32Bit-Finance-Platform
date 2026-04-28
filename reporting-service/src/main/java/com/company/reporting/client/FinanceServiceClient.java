@@ -43,7 +43,9 @@ public class FinanceServiceClient {
     private RequestHeadersSpec<?> applyAuth(RequestHeadersSpec<?> request) {
         String mode = financeAuthMode == null ? "header" : financeAuthMode.trim().toLowerCase();
         if ("bearer".equals(mode) && StringUtils.hasText(financeBearerToken)) {
-            return request.header("Authorization", "Bearer " + financeBearerToken.trim());
+            return request
+                    .header("Authorization", "Bearer " + financeBearerToken.trim())
+                    .header("X-USERNAME", financeHeaderUsername);
         }
         if ("none".equals(mode)) {
             return request;
