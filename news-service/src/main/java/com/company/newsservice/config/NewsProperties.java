@@ -7,7 +7,9 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -17,6 +19,11 @@ public class NewsProperties {
     private Scheduler scheduler = new Scheduler();
     private Rss rss = new Rss();
     private List<Feed> feeds = new ArrayList<>();
+
+    /**
+     * Symbol (e.g. BTCUSDT) → lowercase substring keywords for ingest-time matching only.
+     */
+    private Map<String, List<String>> instrumentKeywords = new LinkedHashMap<>();
 
     @Getter
     @Setter
