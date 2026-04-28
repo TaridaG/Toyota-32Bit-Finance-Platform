@@ -59,6 +59,8 @@ public class SimpleInsightConsumer {
             pending.setDirection(event.getDirection() == null ? "" : event.getDirection());
             pending.setOccurredAt(event.getOccurredAt());
             pending.setProcessed(false);
+            pending.setEventType("INSIGHT");
+            pending.setNewsTitle(null);
             try {
                 pendingInsightEventRepository.save(pending);
             } catch (DataIntegrityViolationException ex) {

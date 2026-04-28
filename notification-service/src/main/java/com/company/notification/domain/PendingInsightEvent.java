@@ -23,7 +23,8 @@ public class PendingInsightEvent {
     @Column(name = "symbol", nullable = false, length = 64)
     private String symbol;
 
-    @Column(name = "change_percent", nullable = false, precision = 20, scale = 8)
+    /** Null for NEWS-type rows (no price move). */
+    @Column(name = "change_percent", precision = 20, scale = 8)
     private BigDecimal changePercent;
 
     @Column(name = "direction", nullable = false, length = 8)
@@ -34,6 +35,12 @@ public class PendingInsightEvent {
 
     @Column(name = "processed", nullable = false)
     private boolean processed;
+
+    @Column(name = "event_type", nullable = false, length = 16)
+    private String eventType = "INSIGHT";
+
+    @Column(name = "news_title", length = 500)
+    private String newsTitle;
 
     public Long getId() {
         return id;
@@ -93,5 +100,21 @@ public class PendingInsightEvent {
 
     public void setProcessed(boolean processed) {
         this.processed = processed;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    public String getNewsTitle() {
+        return newsTitle;
+    }
+
+    public void setNewsTitle(String newsTitle) {
+        this.newsTitle = newsTitle;
     }
 }

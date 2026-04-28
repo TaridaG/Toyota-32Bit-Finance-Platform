@@ -11,4 +11,11 @@ public interface PendingInsightEventRepository extends JpaRepository<PendingInsi
     List<PendingInsightEvent> findByProcessedFalse();
 
     List<PendingInsightEvent> findByProcessedFalseAndUserId(UUID userId);
+
+    boolean existsByUserIdAndInstrumentIdAndNewsTitleAndEventType(
+            UUID userId,
+            Long instrumentId,
+            String newsTitle,
+            String eventType
+    );
 }

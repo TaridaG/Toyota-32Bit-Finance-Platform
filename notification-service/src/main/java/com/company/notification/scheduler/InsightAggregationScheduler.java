@@ -43,12 +43,15 @@ public class InsightAggregationScheduler {
 
         for (Map.Entry<java.util.UUID, List<PendingInsightEvent>> entry : groupedByUser.entrySet()) {
             List<PendingInsightEvent> topEvents = entry.getValue().stream()
-                    .sorted(Comparator.comparing(e -> e.getChangePercent().abs(), Comparator.reverseOrder()))
+                    .sorted(Comparator.comparing(
+                            e -> e.getChangePercent() == null ? BigDecimal.ZERO : e.getChangePercent().abs(),
+                            Comparator.reverseOrder()
+                    ))
                     .limit(5)
                     .toList();
 
             String symbols = topEvents.stream()
-                    .map(e -> e.getSymbol() + " " + formatPercent(e.getChangePercent()))
+                    .map(e -> e.getSymbol() + " " + formatChangeOrNews(e))
                     .collect(Collectors.joining(","));
 
             log.info("INSIGHT_NOTIFICATION userId={} count={} symbols=[{}]", entry.getKey(), topEvents.size(), symbols);
@@ -59,6 +62,13 @@ public class InsightAggregationScheduler {
             }
             pendingInsightEventRepository.saveAll(entry.getValue());
         }
+    }
+
+    private String formatChangeOrNews(PendingInsightEvent e) {
+        if (e.getChangePercent() == null) {
+            return "news";
+        }
+        return formatPercent(e.getChangePercent());
     }
 
     private String formatPercent(BigDecimal changePercent) {

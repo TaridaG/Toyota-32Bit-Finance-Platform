@@ -47,6 +47,10 @@ management:
     tracing:
       endpoint: http://jaeger:4318/v1/traces
 
+services:
+  finance-api:
+    base-url: ${FINANCE_API_BASE_URL:http://localhost:8080}
+
 notification:
   insight:
     threshold: ${NOTIFICATION_INSIGHT_THRESHOLD:0.08}

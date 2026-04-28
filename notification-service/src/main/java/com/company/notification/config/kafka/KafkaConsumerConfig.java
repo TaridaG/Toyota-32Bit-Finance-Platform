@@ -22,6 +22,7 @@ import com.company.notification.event.ReportCompletedEvent;
 import com.company.notification.event.ReportFailedEvent;
 import com.company.notification.event.AnalyticsInsightEvent;
 import com.company.notification.event.WatchlistItemAddedEvent;
+import com.company.notification.event.NewsInstrumentMatchedEvent;
 import com.company.notification.event.WatchlistItemRemovedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -256,6 +257,38 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, AnalyticsInsightEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(analyticsInsightConsumerFactory);
+        factory.setCommonErrorHandler(kafkaErrorHandler);
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, NewsInstrumentMatchedEvent> newsInstrumentMatchedConsumerFactory(
+            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
+    ) {
+        JsonDeserializer<NewsInstrumentMatchedEvent> deserializer =
+                new JsonDeserializer<>(NewsInstrumentMatchedEvent.class);
+        deserializer.addTrustedPackages("*");
+        deserializer.setUseTypeHeaders(false);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-service-news-matched");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, NewsInstrumentMatchedEvent>
+    newsInstrumentMatchedKafkaListenerContainerFactory(
+            ConsumerFactory<String, NewsInstrumentMatchedEvent> newsInstrumentMatchedConsumerFactory,
+            DefaultErrorHandler kafkaErrorHandler
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, NewsInstrumentMatchedEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(newsInstrumentMatchedConsumerFactory);
         factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
     }
