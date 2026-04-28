@@ -5,8 +5,8 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useTranslation } from 'react-i18next'
 
 export function ExternalPortfolioPage() {
-  const { t, i18n } = useTranslation()
-  useDocumentTitle(t('portfolio.titleDoc'))
+  const { t, i18n } = useTranslation('portfolio')
+  useDocumentTitle(t('external.titleDoc'))
 
   const numberFormat = useMemo(
     () =>
@@ -36,7 +36,7 @@ export function ExternalPortfolioPage() {
   }, [fetchPortfolios])
 
   const handleCreatePortfolio = async () => {
-    const name = window.prompt(t('portfolio.promptName'))
+    const name = window.prompt(t('external.promptName'))
     if (!name?.trim()) {
       return
     }
@@ -58,9 +58,9 @@ export function ExternalPortfolioPage() {
   return (
     <section>
       <div className="section-header">
-        <h2>{t('portfolio.title')}</h2>
+        <h2>{t('external.title')}</h2>
         <button onClick={handleCreatePortfolio} disabled={creating}>
-          {creating ? t('portfolio.creating') : t('portfolio.create')}
+          {creating ? t('external.creating') : t('external.create')}
         </button>
       </div>
 
@@ -68,9 +68,9 @@ export function ExternalPortfolioPage() {
 
       <div className="portfolio-grid">
         <article className="card">
-          <h3>{t('portfolio.portfolios')}</h3>
-          {loading && portfolios.length === 0 ? <p>{t('portfolio.loadingPortfolios')}</p> : null}
-          {portfolios.length === 0 ? <p>{t('portfolio.noPortfolios')}</p> : null}
+          <h3>{t('external.portfolios')}</h3>
+          {loading && portfolios.length === 0 ? <p>{t('external.loadingPortfolios')}</p> : null}
+          {portfolios.length === 0 ? <p>{t('external.noPortfolios')}</p> : null}
           <ul className="portfolio-list">
             {portfolios.map((portfolio) => (
               <li key={portfolio.id}>
@@ -89,22 +89,22 @@ export function ExternalPortfolioPage() {
         </article>
 
         <article className="card">
-          <h3>{t('portfolio.summary')}</h3>
+          <h3>{t('external.summary')}</h3>
           {!summary ? (
-            <p>{t('portfolio.summaryHint')}</p>
+            <p>{t('external.summaryHint')}</p>
           ) : (
             <div className="summary">
               <p>
-                {t('portfolio.totalCost')}: <strong>{numberFormat.format(summary.totalCost)}</strong>
+                {t('external.totalCost')}: <strong>{numberFormat.format(summary.totalCost)}</strong>
               </p>
               <p>
-                {t('portfolio.marketValue')}: <strong>{numberFormat.format(summary.totalMarketValue)}</strong>
+                {t('external.marketValue')}: <strong>{numberFormat.format(summary.totalMarketValue)}</strong>
               </p>
               <p>
-                {t('portfolio.pnl')}: <strong>{numberFormat.format(summary.totalPnL)}</strong>
+                {t('external.pnl')}: <strong>{numberFormat.format(summary.totalPnL)}</strong>
               </p>
               <p>
-                {t('portfolio.pnlPercent')}:{' '}
+                {t('external.pnlPercent')}:{' '}
                 <strong>{numberFormat.format(summary.totalPnLPercentage)}%</strong>
               </p>
             </div>
@@ -112,9 +112,9 @@ export function ExternalPortfolioPage() {
         </article>
 
         <article className="card">
-          <h3>{t('portfolio.allocation')}</h3>
+          <h3>{t('external.allocation')}</h3>
           {allocation.length === 0 ? (
-            <p>{t('portfolio.allocationHint')}</p>
+            <p>{t('external.allocationHint')}</p>
           ) : (
             <ul className="allocation-list">
               {allocation.map((item) => (

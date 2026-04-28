@@ -2,7 +2,7 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useTranslation } from 'react-i18next'
 
 export function SimulationPage() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('common')
   useDocumentTitle(t('simulation.titleDoc'))
 
   return (
