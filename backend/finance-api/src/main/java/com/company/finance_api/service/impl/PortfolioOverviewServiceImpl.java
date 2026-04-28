@@ -1,0 +1,207 @@
+package com.company.finance_api.service.impl;
+
+import com.company.finance_api.domain.Instrument;
+import com.company.finance_api.domain.Transaction;
+import com.company.finance_api.domain.User;
+import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.dto.PortfolioOverviewItemResponse;
+import com.company.finance_api.dto.PortfolioOverviewResponse;
+import com.company.finance_api.portfolio.PositionCostBasisCalculator;
+import com.company.finance_api.repository.TransactionRepository;
+import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.security.CurrentUserResolver;
+import com.company.finance_api.service.CurrencyConversionService;
+import com.company.finance_api.service.PortfolioOverviewService;
+import com.company.finance_api.service.PriceService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
+
+    private static final Logger log = LoggerFactory.getLogger(PortfolioOverviewServiceImpl.class);
+    private static final Duration CACHE_TTL = Duration.ofSeconds(5);
+    private static final String USD = "USD";
+
+    private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
+    private final CurrentUserResolver currentUserResolver;
+    private final PositionCostBasisCalculator positionCostBasisCalculator;
+    private final PriceService priceService;
+    private final CurrencyConversionService currencyConversionService;
+    private final ObjectMapper objectMapper;
+    private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+
+    public PortfolioOverviewServiceImpl(
+            TransactionRepository transactionRepository,
+            UserRepository userRepository,
+            CurrentUserResolver currentUserResolver,
+            PositionCostBasisCalculator positionCostBasisCalculator,
+            PriceService priceService,
+            CurrencyConversionService currencyConversionService,
+            ObjectMapper objectMapper,
+            ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider
+    ) {
+        this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
+        this.currentUserResolver = currentUserResolver;
+        this.positionCostBasisCalculator = positionCostBasisCalculator;
+        this.priceService = priceService;
+        this.currencyConversionService = currencyConversionService;
+        this.objectMapper = objectMapper;
+        this.stringRedisTemplateProvider = stringRedisTemplateProvider;
+    }
+
+    @Override
+    public PortfolioOverviewResponse getMyOverview(String targetCurrency) {
+        UUID userId = currentUserResolver.getCurrentUserId();
+        String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
+        String cacheKey = cacheKey(userId, normalizedCurrency);
+        Optional<PortfolioOverviewResponse> cached = readFromCache(cacheKey);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+        List<Transaction> transactions = transactionRepository.findByUserOrderByCreatedAtDesc(user);
+        Map<Instrument, List<Transaction>> grouped = transactions.stream()
+                .collect(Collectors.groupingBy(Transaction::getInstrument));
+
+        List<PortfolioOverviewItemResponse> items = new ArrayList<>();
+        BigDecimal totalValue = BigDecimal.ZERO;
+        BigDecimal totalCost = BigDecimal.ZERO;
+
+        for (Map.Entry<Instrument, List<Transaction>> entry : grouped.entrySet()) {
+            Instrument instrument = entry.getKey();
+            PositionCostBasisCalculator.PositionCostBasis basis = positionCostBasisCalculator.calculate(entry.getValue());
+            if (basis.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            BigDecimal avgBuyPrice = convertAndScale(basis.averageCost(), instrument.getType(), normalizedCurrency);
+            BigDecimal positionCost = convertAndScale(basis.totalCost(), instrument.getType(), normalizedCurrency);
+            totalCost = totalCost.add(positionCost);
+
+            BigDecimal currentPrice = priceService.getLatestValuationPrice(instrument)
+                    .map(price -> convertAndScale(price.getPrice(), instrument.getType(), normalizedCurrency))
+                    .orElse(null);
+
+            BigDecimal value = null;
+            BigDecimal pnl = null;
+            BigDecimal pnlPercent = null;
+
+            if (currentPrice != null) {
+                value = applyScale(currentPrice.multiply(basis.quantity()), instrument.getType());
+                pnl = applyScale(value.subtract(positionCost), instrument.getType());
+                if (positionCost.compareTo(BigDecimal.ZERO) > 0) {
+                    pnlPercent = pnl.multiply(BigDecimal.valueOf(100))
+                            .divide(positionCost, 4, RoundingMode.HALF_UP);
+                }
+                totalValue = totalValue.add(value);
+            }
+
+            items.add(new PortfolioOverviewItemResponse(
+                    instrument.getId(),
+                    instrument.getSymbol(),
+                    instrument.getName(),
+                    instrument.getType().name(),
+                    basis.quantity(),
+                    avgBuyPrice,
+                    currentPrice,
+                    value,
+                    pnl,
+                    pnlPercent
+            ));
+        }
+
+        items.sort(Comparator.comparing(PortfolioOverviewItemResponse::symbol, String.CASE_INSENSITIVE_ORDER));
+
+        BigDecimal totalPnl = totalValue.subtract(totalCost);
+        BigDecimal totalPnlPercent = totalCost.compareTo(BigDecimal.ZERO) > 0
+                ? totalPnl.multiply(BigDecimal.valueOf(100)).divide(totalCost, 4, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        PortfolioOverviewResponse response = new PortfolioOverviewResponse(
+                normalizedCurrency,
+                applyScale(totalValue, InstrumentType.STOCK),
+                applyScale(totalCost, InstrumentType.STOCK),
+                applyScale(totalPnl, InstrumentType.STOCK),
+                totalPnlPercent,
+                items
+        );
+        writeToCache(cacheKey, response);
+        return response;
+    }
+
+    private BigDecimal convertAndScale(BigDecimal value, InstrumentType type, String targetCurrency) {
+        BigDecimal converted = currencyConversionService.convert(value, USD, targetCurrency);
+        return applyScale(converted, type);
+    }
+
+    private BigDecimal applyScale(BigDecimal value, InstrumentType type) {
+        if (value == null) {
+            return null;
+        }
+        if (type == InstrumentType.CRYPTO) {
+            return value.setScale(6, RoundingMode.HALF_UP);
+        }
+        if (type == InstrumentType.FX) {
+            return value.setScale(4, RoundingMode.HALF_UP);
+        }
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private Optional<PortfolioOverviewResponse> readFromCache(String key) {
+        try {
+            StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
+            if (redis == null) {
+                return Optional.empty();
+            }
+            String payload = redis.opsForValue().get(key);
+            if (!StringUtils.hasText(payload)) {
+                return Optional.empty();
+            }
+            PortfolioOverviewResponse value = objectMapper.readValue(payload, new TypeReference<>() {
+            });
+            return Optional.of(value);
+        } catch (Exception ex) {
+            log.debug("PORTFOLIO_OVERVIEW_CACHE_READ_FAIL key={} reason={}", key, ex.toString());
+            return Optional.empty();
+        }
+    }
+
+    private void writeToCache(String key, PortfolioOverviewResponse value) {
+        try {
+            StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
+            if (redis == null) {
+                return;
+            }
+            redis.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+        } catch (Exception ex) {
+            log.debug("PORTFOLIO_OVERVIEW_CACHE_WRITE_FAIL key={} reason={}", key, ex.toString());
+        }
+    }
+
+    private String cacheKey(UUID userId, String currency) {
+        return "portfolio:overview:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT);
+    }
+}

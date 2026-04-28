@@ -27,23 +27,23 @@ const assets: PortfolioAsset[] = [
 
 const marketInsights = [
   {
-    title: 'Tesla rises after deliveries beat estimates',
-    detail: 'TSLA closes higher as delivery growth offsets margin pressure concerns.',
+    titleKey: 'insights.items.tesla.title',
+    detailKey: 'insights.items.tesla.detail',
     thumb: '🚗',
   },
   {
-    title: 'Apple extends buyback program',
-    detail: 'AAPL announces additional buyback authorization for long-term holders.',
+    titleKey: 'insights.items.apple.title',
+    detailKey: 'insights.items.apple.detail',
     thumb: '📱',
   },
   {
-    title: 'NVIDIA opens AI accelerator roadmap',
-    detail: 'Chip roadmap points to higher enterprise AI demand into next year.',
+    titleKey: 'insights.items.nvidia.title',
+    detailKey: 'insights.items.nvidia.detail',
     thumb: '🧠',
   },
   {
-    title: 'Banking stocks stabilize after policy update',
-    detail: 'Large-cap banks recover as policy path appears more predictable.',
+    titleKey: 'insights.items.banking.title',
+    detailKey: 'insights.items.banking.detail',
     thumb: '🏦',
   },
 ]
@@ -150,11 +150,11 @@ function MiniLineChart() {
 }
 
 export function MyPortfolioPage() {
-  const { t, i18n } = useTranslation()
+  const { t, i18n } = useTranslation('portfolio')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeSection, setActiveSection] = useState<string>('dashboard')
   const [selectedPortfolio, setSelectedPortfolio] = useState<(typeof portfolioOptions)[number]>(portfolioOptions[0])
-  useDocumentTitle(t('myPortfolio.titleDoc'))
+  useDocumentTitle(t('titleDoc'))
 
   const currencyFormat = useMemo(
     () =>
@@ -184,7 +184,7 @@ export function MyPortfolioPage() {
               type="button"
               className="my-portfolio-sidebar-toggle"
               onClick={() => setSidebarOpen((prev) => !prev)}
-              aria-label={sidebarOpen ? t('myPortfolio.sidebar.collapse') : t('myPortfolio.sidebar.expand')}
+              aria-label={sidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')}
             >
               <span className="my-portfolio-sidebar-toggle-icon" aria-hidden>
                 {sidebarOpen ? '‹' : '›'}
@@ -194,7 +194,7 @@ export function MyPortfolioPage() {
             <label className="my-portfolio-select-wrap">
               {sidebarOpen ? (
                 <>
-                  <span>{t('myPortfolio.sidebar.portfolios')}</span>
+                  <span>{t('sidebar.portfolios')}</span>
                   <select
                     value={selectedPortfolio}
                     onChange={(event) => setSelectedPortfolio(event.target.value as (typeof portfolioOptions)[number])}
@@ -207,7 +207,7 @@ export function MyPortfolioPage() {
                   </select>
                 </>
               ) : (
-                <button type="button" className="my-portfolio-portfolio-icon" aria-label={t('myPortfolio.sidebar.portfolios')}>
+                <button type="button" className="my-portfolio-portfolio-icon" aria-label={t('sidebar.portfolios')}>
                   <svg viewBox="0 0 24 24" aria-hidden>
                     <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
                     <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
@@ -217,7 +217,7 @@ export function MyPortfolioPage() {
             </label>
           </div>
 
-          <nav className="my-portfolio-sidebar-nav" aria-label={t('myPortfolio.sidebar.navAria')}>
+          <nav className="my-portfolio-sidebar-nav" aria-label={t('sidebar.navAria')}>
             {sidebarMainKeys.map((item) => (
               <button
                 key={item}
@@ -228,12 +228,12 @@ export function MyPortfolioPage() {
                 <span className="my-portfolio-sidebar-item-icon" aria-hidden>
                   <SidebarItemIcon item={item} />
                 </span>
-                {sidebarOpen ? <span>{t(`myPortfolio.sidebar.items.${item}`)}</span> : null}
+                {sidebarOpen ? <span>{t(`sidebar.items.${item}`)}</span> : null}
               </button>
             ))}
           </nav>
 
-          <nav className="my-portfolio-sidebar-nav my-portfolio-sidebar-nav-secondary" aria-label={t('myPortfolio.sidebar.quickAria')}>
+          <nav className="my-portfolio-sidebar-nav my-portfolio-sidebar-nav-secondary" aria-label={t('sidebar.quickAria')}>
             {sidebarSecondaryKeys.map((item) => (
               <button
                 key={item}
@@ -244,7 +244,7 @@ export function MyPortfolioPage() {
                 <span className="my-portfolio-sidebar-item-icon" aria-hidden>
                   <SidebarItemIcon item={item} />
                 </span>
-                {sidebarOpen ? <span>{t(`myPortfolio.sidebar.items.${item}`)}</span> : null}
+                {sidebarOpen ? <span>{t(`sidebar.items.${item}`)}</span> : null}
               </button>
             ))}
           </nav>
@@ -257,13 +257,13 @@ export function MyPortfolioPage() {
                 <path d="M18 12H9" />
               </svg>
             </span>
-            {sidebarOpen ? <span>{t('myPortfolio.sidebar.logout')}</span> : null}
+            {sidebarOpen ? <span>{t('sidebar.logout')}</span> : null}
           </button>
         </aside>
 
         <div className="my-portfolio-content">
           <div className="my-portfolio-gainers">
-            <span>{t('myPortfolio.topGainers')}</span>
+            <span>{t('topGainers')}</span>
             <ul>
               {topGainers.map((item) => (
                 <li key={item.symbol}>
@@ -278,20 +278,20 @@ export function MyPortfolioPage() {
           <div className="my-portfolio-grid">
             <article className="card my-portfolio-card my-portfolio-card-wide">
               <div className="my-portfolio-card-head">
-                <h3>{t('myPortfolio.valueTitle')}</h3>
-                <button type="button">{t('myPortfolio.actions.yearly')}</button>
+                <h3>{t('valueTitle')}</h3>
+                <button type="button">{t('actions.yearly')}</button>
               </div>
               <p className="my-portfolio-main-value">{currencyFormat.format(134815)}</p>
               <p className="my-portfolio-sub-value">
-                + {currencyFormat.format(19698)} {t('myPortfolio.fromLastYear')}
+                + {currencyFormat.format(19698)} {t('fromLastYear')}
               </p>
               <MiniLineChart />
             </article>
 
             <article className="card my-portfolio-card">
               <div className="my-portfolio-card-head">
-                <h3>{t('myPortfolio.profitTitle')}</h3>
-                <button type="button">{t('myPortfolio.actions.yearly')}</button>
+                <h3>{t('profitTitle')}</h3>
+                <button type="button">{t('actions.yearly')}</button>
               </div>
               <div className="my-portfolio-donut-wrap">
                 <div className="my-portfolio-donut">
@@ -302,17 +302,17 @@ export function MyPortfolioPage() {
                 </div>
               </div>
               <ul className="my-portfolio-legend">
-                <li>Stocks</li>
-                <li>Funds</li>
-                <li>Bonds</li>
-                <li>REITs</li>
+                <li>{t('legend.stocks')}</li>
+                <li>{t('legend.funds')}</li>
+                <li>{t('legend.bonds')}</li>
+                <li>{t('legend.reits')}</li>
               </ul>
             </article>
 
             <article className="card my-portfolio-card">
               <div className="my-portfolio-card-head">
-                <h3>{t('myPortfolio.distributionTitle')}</h3>
-                <button type="button">{t('myPortfolio.actions.viewAll')}</button>
+                <h3>{t('distributionTitle')}</h3>
+                <button type="button">{t('actions.viewAll')}</button>
               </div>
               <div className="my-portfolio-distribution-bar">
                 {assets.map((asset) => (
@@ -335,8 +335,8 @@ export function MyPortfolioPage() {
 
             <article className="card my-portfolio-card">
               <div className="my-portfolio-card-head">
-                <h3>{t('myPortfolio.assetsTitle')}</h3>
-                <button type="button">{t('myPortfolio.actions.viewAll')}</button>
+                <h3>{t('assetsTitle')}</h3>
+                <button type="button">{t('actions.viewAll')}</button>
               </div>
               <ul className="my-portfolio-my-assets">
                 {assets.map((asset) => (
@@ -353,16 +353,16 @@ export function MyPortfolioPage() {
 
             <article className="card my-portfolio-card">
               <div className="my-portfolio-card-head">
-                <h3>{t('myPortfolio.insightTitle')}</h3>
-                <button type="button">{t('myPortfolio.actions.viewAll')}</button>
+                <h3>{t('insightTitle')}</h3>
+                <button type="button">{t('actions.viewAll')}</button>
               </div>
               <ul className="my-portfolio-insight-list">
                 {marketInsights.map((item) => (
-                  <li key={item.title}>
+                  <li key={item.titleKey}>
                     <span>{item.thumb}</span>
                     <div>
-                      <strong>{item.title}</strong>
-                      <small>{item.detail}</small>
+                      <strong>{t(item.titleKey)}</strong>
+                      <small>{t(item.detailKey)}</small>
                     </div>
                   </li>
                 ))}

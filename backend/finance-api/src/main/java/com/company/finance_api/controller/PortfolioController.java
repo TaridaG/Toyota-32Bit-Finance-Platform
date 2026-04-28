@@ -3,8 +3,10 @@ package com.company.finance_api.controller;
 import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.domain.PortfolioSnapshot;
 import com.company.finance_api.dto.PortfolioPositionResponse;
+import com.company.finance_api.dto.PortfolioOverviewResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
 import com.company.finance_api.dto.PortfolioValuationResponse;
+import com.company.finance_api.service.PortfolioOverviewService;
 import com.company.finance_api.service.PortfolioService;
 import com.company.finance_api.service.PortfolioSnapshotService;
 import com.company.finance_api.service.PortfolioValuationService;
@@ -19,6 +21,7 @@ import java.util.List;
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
+    private final PortfolioOverviewService portfolioOverviewService;
     private final PortfolioSnapshotService portfolioSnapshotService;
     private final PortfolioValuationService portfolioValuationService;
 
@@ -32,6 +35,15 @@ public class PortfolioController {
     public ApiResponse<PortfolioSummaryResponse> summary() {
         return ApiResponse.success(
                 portfolioService.getPortfolioSummary()
+        );
+    }
+
+    @GetMapping("/overview")
+    public ApiResponse<PortfolioOverviewResponse> overview(
+            @RequestHeader(value = "X-Currency", required = false) String targetCurrency
+    ) {
+        return ApiResponse.success(
+                portfolioOverviewService.getMyOverview(targetCurrency)
         );
     }
 

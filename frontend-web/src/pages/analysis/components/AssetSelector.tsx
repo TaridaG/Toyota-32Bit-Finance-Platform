@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { AssetDefinition, AssetType } from '../types'
 
 type AssetSelectorProps = {
@@ -16,6 +17,7 @@ export function AssetSelector({
   onAssetChange,
   onAssetTypeChange,
 }: AssetSelectorProps) {
+  const { t } = useTranslation('analysis')
   const [query, setQuery] = useState('')
 
   const filteredAssets = useMemo(() => {
@@ -36,15 +38,15 @@ export function AssetSelector({
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search asset (THYAO, BTC, USDTRY...)"
+        placeholder={t('assetSelector.searchPlaceholder')}
       />
       <select value={selectedAssetType} onChange={(event) => onAssetTypeChange(event.target.value as AssetType | 'all')}>
-        <option value="all">All Types</option>
-        <option value="stock">Stock</option>
-        <option value="crypto">Crypto</option>
-        <option value="fx">FX</option>
-        <option value="commodity">Commodity</option>
-        <option value="index">Index</option>
+        <option value="all">{t('assetSelector.types.all')}</option>
+        <option value="stock">{t('assetSelector.types.stock')}</option>
+        <option value="crypto">{t('assetSelector.types.crypto')}</option>
+        <option value="fx">{t('assetSelector.types.fx')}</option>
+        <option value="commodity">{t('assetSelector.types.commodity')}</option>
+        <option value="index">{t('assetSelector.types.index')}</option>
       </select>
       <select value={selectedAssetId} onChange={(event) => onAssetChange(event.target.value)}>
         {filteredAssets.map((asset) => (

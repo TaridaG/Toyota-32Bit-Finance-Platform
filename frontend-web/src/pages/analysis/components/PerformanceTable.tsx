@@ -1,4 +1,5 @@
 import type { AssetDefinition, TimeRange } from '../types'
+import { useTranslation } from 'react-i18next'
 
 type PerformanceRow = {
   assetId: string
@@ -15,22 +16,23 @@ type PerformanceTableProps = {
 }
 
 export function PerformanceTable({ titleRange, assets, rows }: PerformanceTableProps) {
+  const { t } = useTranslation('analysis')
   const byId = new Map(assets.map((asset) => [asset.id, asset]))
 
   return (
     <article className="card fi-performance-table">
       <div className="fi-panel-head">
-        <h3>Performance Table</h3>
-        <small>Synced with {titleRange}</small>
+        <h3>{t('performanceTableTitle')}</h3>
+        <small>{t('syncedWithRange', { range: titleRange })}</small>
       </div>
       <table>
         <thead>
           <tr>
-            <th>Asset</th>
-            <th>Daily %</th>
-            <th>Weekly %</th>
-            <th>Monthly %</th>
-            <th>Yearly %</th>
+            <th>{t('columns.asset')}</th>
+            <th>{t('columns.daily')}</th>
+            <th>{t('columns.weekly')}</th>
+            <th>{t('columns.monthly')}</th>
+            <th>{t('columns.yearly')}</th>
           </tr>
         </thead>
         <tbody>

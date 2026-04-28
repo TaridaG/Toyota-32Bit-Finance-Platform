@@ -1,26 +1,22 @@
 import type { NewsDataPoint } from '../types'
-
-const sentimentLabel = {
-  positive: 'Positive',
-  negative: 'Negative',
-  neutral: 'Neutral',
-} as const
+import { useTranslation } from 'react-i18next'
 
 export function NewsCard({ item, onOpen }: { item: NewsDataPoint; onOpen: (item: NewsDataPoint) => void }) {
+  const { t } = useTranslation('newsPage')
   const isPositive = item.reactionPercent1h >= 0
 
   return (
     <article className="fi-news-card" onClick={() => onOpen(item)}>
       <div className="fi-news-card-head">
         <strong>{item.title}</strong>
-        <span>{item.timeAgoMinutes} min ago</span>
+        <span>{item.timeAgoLabel ?? t('time.minutesAgo', { count: item.timeAgoMinutes })}</span>
       </div>
 
       <p>{item.summary}</p>
 
       <div className="fi-news-card-meta">
         <small>{item.source}</small>
-        <span className={`fi-sentiment fi-sentiment-${item.sentiment}`}>{sentimentLabel[item.sentiment]}</span>
+        <span className={`fi-sentiment fi-sentiment-${item.sentiment}`}>{t(`sentiment.${item.sentiment}`)}</span>
       </div>
 
       <div className="fi-news-tags">
@@ -36,10 +32,10 @@ export function NewsCard({ item, onOpen }: { item: NewsDataPoint; onOpen: (item:
       </div>
 
       <div className="fi-news-reaction">
-        <small>Market Reaction</small>
+        <small>{t('marketReaction')}</small>
         <strong className={isPositive ? 'fi-up' : 'fi-down'}>
           {isPositive ? '+' : ''}
-          {item.reactionPercent1h.toFixed(2)}% in last 1h
+          {t('reactionLast1h', { value: item.reactionPercent1h.toFixed(2) })}
         </strong>
       </div>
     </article>

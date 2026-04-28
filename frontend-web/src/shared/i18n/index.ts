@@ -2,20 +2,21 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { apiClient } from '../api/client'
 import { fetchLocaleFromBackend } from './localeApi'
-import { translations, type TranslationSchema } from './translations'
+import en from './locales/en.json'
+import tr from './locales/tr.json'
+import de from './locales/de.json'
 
-export const SUPPORTED_LOCALES = ['en', 'tr', 'de', 'fr'] as const
+export const SUPPORTED_LOCALES = ['en', 'tr', 'de'] as const
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
 
 export const LANGUAGE_LABELS: Record<SupportedLocale, string> = {
   en: 'English',
   tr: 'Türkçe',
   de: 'Deutsch',
-  fr: 'Français',
 }
 
 const LOCALE_STORAGE_KEY = 'finance.locale'
-const DEFAULT_LOCALE: SupportedLocale = 'en'
+export const DEFAULT_LOCALE: SupportedLocale = 'en'
 
 function isSupportedLocale(value: string): value is SupportedLocale {
   return (SUPPORTED_LOCALES as readonly string[]).includes(value)
@@ -80,13 +81,45 @@ export async function syncLocaleFromBackend() {
 const initialLocale = getStoredLocale() ?? DEFAULT_LOCALE
 setApiLocaleHeader(initialLocale)
 
-const resources = Object.fromEntries(
-  SUPPORTED_LOCALES.map((locale) => [locale, { translation: translations[locale] }]),
-) as Record<SupportedLocale, { translation: TranslationSchema }>
+const resources: Record<
+  SupportedLocale,
+  { common: object; landing: object; auth: object; markets: object; newsPage: object; analysis: object; portfolio: object }
+> = {
+  en: {
+    common: (en as { common?: object }).common ?? {},
+    landing: (en as { landing?: object }).landing ?? {},
+    auth: (en as { auth?: object }).auth ?? {},
+    markets: (en as { markets?: object }).markets ?? {},
+    newsPage: (en as { newsPage?: object }).newsPage ?? {},
+    analysis: (en as { analysis?: object }).analysis ?? {},
+    portfolio: (en as { portfolio?: object }).portfolio ?? {},
+  },
+  tr: {
+    common: (tr as { common?: object }).common ?? {},
+    landing: (tr as { landing?: object }).landing ?? {},
+    auth: (tr as { auth?: object }).auth ?? {},
+    markets: (tr as { markets?: object }).markets ?? {},
+    newsPage: (tr as { newsPage?: object }).newsPage ?? {},
+    analysis: (tr as { analysis?: object }).analysis ?? {},
+    portfolio: (tr as { portfolio?: object }).portfolio ?? {},
+  },
+  de: {
+    common: (de as { common?: object }).common ?? {},
+    landing: (de as { landing?: object }).landing ?? {},
+    auth: (de as { auth?: object }).auth ?? {},
+    markets: (de as { markets?: object }).markets ?? {},
+    newsPage: (de as { newsPage?: object }).newsPage ?? {},
+    analysis: (de as { analysis?: object }).analysis ?? {},
+    portfolio: (de as { portfolio?: object }).portfolio ?? {},
+  },
+}
 
 void i18n.use(initReactI18next).init({
   resources,
   lng: initialLocale,
+  defaultNS: 'common',
+  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'analysis', 'portfolio'],
+  fallbackNS: 'common',
   fallbackLng: DEFAULT_LOCALE,
   interpolation: {
     escapeValue: false,

@@ -10,28 +10,28 @@ const featuredInstruments = [
 ]
 
 const highlightKeyPairs = [
-  { titleKey: 'landing.highlights.realtimeTitle', descriptionKey: 'landing.highlights.realtimeDesc' },
-  { titleKey: 'landing.highlights.reportTitle', descriptionKey: 'landing.highlights.reportDesc' },
-  { titleKey: 'landing.highlights.riskTitle', descriptionKey: 'landing.highlights.riskDesc' },
+  { titleKey: 'highlights.realtimeTitle', descriptionKey: 'highlights.realtimeDesc' },
+  { titleKey: 'highlights.reportTitle', descriptionKey: 'highlights.reportDesc' },
+  { titleKey: 'highlights.riskTitle', descriptionKey: 'highlights.riskDesc' },
 ]
 
 export function LandingPage() {
-  const { t } = useTranslation()
-  useDocumentTitle(t('landing.titleDoc'))
+  const { t } = useTranslation('landing')
+  useDocumentTitle(t('titleDoc'))
 
   return (
     <div className="landing-page">
       <header className="landing-hero">
         <div>
-          <p className="landing-badge">{t('landing.kicker')}</p>
-          <h1>{t('landing.heroTitle')}</h1>
-          <p className="landing-subtitle">{t('landing.heroSubtitle')}</p>
+          <p className="landing-badge">{t('kicker')}</p>
+          <h1>{t('heroTitle')}</h1>
+          <p className="landing-subtitle">{t('heroSubtitle')}</p>
           <div className="landing-cta-group">
             <Link to="/login" className="landing-cta-primary">
-              {t('landing.ctaLogin')}
+              {t('ctaLogin')}
             </Link>
             <Link to="/register" className="landing-cta-secondary">
-              {t('landing.ctaRegister')}
+              {t('ctaRegister')}
             </Link>
           </div>
         </div>
@@ -39,8 +39,8 @@ export function LandingPage() {
 
       <section className="landing-section">
         <div className="landing-section-head">
-          <h2>{t('landing.instrumentsTitle')}</h2>
-          <p>{t('landing.instrumentsSubtitle')}</p>
+          <h2>{t('instrumentsTitle')}</h2>
+          <p>{t('instrumentsSubtitle')}</p>
         </div>
         <div className="instrument-grid">
           {featuredInstruments.map((instrument) => (
@@ -68,7 +68,7 @@ export function LandingPage() {
 
       <section className="landing-section">
         <div className="landing-section-head">
-          <h2>{t('landing.whyTitle')}</h2>
+          <h2>{t('whyTitle')}</h2>
         </div>
         <div className="highlight-grid">
           {highlightKeyPairs.map((item) => (

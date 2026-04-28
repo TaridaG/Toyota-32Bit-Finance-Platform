@@ -1,4 +1,5 @@
 import type { AssetDefinition } from '../types'
+import { useTranslation } from 'react-i18next'
 
 type ComparisonSelectorProps = {
   assets: AssetDefinition[]
@@ -7,9 +8,10 @@ type ComparisonSelectorProps = {
 }
 
 export function ComparisonSelector({ assets, selected, onToggle }: ComparisonSelectorProps) {
+  const { t } = useTranslation('analysis')
   return (
     <section className="fi-comparison-selector card">
-      <h3>Compare</h3>
+      <h3>{t('compareTitle')}</h3>
       <div>
         {assets.map((asset) => (
           <button

@@ -15,6 +15,7 @@ export type NewsDataPoint = {
   details: string
   source: string
   timeAgoMinutes: number
+  timeAgoLabel?: string
   category: Exclude<NewsCategory, 'all'>
   sentiment: SentimentType
   tags: string[]

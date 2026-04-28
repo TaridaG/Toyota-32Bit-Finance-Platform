@@ -3,7 +3,9 @@ import type { MouseEvent } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useTheme } from '../../theme/ThemeProvider'
 import { useTranslation } from 'react-i18next'
-import { LANGUAGE_LABELS, SUPPORTED_LOCALES, normalizeLocale, setAppLocale } from '../../i18n'
+import { LANGUAGE_LABELS, SUPPORTED_LOCALES, normalizeLocale } from '../../i18n'
+import { SUPPORTED_CURRENCIES } from '../../preferences/preferences'
+import { useAppPreferences } from '../../preferences/useAppPreferences'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -44,7 +46,14 @@ const mobileNavItems: PublicNavItem[] = [
   { labelKey: 'header.navPublic.news', to: '/news' },
 ]
 
-const currencyItems = ['USD-$', 'EUR-€', 'TRY-₺', 'GBP-£', 'JPY-¥', 'AED-د.إ']
+const CURRENCY_LABELS: Record<(typeof SUPPORTED_CURRENCIES)[number], string> = {
+  USD: 'USD - $',
+  EUR: 'EUR - €',
+  TRY: 'TRY - ₺',
+  GBP: 'GBP - £',
+  JPY: 'JPY - ¥',
+  AED: 'AED - د.إ',
+}
 
 function IconSearch() {
   return (
@@ -106,6 +115,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [localeOpen, setLocaleOpen] = useState(false)
   const { theme, setTheme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation()
+  const { currency, setLanguage, setCurrency } = useAppPreferences()
   const currentLocale = normalizeLocale(i18n.resolvedLanguage ?? i18n.language) ?? 'en'
 
   const closeMenu = () => setMenuOpen(false)
@@ -123,7 +133,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   }
 
   const handleSelectLocale = async (locale: (typeof SUPPORTED_LOCALES)[number]) => {
-    await setAppLocale(locale)
+    await setLanguage(locale)
     setLocaleOpen(false)
   }
 
@@ -263,9 +273,15 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                   <h4>{t('common.currency')}</h4>
                   <input type="text" placeholder={t('common.search')} />
                   <ul>
-                    {currencyItems.map((item) => (
+                    {SUPPORTED_CURRENCIES.map((item) => (
                       <li key={item}>
-                        <button type="button">{item}</button>
+                        <button
+                          type="button"
+                          className={currency === item ? 'portal-locale-item-active' : undefined}
+                          onClick={() => setCurrency(item)}
+                        >
+                          {CURRENCY_LABELS[item]}
+                        </button>
                       </li>
                     ))}
                   </ul>

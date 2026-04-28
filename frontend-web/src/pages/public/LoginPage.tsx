@@ -6,7 +6,7 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { persistAuthToken } from '../../shared/auth/session'
 
 export function LoginPage() {
-  const { t } = useTranslation()
+  const { t } = useTranslation('auth')
   useDocumentTitle(t('login.titleDoc'))
 
   const navigate = useNavigate()
