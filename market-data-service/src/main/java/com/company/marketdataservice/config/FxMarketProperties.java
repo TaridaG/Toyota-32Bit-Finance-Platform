@@ -14,5 +14,9 @@ public class FxMarketProperties {
 
     private List<String> providerCurrencies = new ArrayList<>(List.of("USD", "EUR"));
 
+    private List<String> providerOrder = new ArrayList<>(List.of("TCMB", "EXCHANGE_API"));
+
     private String tcmbUrl = "https://www.tcmb.gov.tr/kurlar/today.xml";
+
+    private String exchangeRateUrl = "https://open.er-api.com/v6/latest/TRY";
 }

@@ -23,12 +23,27 @@ public class InstrumentMappingService {
         if (normalized.isEmpty() || "COMPOSITE".equalsIgnoreCase(normalized)) {
             return resolveComposite(symbol);
         }
-        return mappingRepository
+        if ("COMPOSITE_FX".equalsIgnoreCase(normalized)) {
+            return resolveComposite(symbol);
+        }
+        Optional<Long> resolved = mappingRepository
                 .findFirstByProviderIgnoreCaseAndProviderSymbolAndActiveTrueOrderByPriorityAsc(
                         normalized,
                         symbol
                 )
                 .flatMap(this::toActiveCatalogInstrumentId);
+        if (resolved.isPresent()) {
+            return resolved;
+        }
+        if ("EXCHANGE_RATE_API".equalsIgnoreCase(normalized) || "EXCHANGE_API".equalsIgnoreCase(normalized)) {
+            return mappingRepository
+                    .findFirstByProviderIgnoreCaseAndProviderSymbolAndActiveTrueOrderByPriorityAsc(
+                            "TCMB",
+                            symbol
+                    )
+                    .flatMap(this::toActiveCatalogInstrumentId);
+        }
+        return Optional.empty();
     }
 
     public List<ProviderInstrumentMapping> getMappingsForInstrument(Long instrumentId) {

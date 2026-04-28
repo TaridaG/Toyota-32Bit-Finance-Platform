@@ -2,7 +2,10 @@ package com.company.marketdataservice.provider;
 
 import com.company.marketdataservice.config.ResilienceProperties;
 import com.company.marketdataservice.metrics.PriceProviderMetrics;
+import com.company.marketdataservice.provider.binance.BinancePriceProvider;
+import com.company.marketdataservice.provider.coingecko.CoinGeckoPriceProvider;
 import com.company.marketdataservice.provider.health.ProviderHealthTracker;
+import com.company.marketdataservice.provider.investing.InvestingStockPriceProvider;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.RetryRegistry;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +13,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -36,6 +40,7 @@ public class CompositePriceProvider implements PriceProvider {
 
         this.resilientProviders = providers.stream()
                 .filter(provider -> !(provider instanceof CompositePriceProvider))
+                .sorted(Comparator.comparingInt(CompositePriceProvider::providerChainOrder))
                 .map(provider -> new ResilientPriceProvider(
                         provider,
                         circuitBreakerRegistry,
@@ -44,6 +49,19 @@ public class CompositePriceProvider implements PriceProvider {
                         resilienceExecutorService
                 ))
                 .toList();
+    }
+
+    private static int providerChainOrder(PriceProvider p) {
+        if (p instanceof BinancePriceProvider) {
+            return 0;
+        }
+        if (p instanceof CoinGeckoPriceProvider) {
+            return 1;
+        }
+        if (p instanceof InvestingStockPriceProvider) {
+            return 2;
+        }
+        return 50;
     }
 
     @Override
