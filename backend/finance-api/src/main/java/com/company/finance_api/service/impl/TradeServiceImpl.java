@@ -95,7 +95,7 @@ public class TradeServiceImpl implements TradeService {
         BigDecimal netQuantity = transactionRepository
                 .findByUserAndInstrument(user, instrument)
                 .stream()
-                .map(tx -> tx.getType().name().equals("BUY")
+                .map(tx -> tx.getType() == TransactionType.BUY
                         ? tx.getQuantity()
                         : tx.getQuantity().negate())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
