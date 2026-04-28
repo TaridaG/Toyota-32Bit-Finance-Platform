@@ -59,16 +59,13 @@ export const candleSeriesByAsset: Record<string, CandlePoint[]> = {
 }
 
 function barsForRange(range: TimeRange): number {
-  if (range === '1D') return 5
-  if (range === '1W') return 7
-  if (range === '1M') return 22
-  if (range === '3M') return 66
-  if (range === '1Y') return 252
-  return Infinity
+  if (range === '1h') return 60
+  if (range === '6h') return 6 * 60
+  if (range === '24h') return 24 * 60
+  return 7 * 24 * 60
 }
 
 export function getWindowedSeries(series: CandlePoint[], range: TimeRange) {
-  if (range === 'ALL') return series
   const n = barsForRange(range)
   return series.slice(-n)
 }

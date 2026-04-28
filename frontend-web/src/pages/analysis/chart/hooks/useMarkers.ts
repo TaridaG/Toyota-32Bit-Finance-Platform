@@ -1,43 +1,30 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { UTCTimestamp } from 'lightweight-charts'
 import { createSeriesMarkers, type ISeriesApi, type ISeriesMarkersPluginApi, type SeriesMarker, type Time } from 'lightweight-charts'
-import type { AssetNewsItem, ChartTradeEvent } from '../../types'
+import type { ChartTradeEvent } from '../../types'
 
 const SELECTION_MARKER_ID = '__bar_selection__'
 
 function buildMarkers(
-  news: AssetNewsItem[],
+  newsMarkers: SeriesMarker<Time>[],
   trades: ChartTradeEvent[],
-  show: boolean,
   selectedBarTime: UTCTimestamp | null,
 ): SeriesMarker<Time>[] {
   const eventMarkers: SeriesMarker<Time>[] = []
 
-  if (show) {
-    const newsMarkers: SeriesMarker<Time>[] = news.map((item) => ({
-      time: item.createdAt,
-      position: 'aboveBar',
-      color: '#3b82f6',
-      shape: 'circle',
+  const tradeMarkers: SeriesMarker<Time>[] = trades.map((ev) => {
+    const up = ev.side === 'buy'
+    return {
+      time: ev.time,
+      position: up ? 'belowBar' : 'aboveBar',
+      color: up ? '#22c55e' : '#ef4444',
+      shape: up ? 'arrowUp' : 'arrowDown',
       size: 1,
-      id: item.id,
-      text: item.title,
-    }))
-
-    const tradeMarkers: SeriesMarker<Time>[] = trades.map((ev) => {
-      const up = ev.side === 'buy'
-      return {
-        time: ev.time,
-        position: up ? 'belowBar' : 'aboveBar',
-        color: up ? '#22c55e' : '#ef4444',
-        shape: up ? 'arrowUp' : 'arrowDown',
-        size: 1,
-        id: ev.id,
-        text: ev.title,
-      }
-    })
-    eventMarkers.push(...newsMarkers, ...tradeMarkers)
-  }
+      id: ev.id,
+      text: ev.title,
+    }
+  })
+  eventMarkers.push(...newsMarkers, ...tradeMarkers)
 
   if (selectedBarTime != null) {
     eventMarkers.push({
@@ -57,9 +44,8 @@ function buildMarkers(
 export function useChartMarkers(
   candleSeries: ISeriesApi<'Candlestick'> | null,
   input: {
-    news: AssetNewsItem[]
+    newsMarkers: SeriesMarker<Time>[]
     trades: ChartTradeEvent[]
-    visible: boolean
     selectedBarTime: UTCTimestamp | null
   },
 ) {
@@ -79,7 +65,7 @@ export function useChartMarkers(
     const plugin = pluginRef.current
     if (!plugin) return
     plugin.setMarkers(
-      buildMarkers(input.news, input.trades, input.visible, input.selectedBarTime),
+      buildMarkers(input.newsMarkers, input.trades, input.selectedBarTime),
     )
-  }, [candleSeries, input.news, input.trades, input.visible, input.selectedBarTime])
+  }, [candleSeries, input.newsMarkers, input.trades, input.selectedBarTime])
 }

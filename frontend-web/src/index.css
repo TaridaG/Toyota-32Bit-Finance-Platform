@@ -844,6 +844,15 @@ button:disabled {
   font-size: 0.75rem;
 }
 
+.markets-size-select {
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  padding: 0.28rem 0.45rem;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
 .markets-filter-active {
   border-color: #2563eb;
   background: #dbeafe;
@@ -988,6 +997,88 @@ button:disabled {
   text-align: center !important;
   color: var(--color-text-muted);
   padding: 1.4rem 0.55rem !important;
+}
+
+.markets-skeleton-row {
+  width: 100%;
+  height: 16px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.12), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.12));
+  background-size: 180% 100%;
+  animation: markets-loading 1.2s ease-in-out infinite;
+}
+
+.markets-error-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.markets-pagination {
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  color: var(--color-text-soft);
+  font-size: 0.78rem;
+}
+
+.markets-insights-column {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.markets-insights-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.markets-insights-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.markets-insights-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.markets-insights-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+}
+
+.markets-insights-item div {
+  display: grid;
+}
+
+.markets-insights-item span {
+  color: var(--color-text-soft);
+  font-size: 0.72rem;
+}
+
+.markets-insights-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+@keyframes markets-loading {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .markets-last-updated {
@@ -2371,6 +2462,50 @@ button:disabled {
   color: #64748b;
   font-weight: 600;
   font-size: 0.68rem;
+}
+
+.fi-crosshair-tooltip-section {
+  display: grid;
+  gap: 0.2rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.fi-crosshair-tooltip-section strong {
+  color: #94a3b8;
+  font-size: 0.64rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.fi-crosshair-tooltip-rsi-hint {
+  color: #94a3b8;
+  font-size: 0.64rem;
+}
+
+.fi-crosshair-direction {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.fi-crosshair-direction.up {
+  color: #22c55e;
+}
+
+.fi-crosshair-direction.down {
+  color: #ef4444;
+}
+
+.fi-chart-empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.55);
+  color: #cbd5e1;
+  pointer-events: none;
 }
 
 .fi-hover-box {

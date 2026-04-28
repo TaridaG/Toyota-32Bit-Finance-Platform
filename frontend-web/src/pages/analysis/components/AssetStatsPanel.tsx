@@ -1,4 +1,5 @@
 import type { ChartReadout } from '../chart/readout'
+import { useTranslation } from 'react-i18next'
 
 type AssetStatsPanelProps = {
   currentPrice: number
@@ -25,14 +26,15 @@ export function AssetStatsPanel({
   marketCap,
   chartReadout,
 }: AssetStatsPanelProps) {
+  const { t } = useTranslation('analysis')
   return (
     <article className="card fi-asset-stats">
-      <h3>Asset Details</h3>
+      <h3>{t('assetDetailsTitle')}</h3>
       <p className="fi-asset-price">{currentPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
       {chartReadout ? (
         <div className="fi-chart-readout">
           <div className="fi-chart-readout-label">
-            {chartReadout.source === 'hover' ? 'Crosshair (live)' : 'Pinned bar'}
+            {chartReadout.source === 'hover' ? t('readout.crosshair') : t('readout.pinnedBar')}
           </div>
           <div className="fi-chart-readout-time">{chartReadout.timeLabel}</div>
           <dl className="fi-chart-readout-ohlc">
@@ -57,25 +59,25 @@ export function AssetStatsPanel({
       ) : null}
       <ul>
         <li>
-          <span>Daily</span>
+          <span>{t('periods.daily')}</span>
           <strong className={daily >= 0 ? 'fi-up' : 'fi-down'}>{daily.toFixed(2)}%</strong>
         </li>
         <li>
-          <span>Weekly</span>
+          <span>{t('periods.weekly')}</span>
           <strong className={weekly >= 0 ? 'fi-up' : 'fi-down'}>{weekly.toFixed(2)}%</strong>
         </li>
         <li>
-          <span>Monthly</span>
+          <span>{t('periods.monthly')}</span>
           <strong className={monthly >= 0 ? 'fi-up' : 'fi-down'}>{monthly.toFixed(2)}%</strong>
         </li>
         <li>
-          <span>Yearly</span>
+          <span>{t('periods.yearly')}</span>
           <strong className={yearly >= 0 ? 'fi-up' : 'fi-down'}>{yearly.toFixed(2)}%</strong>
         </li>
       </ul>
       <div className="fi-asset-meta">
-        <small>Volume: {volume.toLocaleString()}</small>
-        {marketCap ? <small>Market Cap: {marketCap.toLocaleString()}</small> : null}
+        <small>{t('volumeLabel')}: {volume.toLocaleString()}</small>
+        {marketCap ? <small>{t('marketCapLabel')}: {marketCap.toLocaleString()}</small> : null}
       </div>
     </article>
   )

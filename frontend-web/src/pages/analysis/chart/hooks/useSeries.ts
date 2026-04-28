@@ -28,6 +28,9 @@ export function useCandleVolumeSeries(chart: IChartApi | null): CandleVolumeSeri
       wickUpColor: '#22c55e',
       wickDownColor: '#ef4444',
       borderVisible: false,
+      priceLineVisible: true,
+      lastValueVisible: true,
+      priceLineColor: '#38bdf8',
     })
 
     const volume = chart.addSeries(HistogramSeries, {
@@ -59,6 +62,7 @@ export function useCandleVolumeData(
 ) {
   const prevFitKeyRef = useRef<string | null>(null)
   const prevChartRef = useRef<IChartApi | null>(null)
+  const prevCandlesRef = useRef<CandlePoint[]>([])
 
   useEffect(() => {
     if (chart !== prevChartRef.current) {
@@ -67,9 +71,26 @@ export function useCandleVolumeData(
     }
 
     if (!chart || !series) return
+    const prev = prevCandlesRef.current
+    const canIncremental =
+      prev.length > 0 &&
+      candles.length >= prev.length &&
+      prev.every((point, index) => candles[index]?.time === point.time)
 
-    series.candle.setData(candles.map(toCandlestickData))
-    series.volume.setData(candles.map(toVolumeHistogramData))
+    if (canIncremental) {
+      for (let i = prev.length - 1; i < candles.length; i += 1) {
+        if (i < 0) continue
+        series.candle.update(toCandlestickData(candles[i]))
+        series.volume.update(toVolumeHistogramData(candles[i]))
+      }
+      if (candles.length > prev.length) {
+        chart.timeScale().scrollToRealTime()
+      }
+    } else {
+      series.candle.setData(candles.map(toCandlestickData))
+      series.volume.setData(candles.map(toVolumeHistogramData))
+    }
+    prevCandlesRef.current = candles
 
     const shouldFit = prevFitKeyRef.current === null || prevFitKeyRef.current !== fitContentKey
     prevFitKeyRef.current = fitContentKey
