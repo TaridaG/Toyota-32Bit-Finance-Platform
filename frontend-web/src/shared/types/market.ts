@@ -4,7 +4,14 @@ export type MarketOverviewItem = {
   symbol: string
   name: string
   price: number
+  timestamp?: string | null
+  freshness?: 'LIVE' | 'STALE'
   change24h: number | null
+  change1D?: number | null
+  change1M?: number | null
+  change3M?: number | null
+  change6M?: number | null
+  change1Y?: number | null
   high24h: number | null
   low24h: number | null
   category: string | null

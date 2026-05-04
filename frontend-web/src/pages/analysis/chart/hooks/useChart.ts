@@ -47,15 +47,22 @@ export function useChart() {
 
     chartRef.current = instance
     setChart(instance)
+    let disposed = false
 
     const ro = new ResizeObserver(() => {
+      if (disposed) return
       const w = outer.clientWidth
       const h = Math.max(outer.clientHeight || 460, 320)
-      instance.applyOptions({ width: w, height: h })
+      try {
+        instance.applyOptions({ width: w, height: h })
+      } catch {
+        // Ignore lightweight-charts disposal race during unmount.
+      }
     })
     ro.observe(outer)
 
     return () => {
+      disposed = true
       ro.disconnect()
       chartRef.current = null
       instance.remove()

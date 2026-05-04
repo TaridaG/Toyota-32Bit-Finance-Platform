@@ -1,16 +1,10 @@
 import type { UTCTimestamp } from 'lightweight-charts'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useTranslation } from 'react-i18next'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
-import {
-  assets,
-  candleSeriesByAsset,
-  getPerformancePercent,
-  tradeEventsByAsset,
-} from './mockData'
-import type { AssetNewsItem, DrawTool, DrawingItem, TimeRange } from './types'
+import type { AssetDefinition, AssetNewsItem, AssetType, CandlePoint, DrawTool, DrawingItem, TimeRange } from './types'
 import { AssetSelector } from './components/AssetSelector'
 import { ComparisonSelector } from './components/ComparisonSelector'
 import { AnalysisChart } from './components/AnalysisChart'
@@ -19,11 +13,42 @@ import { candleToReadout } from './chart/readout'
 import { AssetStatsPanel } from './components/AssetStatsPanel'
 import { NewsPanel } from './components/NewsPanel'
 import { PerformanceTable } from './components/PerformanceTable'
+import { fetchCandles } from '../../features/analysis/api/analysisService'
 import { useCandles } from '../../features/analysis/hooks/useCandles'
 import { useIndicators } from '../../features/analysis/hooks/useIndicators'
+import { useMarkets } from '../../features/markets/hooks/useMarkets'
 import { useNews } from '../../features/news/hooks/useNews'
+import type { MarketOverviewItem } from '../../shared/types/market'
 
 const comparePalette = ['#f59e0b', '#8b5cf6', '#14b8a6', '#f97316', '#22c55e']
+const rangeButtons: TimeRange[] = ['1h', '6h', '24h', '7d', '30d', '90d', '1y', '5y']
+
+function normalizeSymbol(symbol: string): string {
+  return symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+}
+
+function mapCategoryToAssetType(category: string | null | undefined): AssetType {
+  switch ((category ?? '').toUpperCase()) {
+    case 'CRYPTO':
+      return 'crypto'
+    case 'FX':
+      return 'fx'
+    case 'FUND':
+      return 'commodity'
+    default:
+      return 'stock'
+  }
+}
+
+function mapMarketRowToAsset(row: MarketOverviewItem): AssetDefinition {
+  const symbol = row.symbol.toUpperCase()
+  return {
+    id: symbol.toLowerCase(),
+    symbol,
+    name: row.name || symbol,
+    type: mapCategoryToAssetType(row.category),
+  }
+}
 
 export function AnalysisPage() {
   const { t } = useTranslation('analysis')
@@ -38,18 +63,47 @@ export function AnalysisPage() {
   const [showMA50, setShowMA50] = useState(true)
   const [showRsi, setShowRsi] = useState(true)
   const [showCompareOnChart, setShowCompareOnChart] = useState(true)
-  const [comparisonAssets, setComparisonAssets] = useState<string[]>(['bist', 'gold', 'btc'])
+  const [comparisonAssets, setComparisonAssets] = useState<string[]>([])
   const [drawTool, setDrawTool] = useState<DrawTool>('none')
   const [drawings, setDrawings] = useState<DrawingItem[]>([])
   const [selectedNews, setSelectedNews] = useState<AssetNewsItem | null>(null)
   const [newsSort, setNewsSort] = useState<'time' | 'impact'>('time')
   const [liveHoverOhlc, setLiveHoverOhlc] = useState<OhlcTooltipState>(null)
   const [selectedBarTime, setSelectedBarTime] = useState<UTCTimestamp | null>(null)
+  const [comparisonSeriesByAsset, setComparisonSeriesByAsset] = useState<Record<string, CandlePoint[]>>({})
+
+  const { rows: marketRows } = useMarkets({
+    page: 0,
+    size: 200,
+    category: 'all',
+    searchTerm: '',
+    sort: 'change24h,desc',
+  })
+
+  const assets = useMemo<AssetDefinition[]>(
+    () => marketRows.map(mapMarketRowToAsset),
+    [marketRows],
+  )
+  const assetsById = useMemo(() => new Map(assets.map((asset) => [asset.id, asset])), [assets])
+  const marketBySymbol = useMemo(
+    () => new Map(marketRows.map((row) => [row.symbol.toUpperCase(), row])),
+    [marketRows],
+  )
 
   const selectedSymbol = searchParams.get('symbol')?.toUpperCase()
-  const selectedAsset = assets.find((asset) => asset.symbol.replace('/', '').toUpperCase() === selectedSymbol) ?? assets[0]
+  const selectedAsset = useMemo(() => {
+    if (assets.length === 0) return null
+    if (selectedSymbol) {
+      const found = assets.find((asset) => normalizeSymbol(asset.symbol) === normalizeSymbol(selectedSymbol))
+      if (found) {
+        return found
+      }
+    }
+    return assets[0]
+  }, [assets, selectedSymbol])
+
   const { candles: selectedWindowSeries, loading: candlesLoading, error: candlesError, refetch: refetchCandles } = useCandles(
-    selectedAsset.symbol,
+    selectedAsset?.symbol ?? '',
     timeRange,
     currency,
   )
@@ -59,6 +113,56 @@ export function AnalysisPage() {
     error: indicatorsError,
   } = useIndicators(selectedWindowSeries)
   const { data: newsFeed } = useNews(0, 50)
+
+  useEffect(() => {
+    if (assets.length === 0) {
+      return
+    }
+    setComparisonAssets((prev) => {
+      if (prev.length > 0) {
+        return prev
+      }
+      return assets.slice(0, 3).map((asset) => asset.id)
+    })
+  }, [assets])
+
+  useEffect(() => {
+    let cancelled = false
+    const targets = comparisonAssets
+      .filter((assetId) => selectedAsset != null && assetId !== selectedAsset.id)
+      .slice(0, 4)
+      .map((assetId) => assetsById.get(assetId))
+      .filter((asset): asset is AssetDefinition => asset != null)
+
+    if (targets.length === 0) {
+      setComparisonSeriesByAsset({})
+      return
+    }
+
+    Promise.all(
+      targets.map(async (asset) => ({
+        id: asset.id,
+        candles: await fetchCandles(asset.symbol, timeRange),
+      })),
+    )
+      .then((rows) => {
+        if (cancelled) return
+        const next: Record<string, CandlePoint[]> = {}
+        rows.forEach((row) => {
+          next[row.id] = row.candles
+        })
+        setComparisonSeriesByAsset(next)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setComparisonSeriesByAsset({})
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [assetsById, comparisonAssets, selectedAsset, timeRange])
 
   const pinnedBar = useMemo(() => {
     if (selectedBarTime == null) return null
@@ -75,37 +179,32 @@ export function AnalysisPage() {
     return null
   }, [liveHoverOhlc, pinnedBar])
 
-  const windowedTradeEvents = useMemo(() => {
-    const all = tradeEventsByAsset[selectedAsset.id] ?? []
-    if (selectedWindowSeries.length === 0) return all
-    const from = selectedWindowSeries[0].time
-    const to = selectedWindowSeries[selectedWindowSeries.length - 1].time
-    return all.filter((e) => e.time >= from && e.time <= to)
-  }, [selectedAsset.id, selectedWindowSeries])
+  const windowedTradeEvents = useMemo(() => [], [])
 
   const stats = useMemo(() => {
     const current = selectedWindowSeries[selectedWindowSeries.length - 1]
+    const overview = selectedAsset ? marketBySymbol.get(selectedAsset.symbol.toUpperCase()) : null
     const daily = getPerformancePercent(sliceLast(selectedWindowSeries, 24))
     const weekly = getPerformancePercent(sliceLast(selectedWindowSeries, 7 * 24))
     const monthly = getPerformancePercent(sliceLast(selectedWindowSeries, 30 * 24))
     const yearly = getPerformancePercent(sliceLast(selectedWindowSeries, 365 * 24))
     return {
-      currentPrice: current?.close ?? 0,
+      currentPrice: current?.close ?? overview?.price ?? 0,
       volume: current?.volume ?? 0,
-      daily,
+      daily: overview?.change1D ?? daily,
       weekly,
-      monthly,
-      yearly,
+      monthly: overview?.change1M ?? monthly,
+      yearly: overview?.change1Y ?? yearly,
     }
-  }, [selectedWindowSeries])
+  }, [marketBySymbol, selectedAsset, selectedWindowSeries])
 
   const relatedNews = useMemo(() => {
-    const target = selectedAsset.symbol.replace('/', '').toUpperCase()
+    const target = selectedAsset ? normalizeSymbol(selectedAsset.symbol) : ''
     const mapped = newsFeed
-      .filter((item) => (item.relatedSymbols ?? []).map((s) => s.replace('/', '').toUpperCase()).includes(target))
+      .filter((item) => (item.relatedSymbols ?? []).map((s) => normalizeSymbol(s)).includes(target))
       .map<AssetNewsItem>((item) => ({
         id: String(item.id),
-        assetId: selectedAsset.id,
+        assetId: selectedAsset?.id ?? 'unknown',
         title: item.title,
         summary: item.summary ?? '',
         source: item.sourceName,
@@ -119,15 +218,16 @@ export function AnalysisPage() {
       return [...mapped].sort((a, b) => Math.abs(b.reactionPercent1h) - Math.abs(a.reactionPercent1h))
     }
     return [...mapped].sort((a, b) => b.createdAt - a.createdAt)
-  }, [newsFeed, newsSort, selectedAsset.id, selectedAsset.symbol])
+  }, [newsFeed, newsSort, selectedAsset])
 
   const comparisonLines = useMemo(() => {
-    if (!showCompareOnChart) return []
+    if (!showCompareOnChart || selectedAsset == null) return []
+    const compareTail = getComparisonTailCount(timeRange)
     return comparisonAssets
       .filter((assetId) => assetId !== selectedAsset.id)
       .slice(0, 4)
       .map((assetId, index) => {
-        const windowed = sliceLast(candleSeriesByAsset[assetId], 96)
+        const windowed = sliceLast(comparisonSeriesByAsset[assetId] ?? [], compareTail)
         const base = windowed[0]?.close || 1
         return {
           id: assetId,
@@ -138,21 +238,22 @@ export function AnalysisPage() {
           })),
         }
       })
-  }, [comparisonAssets, selectedAsset.id, showCompareOnChart])
+      .filter((line) => line.data.length > 0)
+  }, [comparisonAssets, comparisonSeriesByAsset, selectedAsset, showCompareOnChart, timeRange])
 
   const tableRows = useMemo(
     () =>
-      [selectedAsset.id, 'gold', 'usdtry', 'bist', 'btc'].map((assetId) => {
-        const series = candleSeriesByAsset[assetId]
+      assets.slice(0, 8).map((asset) => {
+        const summary = marketBySymbol.get(asset.symbol.toUpperCase())
         return {
-          assetId,
-          daily: getPerformancePercent(sliceLast(series, 24)),
-          weekly: getPerformancePercent(sliceLast(series, 7 * 24)),
-          monthly: getPerformancePercent(sliceLast(series, 30 * 24)),
-          yearly: getPerformancePercent(sliceLast(series, 365 * 24)),
+          assetId: asset.id,
+          daily: summary?.change1D ?? 0,
+          weekly: summary?.change1M != null ? summary.change1M / 4 : 0,
+          monthly: summary?.change1M ?? 0,
+          yearly: summary?.change1Y ?? 0,
         }
       }),
-    [selectedAsset.id],
+    [assets, marketBySymbol],
   )
 
   const toggleComparison = (assetId: string) => {
@@ -161,6 +262,7 @@ export function AnalysisPage() {
 
   const handleAssetChange = (id: string) => {
     setSelectedBarTime(null)
+    setSelectedNews(null)
     const asset = assets.find((item) => item.id === id)
     if (asset) {
       const next = new URLSearchParams(searchParams)
@@ -171,6 +273,7 @@ export function AnalysisPage() {
 
   const handleRangeChange = (range: TimeRange) => {
     setSelectedBarTime(null)
+    setSelectedNews(null)
     setTimeRange(range)
   }
 
@@ -179,7 +282,7 @@ export function AnalysisPage() {
       <header className="fi-analysis-top-grid">
         <AssetSelector
           assets={assets}
-          selectedAssetId={selectedAsset.id}
+          selectedAssetId={selectedAsset?.id ?? ''}
           selectedAssetType={selectedAssetType}
           onAssetChange={handleAssetChange}
           onAssetTypeChange={setSelectedAssetType}
@@ -187,7 +290,7 @@ export function AnalysisPage() {
         <ComparisonSelector assets={assets} selected={comparisonAssets} onToggle={toggleComparison} />
         <section className="card fi-analysis-controls">
           <div>
-            {(['1h', '6h', '24h', '7d'] as const).map((range) => (
+            {rangeButtons.map((range) => (
               <button
                 key={range}
                 type="button"
@@ -247,7 +350,7 @@ export function AnalysisPage() {
       <div className="fi-analysis-main-grid">
         <AnalysisChart
           candles={selectedWindowSeries}
-          fitContentKey={`${selectedAsset.id}-${timeRange}`}
+          fitContentKey={`${selectedAsset?.id ?? 'none'}-${timeRange}`}
           comparisonLines={comparisonLines}
           showCompare={showCompareOnChart}
           showMA20={showMA20 && !indicatorsError}
@@ -268,7 +371,7 @@ export function AnalysisPage() {
           onAddDrawing={(item) => setDrawings((prev) => [...prev, item])}
           locale={language}
           currency={currency}
-          assetType={selectedAsset.type}
+          assetType={selectedAsset?.type ?? 'stock'}
         />
         {candlesLoading && selectedWindowSeries.length === 0 ? (
           <div className="markets-skeleton-row" aria-label={t('common:loading')} />
@@ -290,6 +393,7 @@ export function AnalysisPage() {
         {!candlesLoading && !candlesError && indicatorsLoading ? <p className="fi-empty">{t('analysis:indicatorsLoading')}</p> : null}
         {!candlesLoading && !candlesError && indicatorsError ? <p className="fi-empty">{t('analysis:indicatorsDisabled')}</p> : null}
         {!candlesLoading && !candlesError && selectedWindowSeries.length === 0 ? <p className="fi-empty">{t('common:noData')}</p> : null}
+        {assets.length === 0 ? <p className="fi-empty">{t('common:noData')}</p> : null}
 
         <div className="fi-analysis-right-col">
           <AssetStatsPanel
@@ -299,7 +403,7 @@ export function AnalysisPage() {
             monthly={stats.monthly}
             yearly={stats.yearly}
             volume={stats.volume}
-            marketCap={selectedAsset.marketCap}
+            marketCap={selectedAsset?.marketCap}
             chartReadout={chartReadout}
           />
           <section className="card fi-news-sorter">
@@ -325,4 +429,34 @@ function sliceLast<T>(series: T[], count: number): T[] {
     return series
   }
   return series.slice(series.length - count)
+}
+
+function getPerformancePercent(series: { close: number }[]) {
+  if (series.length < 2) return 0
+  const first = series[0].close
+  const last = series[series.length - 1].close
+  return ((last - first) / first) * 100
+}
+
+function getComparisonTailCount(range: TimeRange): number {
+  switch (range) {
+    case '1h':
+      return 120
+    case '6h':
+      return 300
+    case '24h':
+      return 400
+    case '7d':
+      return 450
+    case '30d':
+      return 700
+    case '90d':
+      return 1000
+    case '1y':
+      return 1300
+    case '5y':
+      return 2500
+    default:
+      return 500
+  }
 }
