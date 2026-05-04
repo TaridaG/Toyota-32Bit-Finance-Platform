@@ -22,7 +22,6 @@ public class WebSecurityConfig {
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> {})
                 .headers(h -> h
                         .contentTypeOptions(c -> {})
                         .frameOptions(f -> f.mode(XFrameOptionsServerHttpHeadersWriter.Mode.DENY))
@@ -34,12 +33,16 @@ public class WebSecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/", "/health").permitAll()
                         .pathMatchers("/actuator/health", "/actuator/prometheus").permitAll()
-                        .pathMatchers("/market/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/market/**", "/market/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/news/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/instruments/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
                         .pathMatchers("/api/news/admin/**").hasRole("ADMIN")
-                        .pathMatchers("/api/news/**").permitAll()
+                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/api/users/me/**", "/api/profile/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers("/api/portfolio/**", "/api/accounts/**", "/api/balances/**", "/api/transactions/**", "/api/trades/**", "/api/orders/**").hasAnyRole("USER", "ADMIN")
                         .pathMatchers("/public/**").permitAll()
                         .pathMatchers("/fallback/**").permitAll()
-                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/**").hasAnyRole("USER", "ADMIN")
                         .pathMatchers("/actuator/**").authenticated()
                         .anyExchange().authenticated()
