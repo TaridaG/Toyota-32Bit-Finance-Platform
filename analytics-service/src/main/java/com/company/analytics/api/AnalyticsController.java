@@ -19,10 +19,10 @@ public class AnalyticsController {
 
     @GetMapping("/instruments/{symbol}/candles")
     public ApiResponse<List<CandleResponse>> getCandles(
-            @PathVariable String symbol,
-            @RequestParam(required = false) CandleInterval interval,
-            @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to
+            @PathVariable("symbol") String symbol,
+            @RequestParam(name = "interval", required = false) CandleInterval interval,
+            @RequestParam(name = "from", required = false) LocalDate from,
+            @RequestParam(name = "to", required = false) LocalDate to
     ) {
         if (interval != null) {
             return ApiResponse.success(
@@ -35,7 +35,7 @@ public class AnalyticsController {
     }
     @GetMapping("/instruments/{symbol}/moving-average")
     public ApiResponse<List<MovingAverageResponse>> getMovingAverage(
-            @PathVariable String symbol
+            @PathVariable("symbol") String symbol
     ){
         return ApiResponse.success(
                 analyticsQueryService.getMovingAverage(symbol)
@@ -43,7 +43,7 @@ public class AnalyticsController {
     }
     @GetMapping("/instruments/{symbol}/rsi")
     public ApiResponse<List<RSIResponse>> getRSI(
-            @PathVariable String symbol
+            @PathVariable("symbol") String symbol
     ){
         return ApiResponse.success(
                 analyticsQueryService.getRSI(symbol)
@@ -51,7 +51,7 @@ public class AnalyticsController {
     }
     @GetMapping("/instruments/{symbol}/trend")
     public ApiResponse<List<TrendMetricResponse>> getTrendMetrics(
-            @PathVariable String symbol
+            @PathVariable("symbol") String symbol
     ) {
         return ApiResponse.success(
                 analyticsQueryService.getTrendMetrics(symbol)
