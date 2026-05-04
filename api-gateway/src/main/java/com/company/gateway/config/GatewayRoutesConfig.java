@@ -38,7 +38,15 @@ public class GatewayRoutesConfig {
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
 
-                .route("market-data-service", r -> r.path("/market/**")
+                .route("market-data-service-api", r -> r.path("/api/market/**")
+                        .filters(f -> f
+                                .circuitBreaker(cb -> cb
+                                        .setName("marketCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/market"))
+                        )
+                        .uri(marketBaseUri))
+
+                .route("market-data-service-legacy", r -> r.path("/market/**")
                         .filters(f -> f
                                 .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}")
                                 .circuitBreaker(cb -> cb

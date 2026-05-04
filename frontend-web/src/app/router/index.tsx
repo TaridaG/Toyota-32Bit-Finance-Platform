@@ -48,7 +48,11 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: 'my-portfolio',
-        element: <MyPortfolioPage />,
+        element: (
+          <RequireAuth>
+            <MyPortfolioPage />
+          </RequireAuth>
+        ),
       },
       {
         path: 'news',

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
@@ -12,6 +12,46 @@ type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
 const DEFAULT_SIZE = 20
 const DEFAULT_CATEGORY = 'all'
+const PRICE_FLASH_MS = 500
+const PRICE_ANIMATION_MS = 300
+const SPARKLINE_WIDTH = 80
+const SPARKLINE_HEIGHT = 24
+const SPARKLINE_PADDING = 2
+
+type GlobalMarketStatus = 'LIVE' | 'DELAYED' | 'EMPTY'
+
+function toSparklinePoints(row: MarketOverviewItem): number[] {
+  const safePrice = Number.isFinite(row.price) && row.price > 0 ? row.price : 1
+  const trend = (row.change1D ?? row.change24h ?? 0) / 100
+  const wave = [0.18, -0.12, 0.1, -0.08, 0.06, -0.04, 0.03]
+  const points = wave.map((w, index) => {
+    const t = index / (wave.length - 1)
+    const base = safePrice * (1 + trend * (t - 1))
+    const wobble = safePrice * w * Math.max(Math.abs(trend), 0.01)
+    return Math.max(0.0001, base + wobble)
+  })
+  points.push(safePrice)
+  return points
+}
+
+function toSparklinePath(points: number[]): string {
+  if (points.length === 0) {
+    return ''
+  }
+  const min = Math.min(...points)
+  const max = Math.max(...points)
+  const range = max - min || 1
+  return points
+    .map((point, index) => {
+      const x = SPARKLINE_PADDING + (index / Math.max(points.length - 1, 1)) * (SPARKLINE_WIDTH - SPARKLINE_PADDING * 2)
+      const y =
+        SPARKLINE_HEIGHT -
+        SPARKLINE_PADDING -
+        ((point - min) / range) * (SPARKLINE_HEIGHT - SPARKLINE_PADDING * 2)
+      return `${index === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`
+    })
+    .join(' ')
+}
 
 export function MarketsPage() {
   const { t, i18n } = useTranslation('markets')
@@ -19,6 +59,12 @@ export function MarketsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [favorites, setFavorites] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'ASELS'])
+  const [priceFlashBySymbol, setPriceFlashBySymbol] = useState<Record<string, 'up' | 'down'>>({})
+  const [animatedPriceBySymbol, setAnimatedPriceBySymbol] = useState<Record<string, number>>({})
+  const previousPriceBySymbolRef = useRef<Record<string, number>>({})
+  const flashTimeoutsRef = useRef<Record<string, number>>({})
+  const animationFrameBySymbolRef = useRef<Record<string, number>>({})
+  const animatedPriceBySymbolRef = useRef<Record<string, number>>({})
   useDocumentTitle(t('titleDoc'))
 
   const page = Math.max(Number(searchParams.get('page') ?? DEFAULT_PAGE), 0)
@@ -112,12 +158,113 @@ export function MarketsPage() {
     return sortDirection === 'asc' ? ' ▲' : ' ▼'
   }
 
+  const globalMarketStatus = useMemo<GlobalMarketStatus>(() => {
+    if (backendRows.length === 0) {
+      return 'EMPTY'
+    }
+    if (backendRows.every((row) => row.freshness === 'LIVE')) {
+      return 'LIVE'
+    }
+    if (backendRows.some((row) => row.freshness === 'STALE')) {
+      return 'DELAYED'
+    }
+    return 'EMPTY'
+  }, [backendRows])
+
+  const delayedMinutes = useMemo(() => {
+    const latestTimestampMs = backendRows.reduce((max, row) => {
+      const ts = row.timestamp ? Date.parse(row.timestamp) : Number.NaN
+      if (!Number.isFinite(ts)) {
+        return max
+      }
+      return Math.max(max, ts)
+    }, Number.NEGATIVE_INFINITY)
+    if (!Number.isFinite(latestTimestampMs)) {
+      return null
+    }
+    return Math.max(0, Math.floor((Date.now() - latestTimestampMs) / 60000))
+  }, [backendRows])
+
+  const marketStatusLabel =
+    globalMarketStatus === 'LIVE'
+      ? 'Live market data'
+      : globalMarketStatus === 'DELAYED'
+        ? `Delayed data (last update ${delayedMinutes ?? '-'} min ago)`
+        : 'No market data available'
+
+  useEffect(() => {
+    const previousPrices = previousPriceBySymbolRef.current
+    backendRows.forEach((row) => {
+      const previousPrice = previousPrices[row.symbol]
+      if (previousPrice != null && previousPrice !== row.price) {
+        const direction: 'up' | 'down' = row.price > previousPrice ? 'up' : 'down'
+        const existingTimeoutId = flashTimeoutsRef.current[row.symbol]
+        if (existingTimeoutId != null) {
+          window.clearTimeout(existingTimeoutId)
+        }
+        setPriceFlashBySymbol((prev) => ({ ...prev, [row.symbol]: direction }))
+        flashTimeoutsRef.current[row.symbol] = window.setTimeout(() => {
+          setPriceFlashBySymbol((prev) => {
+            const next = { ...prev }
+            delete next[row.symbol]
+            return next
+          })
+          delete flashTimeoutsRef.current[row.symbol]
+        }, PRICE_FLASH_MS)
+      }
+      previousPrices[row.symbol] = row.price
+    })
+  }, [backendRows])
+
+  useEffect(() => {
+    const animatedPrices = animatedPriceBySymbolRef.current
+    backendRows.forEach((row) => {
+      const existingAnimation = animationFrameBySymbolRef.current[row.symbol]
+      if (existingAnimation != null) {
+        window.cancelAnimationFrame(existingAnimation)
+      }
+      const from = animatedPrices[row.symbol] ?? row.price
+      const to = row.price
+      if (from === to) {
+        animatedPrices[row.symbol] = to
+        setAnimatedPriceBySymbol((prev) => (prev[row.symbol] === to ? prev : { ...prev, [row.symbol]: to }))
+        return
+      }
+      const startTime = performance.now()
+      const tick = (now: number) => {
+        const progress = Math.min((now - startTime) / PRICE_ANIMATION_MS, 1)
+        const nextValue = from + (to - from) * progress
+        animatedPrices[row.symbol] = nextValue
+        setAnimatedPriceBySymbol((prev) => ({ ...prev, [row.symbol]: nextValue }))
+        if (progress < 1) {
+          animationFrameBySymbolRef.current[row.symbol] = window.requestAnimationFrame(tick)
+        } else {
+          delete animationFrameBySymbolRef.current[row.symbol]
+        }
+      }
+      animationFrameBySymbolRef.current[row.symbol] = window.requestAnimationFrame(tick)
+    })
+  }, [backendRows])
+
+  useEffect(() => {
+    return () => {
+      Object.values(flashTimeoutsRef.current).forEach((timeoutId) => window.clearTimeout(timeoutId))
+      flashTimeoutsRef.current = {}
+      Object.values(animationFrameBySymbolRef.current).forEach((frameId) => window.cancelAnimationFrame(frameId))
+      animationFrameBySymbolRef.current = {}
+    }
+  }, [])
+
   return (
     <section className="markets-page">
       <div className="markets-hero">
         <p className="markets-kicker">{t('kicker')}</p>
         <h2>{t('title')}</h2>
         <p>{t('lead')}</p>
+      </div>
+      <div className={`markets-status markets-status-${globalMarketStatus.toLowerCase()}`}>
+        <span className="markets-status-dot" />
+        <span>{marketStatusLabel}</span>
       </div>
 
       <div className="markets-layout">
@@ -199,23 +346,33 @@ export function MarketsPage() {
                   </th>
                   <th>
                     <button type="button" className="markets-sort-button" onClick={() => handleSort('change24h')}>
-                      {t('table.change24h')}
+                      1D
                       {sortIndicator('change24h')}
                     </button>
                   </th>
                   <th>
                     <button type="button" className="markets-sort-button">
-                      {t('table.high24h')}
+                      1M
                     </button>
                   </th>
                   <th>
                     <button type="button" className="markets-sort-button">
-                      {t('table.low24h')}
+                      3M
                     </button>
                   </th>
                   <th>
                     <button type="button" className="markets-sort-button">
-                      {t('table.exchange')}
+                      6M
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="markets-sort-button">
+                      1Y
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="markets-sort-button">
+                      Trend
                     </button>
                   </th>
                 </tr>
@@ -224,14 +381,14 @@ export function MarketsPage() {
                 {loading ? (
                   Array.from({ length: Math.min(size, 6) }).map((_, idx) => (
                     <tr key={`skeleton-${idx}`}>
-                      <td colSpan={7}>
+                      <td colSpan={9}>
                         <div className="markets-skeleton-row" />
                       </td>
                     </tr>
                   ))
                 ) : error ? (
                   <tr>
-                    <td colSpan={7} className="markets-empty">
+                    <td colSpan={9} className="markets-empty">
                       <div className="markets-error-wrap">
                         <span>{error}</span>
                         <button type="button" className="markets-filter" onClick={() => void refetch()}>
@@ -257,23 +414,66 @@ export function MarketsPage() {
                         </td>
                         <td>
                           <div className="markets-symbol-cell">
-                            <strong>{row.symbol}</strong>
+                            <strong>
+                              {row.symbol}
+                              {row.freshness === 'STALE' ? (
+                                <span className="markets-freshness-badge">Delayed data</span>
+                              ) : null}
+                            </strong>
                             <span>{row.name}</span>
                           </div>
                         </td>
-                        <td>{priceFormat.format(row.price)}</td>
-                        <td className={isPositive ? 'markets-positive' : 'markets-negative'}>
-                          {row.change24h == null ? '-' : percentFormat.format(row.change24h)}
+                        <td
+                          className={
+                            priceFlashBySymbol[row.symbol] === 'up'
+                              ? 'markets-price-flash-up'
+                              : priceFlashBySymbol[row.symbol] === 'down'
+                                ? 'markets-price-flash-down'
+                                : undefined
+                          }
+                        >
+                          {priceFormat.format(animatedPriceBySymbol[row.symbol] ?? row.price)}
                         </td>
-                        <td>{row.high24h == null ? '-' : priceFormat.format(row.high24h)}</td>
-                        <td>{row.low24h == null ? '-' : priceFormat.format(row.low24h)}</td>
-                        <td>{row.category ?? '-'}</td>
+                        <td className={isPositive ? 'markets-positive' : 'markets-negative'}>
+                          {percentFormat.format(row.change1D ?? 0)}
+                        </td>
+                        <td className={(row.change1M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
+                          {percentFormat.format(row.change1M ?? 0)}
+                        </td>
+                        <td className={(row.change3M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
+                          {percentFormat.format(row.change3M ?? 0)}
+                        </td>
+                        <td className={(row.change6M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
+                          {percentFormat.format(row.change6M ?? 0)}
+                        </td>
+                        <td className={(row.change1Y ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
+                          {percentFormat.format(row.change1Y ?? 0)}
+                        </td>
+                        <td>
+                          {(() => {
+                            const points = toSparklinePoints(row)
+                            const path = toSparklinePath(points)
+                            const isTrendUp = points[points.length - 1] >= points[0]
+                            return (
+                              <svg
+                                className="sparkline sparkline-compact"
+                                viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
+                                aria-label={`${row.symbol} trend`}
+                              >
+                                <path
+                                  d={path}
+                                  className={isTrendUp ? 'sparkline-line-positive' : 'sparkline-line-negative'}
+                                />
+                              </svg>
+                            )
+                          })()}
+                        </td>
                       </tr>
                     )
                   })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="markets-empty">
+                    <td colSpan={9} className="markets-empty">
                       {t('noMatches')}
                     </td>
                   </tr>
@@ -336,7 +536,12 @@ export function MarketsPage() {
                 {topGainers.map((item) => (
                   <li key={`gainer-${item.symbol}`} className="markets-insights-item">
                     <div>
-                      <strong>{item.symbol}</strong>
+                      <strong>
+                        {item.symbol}
+                        {item.freshness === 'STALE' ? (
+                          <span className="markets-freshness-badge">Delayed data</span>
+                        ) : null}
+                      </strong>
                       <span>{item.name}</span>
                     </div>
                     <b className="markets-positive">
@@ -366,7 +571,12 @@ export function MarketsPage() {
                 {topLosers.map((item) => (
                   <li key={`loser-${item.symbol}`} className="markets-insights-item">
                     <div>
-                      <strong>{item.symbol}</strong>
+                      <strong>
+                        {item.symbol}
+                        {item.freshness === 'STALE' ? (
+                          <span className="markets-freshness-badge">Delayed data</span>
+                        ) : null}
+                      </strong>
                       <span>{item.name}</span>
                     </div>
                     <b className="markets-negative">

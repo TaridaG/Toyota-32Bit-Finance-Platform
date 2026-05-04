@@ -21,6 +21,43 @@ type UseMarketsResult = {
   refetch: () => Promise<void>
 }
 
+type RefetchOptions = {
+  silent?: boolean
+}
+
+const POLL_INTERVAL_VISIBLE_MS = 10_000
+const POLL_INTERVAL_HIDDEN_MS = 30_000
+
+function rowsEqual(prev: MarketOverviewItem[], next: MarketOverviewItem[]): boolean {
+  if (prev.length !== next.length) {
+    return false
+  }
+  for (let i = 0; i < prev.length; i += 1) {
+    const a = prev[i]
+    const b = next[i]
+    if (
+      a.symbol !== b.symbol ||
+      a.name !== b.name ||
+      a.price !== b.price ||
+      a.change24h !== b.change24h ||
+      a.change1D !== b.change1D ||
+      a.change1M !== b.change1M ||
+      a.change3M !== b.change3M ||
+      a.change6M !== b.change6M ||
+      a.change1Y !== b.change1Y ||
+      a.high24h !== b.high24h ||
+      a.low24h !== b.low24h ||
+      a.category !== b.category ||
+      a.instrumentId !== b.instrumentId ||
+      a.timestamp !== b.timestamp ||
+      a.freshness !== b.freshness
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
 function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value)
 
@@ -40,9 +77,11 @@ export function useMarkets({ page, size, category, searchTerm, sort }: UseMarket
   const [error, setError] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 350)
 
-  const refetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const refetchInternal = useCallback(async (options?: RefetchOptions) => {
+    const silent = options?.silent === true
+    if (!silent) {
+      setLoading(true)
+    }
     try {
       const response = await fetchMarketOverview({
         page: Math.max(page, 0),
@@ -51,19 +90,52 @@ export function useMarkets({ page, size, category, searchTerm, sort }: UseMarket
         query: debouncedSearch,
         sort,
       })
-      setRows(response.content)
-      setTotalElements(response.totalElements)
-      setTotalPages(response.totalPages)
-    } catch {
-      setError('Market data could not be loaded. Please try again.')
+      const nextRows = Array.isArray(response.content) ? response.content : []
+      setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
+      const nextTotalElements = response.totalElements ?? 0
+      const nextTotalPages = response.totalPages ?? 0
+      setTotalElements((prev) => (prev === nextTotalElements ? prev : nextTotalElements))
+      setTotalPages((prev) => (prev === nextTotalPages ? prev : nextTotalPages))
+      setError(null)
+    } catch (err) {
+      console.error('market overview request failed', err)
+      if (!silent) {
+        setError('Market data could not be loaded. Please try again.')
+      }
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }, [category, debouncedSearch, page, size, sort])
 
+  const refetch = useCallback(async () => refetchInternal(), [refetchInternal])
+
   useEffect(() => {
-    void refetch()
-  }, [refetch])
+    void refetchInternal()
+  }, [refetchInternal])
+
+  useEffect(() => {
+    let intervalId: number | null = null
+    const restartPolling = () => {
+      if (intervalId != null) {
+        window.clearInterval(intervalId)
+      }
+      const intervalMs = document.visibilityState === 'visible' ? POLL_INTERVAL_VISIBLE_MS : POLL_INTERVAL_HIDDEN_MS
+      intervalId = window.setInterval(() => {
+        void refetchInternal({ silent: true })
+      }, intervalMs)
+    }
+    const onVisibilityChange = () => restartPolling()
+    restartPolling()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      if (intervalId != null) {
+        window.clearInterval(intervalId)
+      }
+    }
+  }, [refetchInternal])
 
   return {
     rows,

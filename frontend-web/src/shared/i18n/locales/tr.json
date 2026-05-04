@@ -22,7 +22,89 @@
     "dashboard": { "titleDoc": "Ana Sayfa | Finans Platformu", "title": "Ana Sayfa", "lead": "Genel özet bileşenleri burada yer alacak." },
     "simulation": { "titleDoc": "Simülasyon | Finans Platformu", "title": "Simülasyon", "lead": "Simülasyon modülü yakında eklenecek." }
   },
-  "landing": { "titleDoc": "Finans Portalı | Hoş Geldiniz", "kicker": "Kurumsal Finans Portalı", "heroTitle": "Piyasaları izleyin, portföyünüzü yönetin", "heroSubtitle": "Finans operasyonlarınızı tek merkezden yönetin.", "ctaLogin": "Giriş Yap", "ctaRegister": "Kaydol", "instrumentsTitle": "Öne Çıkan Enstrümanlar", "instrumentsSubtitle": "Canlı market ekranı örnek vitrini.", "whyTitle": "Neden Bu Platform?", "highlights": { "realtimeTitle": "Gerçek zamanlı takip", "realtimeDesc": "Piyasaları tek panelde karşılaştırın.", "reportTitle": "Akıllı raporlama", "reportDesc": "CSV/PDF otomatik raporlar.", "riskTitle": "Risk analizi", "riskDesc": "Trend ve göstergelerle daha hızlı karar." } },
+  "landing": {
+    "titleDoc": "Finans Portalı | Kurumsal Platform",
+    "sectionsNavAria": "Landing bölümleri",
+    "states": { "loading": "Bölüm verisi yükleniyor...", "error": "Bölüm verisi yüklenemedi.", "retry": "Tekrar dene", "notAvailable": "Mevcut değil" },
+    "sections": {
+      "hero": { "dotLabel": "Hero" },
+      "markets": { "dotLabel": "Canlı piyasalar" },
+      "analysis": { "dotLabel": "Teknik analiz" },
+      "ai-insights": { "dotLabel": "Yapay zeka içgörüleri" },
+      "news": { "dotLabel": "Zenginleştirilmiş haberler" },
+      "portfolio": { "dotLabel": "Portföy K/Z" },
+      "reporting": { "dotLabel": "Raporlama" },
+      "security": { "dotLabel": "Güvenlik" },
+      "final-cta": { "dotLabel": "Final çağrı" }
+    },
+    "hero": {
+      "kicker": "Kurumsal Fintech Çalışma Alanı",
+      "title": "Canlı piyasaları, analizi ve portföy zekasını tek akışta yönetin",
+      "subtitle": "Kritik sinyalleri izleyin, zenginleştirilmiş haberleri yorumlayın ve raporlama ile riski tek güvenli platformdan yönetin.",
+      "ctaLogin": "Giriş Yap",
+      "ctaRegister": "Kaydol"
+    },
+    "markets": {
+      "title": "Canlı piyasalar",
+      "subtitle": "Öne çıkan enstrümanlar canlı market overview endpoint'inden yüklenir."
+    },
+    "analysis": {
+      "title": "Teknik analiz çalışma alanı",
+      "subtitle": "Yapı, trend ve momentumu tek analiz akışında inceleyin.",
+      "points": {
+        "point1": "Piyasa bağlamını gösterge tabanlı sinyallerle birleştirin.",
+        "point2": "Varlıkları senkron zaman aralıklarıyla karşılaştırın.",
+        "point3": "Daha temiz chart okumalarıyla karar hızını artırın."
+      },
+      "visualTitle": "Sinyal yığını",
+      "visualBody": "Trend, RSI ve hareketli ortalamalar taktiksel karar desteği için hizalanır."
+    },
+    "ai": {
+      "title": "Zenginleştirilmiş haberlerden AI içgörüleri",
+      "subtitle": "Duygu ve ilk saat reaksiyonu, varlıkların neden hareket ettiğini gösterir.",
+      "leadingSentiment": {
+        "positive": "Akışta pozitif duygu önde.",
+        "negative": "Akışta negatif duygu önde.",
+        "neutral": "Duygu dağılımı dengeli."
+      },
+      "stats": {
+        "positive": "Pozitif haber: {{count}}",
+        "negative": "Negatif haber: {{count}}",
+        "neutral": "Nötr haber: {{count}}",
+        "reaction": "En güçlü 1s reaksiyon: {{symbol}} ({{value}}%)",
+        "reactionFallback": "Reaksiyon verisi henüz yok."
+      }
+    },
+    "news": {
+      "title": "Zenginleştirilmiş haber zekası",
+      "subtitle": "Özet, duygu ve reaksiyon değerleri backend enriched news akışından gelir."
+    },
+    "portfolio": {
+      "title": "Portföy K/Z ve raporlama",
+      "subtitle": "Dağılımı, gerçekleşen performansı ve raporlama döngüsünü tek iş akışında izleyin.",
+      "cta": "Portföy çalışma alanını aç",
+      "visualTitle": "Güvenlik ve gözlemlenebilirlik",
+      "visualBody": "Kurumsal kontroller, izleme, denetlenebilirlik ve güvenilir teslimat için tasarlanmıştır."
+    },
+    "reporting": {
+      "title": "Karar odaklı raporlama",
+      "subtitle": "Paydaşlar için açıklanabilir özetler üretin ve manuel aktarımı azaltın.",
+      "visualTitle": "İş akışına hazır çıktılar",
+      "visualBody": "Operasyonel ve yönetimsel incelemeler için tekrar kullanılabilir rapor görünümleri üretin."
+    },
+    "security": {
+      "title": "Güvenlik ve gözlemlenebilirlik",
+      "subtitle": "Platform davranışını güvenle izleyin ve risk hassas operasyonları takip edin.",
+      "visualTitle": "Kurumsal güvenlik katmanları",
+      "visualBody": "Birleşik izleme ve denetlenebilirlik, oynak piyasalarda kör noktaları azaltır."
+    },
+    "finalCta": {
+      "title": "Ekibinizi tek kurumsal finans platformunda birleştirin",
+      "subtitle": "Güvenli erişimle başlayın, piyasa zekası iş akışınızı ölçekleyin.",
+      "login": "Giriş Yap",
+      "register": "Kaydol"
+    }
+  },
   "auth": {
     "login": { "titleDoc": "Giriş Yap | Finans Portalı", "kicker": "Güvenli Erişim", "title": "Hesabına giriş yap", "lead": "Gerçek zamanlı piyasalara erişmek için giriş yap.", "identityLabel": "E-posta veya kullanıcı adı", "identityPlaceholder": "ornek@firma.com", "passwordLabel": "Parola", "passwordPlaceholder": "Parolanı gir", "submit": "Giriş Yap", "submitting": "Giriş yapılıyor...", "noAccount": "Hesabın yok mu?", "registerNow": "Hemen kaydol", "errors": { "identityRequired": "E-posta veya kullanıcı adı zorunludur.", "passwordMin": "Parola en az 6 karakter olmalıdır." } },
     "register": { "titleDoc": "Kaydol | Finans Portalı", "kicker": "Yeni Hesap", "title": "Finans Portalı'na katıl", "lead": "Hesabını birkaç adımda oluştur.", "fullNameLabel": "Ad Soyad", "fullNamePlaceholder": "Ad Soyad", "emailLabel": "E-posta", "emailPlaceholder": "ornek@firma.com", "passwordLabel": "Parola", "passwordPlaceholder": "En az 8 karakter", "passwordAgainLabel": "Parola (tekrar)", "passwordAgainPlaceholder": "Parolanı tekrar gir", "termsLabel": "Kullanım koşullarını kabul ediyorum.", "submit": "Kaydol", "submitting": "Hesap oluşturuluyor...", "haveAccount": "Zaten hesabın var mı?", "loginNow": "Giriş yap", "errors": { "fullNameRequired": "Ad soyad zorunludur.", "emailInvalid": "Geçerli bir e-posta adresi giriniz.", "passwordMin": "Parola en az 8 karakter olmalıdır.", "passwordsNotMatch": "Parolalar eşleşmiyor.", "termsRequired": "Devam etmek için şartları kabul etmelisiniz." } }

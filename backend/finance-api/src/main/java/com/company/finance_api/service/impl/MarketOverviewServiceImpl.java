@@ -1,9 +1,11 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.Instrument;
+import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.dto.MarketInsightsResponse;
 import com.company.finance_api.dto.MarketOverviewItemResponse;
 import com.company.finance_api.dto.MarketOverviewPageResponse;
+import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.service.CurrencyConversionService;
 import com.company.finance_api.service.InstrumentService;
 import com.company.finance_api.service.MarketOverviewService;
@@ -42,8 +44,10 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     private static final Duration CACHE_TTL = Duration.ofSeconds(5);
     private static final String INSIGHTS_CACHE_KEY = "market:insights";
     private static final String USD = "USD";
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private final InstrumentService instrumentService;
+    private final InstrumentPriceRepository instrumentPriceRepository;
     private final CurrencyConversionService currencyConversionService;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
@@ -58,11 +62,13 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
     public MarketOverviewServiceImpl(
             InstrumentService instrumentService,
+            InstrumentPriceRepository instrumentPriceRepository,
             CurrencyConversionService currencyConversionService,
             ObjectMapper objectMapper,
             ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider
     ) {
         this.instrumentService = instrumentService;
+        this.instrumentPriceRepository = instrumentPriceRepository;
         this.currencyConversionService = currencyConversionService;
         this.objectMapper = objectMapper;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
@@ -99,9 +105,20 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         }
 
         List<MarketBaseItem> currentPage = merged.subList(start, end);
+        Map<String, BigDecimal> currentPricesBySymbol = currentPage.stream()
+                .collect(Collectors.toMap(
+                        MarketBaseItem::symbol,
+                        MarketBaseItem::price,
+                        (left, right) -> left
+                ));
+        Map<String, HistoricalChanges> changesBySymbol = fetchHistoricalChanges(currentPricesBySymbol);
 
         List<CompletableFuture<MarketOverviewItemResponse>> futures = currentPage.stream()
-                .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(item, normalizedCurrency)))
+                .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(
+                        item,
+                        normalizedCurrency,
+                        changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty())
+                )))
                 .toList();
 
         List<MarketOverviewItemResponse> content = futures.stream()
@@ -128,7 +145,16 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             return cached.get();
         }
 
-        List<MarketOverviewItemResponse> all = enrichAll(loadMergedBaseItems(), normalizedCurrency);
+        List<MarketBaseItem> baseItems = loadMergedBaseItems();
+        Map<String, BigDecimal> currentPricesBySymbol = baseItems.stream()
+                .collect(Collectors.toMap(
+                        MarketBaseItem::symbol,
+                        MarketBaseItem::price,
+                        (left, right) -> left
+                ));
+        Map<String, HistoricalChanges> changesBySymbol = fetchHistoricalChanges(currentPricesBySymbol);
+        List<MarketOverviewItemResponse> all = enrichAll(baseItems, normalizedCurrency, changesBySymbol);
+        all = applySummaryChangeFallback(all);
         List<MarketOverviewItemResponse> changeReady = all.stream()
                 .filter(item -> item.change24h() != null)
                 .toList();
@@ -148,9 +174,17 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         return response;
     }
 
-    private List<MarketOverviewItemResponse> enrichAll(List<MarketBaseItem> baseItems, String targetCurrency) {
+    private List<MarketOverviewItemResponse> enrichAll(
+            List<MarketBaseItem> baseItems,
+            String targetCurrency,
+            Map<String, HistoricalChanges> changesBySymbol
+    ) {
         List<CompletableFuture<MarketOverviewItemResponse>> futures = baseItems.stream()
-                .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(item, targetCurrency)))
+                .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(
+                        item,
+                        targetCurrency,
+                        changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty())
+                )))
                 .toList();
         return futures.stream()
                 .map(CompletableFuture::join)
@@ -161,10 +195,29 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         List<MarketPriceDto> prices = fetchLatestPrices();
         Map<String, Instrument> instrumentsBySymbol = instrumentService.getAllActive()
                 .stream()
-                .collect(Collectors.toMap(Instrument::getSymbol, Function.identity(), (left, right) -> left));
-        return prices.stream()
-                .map(price -> mergeBase(price, instrumentsBySymbol.get(price.symbol())))
+                .collect(Collectors.toMap(
+                        instrument -> instrument.getSymbol().trim().toUpperCase(Locale.ROOT),
+                        Function.identity(),
+                        (left, right) -> left
+                ));
+        log.warn("items before filter: {}", prices.size());
+        List<MarketBaseItem> filtered = prices.stream()
+                .filter(price -> price.symbol() != null && !price.symbol().isBlank())
+                .map(price -> {
+                    String symbol = price.symbol().trim().toUpperCase(Locale.ROOT);
+                    Instrument instrument = instrumentsBySymbol.get(symbol);
+                    return mergeBase(
+                            new MarketPriceDto(symbol, price.price(), price.source(), price.timestamp()),
+                            instrument
+                    );
+                })
                 .toList();
+        log.warn("items after filter: {}", filtered.size());
+        if (!filtered.isEmpty()) {
+            return filtered;
+        }
+        log.warn("Market overview empty, returning fallback minimal dataset");
+        return fallbackMinimalItems(prices, instrumentsBySymbol);
     }
 
     private MarketBaseItem mergeBase(MarketPriceDto price, Instrument instrument) {
@@ -186,6 +239,42 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         );
     }
 
+    private List<MarketBaseItem> fallbackMinimalItems(
+            List<MarketPriceDto> prices,
+            Map<String, Instrument> instrumentsBySymbol
+    ) {
+        List<MarketBaseItem> fromPriceSymbols = prices.stream()
+                .filter(price -> price.symbol() != null && !price.symbol().isBlank())
+                .map(price -> {
+                    String symbol = price.symbol().trim().toUpperCase(Locale.ROOT);
+                    Instrument instrument = instrumentsBySymbol.get(symbol);
+                    if (instrument == null) {
+                        return new MarketBaseItem(symbol, symbol, BigDecimal.ZERO, null, null);
+                    }
+                    return new MarketBaseItem(
+                            symbol,
+                            instrument.getName(),
+                            BigDecimal.ZERO,
+                            instrument.getType().name(),
+                            instrument.getId()
+                    );
+                })
+                .distinct()
+                .toList();
+        if (!fromPriceSymbols.isEmpty()) {
+            return fromPriceSymbols;
+        }
+        return instrumentService.getAllActive().stream()
+                .map(instrument -> new MarketBaseItem(
+                        instrument.getSymbol(),
+                        instrument.getName(),
+                        BigDecimal.ZERO,
+                        instrument.getType().name(),
+                        instrument.getId()
+                ))
+                .toList();
+    }
+
     private boolean categoryMatches(MarketBaseItem item, String category) {
         if (!StringUtils.hasText(category)) {
             return true;
@@ -202,18 +291,28 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                 || item.name().toLowerCase(Locale.ROOT).contains(lowered);
     }
 
-    private MarketOverviewItemResponse enrichWithAnalytics(MarketBaseItem base, String targetCurrency) {
+    private MarketOverviewItemResponse enrichWithAnalytics(
+            MarketBaseItem base,
+            String targetCurrency,
+            HistoricalChanges historicalChanges
+    ) {
         try {
             List<AnalyticsCandleDto> candles = fetchCandles(base.symbol());
             AnalyticsMetrics metrics = computeMetrics(base.price(), candles);
             BigDecimal convertedPrice = applyPrecision(convertFromUsd(base.price(), targetCurrency), base.category());
             BigDecimal convertedHigh = applyPrecision(convertFromUsd(metrics.high24h(), targetCurrency), base.category());
             BigDecimal convertedLow = applyPrecision(convertFromUsd(metrics.low24h(), targetCurrency), base.category());
+            BigDecimal change24h = metrics.change24h() == null ? historicalChanges.change1D() : metrics.change24h();
             return new MarketOverviewItemResponse(
                     base.symbol(),
                     base.name(),
                     convertedPrice,
-                    metrics.change24h(),
+                    change24h,
+                    historicalChanges.change1D(),
+                    historicalChanges.change1M(),
+                    historicalChanges.change3M(),
+                    historicalChanges.change6M(),
+                    historicalChanges.change1Y(),
                     convertedHigh,
                     convertedLow,
                     base.category(),
@@ -226,7 +325,12 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                     base.symbol(),
                     base.name(),
                     convertedPrice,
-                    null,
+                    historicalChanges.change1D(),
+                    historicalChanges.change1D(),
+                    historicalChanges.change1M(),
+                    historicalChanges.change3M(),
+                    historicalChanges.change6M(),
+                    historicalChanges.change1Y(),
                     null,
                     null,
                     base.category(),
@@ -285,6 +389,117 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             return List.of();
         }
         return body.data();
+    }
+
+    private List<MarketOverviewItemResponse> applySummaryChangeFallback(List<MarketOverviewItemResponse> items) {
+        List<String> symbolsNeedingFallback = items.stream()
+                .filter(item -> item.change24h() == null)
+                .map(MarketOverviewItemResponse::symbol)
+                .distinct()
+                .toList();
+        if (symbolsNeedingFallback.isEmpty()) {
+            return items;
+        }
+        Map<String, SummaryDto> summaryBySymbol = fetchPriceSummary(symbolsNeedingFallback);
+        if (summaryBySymbol.isEmpty()) {
+            return items;
+        }
+        return items.stream()
+                .map(item -> {
+                    if (item.change24h() != null) {
+                        return item;
+                    }
+                    SummaryDto summary = summaryBySymbol.get(item.symbol());
+                    if (summary == null || summary.change1D() == null) {
+                        return item;
+                    }
+                    return new MarketOverviewItemResponse(
+                            item.symbol(),
+                            item.name(),
+                            item.price(),
+                            summary.change1D(),
+                            item.change1D(),
+                            item.change1M(),
+                            item.change3M(),
+                            item.change6M(),
+                            item.change1Y(),
+                            item.high24h(),
+                            item.low24h(),
+                            item.category(),
+                            item.instrumentId()
+                    );
+                })
+                .toList();
+    }
+
+    private Map<String, HistoricalChanges> fetchHistoricalChanges(Map<String, BigDecimal> currentPricesBySymbol) {
+        if (currentPricesBySymbol == null || currentPricesBySymbol.isEmpty()) {
+            return Map.of();
+        }
+        List<String> symbols = currentPricesBySymbol.keySet().stream().toList();
+        Instant now = Instant.now();
+        Map<String, BigDecimal> change1DBase = fetchBaselinePrices(symbols, now.minus(Duration.ofDays(1)));
+        Map<String, BigDecimal> change1MBase = fetchBaselinePrices(symbols, now.minus(Duration.ofDays(30)));
+        Map<String, BigDecimal> change3MBase = fetchBaselinePrices(symbols, now.minus(Duration.ofDays(90)));
+        Map<String, BigDecimal> change6MBase = fetchBaselinePrices(symbols, now.minus(Duration.ofDays(180)));
+        Map<String, BigDecimal> change1YBase = fetchBaselinePrices(symbols, now.minus(Duration.ofDays(365)));
+
+        return symbols.stream()
+                .distinct()
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        symbol -> {
+                            BigDecimal current = currentPricesBySymbol.get(symbol);
+                            return new HistoricalChanges(
+                                    computePercentageChange(current, change1DBase.get(symbol)),
+                                    computePercentageChange(current, change1MBase.get(symbol)),
+                                    computePercentageChange(current, change3MBase.get(symbol)),
+                                    computePercentageChange(current, change6MBase.get(symbol)),
+                                    computePercentageChange(current, change1YBase.get(symbol))
+                            );
+                        }
+                ));
+    }
+
+    private Map<String, BigDecimal> fetchBaselinePrices(List<String> symbols, Instant target) {
+        return instrumentPriceRepository.findLatestPricesAtOrBefore(symbols, PriceType.MARKET.name(), target)
+                .stream()
+                .collect(Collectors.toMap(
+                        InstrumentPriceRepository.SymbolPriceView::getSymbol,
+                        InstrumentPriceRepository.SymbolPriceView::getPrice,
+                        (left, right) -> left
+                ));
+    }
+
+    private BigDecimal computePercentageChange(BigDecimal current, BigDecimal old) {
+        if (current == null || old == null || old.compareTo(BigDecimal.ZERO) == 0) {
+            return null;
+        }
+        return current.subtract(old)
+                .divide(old, 8, RoundingMode.HALF_UP)
+                .multiply(HUNDRED)
+                .setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private Map<String, SummaryDto> fetchPriceSummary(List<String> symbols) {
+        if (symbols.isEmpty()) {
+            return Map.of();
+        }
+        String url = UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
+                .path("/api/market/prices/summary")
+                .queryParam("symbols", String.join(",", symbols))
+                .toUriString();
+        try {
+            Map<String, SummaryDto> body = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+            return body == null ? Map.of() : body;
+        } catch (Exception ex) {
+            log.warn("MARKET_SUMMARY_FALLBACK_FAILED reason={}", ex.toString());
+            return Map.of();
+        }
     }
 
     private <T> Optional<T> readFromCache(String key, TypeReference<T> typeReference) {
@@ -411,5 +626,27 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             String category,
             Long instrumentId
     ) {
+    }
+
+    private record SummaryDto(
+            BigDecimal price,
+            BigDecimal change1D,
+            BigDecimal change1M,
+            BigDecimal change3M,
+            BigDecimal change6M,
+            BigDecimal change1Y
+    ) {
+    }
+
+    private record HistoricalChanges(
+            BigDecimal change1D,
+            BigDecimal change1M,
+            BigDecimal change3M,
+            BigDecimal change6M,
+            BigDecimal change1Y
+    ) {
+        static HistoricalChanges empty() {
+            return new HistoricalChanges(null, null, null, null, null);
+        }
     }
 }

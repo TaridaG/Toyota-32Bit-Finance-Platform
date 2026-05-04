@@ -41,6 +41,11 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        // Public instrument discovery is allowed for guest users.
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/instruments")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (hasJwtAuthentication() || hasBearerTokenHeader(request)) {
             filterChain.doFilter(request, response);

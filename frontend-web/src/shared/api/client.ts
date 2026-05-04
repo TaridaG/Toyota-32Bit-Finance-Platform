@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { isAuthenticated } from '../auth/session'
 
-const DEFAULT_API_BASE_URL = 'http://localhost:8080'
+const DEFAULT_API_BASE_URL = ''
 const LANGUAGE_STORAGE_KEY = 'finance.locale'
 const CURRENCY_STORAGE_KEY = 'finance.currency'
 
