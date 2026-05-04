@@ -5,6 +5,7 @@ import com.company.marketdataservice.fx.FxProvider;
 import com.company.marketdataservice.fx.FxSnapshot;
 import com.company.marketdataservice.instrument.InstrumentMappingService;
 import com.company.marketdataservice.kafka.FxSnapshotEventPublisher;
+import com.company.marketdataservice.service.historical.FxHistoryBootstrapGuard;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -31,6 +32,7 @@ public class FxScheduler {
     private final InstrumentMappingService instrumentMappingService;
     private final FxSnapshotEventPublisher fxSnapshotEventPublisher;
     private final MeterRegistry meterRegistry;
+    private final FxHistoryBootstrapGuard fxHistoryBootstrapGuard;
 
     private final AtomicInteger lastPublishedRateCount = new AtomicInteger(0);
 
@@ -80,6 +82,10 @@ public class FxScheduler {
             lastPublishedRateCount.set(snapshots.size());
 
             for (FxSnapshot s : snapshots) {
+                if (!fxHistoryBootstrapGuard.isLiveAllowed(s.canonicalSymbol())) {
+                    log.info("FX_DATA_WAITING_FOR_HISTORY symbol={}", s.canonicalSymbol());
+                    continue;
+                }
                 Long instrumentId = instrumentMappingService
                         .resolveInstrument(fxProvider.source(), s.canonicalSymbol())
                         .orElse(null);

@@ -7,4 +7,6 @@ import java.util.Optional;
 public interface InstrumentCatalogRepository extends JpaRepository<InstrumentCatalogEntry, Long> {
 
     Optional<InstrumentCatalogEntry> findByInstrumentIdAndActiveTrue(Long instrumentId);
+
+    Optional<InstrumentCatalogEntry> findByCanonicalSymbolAndActiveTrue(String canonicalSymbol);
 }

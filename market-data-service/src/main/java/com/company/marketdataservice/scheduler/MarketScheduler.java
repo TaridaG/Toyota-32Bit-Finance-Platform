@@ -6,6 +6,7 @@ import com.company.marketdataservice.instrument.InstrumentMappingService;
 import com.company.marketdataservice.kafka.MarketEventPublisher;
 import com.company.marketdataservice.observation.MarketPriceObservation;
 import com.company.marketdataservice.provider.PriceProvider;
+import com.company.marketdataservice.service.historical.CryptoHistoryBootstrapGuard;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -31,6 +32,7 @@ public class MarketScheduler {
     private final MarketEventPublisher publisher;
     private final InstrumentMappingService instrumentMappingService;
     private final MeterRegistry meterRegistry;
+    private final CryptoHistoryBootstrapGuard cryptoHistoryBootstrapGuard;
 
     private final Set<String> mappingMissWarnFirstSeen = ConcurrentHashMap.newKeySet();
     private final Set<String> mappingHitCanonicalFirstSeen = ConcurrentHashMap.newKeySet();
@@ -40,6 +42,10 @@ public class MarketScheduler {
 
 
         for (String symbol : properties.getTrackedSymbols()) {
+            if (!cryptoHistoryBootstrapGuard.isLiveAllowed(symbol)) {
+                log.info("MARKET_DATA_WAITING_FOR_HISTORY symbol={}", symbol);
+                continue;
+            }
 
             try {
 

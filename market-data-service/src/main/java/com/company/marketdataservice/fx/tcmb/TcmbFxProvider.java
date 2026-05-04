@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -17,6 +18,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -48,9 +50,16 @@ public class TcmbFxProvider implements FxProvider {
 
     @Override
     public List<FxSnapshot> fetchLatestRates() {
-        String url = fxMarketProperties.getTcmbUrl();
+        String baseUrl = fxMarketProperties.getTcmbUrl();
+        String apiKey = fxMarketProperties.getTcmbApiKey();
+        String finalUrl = appendApiKeyQueryIfConfigured(baseUrl, apiKey);
         byte[] body = fxWebClient.get()
-                .uri(url)
+                .uri(URI.create(finalUrl))
+                .headers(headers -> {
+                    if (StringUtils.hasText(apiKey) && StringUtils.hasText(fxMarketProperties.getTcmbApiKeyHeader())) {
+                        headers.set(fxMarketProperties.getTcmbApiKeyHeader(), apiKey);
+                    }
+                })
                 .accept(MediaType.APPLICATION_XML, MediaType.TEXT_XML, MediaType.ALL)
                 .retrieve()
                 .bodyToMono(byte[].class)
@@ -68,7 +77,7 @@ public class TcmbFxProvider implements FxProvider {
             } catch (Exception ignored) {
             }
         }
-        log.warn("TCMB_PARSE_EMPTY_OR_UNSUPPORTED source={} url={}", source(), url);
+        log.warn("TCMB_PARSE_EMPTY_OR_UNSUPPORTED source={} url={}", source(), baseUrl);
         return List.of();
     }
 
@@ -159,5 +168,13 @@ public class TcmbFxProvider implements FxProvider {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    private String appendApiKeyQueryIfConfigured(String url, String apiKey) {
+        if (!StringUtils.hasText(url) || !StringUtils.hasText(apiKey) || !StringUtils.hasText(fxMarketProperties.getTcmbApiKeyQueryParam())) {
+            return url;
+        }
+        String separator = url.contains("?") ? "&" : "?";
+        return url + separator + fxMarketProperties.getTcmbApiKeyQueryParam() + "=" + apiKey;
     }
 }
