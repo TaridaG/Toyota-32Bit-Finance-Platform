@@ -5,7 +5,7 @@ import com.company.marketdataservice.metrics.PriceProviderMetrics;
 import com.company.marketdataservice.provider.binance.BinancePriceProvider;
 import com.company.marketdataservice.provider.coingecko.CoinGeckoPriceProvider;
 import com.company.marketdataservice.provider.health.ProviderHealthTracker;
-import com.company.marketdataservice.provider.investing.InvestingStockPriceProvider;
+import com.company.marketdataservice.provider.yahoo.YahooFinanceProvider;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.RetryRegistry;
 import lombok.extern.slf4j.Slf4j;
@@ -52,13 +52,13 @@ public class CompositePriceProvider implements PriceProvider {
     }
 
     private static int providerChainOrder(PriceProvider p) {
-        if (p instanceof BinancePriceProvider) {
+        if (p instanceof YahooFinanceProvider) {
             return 0;
         }
         if (p instanceof CoinGeckoPriceProvider) {
             return 1;
         }
-        if (p instanceof InvestingStockPriceProvider) {
+        if (p instanceof BinancePriceProvider) {
             return 2;
         }
         return 50;

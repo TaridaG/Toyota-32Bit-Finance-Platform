@@ -32,6 +32,14 @@ public class InstrumentMappingService {
                         symbol
                 )
                 .flatMap(this::toActiveCatalogInstrumentId);
+        if (resolved.isEmpty() && "YAHOO".equalsIgnoreCase(normalized) && !symbol.contains(".")) {
+            resolved = mappingRepository
+                    .findFirstByProviderIgnoreCaseAndProviderSymbolAndActiveTrueOrderByPriorityAsc(
+                            normalized,
+                            symbol + ".IS"
+                    )
+                    .flatMap(this::toActiveCatalogInstrumentId);
+        }
         if (resolved.isPresent()) {
             return resolved;
         }

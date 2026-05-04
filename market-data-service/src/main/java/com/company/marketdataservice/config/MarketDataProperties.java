@@ -17,4 +17,11 @@ public class MarketDataProperties {
     /** Alias list for UX; reuse same YAML anchor as {@code fund.tracked-fund-codes}. */
     private List<String> trackedFunds = new ArrayList<>();
     private String provider;
+    private Ingestion ingestion = new Ingestion();
+
+    @Getter
+    @Setter
+    public static class Ingestion {
+        private String env = "dev";
+    }
 }

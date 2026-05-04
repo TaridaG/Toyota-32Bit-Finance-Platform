@@ -1,11 +1,13 @@
 package com.company.marketdataservice.scheduler;
 
 import com.company.marketdataservice.config.MarketDataProperties;
+import com.company.marketdataservice.config.FinnhubProperties;
 import com.company.marketdataservice.event.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.instrument.InstrumentMappingService;
 import com.company.marketdataservice.kafka.MarketEventPublisher;
 import com.company.marketdataservice.observation.MarketPriceObservation;
-import com.company.marketdataservice.provider.investing.InvestingStockPriceProvider;
+import com.company.marketdataservice.provider.finnhub.FinnhubClient;
+import com.company.marketdataservice.provider.yahoo.YahooFinanceProvider;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -27,7 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StockPriceScheduler {
 
     private final MarketDataProperties properties;
-    private final InvestingStockPriceProvider investingStockPriceProvider;
+    private final FinnhubProperties finnhubProperties;
+    private final FinnhubClient finnhubClient;
+    private final YahooFinanceProvider yahooFinanceProvider;
     private final MarketEventPublisher publisher;
     private final InstrumentMappingService instrumentMappingService;
     private final MeterRegistry meterRegistry;
@@ -37,23 +43,28 @@ public class StockPriceScheduler {
 
     @Scheduled(fixedDelayString = "${scheduler.stock.delay-ms:30000}")
     public void pullStockPrices() {
+        log.info("STOCK SCHEDULER RUNNING");
         List<String> stocks = properties.getTrackedStocks();
         if (stocks == null || stocks.isEmpty()) {
             return;
         }
         for (String symbol : stocks) {
             try {
-                BigDecimal price = investingStockPriceProvider.fetchPrice(symbol);
+                boolean finnhubOwned = isOwnedByFinnhub(symbol);
+                String source = finnhubOwned ? "FINNHUB" : yahooFinanceProvider.source();
+                BigDecimal price = finnhubOwned
+                        ? finnhubClient.fetchLiveQuotePrice(symbol)
+                        : yahooFinanceProvider.fetchPrice(symbol);
 
                 var observation = new MarketPriceObservation(
-                        investingStockPriceProvider.source(),
+                        source,
                         symbol,
                         price,
                         Instant.now()
                 );
 
                 Long instrumentId = instrumentMappingService
-                        .resolveInstrument(investingStockPriceProvider.source(), symbol)
+                        .resolveInstrument(source, symbol)
                         .orElse(null);
 
                 String provider = observation.provider() == null ? "" : observation.provider();
@@ -97,7 +108,7 @@ public class StockPriceScheduler {
                                 symbol,
                                 price,
                                 "MARKET",
-                                investingStockPriceProvider.source(),
+                                source,
                                 instrumentId
                         )
                 );
@@ -114,5 +125,18 @@ public class StockPriceScheduler {
                 log.error("STOCK_DATA_ERROR symbol={}, error={}", symbol, e.getMessage());
             }
         }
+    }
+
+    private boolean isOwnedByFinnhub(String symbol) {
+        if (!finnhubProperties.isEnabled() || symbol == null || symbol.isBlank()) {
+            return false;
+        }
+        Set<String> owned = finnhubProperties.getSymbols() == null
+                ? Set.of()
+                : finnhubProperties.getSymbols().stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(s -> s.trim().toUpperCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+        return owned.contains(symbol.trim().toUpperCase(Locale.ROOT));
     }
 }

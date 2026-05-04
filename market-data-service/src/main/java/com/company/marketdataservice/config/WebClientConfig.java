@@ -67,9 +67,30 @@ public class WebClientConfig {
                 .build();
     }
 
-    @Bean("investingStockWebClient")
-    public WebClient investingStockWebClient(ResilienceProperties resilienceProperties) {
-        long timeoutMillis = resilienceProperties.getRequiredProvider("investing_stock").getTimeout().getMillis();
+    @Bean("yahooStockWebClient")
+    public WebClient yahooStockWebClient(ResilienceProperties resilienceProperties) {
+        long timeoutMillis = resilienceProperties.getRequiredProvider("yahoo").getTimeout().getMillis();
+        HttpClient httpClient =
+                HttpClient.create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) timeoutMillis)
+                        .responseTimeout(Duration.ofMillis(timeoutMillis))
+                        .doOnConnected(conn ->
+                                conn.addHandlerLast(
+                                                new ReadTimeoutHandler(timeoutMillis, TimeUnit.MILLISECONDS)
+                                        )
+                                        .addHandlerLast(
+                                                new WriteTimeoutHandler(timeoutMillis, TimeUnit.MILLISECONDS)
+                                        )
+                        );
+
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+    @Bean("finnhubWebClient")
+    public WebClient finnhubWebClient(ResilienceProperties resilienceProperties) {
+        long timeoutMillis = resilienceProperties.getRequiredProvider("finnhub").getTimeout().getMillis();
         HttpClient httpClient =
                 HttpClient.create()
                         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) timeoutMillis)

@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "providers.investing")
-public class InvestingProperties {
+@ConfigurationProperties(prefix = "providers.yahoo")
+public class YahooFinanceProperties {
 
-    private String baseUrl = "https://api.investing.com";
-
-    private String pricePathTemplate = "/api/financialdata/{symbol}/price";
-
+    private String baseUrl = "https://query1.finance.yahoo.com";
+    private String chartPathTemplate = "/v8/finance/chart/{symbol}";
     private String userAgent = "Mozilla/5.0 (compatible; FinanceMarketDataService/1.0)";
+    private String defaultRange = "1d";
+    private String defaultInterval = "1m";
 }

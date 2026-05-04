@@ -30,18 +30,33 @@ providers:
     base-url: https://api.binance.com
   coingecko:
     base-url: https://api.coingecko.com/api/v3
-  investing:
-    base-url: https://api.investing.com
-    price-path-template: /api/financialdata/{symbol}/price
+    api-key: ${COINGECKO_API_KEY:}
+  yahoo:
+    base-url: https://query1.finance.yahoo.com
+    chart-path-template: /v8/finance/chart/{symbol}
     user-agent: Mozilla/5.0 (compatible; FinanceMarketDataService/1.0)
+  finnhub:
+    enabled: ${PROVIDERS_FINNHUB_ENABLED:false}
+    base-url: https://finnhub.io
+    stock-quote-path: /api/v1/quote
+    stock-candle-path: /api/v1/stock/candle
+    api-key: ${FINNHUB_API_KEY:}
+    symbols:
+      - AAPL
+      - AMZN
+      - NVDA
+      - MSFT
+      - GOOGL
 
 scheduler:
+  market:
+    delay-ms: 30000
   binance:
     delay-ms: 5000
   fx:
     delay-ms: 300000
   stock:
-    delay-ms: 30000
+    delay-ms: 60000
 
 management:
   endpoints:
@@ -56,6 +71,30 @@ management:
       endpoint: http://jaeger:4318/v1/traces
 
 market:
+  evds:
+    base-url: ${MARKET_EVDS_BASE_URL:https://evds2.tcmb.gov.tr/service/evds}
+    api-key: ${MARKET_EVDS_API_KEY:${TCMB_API_KEY:}}
+  ingestion:
+    env: ${MARKET_INGESTION_ENV:dev}
+  history:
+    backfill:
+      enabled: ${MARKET_HISTORY_BACKFILL_ENABLED:false}
+      run-on-startup: ${MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP:false}
+      schedule-initial-delay-ms: 10000
+      schedule-delay-ms: 60000
+      kafka:
+        enabled: false
+      retry:
+        initial-delay-ms: 1000
+        multiplier: 2.0
+        max-delay-ms: 300000
+        max-attempts: 8
+      years: 5
+      chunk-days: 365
+      min-price-history-days: 900
+      min-recent-price-history-days: 120
+      min-recent30-day-coverage-days: 15
+      sleep-ms: 200
   tracked-funds: &mds-tracked-funds
     - AFT
     - AFA
@@ -70,6 +109,11 @@ market:
     - GARAN
     - THYAO
     - ASELS
+    - AAPL
+    - AMZN
+    - NVDA
+    - MSFT
+    - GOOGL
   provider: composite
   fx:
     scheduler-enabled: true
@@ -79,7 +123,13 @@ market:
     provider-currencies:
       - USD
       - EUR
+      - GBP
+      - JPY
+      - AED
     tcmb-url: https://www.tcmb.gov.tr/kurlar/today.xml
+    tcmb-api-key: ${TCMB_API_KEY:}
+    tcmb-api-key-query-param: ${TCMB_API_KEY_QUERY_PARAM:key}
+    tcmb-api-key-header: ${TCMB_API_KEY_HEADER:X-API-Key}
     exchange-rate-url: https://open.er-api.com/v6/latest/TRY
   fund:
     scheduler-enabled: false
@@ -125,7 +175,18 @@ resilience:
         sliding-window-size: 10
         wait-duration-in-open-state-ms: 30000
         permitted-number-of-calls-in-half-open-state: 3
-    investing_stock:
+    yahoo:
+      retry:
+        max-attempts: 2
+        delay-ms: 1000
+      timeout:
+        millis: 12000
+      circuit-breaker:
+        failure-rate-threshold: 50
+        sliding-window-size: 10
+        wait-duration-in-open-state-ms: 60000
+        permitted-number-of-calls-in-half-open-state: 2
+    finnhub:
       retry:
         max-attempts: 2
         delay-ms: 1000
