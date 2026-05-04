@@ -179,6 +179,15 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
       - SPRING_DATASOURCE_USERNAME=finance
       - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
+      - TCMB_API_KEY=${TCMB_API_KEY:-NvIg6r0WZV}
+      - TCMB_API_KEY_QUERY_PARAM=${TCMB_API_KEY_QUERY_PARAM:-key}
+      - TCMB_API_KEY_HEADER=${TCMB_API_KEY_HEADER:-X-API-Key}
+      - PROVIDERS_FINNHUB_ENABLED=true
+      - FINNHUB_API_KEY=d7r26q9r01qtpsm0phfgd7r26q9r01qtpsm0phg0
+      - MARKET_HISTORY_BACKFILL_ENABLED=true
+      - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=false
     networks:
       - finance-net
 
@@ -354,6 +363,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - VITE_PROXY_TARGET=http://api-gateway:8080
     volumes:
       - ../frontend-web:/app
       - /app/node_modules
