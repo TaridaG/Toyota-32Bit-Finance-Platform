@@ -142,7 +142,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
       <div className="portal-header-inner">
         <Link to={isAuthenticated ? '/app' : '/'} className="portal-logo">
           <span className="portal-logo-mark" />
-          <span>{t('common.appName')}</span>
+          <span>{t('appName')}</span>
         </Link>
 
         <nav className="portal-nav portal-nav-desktop" aria-label="Ana navigasyon">

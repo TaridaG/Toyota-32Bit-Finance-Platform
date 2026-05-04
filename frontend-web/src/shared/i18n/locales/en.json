@@ -23,22 +23,91 @@
     "simulation": { "titleDoc": "Simulation | Finance Platform", "title": "Simulation", "lead": "Simulation module will be added soon." }
   },
   "landing": {
-    "titleDoc": "Finance Portal | Welcome",
-    "kicker": "Enterprise Finance Portal",
-    "heroTitle": "Track markets, manage your portfolio, and strengthen your strategy",
-    "heroSubtitle": "Manage your financial operations from one place with advanced analytics and live tracking.",
-    "ctaLogin": "Log In",
-    "ctaRegister": "Sign Up",
-    "instrumentsTitle": "Featured Instruments",
-    "instrumentsSubtitle": "Sample showcase for your live market dashboard.",
-    "whyTitle": "Why This Platform?",
-    "highlights": {
-      "realtimeTitle": "Real-time market tracking",
-      "realtimeDesc": "Compare crypto, equities, and commodities on one panel.",
-      "reportTitle": "Smart report generation",
-      "reportDesc": "Track your portfolio with automatic CSV and PDF reports.",
-      "riskTitle": "Risk and trend analysis",
-      "riskDesc": "Speed up decisions with trend, RSI, and moving averages."
+    "titleDoc": "Finance Portal | Enterprise Platform",
+    "sectionsNavAria": "Landing sections",
+    "states": {
+      "loading": "Loading section data...",
+      "error": "Section data could not be loaded.",
+      "retry": "Retry",
+      "notAvailable": "Not available"
+    },
+    "sections": {
+      "hero": { "dotLabel": "Hero" },
+      "markets": { "dotLabel": "Live markets" },
+      "analysis": { "dotLabel": "Technical analysis" },
+      "ai-insights": { "dotLabel": "AI insights" },
+      "news": { "dotLabel": "Enriched news" },
+      "portfolio": { "dotLabel": "Portfolio PnL" },
+      "reporting": { "dotLabel": "Reporting" },
+      "security": { "dotLabel": "Security" },
+      "final-cta": { "dotLabel": "Final call to action" }
+    },
+    "hero": {
+      "kicker": "Enterprise Fintech Workspace",
+      "title": "A scroll-driven command center for live markets, analysis, and portfolio intelligence",
+      "subtitle": "Track execution-critical signals, interpret enriched news, and coordinate reporting and risk from a single secure platform.",
+      "ctaLogin": "Log In",
+      "ctaRegister": "Sign Up"
+    },
+    "markets": {
+      "title": "Live markets",
+      "subtitle": "Featured instruments are loaded from the live market overview endpoint."
+    },
+    "analysis": {
+      "title": "Technical analysis workspace",
+      "subtitle": "Review structure, trend, and momentum in one analysis flow.",
+      "points": {
+        "point1": "Overlay market context with indicator-based signals.",
+        "point2": "Compare assets with synchronized time ranges.",
+        "point3": "Support faster entries with cleaner chart readouts."
+      },
+      "visualTitle": "Signal stack",
+      "visualBody": "Trend, RSI, and moving averages are aligned for tactical decision support."
+    },
+    "ai": {
+      "title": "AI insights from enriched news",
+      "subtitle": "Sentiment and first-hour reaction expose why assets move.",
+      "leadingSentiment": {
+        "positive": "Positive sentiment currently leads the feed.",
+        "negative": "Negative sentiment currently leads the feed.",
+        "neutral": "Sentiment is currently balanced."
+      },
+      "stats": {
+        "positive": "Positive stories: {{count}}",
+        "negative": "Negative stories: {{count}}",
+        "neutral": "Neutral stories: {{count}}",
+        "reaction": "Strongest 1h reaction: {{symbol}} ({{value}}%)",
+        "reactionFallback": "Reaction data is not available yet."
+      }
+    },
+    "news": {
+      "title": "Enriched news intelligence",
+      "subtitle": "Summaries, sentiment, and reaction values are streamed from backend enriched news."
+    },
+    "portfolio": {
+      "title": "Portfolio PnL and reporting",
+      "subtitle": "Monitor allocation, realized performance, and reporting cadence in one workflow.",
+      "cta": "Open portfolio workspace",
+      "visualTitle": "Security and observability",
+      "visualBody": "Built for enterprise controls with stable monitoring, auditability, and reliable delivery."
+    },
+    "reporting": {
+      "title": "Decision-grade reporting",
+      "subtitle": "Generate explainable summaries for stakeholders with fewer manual handoffs.",
+      "visualTitle": "Workflow-ready outputs",
+      "visualBody": "Create reusable reporting views for operational and executive review."
+    },
+    "security": {
+      "title": "Security and observability",
+      "subtitle": "Track platform behavior with confidence and monitor risk-sensitive operations.",
+      "visualTitle": "Enterprise guardrails",
+      "visualBody": "Unified monitoring and auditability reduce blind spots in volatile markets."
+    },
+    "finalCta": {
+      "title": "Deploy your team on one enterprise finance platform",
+      "subtitle": "Start with secure access and scale your market intelligence workflow.",
+      "login": "Log In",
+      "register": "Sign Up"
     }
   },
   "auth": {

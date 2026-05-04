@@ -22,7 +22,89 @@
     "dashboard": { "titleDoc": "Startseite | Finanzplattform", "title": "Startseite", "lead": "Allgemeine Übersichtskomponenten werden hier erscheinen." },
     "simulation": { "titleDoc": "Simulation | Finanzplattform", "title": "Simulation", "lead": "Das Simulationsmodul wird bald hinzugefügt." }
   },
-  "landing": { "titleDoc": "Finanzportal | Willkommen", "kicker": "Enterprise Finanzportal", "heroTitle": "Märkte verfolgen, Portfolio verwalten", "heroSubtitle": "Steuern Sie Ihre Finanzprozesse zentral.", "ctaLogin": "Anmelden", "ctaRegister": "Registrieren", "instrumentsTitle": "Top Instrumente", "instrumentsSubtitle": "Beispielübersicht für Ihr Live-Dashboard.", "whyTitle": "Warum diese Plattform?", "highlights": { "realtimeTitle": "Echtzeitüberwachung", "realtimeDesc": "Märkte in einem Panel vergleichen.", "reportTitle": "Intelligente Berichte", "reportDesc": "Automatische CSV- und PDF-Berichte.", "riskTitle": "Risikoanalyse", "riskDesc": "Schnellere Entscheidungen mit Indikatoren." } },
+  "landing": {
+    "titleDoc": "Finanzportal | Enterprise Plattform",
+    "sectionsNavAria": "Landing-Bereiche",
+    "states": { "loading": "Bereichsdaten werden geladen...", "error": "Bereichsdaten konnten nicht geladen werden.", "retry": "Erneut versuchen", "notAvailable": "Nicht verfügbar" },
+    "sections": {
+      "hero": { "dotLabel": "Hero" },
+      "markets": { "dotLabel": "Live-Märkte" },
+      "analysis": { "dotLabel": "Technische Analyse" },
+      "ai-insights": { "dotLabel": "KI-Insights" },
+      "news": { "dotLabel": "Enriched News" },
+      "portfolio": { "dotLabel": "Portfolio GuV" },
+      "reporting": { "dotLabel": "Reporting" },
+      "security": { "dotLabel": "Sicherheit" },
+      "final-cta": { "dotLabel": "Finaler CTA" }
+    },
+    "hero": {
+      "kicker": "Enterprise Fintech Workspace",
+      "title": "Steuern Sie Live-Märkte, Analyse und Portfolio-Intelligenz in einem Scroll-Flow",
+      "subtitle": "Überwachen Sie kritische Signale, interpretieren Sie Enriched News und koordinieren Sie Reporting und Risiko auf einer sicheren Plattform.",
+      "ctaLogin": "Anmelden",
+      "ctaRegister": "Registrieren"
+    },
+    "markets": {
+      "title": "Live-Märkte",
+      "subtitle": "Top-Instrumente werden aus dem Live-Market-Overview-Endpunkt geladen."
+    },
+    "analysis": {
+      "title": "Technischer Analyse-Arbeitsbereich",
+      "subtitle": "Struktur, Trend und Momentum in einem Analysefluss auswerten.",
+      "points": {
+        "point1": "Marktkontext mit indikatorbasierten Signalen kombinieren.",
+        "point2": "Assets mit synchronisierten Zeitfenstern vergleichen.",
+        "point3": "Schnellere Entscheidungen mit klaren Chart-Readouts treffen."
+      },
+      "visualTitle": "Signal-Stack",
+      "visualBody": "Trend, RSI und gleitende Durchschnitte sind für taktische Entscheidungen abgestimmt."
+    },
+    "ai": {
+      "title": "KI-Insights aus Enriched News",
+      "subtitle": "Sentiment und erste Reaktion zeigen, warum sich Assets bewegen.",
+      "leadingSentiment": {
+        "positive": "Positives Sentiment führt derzeit den Feed.",
+        "negative": "Negatives Sentiment führt derzeit den Feed.",
+        "neutral": "Das Sentiment ist derzeit ausgeglichen."
+      },
+      "stats": {
+        "positive": "Positive Meldungen: {{count}}",
+        "negative": "Negative Meldungen: {{count}}",
+        "neutral": "Neutrale Meldungen: {{count}}",
+        "reaction": "Stärkste 1h-Reaktion: {{symbol}} ({{value}}%)",
+        "reactionFallback": "Reaktionsdaten sind noch nicht verfügbar."
+      }
+    },
+    "news": {
+      "title": "Enriched News Intelligence",
+      "subtitle": "Zusammenfassungen, Sentiment und Reaktionswerte kommen aus dem Backend-News-Stream."
+    },
+    "portfolio": {
+      "title": "Portfolio GuV und Reporting",
+      "subtitle": "Allokation, realisierte Performance und Reporting-Rhythmus in einem Workflow überwachen.",
+      "cta": "Portfolio-Arbeitsbereich öffnen",
+      "visualTitle": "Sicherheit und Observability",
+      "visualBody": "Für Enterprise-Kontrollen mit stabiler Überwachung, Auditierbarkeit und verlässlicher Auslieferung."
+    },
+    "reporting": {
+      "title": "Reporting für belastbare Entscheidungen",
+      "subtitle": "Erstellen Sie nachvollziehbare Zusammenfassungen für Stakeholder mit weniger manuellen Übergaben.",
+      "visualTitle": "Workflow-fähige Ausgaben",
+      "visualBody": "Nutzen Sie wiederverwendbare Reporting-Ansichten für operative und strategische Reviews."
+    },
+    "security": {
+      "title": "Sicherheit und Observability",
+      "subtitle": "Überwachen Sie Plattformverhalten zuverlässig und behalten Sie risikokritische Abläufe im Blick.",
+      "visualTitle": "Enterprise-Leitplanken",
+      "visualBody": "Einheitliches Monitoring und Auditierbarkeit reduzieren blinde Flecken in volatilen Märkten."
+    },
+    "finalCta": {
+      "title": "Führen Sie Ihr Team auf einer Enterprise-Finanzplattform zusammen",
+      "subtitle": "Starten Sie mit sicherem Zugriff und skalieren Sie Ihren Markt-Intelligence-Workflow.",
+      "login": "Anmelden",
+      "register": "Registrieren"
+    }
+  },
   "auth": {
     "login": { "titleDoc": "Anmelden | Finanzportal", "kicker": "Sicherer Zugriff", "title": "Bei Ihrem Konto anmelden", "lead": "Für Echtzeitmärkte anmelden.", "identityLabel": "E-Mail oder Benutzername", "identityPlaceholder": "beispiel@firma.com", "passwordLabel": "Passwort", "passwordPlaceholder": "Passwort eingeben", "submit": "Anmelden", "submitting": "Anmeldung läuft...", "noAccount": "Noch kein Konto?", "registerNow": "Jetzt registrieren", "errors": { "identityRequired": "E-Mail oder Benutzername ist erforderlich.", "passwordMin": "Passwort muss mindestens 6 Zeichen haben." } },
     "register": { "titleDoc": "Registrieren | Finanzportal", "kicker": "Neues Konto", "title": "Dem Finanzportal beitreten", "lead": "Konto in wenigen Schritten erstellen.", "fullNameLabel": "Vollständiger Name", "fullNamePlaceholder": "Vollständiger Name", "emailLabel": "E-Mail", "emailPlaceholder": "beispiel@firma.com", "passwordLabel": "Passwort", "passwordPlaceholder": "Mindestens 8 Zeichen", "passwordAgainLabel": "Passwort (wiederholen)", "passwordAgainPlaceholder": "Passwort erneut eingeben", "termsLabel": "Ich akzeptiere die Nutzungsbedingungen.", "submit": "Registrieren", "submitting": "Konto wird erstellt...", "haveAccount": "Sie haben bereits ein Konto?", "loginNow": "Anmelden", "errors": { "fullNameRequired": "Vollständiger Name ist erforderlich.", "emailInvalid": "Bitte gültige E-Mail eingeben.", "passwordMin": "Passwort muss mindestens 8 Zeichen haben.", "passwordsNotMatch": "Passwörter stimmen nicht überein.", "termsRequired": "Sie müssen den Bedingungen zustimmen." } }
