@@ -19,6 +19,7 @@ export function ChartBackground({ isReducedMotion, theme }: ChartBackgroundProps
 
     let timerId: number | null = null
     let isActive = true
+    let disposed = false
 
     const isDark = theme === 'dark'
     const palette = {
@@ -90,7 +91,7 @@ export function ChartBackground({ isReducedMotion, theme }: ChartBackgroundProps
     chartInstance.timeScale().fitContent()
 
     const tick = () => {
-      if (!isActive) return
+      if (!isActive || disposed) return
       const open = lastClose
       const close = open + randomBetween(-1, 1)
       const high = Math.max(open, close) + randomBetween(0, 0.5)
@@ -103,7 +104,11 @@ export function ChartBackground({ isReducedMotion, theme }: ChartBackgroundProps
         low,
         close,
       }
-      seriesInstance.update(candle)
+      try {
+        seriesInstance.update(candle)
+      } catch {
+        return
+      }
       lastClose = close
       const nextDelay = isReducedMotion ? randomBetween(700, 950) : randomBetween(500, 800)
       timerId = window.setTimeout(tick, nextDelay)
@@ -112,10 +117,15 @@ export function ChartBackground({ isReducedMotion, theme }: ChartBackgroundProps
     tick()
 
     const resizeObserver = new ResizeObserver(() => {
-      chartInstance.applyOptions({
-        width: Math.max(host.clientWidth || 0, 320),
-        height: Math.max(host.clientHeight || 0, 180),
-      })
+      if (disposed) return
+      try {
+        chartInstance.applyOptions({
+          width: Math.max(host.clientWidth || 0, 320),
+          height: Math.max(host.clientHeight || 0, 180),
+        })
+      } catch {
+        // Chart removed while ResizeObserver still fires (unmount race).
+      }
     })
     resizeObserver.observe(host)
 
@@ -136,13 +146,18 @@ export function ChartBackground({ isReducedMotion, theme }: ChartBackgroundProps
     document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
+      disposed = true
       isActive = false
       if (timerId != null) {
         window.clearTimeout(timerId)
       }
       resizeObserver.disconnect()
       document.removeEventListener('visibilitychange', onVisibility)
-      chartInstance.remove()
+      try {
+        chartInstance.remove()
+      } catch {
+        // ignore
+      }
     }
   }, [isReducedMotion, theme])
 

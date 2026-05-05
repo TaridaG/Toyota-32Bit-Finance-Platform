@@ -4,7 +4,8 @@ server:
 app:
   security:
     jwt:
-      issuer-uri: ${JWT_ISSUER_URI:http://localhost:8085/realms/finance}
+      issuer-uri: ${JWT_ISSUER_URI:}
+      jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8085/realms/finance/protocol/openid-connect/certs}
 
 spring:
   security:

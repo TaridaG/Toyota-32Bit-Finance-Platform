@@ -1,4 +1,6 @@
 spring:
+  codec:
+    max-in-memory-size: 8MB
   application:
     name: api-gateway
   main:
@@ -13,6 +15,8 @@ app:
   security:
     jwt:
       issuer-uri: ${JWT_ISSUER_URI:http://localhost:8085/realms/finance}
+      # JWKS-only JWT decode (no iss hostname coupling). Without this, gateway may use issuer-uri-only decoder.
+      jwk-set-uri: http://localhost:8085/realms/finance/protocol/openid-connect/certs
 
 gateway:
   cors:

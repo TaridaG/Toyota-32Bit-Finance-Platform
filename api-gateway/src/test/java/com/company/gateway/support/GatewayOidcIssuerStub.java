@@ -80,6 +80,9 @@ public final class GatewayOidcIssuerStub {
         }
         registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> registeredIssuer);
         registry.add("app.security.jwt.issuer-uri", () -> registeredIssuer);
+        int port = server.getPort();
+        String jwks = "http://127.0.0.1:" + port + "/realms/finance/protocol/openid-connect/certs";
+        registry.add("app.security.jwt.jwk-set-uri", () -> jwks);
     }
 
     public static String mintAccessToken(Consumer<JWTClaimsSet.Builder> customizer) throws JOSEException {

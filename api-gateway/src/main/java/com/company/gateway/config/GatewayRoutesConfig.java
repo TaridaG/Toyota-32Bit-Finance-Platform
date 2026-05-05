@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @Profile("!test")
 public class GatewayRoutesConfig {
+
     public GatewayRoutesConfig(RedisRateLimiter apiRateLimiter, KeyResolver userIdKeyResolver) {
         this.apiRateLimiter = apiRateLimiter;
         this.userIdKeyResolver = userIdKeyResolver;
@@ -37,59 +38,65 @@ public class GatewayRoutesConfig {
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
-
-                .route("market-data-service-api", r -> r.path("/api/market/**")
-                        .filters(f -> f
-                                .circuitBreaker(cb -> cb
-                                        .setName("marketCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/market"))
-                        )
-                        .uri(marketBaseUri))
-
-                .route("market-data-service-legacy", r -> r.path("/market/**")
-                        .filters(f -> f
-                                .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}")
-                                .circuitBreaker(cb -> cb
-                                        .setName("marketCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/market"))
-                        )
-                        .uri(marketBaseUri))
-
-                .route("news-service", r -> r.path("/api/news/**")
-                        .filters(f -> f
-                                .circuitBreaker(cb -> cb
-                                        .setName("newsCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/news"))
-                        )
-                        .uri(newsBaseUri))
-
-                .route("reporting-service", r -> r.path("/api/reports/**")
-                        .filters(f -> f
-                                .circuitBreaker(cb -> cb
-                                        .setName("reportingCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/reporting"))
-                        )
-                        .uri(reportingBaseUri))
-
-                .route("analytics-service", r -> r.path("/api/analytics/**")
-                        .filters(f -> f
-                                .circuitBreaker(cb -> cb
-                                        .setName("analyticsCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/analytics"))
-                        )
-                        .uri(analyticsBaseUri))
-
-                .route("finance-api", r -> r.path("/api/**", "/health")
-                        .filters(f -> f
-                                .requestRateLimiter(rl -> rl
-                                        .setRateLimiter(apiRateLimiter)
-                                        .setKeyResolver(userIdKeyResolver)
-                                )
-                                .circuitBreaker(cb -> cb
-                                        .setName("financeCircuitBreaker")
-                                        .setFallbackUri("forward:/fallback/finance"))
-                        )
+                .route("finance-api-public", r -> r.order(-1)
+                        .path(
+                                "/api/public/register",
+                                "/api/public/login",
+                                "/api/public/refresh",
+                                "/api/public/register/",
+                                "/api/public/login/",
+                                "/api/public/refresh/")
                         .uri(financeBaseUri))
+                .route("market-data-service-api", r -> r.path("/api/market/**")
+                .filters(f -> f
+                .circuitBreaker(cb -> cb
+                .setName("marketCircuitBreaker")
+                .setFallbackUri("forward:/fallback/market"))
+                )
+                .uri(marketBaseUri))
+                .route("market-data-service-legacy", r -> r.path("/market/**")
+                .filters(f -> f
+                .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}")
+                .circuitBreaker(cb -> cb
+                .setName("marketCircuitBreaker")
+                .setFallbackUri("forward:/fallback/market"))
+                )
+                .uri(marketBaseUri))
+                .route("finance-api-news-enriched", r -> r.order(-2)
+                        .path("/api/news/enriched", "/api/news/enriched/")
+                        .uri(financeBaseUri))
+                .route("news-service", r -> r.order(1).path("/api/news/**")
+                .filters(f -> f
+                .circuitBreaker(cb -> cb
+                .setName("newsCircuitBreaker")
+                .setFallbackUri("forward:/fallback/news"))
+                )
+                .uri(newsBaseUri))
+                .route("reporting-service", r -> r.path("/api/reports/**")
+                .filters(f -> f
+                .circuitBreaker(cb -> cb
+                .setName("reportingCircuitBreaker")
+                .setFallbackUri("forward:/fallback/reporting"))
+                )
+                .uri(reportingBaseUri))
+                .route("analytics-service", r -> r.path("/api/analytics/**")
+                .filters(f -> f
+                .circuitBreaker(cb -> cb
+                .setName("analyticsCircuitBreaker")
+                .setFallbackUri("forward:/fallback/analytics"))
+                )
+                .uri(analyticsBaseUri))
+                .route("finance-api", r -> r.path("/api/**", "/health")
+                .filters(f -> f
+                .requestRateLimiter(rl -> rl
+                .setRateLimiter(apiRateLimiter)
+                .setKeyResolver(userIdKeyResolver)
+                )
+                .circuitBreaker(cb -> cb
+                .setName("financeCircuitBreaker")
+                .setFallbackUri("forward:/fallback/finance"))
+                )
+                .uri(financeBaseUri))
                 .build();
     }
 }

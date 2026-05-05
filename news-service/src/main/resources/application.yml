@@ -60,6 +60,142 @@ news:
       THYAO:
         - thy
         - turkish airlines
+      ASELS:
+        - aselsan
+        - asels
+      AKBNK:
+        - akbank
+      ISCTR:
+        - is bankasi
+        - isbank
+      XU100:
+        - bist 100
+        - xu100
+        - borsa istanbul
+      XU030:
+        - bist 30
+        - xu030
+      AAPL:
+        - apple
+      MSFT:
+        - microsoft
+      NVDA:
+        - nvidia
+      TSLA:
+        - tesla
+      QQQ:
+        - nasdaq 100
+        - qqq
+      SPY:
+        - s&p 500
+        - sp500
+      EURTRY:
+        - eurtry
+        - euro tl
+      XAUUSD:
+        - ons altin
+        - xauusd
+      GLDTR:
+        - gram altin
+      TAHVIL:
+        - tahvil
+        - bono
+      FON:
+        - yatirim fonu
+        - emeklilik fonu
+  relevance:
+    enabled: true
+    min-score: 3
+    require-category-keyword-match: false
+    global-keywords:
+      - bist
+      - borsa istanbul
+      - xu100
+      - xu030
+      - viop
+      - nasdaq
+      - nyse
+      - wall street
+      - stock market
+      - hisse
+      - endeks
+      - etf
+      - fon
+      - doviz
+      - kur
+      - usdtry
+      - eurtry
+      - enflasyon
+      - faiz
+      - merkez bankasi
+      - tcmb
+      - fed
+      - ecb
+      - resesyon
+      - gsyh
+      - cari acik
+      - emtia
+      - altin
+      - petrol
+      - dogalgaz
+      - kripto
+      - bitcoin
+      - ethereum
+    category-keywords:
+      STOCK:
+        - hisse
+        - equity
+        - earnings
+        - bilanco
+        - temettu
+        - borsa
+      FX:
+        - doviz
+        - forex
+        - kur
+        - parity
+        - usdtry
+        - eurtry
+      FUND:
+        - fon
+        - etf
+        - mutual fund
+        - portfolio
+      GENERAL_ECONOMY:
+        - enflasyon
+        - faiz
+        - merkez bankasi
+        - fed
+        - ecb
+        - cpi
+        - pmi
+      CRYPTO:
+        - bitcoin
+        - ethereum
+        - stablecoin
+        - blockchain
+    blocked-keywords:
+      - celebrity
+      - horoscope
+      - magazin
+      - fashion week
+      - football match
+      - transfer rumor
+  translation:
+    enabled: true
+    provider: mymemory
+    supported-languages:
+      - tr
+      - en
+      - de
+    default-language: en
+    backfill-enabled: true
+    backfill-batch-size: 50
+    backfill-delay-ms: 60000
+    mymemory:
+      base-url: ${NEWS_TRANSLATION_MYMEMORY_BASE_URL:https://api.mymemory.translated.net}
+      timeout-ms: ${NEWS_TRANSLATION_TIMEOUT_MS:5000}
+      email: ${NEWS_TRANSLATION_MYMEMORY_EMAIL:}
   scheduler:
     enabled: true
     delay-ms: 300000

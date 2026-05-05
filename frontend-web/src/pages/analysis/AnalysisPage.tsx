@@ -77,7 +77,8 @@ export function AnalysisPage() {
     size: 200,
     category: 'all',
     searchTerm: '',
-    sort: 'change24h,desc',
+    sort: 'change1D,desc',
+    displayCurrency: currency,
   })
 
   const assets = useMemo<AssetDefinition[]>(
@@ -205,8 +206,8 @@ export function AnalysisPage() {
       .map<AssetNewsItem>((item) => ({
         id: String(item.id),
         assetId: selectedAsset?.id ?? 'unknown',
-        title: item.title,
-        summary: item.summary ?? '',
+        title: item.title ?? item.titleOriginal ?? '',
+        summary: item.summary ?? item.summaryOriginal ?? '',
         source: item.sourceName,
         impact: item.sentiment,
         createdAt: Math.floor(Date.parse(item.publishedAt) / 1000) as UTCTimestamp,

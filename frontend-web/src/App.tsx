@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import siteLogo from './assets/site-logo.png'
 import heroImg from './assets/hero.png'
 import './App.css'
 
@@ -13,7 +13,7 @@ function App() {
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logosu" />
-          <img src={viteLogo} className="vite" alt="Vite logosu" />
+          <img src={siteLogo} className="vite" alt="32Bit logosu" />
         </div>
         <div>
           <h1>Baslangic</h1>
@@ -42,7 +42,7 @@ function App() {
           <ul>
             <li>
               <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
+                <img className="logo" src={siteLogo} alt="" />
                 Vite'i Kesfet
               </a>
             </li>

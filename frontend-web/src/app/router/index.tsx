@@ -8,6 +8,7 @@ import { MarketsPage } from '../../pages/markets/MarketsPage'
 import { MyPortfolioPage } from '../../pages/my-portfolio/MyPortfolioPage'
 import { NewsPage } from '../../pages/news/NewsPage'
 import { AnalysisPage } from '../../pages/analysis/AnalysisPage'
+import { ProfileSettingsPage } from '../../pages/profile/ProfileSettingsPage'
 import { LandingPage } from '../../pages/public/LandingPage'
 import { LoginPage } from '../../pages/public/LoginPage'
 import { RegisterPage } from '../../pages/public/RegisterPage'
@@ -78,6 +79,7 @@ export const appRouter = createBrowserRouter([
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'portfolio', element: <ExternalPortfolioPage /> },
           { path: 'simulation', element: <SimulationPage /> },
+          { path: 'profile', element: <ProfileSettingsPage /> },
         ],
       },
     ],

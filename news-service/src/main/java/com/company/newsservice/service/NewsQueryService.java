@@ -7,6 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface NewsQueryService {
-    Page<NewsResponse> search(NewsCategory category, String q, Pageable pageable);
+    Page<NewsResponse> search(NewsCategory category, String q, Pageable pageable, String language, boolean includeOriginal);
     NewsDetailResponse getById(Long id);
 }

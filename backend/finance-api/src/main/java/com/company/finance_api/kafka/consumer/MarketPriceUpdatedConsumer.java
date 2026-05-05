@@ -33,6 +33,7 @@ import org.apache.kafka.common.header.Header;
 
 import org.apache.kafka.common.header.Headers;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 
 import org.springframework.stereotype.Component;
@@ -66,6 +67,8 @@ import java.util.regex.Pattern;
 @Slf4j
 
 @Component
+
+@Profile("kafka")
 
 public class MarketPriceUpdatedConsumer {
 

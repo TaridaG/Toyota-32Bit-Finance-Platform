@@ -41,8 +41,21 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        // Public self-service auth (no JWT yet; gateway must not forward spoofed X-USERNAME)
+        if ("POST".equalsIgnoreCase(request.getMethod())
+                && (path.endsWith("/api/public/register")
+                || path.endsWith("/api/public/login")
+                || path.endsWith("/api/public/refresh"))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // Public instrument discovery is allowed for guest users.
         if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/instruments")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        // Public news stream endpoints are allowed for guest users.
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/news")) {
             filterChain.doFilter(request, response);
             return;
         }

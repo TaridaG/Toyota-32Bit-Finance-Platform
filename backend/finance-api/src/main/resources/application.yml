@@ -1,6 +1,10 @@
 spring:
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 7MB
   security:
     oauth2:
       resourceserver:
@@ -34,3 +38,15 @@ scheduler:
 app:
   security:
     allow-header-user-fallback: ${APP_SECURITY_ALLOW_HEADER_USER_FALLBACK:true}
+  registration:
+    enabled: ${APP_REGISTRATION_ENABLED:true}
+  keycloak:
+    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8085}
+    realm: finance
+    admin:
+      username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+      password: ${KEYCLOAK_ADMIN_PASSWORD:}
+      client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+    portal:
+      client-id: ${KEYCLOAK_PORTAL_CLIENT_ID:finance-portal}
+      client-secret: ${KEYCLOAK_PORTAL_CLIENT_SECRET:}
