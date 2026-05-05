@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.io.IOException;
@@ -74,6 +75,60 @@ class GatewaySecurityTests {
                 .uri("/actuator/health")
                 .exchange()
                 .expectStatus().isOk();
+    }
+
+    @Test
+    void public_register_should_be_permitted_without_token() {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"success\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        webTestClient.post()
+                .uri("/api/public/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of(
+                        "email", "newuser@example.com",
+                        "username", "newuser",
+                        "password", "password12x"
+                ))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"success\":true}");
+    }
+
+    @Test
+    void public_register_should_ignore_invalid_bearer_token() {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"success\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        webTestClient.post()
+                .uri("/api/public/register")
+                .headers(h -> h.setBearerAuth("not.a.valid.jwt.token"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of(
+                        "email", "newuser2@example.com",
+                        "username", "newuser2",
+                        "password", "password12x"
+                ))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"success\":true}");
+    }
+
+    @Test
+    void public_login_should_be_permitted_without_token() {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"success\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        webTestClient.post()
+                .uri("/api/public/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of(
+                        "username", "user1",
+                        "password", "123456"
+                ))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"success\":true}");
     }
 
     @Test
@@ -145,7 +200,7 @@ class GatewaySecurityTests {
     @Test
     void should_return_401_without_token_for_protected_api() {
         webTestClient.get()
-                .uri("/api/instruments")
+                .uri("/api/admin/stats")
                 .exchange()
                 .expectStatus().isUnauthorized();
     }

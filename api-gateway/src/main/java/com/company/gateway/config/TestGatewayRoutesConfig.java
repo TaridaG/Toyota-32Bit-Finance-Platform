@@ -29,20 +29,29 @@ public class TestGatewayRoutesConfig {
     @Bean
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("market-data-service-api", r -> r.path("/api/market/**")
-                        .uri(marketBaseUri))
-                .route("market-data-service-legacy", r -> r.path("/market/**")
-                        .filters(f -> f
-                                .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}"))
-                        .uri(marketBaseUri))
-                .route("news-service", r -> r.path("/api/news/**")
-                        .uri(newsBaseUri))
-                .route("reporting-service", r -> r.path("/api/reports/**")
-                        .uri(reportingBaseUri))
-                .route("analytics-service", r -> r.path("/api/analytics/**")
-                        .uri(analyticsBaseUri))
-                .route("finance-api", r -> r.path("/api/**", "/health")
+                .route("finance-api-public", r -> r.order(-1)
+                        .path(
+                                "/api/public/register",
+                                "/api/public/login",
+                                "/api/public/refresh",
+                                "/api/public/register/",
+                                "/api/public/login/",
+                                "/api/public/refresh/")
                         .uri(financeBaseUri))
+                .route("market-data-service-api", r -> r.path("/api/market/**")
+                .uri(marketBaseUri))
+                .route("market-data-service-legacy", r -> r.path("/market/**")
+                .filters(f -> f
+                .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}"))
+                .uri(marketBaseUri))
+                .route("news-service", r -> r.path("/api/news/**")
+                .uri(newsBaseUri))
+                .route("reporting-service", r -> r.path("/api/reports/**")
+                .uri(reportingBaseUri))
+                .route("analytics-service", r -> r.path("/api/analytics/**")
+                .uri(analyticsBaseUri))
+                .route("finance-api", r -> r.path("/api/**", "/health")
+                .uri(financeBaseUri))
                 .build();
     }
 }

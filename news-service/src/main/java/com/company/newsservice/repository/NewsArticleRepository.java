@@ -21,16 +21,59 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long> 
         from NewsArticle n
         where n.active = true
           and (:category is null or n.category = :category)
+        order by n.publishedAt desc
+    """)
+    Page<NewsArticle> searchByCategory(
+            @Param("category") NewsCategory category,
+            Pageable pageable
+    );
+
+    @Query("""
+        select n
+        from NewsArticle n
+        where n.active = true
+          and n.category = :category
           and (
-                :q is null
-                or lower(n.title) like lower(concat('%', :q, '%'))
+                lower(n.title) like lower(concat('%', :q, '%'))
                 or lower(coalesce(n.summary, '')) like lower(concat('%', :q, '%'))
               )
         order by n.publishedAt desc
     """)
-    Page<NewsArticle> search(
+    Page<NewsArticle> searchByCategoryAndQuery(
             @Param("category") NewsCategory category,
             @Param("q") String q,
+            Pageable pageable
+    );
+
+    @Query("""
+        select n
+        from NewsArticle n
+        where n.active = true
+          and (
+                lower(n.title) like lower(concat('%', :q, '%'))
+                or lower(coalesce(n.summary, '')) like lower(concat('%', :q, '%'))
+              )
+        order by n.publishedAt desc
+    """)
+    Page<NewsArticle> searchByQuery(
+            @Param("q") String q,
+            Pageable pageable
+    );
+
+    @Query("""
+        select n
+        from NewsArticle n
+        where n.active = true
+          and not exists (
+              select 1
+              from NewsArticleTranslation t
+              where t.newsArticle.id = n.id
+                and t.languageCode = :language
+          )
+        order by n.publishedAt desc
+    """)
+    Page<NewsArticle> findActiveWithoutTranslation(
+            @Param("language") String language,
             Pageable pageable
     );
 }

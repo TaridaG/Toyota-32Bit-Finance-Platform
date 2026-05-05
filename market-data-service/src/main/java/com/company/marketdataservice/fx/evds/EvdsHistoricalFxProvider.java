@@ -319,3 +319,6 @@ public class EvdsHistoricalFxProvider implements HistoricalFxProvider {
 
     private record Pair(String baseCurrency, String quoteCurrency) {}
 }
+
+
+    

@@ -72,6 +72,7 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME: localhost
       KC_HOSTNAME_PORT: 8085
+      KC_HOSTNAME_URL: http://localhost:8085
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
     ports:
@@ -147,7 +148,6 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=kafka,cache-redis
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
       - SPRING_DATASOURCE_USERNAME=finance
       - SPRING_DATASOURCE_PASSWORD=123456
@@ -158,6 +158,14 @@ services:
       - SPRING_REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - APP_SECURITY_ALLOW_HEADER_USER_FALLBACK=${APP_SECURITY_ALLOW_HEADER_USER_FALLBACK:-true}
+      - SPRING_PROFILES_ACTIVE=docker,kafka,cache-redis
+      - APP_SECURITY_JWT_JWK_SET_URI=http://keycloak:8080/realms/finance/protocol/openid-connect/certs
+      - KEYCLOAK_SERVER_URL=http://keycloak:8080
+      - KEYCLOAK_ADMIN_USERNAME=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - CLIENTS_NEWS_BASE_URL=http://news-service:8082
+      - APP_REGISTRATION_ENABLED=true
+      - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
     networks:
       - finance-net
 
@@ -282,6 +290,7 @@ services:
       - DB_NAME=finance
       - DB_USERNAME=finance
       - DB_PASSWORD=${NEWS_DB_PASSWORD:?NEWS_DB_PASSWORD is required}
+      - JWT_ISSUER_URI=http://keycloak:8080/realms/finance
       - NEWS_RSS_CONNECT_TIMEOUT_MS=${NEWS_RSS_CONNECT_TIMEOUT_MS:-5000}
       - NEWS_RSS_READ_TIMEOUT_MS=${NEWS_RSS_READ_TIMEOUT_MS:-10000}
       - NEWS_RSS_MAX_ENTRIES_PER_FEED=${NEWS_RSS_MAX_ENTRIES_PER_FEED:-100}
@@ -342,7 +351,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      JWT_ISSUER_URI: http://keycloak:8080/realms/finance
+      JWT_ISSUER_URI: http://localhost:8085/realms/finance
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
     ports:
@@ -366,7 +375,7 @@ services:
       - VITE_PROXY_TARGET=http://api-gateway:8080
     volumes:
       - ../frontend-web:/app
-      - /app/node_modules
+      - frontend_web_node_modules:/app/node_modules
     networks:
       - finance-net
 
@@ -420,4 +429,5 @@ networks:
 volumes:
   finance_pg_data:
   kafka_data:
+  frontend_web_node_modules:
 

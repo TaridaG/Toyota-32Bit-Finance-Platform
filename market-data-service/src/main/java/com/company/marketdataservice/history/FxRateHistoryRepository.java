@@ -11,11 +11,17 @@ import java.util.List;
 public interface FxRateHistoryRepository extends JpaRepository<FxRateHistoryEntry, Long> {
 
     interface LatestFxRateView {
+
         String getCanonicalSymbol();
+
         java.math.BigDecimal getBid();
+
         java.math.BigDecimal getAsk();
+
         java.math.BigDecimal getMid();
+
         String getSource();
+
         Instant getObservedAt();
     }
 

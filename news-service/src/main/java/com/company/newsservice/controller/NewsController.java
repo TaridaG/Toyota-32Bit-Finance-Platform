@@ -23,10 +23,12 @@ public class NewsController {
     public ApiResponse<Page<NewsResponse>> list(
             @RequestParam(required = false) NewsCategory category,
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String lang,
+            @RequestParam(defaultValue = "false") boolean includeOriginal,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        Page<NewsResponse> result = newsQueryService.search(category, q, PageRequest.of(page, size));
+        Page<NewsResponse> result = newsQueryService.search(category, q, PageRequest.of(page, size), lang, includeOriginal);
         return ApiResponse.success(result);
     }
 

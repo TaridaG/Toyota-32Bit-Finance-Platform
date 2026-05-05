@@ -115,10 +115,10 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
         List<CompletableFuture<MarketOverviewItemResponse>> futures = currentPage.stream()
                 .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(
-                        item,
-                        normalizedCurrency,
-                        changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty())
-                )))
+                item,
+                normalizedCurrency,
+                changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty())
+        )))
                 .toList();
 
         List<MarketOverviewItemResponse> content = futures.stream()
@@ -140,7 +140,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     public MarketInsightsResponse getInsights(String targetCurrency) {
         String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
         String currencyInsightsCacheKey = INSIGHTS_CACHE_KEY + ":currency:" + normalizedCurrency;
-        Optional<MarketInsightsResponse> cached = readFromCache(currencyInsightsCacheKey, new TypeReference<>() {});
+        Optional<MarketInsightsResponse> cached = readFromCache(currencyInsightsCacheKey, new TypeReference<>() {
+        });
         if (cached.isPresent()) {
             return cached.get();
         }
@@ -181,10 +182,10 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     ) {
         List<CompletableFuture<MarketOverviewItemResponse>> futures = baseItems.stream()
                 .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(
-                        item,
-                        targetCurrency,
-                        changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty())
-                )))
+                item,
+                targetCurrency,
+                changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty())
+        )))
                 .toList();
         return futures.stream()
                 .map(CompletableFuture::join)
@@ -266,12 +267,12 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         }
         return instrumentService.getAllActive().stream()
                 .map(instrument -> new MarketBaseItem(
-                        instrument.getSymbol(),
-                        instrument.getName(),
-                        BigDecimal.ZERO,
-                        instrument.getType().name(),
-                        instrument.getId()
-                ))
+                instrument.getSymbol(),
+                instrument.getName(),
+                BigDecimal.ZERO,
+                instrument.getType().name(),
+                instrument.getId()
+        ))
                 .toList();
     }
 
@@ -582,13 +583,15 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal price,
             String source,
             Instant timestamp
-    ) {
+            ) {
+
     }
 
     private record AnalyticsApiResponse<T>(
             boolean success,
             T data
-    ) {
+            ) {
+
     }
 
     private record AnalyticsCandleDto(
@@ -597,7 +600,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal high,
             BigDecimal low,
             BigDecimal close
-    ) {
+            ) {
+
         Instant timeAnchor() {
             if (openTime != null) {
                 return openTime;
@@ -613,7 +617,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal change24h,
             BigDecimal high24h,
             BigDecimal low24h
-    ) {
+            ) {
+
         static AnalyticsMetrics empty() {
             return new AnalyticsMetrics(null, null, null);
         }
@@ -625,7 +630,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal price,
             String category,
             Long instrumentId
-    ) {
+            ) {
+
     }
 
     private record SummaryDto(
@@ -635,7 +641,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal change3M,
             BigDecimal change6M,
             BigDecimal change1Y
-    ) {
+            ) {
+
     }
 
     private record HistoricalChanges(
@@ -644,7 +651,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal change3M,
             BigDecimal change6M,
             BigDecimal change1Y
-    ) {
+            ) {
+
         static HistoricalChanges empty() {
             return new HistoricalChanges(null, null, null, null, null);
         }

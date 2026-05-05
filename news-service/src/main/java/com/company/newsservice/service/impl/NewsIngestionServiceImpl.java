@@ -7,6 +7,8 @@ import com.company.newsservice.provider.ProviderNewsItem;
 import com.company.newsservice.repository.NewsArticleRepository;
 import com.company.newsservice.service.NewsIngestionService;
 import com.company.newsservice.service.NewsInstrumentMatcher;
+import com.company.newsservice.service.NewsRelevanceEvaluator;
+import com.company.newsservice.service.translation.NewsTranslationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,6 +29,8 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
     private final List<NewsProvider> newsProviders;
     private final NewsArticleRepository newsArticleRepository;
     private final NewsInstrumentMatcher newsInstrumentMatcher;
+    private final NewsRelevanceEvaluator newsRelevanceEvaluator;
+    private final NewsTranslationService newsTranslationService;
     private final KafkaTemplate<String, Object> newsKafkaTemplate;
 
     @Override
@@ -64,6 +68,12 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
                         continue;
                     }
 
+                    if (!newsRelevanceEvaluator.isRelevant(item)) {
+                        skipped++;
+                        log.debug("NEWS_INGEST_SKIP reason=irrelevant_domain_news");
+                        continue;
+                    }
+
                     if (newsArticleRepository.findByArticleUrl(articleUrl).isPresent()) {
                         skipped++;
                         log.debug("NEWS_INGEST_SKIP reason=duplicate_url_precheck");
@@ -96,7 +106,8 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
                     }
 
                     try {
-                        newsArticleRepository.save(article);
+                        NewsArticle savedArticle = newsArticleRepository.save(article);
+                        newsTranslationService.pretranslateForArticle(savedArticle);
                         saved++;
                     } catch (DataIntegrityViolationException ex) {
                         duplicates++;

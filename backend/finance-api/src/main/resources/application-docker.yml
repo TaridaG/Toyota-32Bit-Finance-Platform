@@ -1,0 +1,9 @@
+# Used with Spring profile "docker" (see Docker Compose for finance-api).
+# JWT verified via in-cluster JWKS; token iss hostname may still be localhost:8080/8085 for browsers.
+app:
+  profile-avatar:
+    # Persist across container restarts by mounting this path as a volume.
+    storage-root: ${PROFILE_AVATAR_STORAGE_ROOT:/data/profile-avatars}
+  security:
+    jwt:
+      jwk-set-uri: ${APP_SECURITY_JWT_JWK_SET_URI:http://keycloak:8080/realms/finance/protocol/openid-connect/certs}

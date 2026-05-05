@@ -2,8 +2,10 @@ package com.company.finance_api.service.impl;
 
 import com.company.finance_api.dto.NewsEnrichedPageResponse;
 import com.company.finance_api.dto.NewsEnrichedResponse;
+import com.company.finance_api.dto.NewsOriginalResponse;
 import com.company.finance_api.service.InstrumentService;
 import com.company.finance_api.service.NewsEnrichmentService;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -36,6 +38,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
     private static final Logger log = LoggerFactory.getLogger(NewsEnrichmentServiceImpl.class);
     private static final Duration CACHE_TTL = Duration.ofSeconds(10);
+    private static final Duration ORIGINAL_CACHE_TTL = Duration.ofMinutes(10);
     private static final Set<String> POSITIVE_KEYWORDS = Set.of(
             "gain", "gains", "rally", "rise", "rises", "up", "bull", "surge", "positive", "beat"
     );
@@ -65,23 +68,31 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
 
     @Override
-    public NewsEnrichedPageResponse getEnrichedNews(int page, int size) {
+    public NewsEnrichedPageResponse getEnrichedNews(int page, int size, String language) {
         int resolvedPage = Math.max(page, 0);
         int resolvedSize = Math.max(size, 1);
-        String cacheKey = "news:enriched:page:" + resolvedPage + ":size:" + resolvedSize;
+        String resolvedLang = normalizeLanguage(language);
+        String cacheKey = "news:enriched:lang:" + resolvedLang + ":page:" + resolvedPage + ":size:" + resolvedSize;
         Optional<NewsEnrichedPageResponse> cached = readFromCache(cacheKey);
         if (cached.isPresent()) {
             return cached.get();
         }
 
-        NewsServicePageResponse<NewsServiceNewsItem> upstream = fetchNewsPage(resolvedPage, resolvedSize);
-        List<String> symbols = instrumentService.getAllActive().stream()
-                .map(instrument -> instrument.getSymbol().toUpperCase(Locale.ROOT))
-                .sorted(Comparator.comparingInt(String::length).reversed())
-                .toList();
+        NewsServicePageResponse<NewsServiceNewsItem> upstream = fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, false);
+        List<String> symbols;
+        try {
+            symbols = instrumentService.getAllActive().stream()
+                    .map(instrument -> instrument.getSymbol().toUpperCase(Locale.ROOT))
+                    .sorted(Comparator.comparingInt(String::length).reversed())
+                    .toList();
+        } catch (Exception ex) {
+            log.warn("NEWS_INSTRUMENT_CATALOG_LOAD_FAIL reason={}", ex.toString());
+            symbols = List.of();
+        }
 
+        final List<String> symbolsForEnrichment = symbols;
         List<NewsEnrichedResponse> enrichedContent = upstream.content().stream()
-                .map(item -> enrich(item, symbols))
+                .map(item -> enrich(item, symbolsForEnrichment))
                 .toList();
 
         NewsEnrichedPageResponse response = new NewsEnrichedPageResponse(
@@ -95,10 +106,36 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         return response;
     }
 
+    @Override
+    public NewsOriginalResponse getOriginalNews(Long id) {
+        String cacheKey = "news:original:id:" + id;
+        Optional<NewsOriginalResponse> cached = readFromCache(cacheKey, new TypeReference<>() {
+        });
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+        NewsServiceApiResponse<NewsServiceNewsDetailItem> body = restClient.get()
+                .uri(UriComponentsBuilder.fromHttpUrl(newsBaseUrl).path("/api/news/{id}").buildAndExpand(id).toUriString())
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
+        if (body == null || body.data() == null) {
+            return new NewsOriginalResponse(id, "", "");
+        }
+        NewsOriginalResponse response = new NewsOriginalResponse(
+                body.data().id(),
+                nz(body.data().title()),
+                nz(body.data().summary())
+        );
+        writeToCache(cacheKey, response, ORIGINAL_CACHE_TTL);
+        return response;
+    }
+
     private NewsEnrichedResponse enrich(NewsServiceNewsItem item, List<String> symbols) {
-        String title = item.title() == null ? "" : item.title();
-        String summary = item.summary() == null ? "" : item.summary();
-        String bag = (title + " " + summary).toLowerCase(Locale.ROOT);
+        String title = nz(item.title());
+        String summary = nz(item.summary());
+        String bag = (title + " " + summary)
+                .toLowerCase(Locale.ROOT);
         List<String> relatedSymbols = extractSymbols(title + " " + summary, symbols);
         String sentiment = resolveSentiment(bag);
         BigDecimal reactionPercent1h = relatedSymbols.isEmpty() ? null : computeReactionPercent1h(relatedSymbols.get(0));
@@ -106,7 +143,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         return new NewsEnrichedResponse(
                 item.id(),
                 title,
-                item.summary(),
+                summary,
+                item.titleOriginal(),
+                item.summaryOriginal(),
+                item.translatedLanguage(),
+                item.translated(),
                 item.sourceName(),
                 item.category(),
                 item.publishedAt(),
@@ -165,11 +206,13 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         }
     }
 
-    private NewsServicePageResponse<NewsServiceNewsItem> fetchNewsPage(int page, int size) {
+    private NewsServicePageResponse<NewsServiceNewsItem> fetchNewsPage(int page, int size, String language, boolean includeOriginal) {
         String url = UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
                 .path("/api/news")
                 .queryParam("page", page)
                 .queryParam("size", size)
+                .queryParam("lang", language)
+                .queryParam("includeOriginal", includeOriginal)
                 .toUriString();
 
         NewsServiceApiResponse<NewsServicePageResponse<NewsServiceNewsItem>> body = restClient.get()
@@ -204,6 +247,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
 
     private Optional<NewsEnrichedPageResponse> readFromCache(String key) {
+        return readFromCache(key, new TypeReference<>() {
+        });
+    }
+
+    private <T> Optional<T> readFromCache(String key, TypeReference<T> typeReference) {
         try {
             StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
             if (redis == null) {
@@ -213,8 +261,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             if (!StringUtils.hasText(payload)) {
                 return Optional.empty();
             }
-            NewsEnrichedPageResponse value = objectMapper.readValue(payload, new TypeReference<>() {
-            });
+            T value = objectMapper.readValue(payload, typeReference);
             return Optional.of(value);
         } catch (Exception ex) {
             log.debug("NEWS_ENRICHED_CACHE_READ_FAIL key={} reason={}", key, ex.toString());
@@ -223,12 +270,16 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
 
     private void writeToCache(String key, Object value) {
+        writeToCache(key, value, CACHE_TTL);
+    }
+
+    private void writeToCache(String key, Object value, Duration ttl) {
         try {
             StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
             if (redis == null) {
                 return;
             }
-            redis.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
+            redis.opsForValue().set(key, objectMapper.writeValueAsString(value), ttl);
         } catch (Exception ex) {
             log.debug("NEWS_ENRICHED_CACHE_WRITE_FAIL key={} reason={}", key, ex.toString());
         }
@@ -242,6 +293,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
     private record NewsServicePageResponse<T>(
             List<T> content,
+            @JsonAlias("number")
             int page,
             int size,
             long totalElements,
@@ -253,9 +305,20 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             Long id,
             String title,
             String summary,
+            String titleOriginal,
+            String summaryOriginal,
+            String translatedLanguage,
+            boolean translated,
             String sourceName,
             String category,
             Instant publishedAt
+    ) {
+    }
+
+    private record NewsServiceNewsDetailItem(
+            Long id,
+            String title,
+            String summary
     ) {
     }
 
@@ -281,5 +344,23 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             }
             return Instant.EPOCH;
         }
+    }
+
+    private static String normalizeLanguage(String language) {
+        if (!StringUtils.hasText(language)) {
+            return "en";
+        }
+        String normalized = language.trim().toLowerCase(Locale.ROOT);
+        if (normalized.contains(",")) {
+            normalized = normalized.split(",")[0].trim();
+        }
+        if (normalized.contains("-")) {
+            normalized = normalized.split("-")[0];
+        }
+        return normalized.isBlank() ? "en" : normalized;
+    }
+
+    private static String nz(String value) {
+        return value == null ? "" : value;
     }
 }

@@ -6,6 +6,8 @@ import com.company.newsservice.provider.NewsProvider;
 import com.company.newsservice.provider.ProviderNewsItem;
 import com.company.newsservice.repository.NewsArticleRepository;
 import com.company.newsservice.service.NewsInstrumentMatcher;
+import com.company.newsservice.service.NewsRelevanceEvaluator;
+import com.company.newsservice.service.translation.NewsTranslationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,18 +41,27 @@ class NewsIngestionServiceImplTest {
     private NewsInstrumentMatcher newsInstrumentMatcher;
 
     @Mock
+    private NewsRelevanceEvaluator newsRelevanceEvaluator;
+
+    @Mock
     private KafkaTemplate<String, Object> newsKafkaTemplate;
+
+    @Mock
+    private NewsTranslationService newsTranslationService;
 
     private NewsIngestionServiceImpl ingestionService;
 
     @BeforeEach
     void setUp() {
         lenient().when(newsInstrumentMatcher.match(anyString(), any())).thenReturn(List.of());
+        lenient().when(newsRelevanceEvaluator.isRelevant(any())).thenReturn(true);
         ingestionService =
                 new NewsIngestionServiceImpl(
                         List.of(newsProvider),
                         newsArticleRepository,
                         newsInstrumentMatcher,
+                        newsRelevanceEvaluator,
+                        newsTranslationService,
                         newsKafkaTemplate
                 );
     }

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("dev") // prod'da otomatik devre dışı
+@Profile({ "dev", "test" }) // prod'da otomatik devre dışı; test: Kafka yokken no-op log publisher
 public class LogAlarmEventPublisher implements AlarmEventPublisher {
 
     private static final Logger log =

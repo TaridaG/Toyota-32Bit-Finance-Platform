@@ -1,4 +1,9 @@
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:}
   datasource:
     url: jdbc:postgresql://postgres:5432/finance
     username: finance
@@ -29,3 +34,14 @@ spring:
   scheduler:
     market-price:
       delay-ms: 15000
+
+app:
+  expose-internal-errors: true
+  security:
+    jwt:
+      jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8085/realms/finance/protocol/openid-connect/certs}
+  keycloak:
+    admin:
+      password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    portal:
+      client-secret: ${KEYCLOAK_PORTAL_CLIENT_SECRET:finance-portal-dev-secret}

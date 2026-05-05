@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("dev")
+@Profile({ "dev", "test" })
 public class LogTransactionEventPublisher implements TransactionEventPublisher {
 
     private static final Logger log =

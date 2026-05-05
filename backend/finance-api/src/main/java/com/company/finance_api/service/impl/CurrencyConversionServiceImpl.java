@@ -119,23 +119,35 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
 
     private BigDecimal toUsd(BigDecimal amount, String from, Map<String, BigDecimal> rates) {
         return switch (from) {
-            case "USD" -> amount;
-            case "TRY" -> divide(amount, rates.get("USDTRY"));
-            case "EUR" -> multiply(amount, rates.get("EURUSD"));
-            case "GBP" -> multiply(amount, rates.get("GBPUSD"));
-            case "JPY" -> multiply(amount, rates.get("JPYUSD"));
-            default -> null;
+            case "USD" ->
+                amount;
+            case "TRY" ->
+                divide(amount, rates.get("USDTRY"));
+            case "EUR" ->
+                multiply(amount, rates.get("EURUSD"));
+            case "GBP" ->
+                multiply(amount, rates.get("GBPUSD"));
+            case "JPY" ->
+                multiply(amount, rates.get("JPYUSD"));
+            default ->
+                null;
         };
     }
 
     private BigDecimal fromUsd(BigDecimal usdAmount, String to, Map<String, BigDecimal> rates) {
         return switch (to) {
-            case "USD" -> usdAmount;
-            case "TRY" -> multiply(usdAmount, rates.get("USDTRY"));
-            case "EUR" -> divide(usdAmount, rates.get("EURUSD"));
-            case "GBP" -> divide(usdAmount, rates.get("GBPUSD"));
-            case "JPY" -> divide(usdAmount, rates.get("JPYUSD"));
-            default -> null;
+            case "USD" ->
+                usdAmount;
+            case "TRY" ->
+                multiply(usdAmount, rates.get("USDTRY"));
+            case "EUR" ->
+                divide(usdAmount, rates.get("EURUSD"));
+            case "GBP" ->
+                divide(usdAmount, rates.get("GBPUSD"));
+            case "JPY" ->
+                divide(usdAmount, rates.get("JPYUSD"));
+            default ->
+                null;
         };
     }
 

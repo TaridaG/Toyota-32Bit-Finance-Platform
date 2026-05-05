@@ -15,7 +15,9 @@ public interface InstrumentPriceRepository
         extends JpaRepository<InstrumentPrice, Long> {
 
     interface SymbolPriceView {
+
         String getSymbol();
+
         java.math.BigDecimal getPrice();
     }
 
