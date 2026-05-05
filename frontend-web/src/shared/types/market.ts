@@ -1,9 +1,15 @@
 export type MarketCategory = 'all' | 'crypto' | 'stocks' | 'forex' | 'commodities'
 
+export type MarketNativeQuote = 'TRY' | 'USD'
+
 export type MarketOverviewItem = {
   symbol: string
   name: string
   price: number
+  /** Quote currency of the raw `price` from the feed (TRY=BIST-style, USD=US equity/crypto). */
+  nativeQuote?: MarketNativeQuote
+  /** Spot converted into the header-selected currency using TRY crosses from `/api/market/fx`. */
+  displayAmount?: number | null
   timestamp?: string | null
   freshness?: 'LIVE' | 'STALE'
   change24h: number | null

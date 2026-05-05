@@ -1,5 +1,18 @@
 import { apiClient } from '../../../shared/api/client'
 import type { MarketCategory, MarketInsightsResponse, MarketOverviewPageResponse } from '../../../shared/types/market'
+import type { SupportedCurrency } from '../../../shared/preferences/preferences'
+import {
+  buildFxTryHub,
+  convertToDisplayCurrency,
+  inferNativeQuote,
+} from '../lib/marketDisplayConversion'
+import {
+  parseMarketSortQuery,
+  SORT_DISPLAY_AMOUNT_KEY,
+  sortMarketOverviewRows,
+  sortRequiresPageSummaryFetch,
+  sortRequiresPeriodPrefetch,
+} from '../lib/marketSort'
 
 type FetchMarketsParams = {
   page: number
@@ -7,6 +20,8 @@ type FetchMarketsParams = {
   category?: MarketCategory
   query?: string
   sort?: string
+  /** Header currency: drives `displayAmount` TRY-bridge conversion on each row. */
+  displayCurrency?: SupportedCurrency
 }
 
 const categoryToQueryParam: Record<Exclude<MarketCategory, 'all'>, string> = {
@@ -125,6 +140,78 @@ function normalizeFxRows(items: FxRateApiItem[]) {
     })
 }
 
+export type CatalogRow = ReturnType<typeof normalizeMarketRows>[number] | ReturnType<typeof normalizeFxRows>[number]
+
+/** Cached slice of the wire catalog after category + search filters (prices + FX mids). */
+export type MarketCatalogSnapshot = {
+  filteredRows: CatalogRow[]
+  fxResponseItems: FxRateApiItem[]
+}
+
+type CatalogRowWithPeriods = CatalogRow & {
+  change1D: number
+  change1M: number
+  change3M: number
+  change6M: number
+  change1Y: number
+}
+
+/**
+ * Loads 1D–1Y metrics for every visible catalog row (one summary batch + parallel FX history).
+ * Required before sorting by any period column so ordering matches displayed values.
+ */
+async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
+  rows: CatalogRowWithPeriods[]
+  summaryBySymbol: Record<string, PeriodChanges & { price: number }>
+  fxPeriodBySymbol: Record<string, PeriodChanges>
+}> {
+  const nonFx = rows.filter((r) => r.category !== 'FX')
+  const fxRows = rows.filter((r) => r.category === 'FX')
+  let summaryBySymbol: Record<string, PeriodChanges & { price: number }> = {}
+  try {
+    summaryBySymbol = nonFx.length > 0 ? await fetchPricesSummary(nonFx.map((r) => r.symbol)) : {}
+  } catch {
+    summaryBySymbol = {}
+  }
+  const fxPeriodBySymbol: Record<string, PeriodChanges> = {}
+  await Promise.all(
+    fxRows.map(async (row) => {
+      try {
+        const history = await fetchFxHistory(row.symbol, 365)
+        fxPeriodBySymbol[row.symbol] = computePeriodChanges(history)
+      } catch {
+        fxPeriodBySymbol[row.symbol] = { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+      }
+    }),
+  )
+  const merged: CatalogRowWithPeriods[] = rows.map((row) => {
+    if (row.category === 'FX') {
+      const s = fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+      return {
+        ...row,
+        change24h: s.change1D,
+        change1D: s.change1D,
+        change1M: s.change1M,
+        change3M: s.change3M,
+        change6M: s.change6M,
+        change1Y: s.change1Y,
+      }
+    }
+    const s = summaryBySymbol[row.symbol]
+    const change1D = s?.change1D ?? row.change24h ?? 0
+    return {
+      ...row,
+      change24h: change1D,
+      change1D,
+      change1M: s?.change1M ?? 0,
+      change3M: s?.change3M ?? 0,
+      change6M: s?.change6M ?? 0,
+      change1Y: s?.change1Y ?? 0,
+    }
+  })
+  return { rows: merged, summaryBySymbol, fxPeriodBySymbol }
+}
+
 function toDateParam(value: Date): string {
   return value.toISOString().slice(0, 10)
 }
@@ -228,10 +315,13 @@ async function fetchPricesSummary(symbols: string[]): Promise<Record<string, Per
   return out
 }
 
-export async function fetchMarketOverview(params: FetchMarketsParams): Promise<MarketOverviewPageResponse> {
+/** Fetches `/api/market/prices` + `/api/market/fx` and applies the same filters as the overview table. */
+export async function fetchMarketCatalogSnapshot(params: {
+  category?: MarketCategory
+  query?: string
+}): Promise<MarketCatalogSnapshot> {
   const category = params.category
   const query = params.query?.trim()
-  const sort = params.sort?.trim()
   const response = await apiClient.get<MarketPriceApiItem[] | { data?: MarketPriceApiItem[] }>('/api/market/prices')
   const responseItems = Array.isArray(response.data)
     ? response.data
@@ -258,58 +348,86 @@ export async function fetchMarketOverview(params: FetchMarketsParams): Promise<M
     ? filteredByCategory.filter((row) => row.symbol.includes(query.toUpperCase()))
     : filteredByCategory
 
-  const sorted = [...filteredBySearch]
-  if (sort) {
-    const [field, direction] = sort.split(',')
-    if (field === 'price') {
-      sorted.sort((a, b) => (direction === 'asc' ? a.price - b.price : b.price - a.price))
-    } else if (field === 'change24h') {
-      sorted.sort((a, b) => {
-        const av = a.change24h ?? 0
-        const bv = b.change24h ?? 0
-        return direction === 'asc' ? av - bv : bv - av
-      })
-    }
+  return { filteredRows: filteredBySearch, fxResponseItems }
+}
+
+/** Pure follow-up on an in-memory catalog: sort, optional period prefetch, pagination, row shaping. */
+export async function buildMarketOverviewFromCatalog(
+  snapshot: MarketCatalogSnapshot,
+  params: FetchMarketsParams,
+): Promise<MarketOverviewPageResponse> {
+  const sort = params.sort?.trim()
+  const displayCurrency: SupportedCurrency = params.displayCurrency ?? 'USD'
+  const fxResponseItems = snapshot.fxResponseItems
+
+  const { field: sortMetricField } = parseMarketSortQuery(sort)
+  let summaryBySymbol: Record<string, PeriodChanges & { price: number }> = {}
+  let fxPeriodBySymbol: Record<string, PeriodChanges> = {}
+  let rowsForSort: CatalogRow[] | CatalogRowWithPeriods[] = [...snapshot.filteredRows]
+
+  if (sortRequiresPeriodPrefetch(sortMetricField)) {
+    const loaded = await enrichCatalogRowsWithPeriodMetrics(rowsForSort as CatalogRow[])
+    rowsForSort = loaded.rows
+    summaryBySymbol = loaded.summaryBySymbol
+    fxPeriodBySymbol = loaded.fxPeriodBySymbol
   }
+
+  if (sortMetricField === 'displayAmount') {
+    const hub = buildFxTryHub(fxResponseItems)
+    rowsForSort = rowsForSort.map((r) => {
+      const nq = inferNativeQuote(r.symbol, r.category ?? null)
+      const amt =
+        hub != null ? convertToDisplayCurrency(r.price ?? 0, nq, displayCurrency, hub) : null
+      return { ...r, [SORT_DISPLAY_AMOUNT_KEY]: amt }
+    })
+  }
+
+  const sorted = sortMarketOverviewRows(rowsForSort, sort)
 
   const safePage = Math.max(params.page, 0)
   const safeSize = Math.max(params.size, 1)
   const start = safePage * safeSize
   const end = start + safeSize
   const basePageRows = sorted.slice(start, end)
-  let summaryBySymbol: Record<string, PeriodChanges & { price: number }> = {}
-  const summarySymbols = basePageRows
-    .filter((row) => row.category !== 'FX')
-    .map((row) => row.symbol)
-  try {
-    summaryBySymbol = await fetchPricesSummary(summarySymbols)
-  } catch {
-    summaryBySymbol = {}
+
+  if (sortRequiresPageSummaryFetch(sortMetricField)) {
+    const summarySymbols = basePageRows.filter((row) => row.category !== 'FX').map((row) => row.symbol)
+    try {
+      summaryBySymbol = summarySymbols.length > 0 ? await fetchPricesSummary(summarySymbols) : {}
+    } catch {
+      summaryBySymbol = {}
+    }
+    const fxSymbols = basePageRows.filter((row) => row.category === 'FX').map((row) => row.symbol)
+    await Promise.all(
+      fxSymbols.map(async (symbol) => {
+        try {
+          const history = await fetchFxHistory(symbol, 365)
+          fxPeriodBySymbol[symbol] = computePeriodChanges(history)
+        } catch {
+          fxPeriodBySymbol[symbol] = { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+        }
+      }),
+    )
   }
 
-  const fxPeriodBySymbol: Record<string, PeriodChanges> = {}
-  const fxSymbols = basePageRows
-    .filter((row) => row.category === 'FX')
-    .map((row) => row.symbol)
-  await Promise.all(
-    fxSymbols.map(async (symbol) => {
-      try {
-        const history = await fetchFxHistory(symbol, 365)
-        fxPeriodBySymbol[symbol] = computePeriodChanges(history)
-      } catch {
-        fxPeriodBySymbol[symbol] = { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
-      }
-    }),
-  )
+  const fxHub = buildFxTryHub(fxResponseItems)
 
-  const content = basePageRows.map((row) => {
-    const summary = row.category === 'FX'
-      ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
-      : summaryBySymbol[row.symbol] ?? {}
+  const content = basePageRows.map((rawRow) => {
+    const { [SORT_DISPLAY_AMOUNT_KEY]: _sortMetric, ...row } = rawRow as typeof rawRow &
+      Record<string, number | null | undefined>
+    const summary =
+      row.category === 'FX'
+        ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+        : summaryBySymbol[row.symbol] ?? {}
+    const nativeQuote = inferNativeQuote(row.symbol, row.category ?? null)
+    const displayAmount =
+      fxHub != null ? convertToDisplayCurrency(row.price ?? 0, nativeQuote, displayCurrency, fxHub) : null
     return {
       ...row,
       symbol: row.symbol,
       price: row.price ?? 0,
+      nativeQuote,
+      displayAmount,
       timestamp: row.timestamp ?? null,
       freshness: row.freshness ?? 'STALE',
       change24h: summary.change1D ?? 0,
@@ -332,16 +450,39 @@ export async function fetchMarketOverview(params: FetchMarketsParams): Promise<M
   }
 }
 
+export async function fetchMarketOverview(params: FetchMarketsParams): Promise<MarketOverviewPageResponse> {
+  const snapshot = await fetchMarketCatalogSnapshot({
+    category: params.category,
+    query: params.query,
+  })
+  return buildMarketOverviewFromCatalog(snapshot, params)
+}
+
 export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
-  const response = await apiClient.get<MarketPriceApiItem[] | { data?: MarketPriceApiItem[] }>('/api/market/prices')
-  const responseItems = Array.isArray(response.data)
-    ? response.data
-    : Array.isArray(response.data?.data)
-      ? response.data.data
-      : []
-  const normalizedRows = normalizeMarketRows(responseItems)
+  const snapshot = await fetchMarketCatalogSnapshot({
+    category: 'all',
+    query: '',
+  })
+  const [gainersPage, losersPage] = await Promise.all([
+    buildMarketOverviewFromCatalog(snapshot, {
+      page: 0,
+      size: 5,
+      category: 'all',
+      query: '',
+      sort: 'change1D,desc',
+      displayCurrency: 'USD',
+    }),
+    buildMarketOverviewFromCatalog(snapshot, {
+      page: 0,
+      size: 5,
+      category: 'all',
+      query: '',
+      sort: 'change1D,asc',
+      displayCurrency: 'USD',
+    }),
+  ])
   return {
-    topGainers: normalizedRows.slice(0, 5),
-    topLosers: normalizedRows.slice(-5).reverse(),
+    topGainers: gainersPage.content,
+    topLosers: losersPage.content,
   }
 }

@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { tickerItems, newsPoints, topGainers, topLosers } from './mockData'
+import { tickerItems, topGainers, topLosers } from './mockData'
 import type { NewsCategory, NewsDataPoint, SentimentType } from './types'
-import type { NewsApiItem } from '../../features/news/api/newsService'
+import { fetchNewsOriginal, type NewsApiItem } from '../../features/news/api/newsService'
 import { useNews } from '../../features/news/hooks/useNews'
 import { MarketTicker } from './components/MarketTicker'
 import { NewsCard } from './components/NewsCard'
@@ -12,29 +12,48 @@ import { SentimentChart } from './components/SentimentChart'
 import { InsightBox } from './components/InsightBox'
 
 export function NewsPage() {
-  const { t } = useTranslation('newsPage')
-  const { data: streamApiData, loading: streamLoading, error: streamError, refetch: refetchStream } = useNews(0, 20)
+  const { t, i18n } = useTranslation('newsPage')
+  const [page, setPage] = useState(0)
+  const pageSize = 10
+  const {
+    data: streamApiData,
+    loading: streamLoading,
+    error: streamError,
+    refetch: refetchStream,
+    totalElements,
+    totalPages,
+  } = useNews(page, pageSize, i18n.language)
   const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('all')
-  const [selectedRange, setSelectedRange] = useState<'1h' | '6h' | '24h'>('24h')
+  /** Default "all" so server-side pagination is not wiped by a 24h window (older pages are always >24h old). */
+  const [selectedRange, setSelectedRange] = useState<'all' | '1h' | '6h' | '24h'>('all')
   const [selectedSentiment, setSelectedSentiment] = useState<'all' | SentimentType>('all')
   const [selectedNews, setSelectedNews] = useState<NewsDataPoint | null>(null)
   useDocumentTitle(t('titleDoc'))
 
-  const filteredNews = useMemo(() => {
-    const byCategory = selectedCategory === 'all' ? newsPoints : newsPoints.filter((item) => item.category === selectedCategory)
+  const streamNews = useMemo<NewsDataPoint[]>(
+    () => streamApiData.map((item) => mapNewsItem(item, t)),
+    [streamApiData, t],
+  )
+
+  const filteredStreamNews = useMemo(() => {
+    const byCategory =
+      selectedCategory === 'all' ? streamNews : streamNews.filter((item) => item.category === selectedCategory)
     const bySentiment =
       selectedSentiment === 'all' ? byCategory : byCategory.filter((item) => item.sentiment === selectedSentiment)
+    if (selectedRange === 'all') {
+      return bySentiment
+    }
     const maxMinutes = selectedRange === '1h' ? 60 : selectedRange === '6h' ? 360 : 1440
     return bySentiment.filter((item) => item.timeAgoMinutes <= maxMinutes)
-  }, [selectedCategory, selectedRange, selectedSentiment])
+  }, [selectedCategory, selectedRange, selectedSentiment, streamNews])
 
   const sentimentCounts = useMemo(
     () => ({
-      positive: filteredNews.filter((item) => item.sentiment === 'positive').length,
-      negative: filteredNews.filter((item) => item.sentiment === 'negative').length,
-      neutral: filteredNews.filter((item) => item.sentiment === 'neutral').length,
+      positive: filteredStreamNews.filter((item) => item.sentiment === 'positive').length,
+      negative: filteredStreamNews.filter((item) => item.sentiment === 'negative').length,
+      neutral: filteredStreamNews.filter((item) => item.sentiment === 'neutral').length,
     }),
-    [filteredNews],
+    [filteredStreamNews],
   )
 
   const aiInsight = useMemo(() => {
@@ -46,11 +65,6 @@ export function NewsPage() {
     }
     return t('aiInsightNeutral')
   }, [sentimentCounts.negative, sentimentCounts.positive, t])
-
-  const streamNews = useMemo<NewsDataPoint[]>(
-    () => streamApiData.map((item) => mapNewsItem(item, t)),
-    [streamApiData, t],
-  )
 
   return (
     <>
@@ -88,14 +102,14 @@ export function NewsPage() {
           <div className="fi-filter-group">
             <span>{t('timeRangeTitle')}</span>
             <div>
-              {(['1h', '6h', '24h'] as const).map((range) => (
+              {(['all', '1h', '6h', '24h'] as const).map((range) => (
                 <button
                   key={range}
                   type="button"
                   className={`fi-filter-chip${selectedRange === range ? ' fi-filter-chip-active' : ''}`}
                   onClick={() => setSelectedRange(range)}
                 >
-                  {range}
+                  {range === 'all' ? t('timeRangeAll') : range}
                 </button>
               ))}
             </div>
@@ -133,12 +147,49 @@ export function NewsPage() {
                     {t('common:retry')}
                   </button>
                 </div>
-              ) : streamNews.length > 0 ? (
-                streamNews.map((item) => <NewsCard key={item.id} item={item} onOpen={setSelectedNews} />)
+              ) : filteredStreamNews.length > 0 ? (
+                filteredStreamNews.map((item) => (
+                  <NewsCard
+                    key={item.id}
+                    item={item}
+                    onOpen={setSelectedNews}
+                    onRequestOriginal={async (id) => {
+                      try {
+                        const response = await fetchNewsOriginal(Number(id))
+                        return { title: stripHtml(response.title || '-'), summary: stripHtml(response.summary || '-') }
+                      } catch {
+                        return null
+                      }
+                    }}
+                  />
+                ))
               ) : (
                 <p className="fi-empty">{t('noNews')}</p>
               )}
             </div>
+            {!streamLoading && !streamError && totalElements > 0 ? (
+              <div className="fi-pagination">
+                <button
+                  type="button"
+                  className="fi-filter-chip"
+                  disabled={page <= 0}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+                >
+                  ‹ Önceki
+                </button>
+                <span className="fi-pagination-summary">
+                  Sayfa {page + 1} / {Math.max(totalPages, 1)} · {totalElements} haber
+                </span>
+                <button
+                  type="button"
+                  className="fi-filter-chip"
+                  disabled={page >= Math.max(totalPages - 1, 0)}
+                  onClick={() => setPage((prev) => Math.min(prev + 1, Math.max(totalPages - 1, 0)))}
+                >
+                  Sonraki ›
+                </button>
+              </div>
+            ) : null}
           </article>
 
           <aside className="fi-right-column">
@@ -175,17 +226,24 @@ export function NewsPage() {
 }
 
 function mapNewsItem(item: NewsApiItem, t: (key: string, options?: Record<string, unknown>) => string): NewsDataPoint {
-  const summary = item.summary?.trim() || '-'
+  const titleTranslated = stripHtml(item.title?.trim() || '-')
+  const summaryTranslated = stripHtml(item.summary?.trim() || '-')
   const relatedAssets = item.relatedSymbols?.filter(Boolean) ?? []
   return {
     id: String(item.id),
-    title: item.title,
-    summary,
-    details: summary,
+    title: titleTranslated,
+    summary: summaryTranslated,
+    titleOriginal: item.titleOriginal ? stripHtml(item.titleOriginal) : undefined,
+    summaryOriginal: item.summaryOriginal ? stripHtml(item.summaryOriginal) : undefined,
+    titleTranslated,
+    summaryTranslated,
+    translatedLanguage: item.translatedLanguage,
+    translated: item.translated ?? false,
+    details: summaryTranslated,
     source: item.sourceName,
     timeAgoMinutes: toMinutesAgo(item.publishedAt),
     timeAgoLabel: toRelativeTimeLabel(item.publishedAt, t),
-    category: 'macro',
+    category: mapCategory(item.category),
     sentiment: item.sentiment,
     tags: relatedAssets,
     relatedAssets,
@@ -193,6 +251,19 @@ function mapNewsItem(item: NewsApiItem, t: (key: string, options?: Record<string
     correlationNote: '-',
     sparkline: [0, 0, 0, 0, 0, 0, 0, 0],
   }
+}
+
+function stripHtml(value: string): string {
+  return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function mapCategory(category: string | null | undefined): Exclude<NewsCategory, 'all'> {
+  const c = (category ?? '').toUpperCase()
+  if (c === 'CRYPTO') return 'crypto'
+  if (c === 'FX') return 'fx'
+  if (c === 'STOCK') return 'bist'
+  if (c === 'FUND' || c === 'BOND' || c === 'GENERAL_ECONOMY') return 'macro'
+  return 'macro'
 }
 
 function toMinutesAgo(publishedAt: string): number {

@@ -137,6 +137,8 @@ export const translations = {
       table: {
         symbol: 'Symbol',
         price: 'Price',
+        priceHint: 'Left: native quote (TRY or USD). Right: same spot in your header currency.',
+        priceConvertedSort: 'Sort by value in selected currency',
         previousClose: 'Prev',
         change24h: '24h',
         weightedAverage: 'W.Avg',
@@ -331,7 +333,7 @@ export const translations = {
       },
     },
     landing: {
-      titleDoc: 'Finans Portalı | Hoş Geldiniz',
+      titleDoc: '32Bit Finans Platformu',
       kicker: 'Kurumsal Finans Portalı',
       heroTitle: 'Piyasaları izleyin, portföyünüzü yönetin, stratejinizi güçlendirin',
       heroSubtitle:
@@ -412,6 +414,8 @@ export const translations = {
       table: {
         symbol: 'Sembol',
         price: 'Fiyat',
+        priceHint: 'Sol: yerel kotasyon (TRY veya USD). Sağ: üst menüde seçtiğiniz para birimi.',
+        priceConvertedSort: 'Secili para birimindeki tutara gore sirala',
         previousClose: 'Dun',
         change24h: '24s',
         weightedAverage: 'Ag.Ort.',
@@ -687,6 +691,8 @@ export const translations = {
       table: {
         symbol: 'Symbol',
         price: 'Preis',
+        priceHint: 'Links: native Notierung (TRY oder USD). Rechts: gleicher Kurs in Ihrer Kopfzeilen-Währung.',
+        priceConvertedSort: 'Nach umgerechnetem Betrag in Kopfzeilen-Währung sortieren',
         previousClose: 'Vortag',
         change24h: '24h',
         weightedAverage: 'Gew.Ort',
@@ -962,6 +968,8 @@ export const translations = {
       table: {
         symbol: 'Symbole',
         price: 'Prix',
+        priceHint: 'À gauche : cotation native (TRY ou USD). À droite : même cours dans la devise de l en-tête.',
+        priceConvertedSort: 'Trier par valeur dans la devise de l en-tête',
         previousClose: 'Veille',
         change24h: '24h',
         weightedAverage: 'Moy.P',

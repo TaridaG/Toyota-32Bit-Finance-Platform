@@ -1,11 +1,19 @@
-import { useState } from 'react'
-import type { MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import siteLogo from '../../../assets/site-logo.png'
 import { useTheme } from '../../theme/ThemeProvider'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGE_LABELS, SUPPORTED_LOCALES, normalizeLocale } from '../../i18n'
 import { SUPPORTED_CURRENCIES } from '../../preferences/preferences'
 import { useAppPreferences } from '../../preferences/useAppPreferences'
+import {
+  getAuthClaims,
+  getProfileDisplayLabel,
+  getProfileInitials,
+} from '../../auth/session'
+import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
+import { usePortalAvatarObjectUrl } from '../../../features/profile/hooks/usePortalAvatarObjectUrl'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -113,18 +121,80 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [downloadOpen, setDownloadOpen] = useState(false)
   const [localeOpen, setLocaleOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [serverAvatarUpdatedAt, setServerAvatarUpdatedAt] = useState<string | null>(null)
+  const [profileImgBroken, setProfileImgBroken] = useState(false)
+  const profileAnchorRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation()
   const { currency, setLanguage, setCurrency } = useAppPreferences()
   const currentLocale = normalizeLocale(i18n.resolvedLanguage ?? i18n.language) ?? 'en'
 
+  const claims = useMemo(() => (isAuthenticated ? getAuthClaims() : null), [isAuthenticated])
+  const displayLabel = useMemo(() => {
+    const label = getProfileDisplayLabel(claims)
+    return label.length > 0 ? label : '…'
+  }, [claims])
+  const initials = useMemo(() => getProfileInitials(displayLabel), [displayLabel])
+  const serverAvatarBlobUrl = usePortalAvatarObjectUrl(serverAvatarUpdatedAt ?? undefined)
+  const avatarUrl = useMemo(() => {
+    if (!isAuthenticated) {
+      return null
+    }
+    return serverAvatarBlobUrl ?? claims?.picture ?? null
+  }, [isAuthenticated, serverAvatarBlobUrl, claims?.picture])
+
+  useEffect(() => {
+    setProfileImgBroken(false)
+  }, [avatarUrl])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setServerAvatarUpdatedAt(null)
+      return
+    }
+    void fetchPortalProfile()
+      .then((p) => setServerAvatarUpdatedAt(p.avatarUpdatedAt ?? null))
+      .catch(() => setServerAvatarUpdatedAt(null))
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    const onAvatar = (e: Event) => {
+      const detail = (e as CustomEvent<{ avatarUpdatedAt?: string | null }>).detail
+      if (detail && 'avatarUpdatedAt' in detail) {
+        setServerAvatarUpdatedAt(detail.avatarUpdatedAt ?? null)
+      } else if (isAuthenticated) {
+        void fetchPortalProfile()
+          .then((p) => setServerAvatarUpdatedAt(p.avatarUpdatedAt ?? null))
+          .catch(() => setServerAvatarUpdatedAt(null))
+      }
+    }
+    window.addEventListener('finance-profile-avatar', onAvatar)
+    return () => window.removeEventListener('finance-profile-avatar', onAvatar)
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!profileOpen) {
+      return
+    }
+    const onDoc = (event: globalThis.MouseEvent) => {
+      const el = profileAnchorRef.current
+      if (el && !el.contains(event.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [profileOpen])
+
   const closeMenu = () => setMenuOpen(false)
   const closeDesktopPanels = () => {
     setDownloadOpen(false)
     setLocaleOpen(false)
+    setProfileOpen(false)
   }
 
-  const handleThemeToggle = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleThemeToggle = (event: ReactMouseEvent<HTMLButtonElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
     toggleTheme({
       x: rect.left + rect.width / 2,
@@ -141,7 +211,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     <header className="portal-header">
       <div className="portal-header-inner">
         <Link to={isAuthenticated ? '/app' : '/'} className="portal-logo">
-          <span className="portal-logo-mark" />
+          <img src={siteLogo} className="portal-logo-mark" alt="32Bit logo" />
           <span>{t('appName')}</span>
         </Link>
 
@@ -198,9 +268,74 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
           </button>
 
           {isAuthenticated ? (
-            <button className="portal-action-secondary" onClick={onLogout}>
-              {t('header.actions.logout')}
-            </button>
+            <div className="portal-popover-anchor" ref={profileAnchorRef}>
+              <button
+                type="button"
+                className={`portal-profile-trigger${profileOpen ? ' portal-profile-trigger-active' : ''}`}
+                aria-label={t('header.profileMenu.openAria')}
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
+                onClick={() => {
+                  setProfileOpen((prev) => !prev)
+                  setDownloadOpen(false)
+                  setLocaleOpen(false)
+                }}
+              >
+                {avatarUrl && !profileImgBroken ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    className="portal-profile-trigger-img"
+                    onError={() => setProfileImgBroken(true)}
+                  />
+                ) : (
+                  <span className="portal-profile-trigger-initials" aria-hidden>
+                    {initials}
+                  </span>
+                )}
+              </button>
+              {profileOpen ? (
+                <div className="portal-popover portal-profile-menu" role="menu">
+                  <div className="portal-profile-menu-user">
+                    <div className="portal-profile-menu-avatar" aria-hidden>
+                      {avatarUrl && !profileImgBroken ? (
+                        <img
+                          src={avatarUrl}
+                          alt=""
+                          className="portal-profile-menu-avatar-img"
+                          onError={() => setProfileImgBroken(true)}
+                        />
+                      ) : (
+                        <span className="portal-profile-menu-initials">{initials}</span>
+                      )}
+                    </div>
+                    <span className="portal-profile-menu-name">{displayLabel}</span>
+                  </div>
+                  <Link
+                    to="/app/profile"
+                    role="menuitem"
+                    className="portal-profile-menu-item"
+                    onClick={() => {
+                      setProfileOpen(false)
+                      closeDesktopPanels()
+                    }}
+                  >
+                    {t('header.profileMenu.settings')}
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="portal-profile-menu-item portal-profile-menu-item-danger"
+                    onClick={() => {
+                      setProfileOpen(false)
+                      onLogout?.()
+                    }}
+                  >
+                    {t('header.profileMenu.logout')}
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ) : (
             <>
               <Link to="/login" className="portal-action-secondary">
@@ -221,6 +356,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               onClick={() => {
                 setDownloadOpen((prev) => !prev)
                 setLocaleOpen(false)
+                setProfileOpen(false)
               }}
             >
               <IconDownload />
@@ -246,6 +382,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               onClick={() => {
                 setLocaleOpen((prev) => !prev)
                 setDownloadOpen(false)
+                setProfileOpen(false)
               }}
             >
               <IconLanguage />
@@ -336,6 +473,29 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               x
             </button>
 
+            {isAuthenticated ? (
+              <div className="portal-mobile-user">
+                <div className="portal-mobile-user-avatar" aria-hidden>
+                  {avatarUrl && !profileImgBroken ? (
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="portal-mobile-user-avatar-img"
+                      onError={() => setProfileImgBroken(true)}
+                    />
+                  ) : (
+                    <span className="portal-mobile-user-initials">{initials}</span>
+                  )}
+                </div>
+                <div className="portal-mobile-user-text">
+                  <span className="portal-mobile-user-name">{displayLabel}</span>
+                  <Link to="/app/profile" className="portal-mobile-user-settings" onClick={closeMenu}>
+                    {t('header.profileMenu.settings')}
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+
             {!isAuthenticated ? (
               <div className="portal-mobile-auth-row">
                 <Link to="/login" className="portal-mobile-auth-secondary" onClick={closeMenu}>
@@ -415,7 +575,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                     onLogout?.()
                   }}
                 >
-                  {t('header.actions.logout')}
+                  {t('header.profileMenu.logout')}
                 </button>
               ) : null}
             </div>

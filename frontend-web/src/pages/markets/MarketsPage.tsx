@@ -6,16 +6,16 @@ import { useMarkets } from '../../features/markets/hooks/useMarkets'
 import { useMarketInsights } from '../../features/markets/hooks/useMarketInsights'
 import type { MarketCategory, MarketOverviewItem } from '../../shared/types/market'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
+import { marketSortFieldFromUrl, type MarketSortField } from '../../features/markets/lib/marketSort'
 
-type SortField = 'price' | 'change24h'
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
 const DEFAULT_SIZE = 20
 const DEFAULT_CATEGORY = 'all'
 const PRICE_FLASH_MS = 500
 const PRICE_ANIMATION_MS = 300
-const SPARKLINE_WIDTH = 80
-const SPARKLINE_HEIGHT = 24
+const SPARKLINE_WIDTH = 64
+const SPARKLINE_HEIGHT = 22
 const SPARKLINE_PADDING = 2
 
 type GlobalMarketStatus = 'LIVE' | 'DELAYED' | 'EMPTY'
@@ -72,9 +72,9 @@ export function MarketsPage() {
   const selectedCategory = (searchParams.get('category')?.toLowerCase() ?? DEFAULT_CATEGORY) as MarketCategory
   const searchTerm = searchParams.get('q') ?? ''
 
-  const rawSort = searchParams.get('sort') ?? 'change24h,desc'
+  const rawSort = searchParams.get('sort') ?? 'change1D,desc'
   const [sortFieldRaw, sortDirectionRaw] = rawSort.split(',')
-  const sortField: SortField = sortFieldRaw === 'price' ? 'price' : 'change24h'
+  const sortField: MarketSortField = marketSortFieldFromUrl(sortFieldRaw)
   const sortDirection: SortDirection = sortDirectionRaw === 'asc' ? 'asc' : 'desc'
   const sortQuery = `${sortField},${sortDirection}`
 
@@ -94,7 +94,7 @@ export function MarketsPage() {
     if (!next.has('page')) next.set('page', String(DEFAULT_PAGE))
     if (!next.has('size')) next.set('size', String(DEFAULT_SIZE))
     if (!next.has('category')) next.set('category', 'ALL')
-    if (!next.has('sort')) next.set('sort', 'change24h,desc')
+    if (!next.has('sort')) next.set('sort', 'change1D,desc')
     setSearchParams(next, { replace: true })
   }, [searchParams, setSearchParams])
 
@@ -104,6 +104,7 @@ export function MarketsPage() {
     category: selectedCategory,
     searchTerm,
     sort: sortQuery,
+    displayCurrency: currency,
   })
   const {
     topGainers,
@@ -113,7 +114,8 @@ export function MarketsPage() {
     refetch: refetchInsights,
   } = useMarketInsights()
 
-  const priceFormat = useMemo(
+  /** Header-selected currency (converted line). */
+  const selectedCurrencyFormat = useMemo(
     () =>
       new Intl.NumberFormat(i18n.language, {
         style: 'currency',
@@ -123,6 +125,42 @@ export function MarketsPage() {
       }),
     [currency, i18n.language],
   )
+
+  const tryNativeFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: 'TRY',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    [i18n.language],
+  )
+
+  const usdNativeFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    [i18n.language],
+  )
+
+  /** Narrow symbol for the selected header currency (second price column). */
+  const headerCurrencySymbol = useMemo(() => {
+    try {
+      const parts = new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency,
+        currencyDisplay: 'narrowSymbol',
+      }).formatToParts(1)
+      return parts.find((p) => p.type === 'currency')?.value ?? currency
+    } catch {
+      return currency
+    }
+  }, [currency, i18n.language])
 
   const percentFormat = useMemo(
     () =>
@@ -145,7 +183,7 @@ export function MarketsPage() {
     setFavorites((prev) => (prev.includes(symbol) ? prev.filter((item) => item !== symbol) : [...prev, symbol]))
   }
 
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: MarketSortField) => {
     const nextDirection: SortDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc'
     updateParams((next) => {
       next.set('sort', `${field},${nextDirection}`)
@@ -153,7 +191,7 @@ export function MarketsPage() {
     })
   }
 
-  const sortIndicator = (field: SortField) => {
+  const sortIndicator = (field: MarketSortField) => {
     if (sortField !== field) return ''
     return sortDirection === 'asc' ? ' ▲' : ' ▼'
   }
@@ -334,40 +372,62 @@ export function MarketsPage() {
                 <tr>
                   <th />
                   <th>
-                    <button type="button" className="markets-sort-button">
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('symbol')}>
                       {t('table.symbol')}
+                      {sortIndicator('symbol')}
                     </button>
                   </th>
                   <th>
-                    <button type="button" className="markets-sort-button" onClick={() => handleSort('price')}>
+                    <button
+                      type="button"
+                      className="markets-sort-button"
+                      onClick={() => handleSort('price')}
+                      title={t('table.priceHint')}
+                    >
                       {t('table.price')}
                       {sortIndicator('price')}
                     </button>
                   </th>
+                  <th className="markets-th-currency" title={currency} scope="col">
+                    <button
+                      type="button"
+                      className="markets-sort-button markets-th-currency-button"
+                      onClick={() => handleSort('displayAmount')}
+                      title={t('table.priceConvertedSort')}
+                      aria-label={t('table.priceConvertedSort')}
+                    >
+                      <span className="markets-th-currency-symbol">{headerCurrencySymbol}</span>
+                      {sortIndicator('displayAmount')}
+                    </button>
+                  </th>
                   <th>
-                    <button type="button" className="markets-sort-button" onClick={() => handleSort('change24h')}>
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('change1D')}>
                       1D
-                      {sortIndicator('change24h')}
+                      {sortIndicator('change1D')}
                     </button>
                   </th>
                   <th>
-                    <button type="button" className="markets-sort-button">
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('change1M')}>
                       1M
+                      {sortIndicator('change1M')}
                     </button>
                   </th>
                   <th>
-                    <button type="button" className="markets-sort-button">
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('change3M')}>
                       3M
+                      {sortIndicator('change3M')}
                     </button>
                   </th>
                   <th>
-                    <button type="button" className="markets-sort-button">
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('change6M')}>
                       6M
+                      {sortIndicator('change6M')}
                     </button>
                   </th>
                   <th>
-                    <button type="button" className="markets-sort-button">
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('change1Y')}>
                       1Y
+                      {sortIndicator('change1Y')}
                     </button>
                   </th>
                   <th>
@@ -381,14 +441,14 @@ export function MarketsPage() {
                 {loading ? (
                   Array.from({ length: Math.min(size, 6) }).map((_, idx) => (
                     <tr key={`skeleton-${idx}`}>
-                      <td colSpan={9}>
+                      <td colSpan={10}>
                         <div className="markets-skeleton-row" />
                       </td>
                     </tr>
                   ))
                 ) : error ? (
                   <tr>
-                    <td colSpan={9} className="markets-empty">
+                    <td colSpan={10} className="markets-empty">
                       <div className="markets-error-wrap">
                         <span>{error}</span>
                         <button type="button" className="markets-filter" onClick={() => void refetch()}>
@@ -400,6 +460,26 @@ export function MarketsPage() {
                 ) : visibleRows.length > 0 ? (
                   visibleRows.map((row: MarketOverviewItem) => {
                     const isPositive = (row.change24h ?? 0) >= 0
+                    const animatedNat = animatedPriceBySymbol[row.symbol] ?? row.price
+                    const nativeQ = row.nativeQuote ?? 'USD'
+                    const nativeFmt = nativeQ === 'TRY' ? tryNativeFormat : usdNativeFormat
+                    const redundantCol =
+                      (nativeQ === 'TRY' && currency === 'TRY') || (nativeQ === 'USD' && currency === 'USD')
+                    const ratio =
+                      row.displayAmount != null && row.price > 0 ? row.displayAmount / row.price : null
+                    const animatedDisplay =
+                      ratio != null && Number.isFinite(ratio) ? ratio * animatedNat : row.displayAmount
+                    const showConverted =
+                      !redundantCol &&
+                      animatedDisplay != null &&
+                      Number.isFinite(animatedDisplay) &&
+                      row.displayAmount != null
+                    const flashClass =
+                      priceFlashBySymbol[row.symbol] === 'up'
+                        ? 'markets-price-flash-up'
+                        : priceFlashBySymbol[row.symbol] === 'down'
+                          ? 'markets-price-flash-down'
+                          : undefined
                     return (
                       <tr key={row.symbol}>
                         <td>
@@ -423,16 +503,17 @@ export function MarketsPage() {
                             <span>{row.name}</span>
                           </div>
                         </td>
-                        <td
-                          className={
-                            priceFlashBySymbol[row.symbol] === 'up'
-                              ? 'markets-price-flash-up'
-                              : priceFlashBySymbol[row.symbol] === 'down'
-                                ? 'markets-price-flash-down'
-                                : undefined
-                          }
-                        >
-                          {priceFormat.format(animatedPriceBySymbol[row.symbol] ?? row.price)}
+                        <td className={`markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
+                          {nativeFmt.format(animatedNat)}
+                        </td>
+                        <td className="markets-price-converted-cell">
+                          {redundantCol ? (
+                            selectedCurrencyFormat.format(animatedNat)
+                          ) : showConverted ? (
+                            selectedCurrencyFormat.format(animatedDisplay)
+                          ) : (
+                            <span className="markets-price-converted-missing">—</span>
+                          )}
                         </td>
                         <td className={isPositive ? 'markets-positive' : 'markets-negative'}>
                           {percentFormat.format(row.change1D ?? 0)}
@@ -473,7 +554,7 @@ export function MarketsPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={9} className="markets-empty">
+                    <td colSpan={10} className="markets-empty">
                       {t('noMatches')}
                     </td>
                   </tr>

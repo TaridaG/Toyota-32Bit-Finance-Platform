@@ -2,8 +2,9 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import axios from 'axios'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { persistAuthToken } from '../../shared/auth/session'
+import { registerPortalUser } from '../../shared/api/publicRegistration'
 
 export function RegisterPage() {
   const { t } = useTranslation('auth')
@@ -12,13 +13,14 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [passwordAgain, setPasswordAgain] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
 
@@ -29,6 +31,16 @@ export function RegisterPage() {
 
     if (!email.trim() || !email.includes('@')) {
       setError(t('register.errors.emailInvalid'))
+      return
+    }
+
+    const trimmedUsername = username.trim()
+    if (!trimmedUsername) {
+      setError(t('register.errors.usernameRequired'))
+      return
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(trimmedUsername)) {
+      setError(t('register.errors.usernameInvalid'))
       return
     }
 
@@ -48,11 +60,30 @@ export function RegisterPage() {
     }
 
     setSubmitting(true)
-
-    window.setTimeout(() => {
-      persistAuthToken(`session_${Date.now()}`)
-      navigate('/app', { replace: true })
-    }, 350)
+    try {
+      await registerPortalUser({
+        email: email.trim().toLowerCase(),
+        username: trimmedUsername.toLowerCase(),
+        password,
+      })
+      navigate('/login?registered=1', { replace: true })
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.data && typeof e.response.data === 'object') {
+        const body = e.response.data as { error?: { message?: string } }
+        const msg = body.error?.message
+        if (msg) {
+          setError(msg)
+          return
+        }
+      }
+      if (e instanceof Error && e.message) {
+        setError(e.message)
+        return
+      }
+      setError(t('register.errors.generic'))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -63,7 +94,7 @@ export function RegisterPage() {
           <h2>{t('register.title')}</h2>
           <p className="auth-lead">{t('register.lead')}</p>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={(e) => void handleSubmit(e)}>
             <label className="auth-label" htmlFor="fullName">
               {t('register.fullNameLabel')}
             </label>
@@ -87,6 +118,18 @@ export function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('register.emailPlaceholder')}
               autoComplete="email"
+            />
+
+            <label className="auth-label" htmlFor="username">
+              {t('register.usernameLabel')}
+            </label>
+            <input
+              id="username"
+              className="auth-input"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={t('register.usernamePlaceholder')}
+              autoComplete="username"
             />
 
             <label className="auth-label" htmlFor="newPassword">
@@ -139,4 +182,3 @@ export function RegisterPage() {
     </div>
   )
 }
-

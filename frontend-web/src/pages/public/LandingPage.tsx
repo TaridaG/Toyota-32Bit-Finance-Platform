@@ -52,7 +52,7 @@ export function LandingPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const { currency } = useAppPreferences()
-  const marketOverview = useMarkets({ page: 0, size: 4, category: 'all', searchTerm: '' })
+  const marketOverview = useMarkets({ page: 0, size: 4, category: 'all', searchTerm: '', displayCurrency: currency })
   const newsFeed = useNews(0, 8)
   useDocumentTitle(t('titleDoc'))
 
@@ -77,6 +77,13 @@ export function LandingPage() {
     const withReaction = newsFeed.data.filter((item) => item.reactionPercent1h != null)
     return withReaction.sort((a, b) => Math.abs(b.reactionPercent1h ?? 0) - Math.abs(a.reactionPercent1h ?? 0))[0] ?? null
   }, [newsFeed.data])
+
+  const marketHealth = useMemo(() => {
+    const total = marketOverview.rows.length
+    const live = marketOverview.rows.filter((item) => item.freshness === 'LIVE').length
+    const delayed = Math.max(0, total - live)
+    return { total, live, delayed }
+  }, [marketOverview.rows])
 
   const leadingSentiment = useMemo(() => {
     const entries: Array<{ key: 'positive' | 'negative' | 'neutral'; value: number }> = [
@@ -117,8 +124,18 @@ export function LandingPage() {
       <motion.section id="markets" className="landing-section landing-screen-section section-markets" {...motionProps}>
         <div className="container">
           <header className="landing-section-head landing-section-inner">
-            <h2 className="section-title">{t('markets.title')}</h2>
+            <div className="landing-markets-head-title">
+              <h2 className="section-title">{t('markets.title')}</h2>
+              <span className={`landing-live-pill${marketHealth.delayed > 0 ? ' landing-live-pill-delayed' : ''}`}>
+                {marketHealth.delayed > 0 ? 'DELAYED' : 'LIVE'}
+              </span>
+            </div>
             <p>{t('markets.subtitle')}</p>
+            {marketHealth.total > 0 ? (
+              <p className="landing-markets-health">
+                {marketHealth.live}/{marketHealth.total} instruments live
+              </p>
+            ) : null}
           </header>
           {marketOverview.loading ? (
             <p className="landing-state">{t('states.loading')}</p>
@@ -147,12 +164,21 @@ export function LandingPage() {
                   transition={{ duration: 0.4 }}
                 >
                   <div>
-                    <strong>{instrument.symbol}</strong>
+                    <strong className="landing-feature-card-symbol">
+                      {instrument.symbol}
+                      <span
+                        className={`landing-feature-status-dot${
+                          instrument.freshness === 'STALE' ? ' landing-feature-status-dot-stale' : ''
+                        }`}
+                        aria-hidden
+                      />
+                    </strong>
                     <p>{instrument.name}</p>
                   </div>
                   <div className="landing-feature-card-right">
-                    <span>{formatPrice(instrument.price, i18n.language, currency)}</span>
-                    <small className={(instrument.change24h ?? 0) >= 0 ? 'landing-up' : 'landing-down'}>
+                    <span className="landing-feature-price">{formatPrice(instrument.price, i18n.language, currency)}</span>
+                    <small className={`landing-change-chip ${(instrument.change24h ?? 0) >= 0 ? 'landing-up' : 'landing-down'}`}>
+                      {(instrument.change24h ?? 0) >= 0 ? '▲ ' : '▼ '}
                       {formatNumber(instrument.change24h, i18n.language, 2)}%
                     </small>
                   </div>
