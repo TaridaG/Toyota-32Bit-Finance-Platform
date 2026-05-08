@@ -1,6 +1,17 @@
 spring:
   profiles:
     active: dev
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   servlet:
     multipart:
       max-file-size: 6MB
@@ -40,6 +51,15 @@ app:
     allow-header-user-fallback: ${APP_SECURITY_ALLOW_HEADER_USER_FALLBACK:true}
   registration:
     enabled: ${APP_REGISTRATION_ENABLED:true}
+    verification:
+      enabled: ${APP_REGISTRATION_VERIFICATION_ENABLED:true}
+      code-length: ${APP_REGISTRATION_VERIFICATION_CODE_LENGTH:6}
+      ttl-seconds: ${APP_REGISTRATION_VERIFICATION_TTL_SECONDS:90}
+      resend-cooldown-seconds: ${APP_REGISTRATION_VERIFICATION_RESEND_COOLDOWN_SECONDS:15}
+      max-attempts: ${APP_REGISTRATION_VERIFICATION_MAX_ATTEMPTS:5}
+      hash-secret: ${APP_REGISTRATION_VERIFICATION_HASH_SECRET:change-me}
+      from: ${APP_REGISTRATION_VERIFICATION_FROM:${SPRING_MAIL_USERNAME:}}
+      subject: ${APP_REGISTRATION_VERIFICATION_SUBJECT:Your Finance Portal verification code}
   keycloak:
     server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8085}
     realm: finance

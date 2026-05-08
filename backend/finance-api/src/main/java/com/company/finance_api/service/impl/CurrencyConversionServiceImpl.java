@@ -1,16 +1,17 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
+import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.service.CurrencyConversionService;
-import com.company.finance_api.service.PriceService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -24,19 +25,20 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
     private static final Set<String> SUPPORTED = Set.of("USD", "EUR", "TRY", "GBP", "JPY");
     private static final Set<String> REQUIRED_RATE_SYMBOLS = Set.of("USDTRY", "EURUSD", "GBPUSD", "JPYUSD");
     private static final Duration RATE_CACHE_TTL = Duration.ofSeconds(5);
+    private static final List<PriceType> RATE_PRICE_TYPES = List.of(PriceType.FX_MID, PriceType.MARKET, PriceType.FUND_NAV);
 
     private final InstrumentRepository instrumentRepository;
-    private final PriceService priceService;
+    private final InstrumentPriceRepository instrumentPriceRepository;
 
     private final Map<String, BigDecimal> cachedRates = new ConcurrentHashMap<>();
     private volatile Instant cacheExpiresAt = Instant.EPOCH;
 
     public CurrencyConversionServiceImpl(
             InstrumentRepository instrumentRepository,
-            PriceService priceService
+            InstrumentPriceRepository instrumentPriceRepository
     ) {
         this.instrumentRepository = instrumentRepository;
-        this.priceService = priceService;
+        this.instrumentPriceRepository = instrumentPriceRepository;
     }
 
     @Override
@@ -110,11 +112,15 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
         if (instrumentOpt.isEmpty()) {
             return Optional.empty();
         }
-        Optional<InstrumentPrice> latest = priceService.getLatestValuationPrice(instrumentOpt.get());
-        if (latest.isEmpty() || latest.get().getPrice() == null) {
-            return Optional.empty();
+        for (PriceType priceType : RATE_PRICE_TYPES) {
+            Optional<BigDecimal> rate = instrumentPriceRepository
+                    .findTopByInstrumentAndPriceTypeOrderByTimestampDesc(instrumentOpt.get(), priceType)
+                    .map(row -> row.getPrice());
+            if (rate.isPresent() && rate.get().compareTo(BigDecimal.ZERO) > 0) {
+                return rate;
+            }
         }
-        return Optional.of(latest.get().getPrice());
+        return Optional.empty();
     }
 
     private BigDecimal toUsd(BigDecimal amount, String from, Map<String, BigDecimal> rates) {

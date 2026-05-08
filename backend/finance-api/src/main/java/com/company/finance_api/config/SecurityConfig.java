@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/public/register", "/api/public/login", "/api/public/refresh")
+                        .requestMatchers(HttpMethod.POST, "/api/public/register", "/api/public/register/send-code", "/api/public/login", "/api/public/refresh")
                                 .permitAll()
                         .anyRequest().permitAll()
                 )

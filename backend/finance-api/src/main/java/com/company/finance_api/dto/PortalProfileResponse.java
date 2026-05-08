@@ -8,5 +8,7 @@ public record PortalProfileResponse(
         String phone,
         boolean notifySecurityAlerts,
         boolean notifyProductUpdates,
-        Instant avatarUpdatedAt
+        Instant avatarUpdatedAt,
+        String preferredLocale,
+        String preferredCurrency
 ) {}

@@ -31,6 +31,10 @@ providers:
   coingecko:
     base-url: https://api.coingecko.com/api/v3
     api-key: ${COINGECKO_API_KEY:}
+  fmp:
+    enabled: ${PROVIDERS_FMP_ENABLED:false}
+    base-url: https://financialmodelingprep.com/api/v3
+    api-key: ${FMP_API_KEY:}
   yahoo:
     base-url: https://query1.finance.yahoo.com
     chart-path-template: /v8/finance/chart/{symbol}
@@ -40,6 +44,9 @@ providers:
     base-url: https://finnhub.io
     stock-quote-path: /api/v1/quote
     stock-candle-path: /api/v1/stock/candle
+    stock-profile-path: /api/v1/stock/profile2
+    stock-financials-reported-path: /api/v1/stock/financials-reported
+    stock-metric-path: /api/v1/stock/metric
     api-key: ${FINNHUB_API_KEY:}
     symbols:
       - AAPL
@@ -47,6 +54,11 @@ providers:
       - NVDA
       - MSFT
       - GOOGL
+      - VOO
+      - VTI
+      - QQQ
+      - IVV
+      - SPY
 
 scheduler:
   market:
@@ -57,6 +69,8 @@ scheduler:
     delay-ms: 300000
   stock:
     delay-ms: 60000
+  bond:
+    delay-ms: 300000
 
 management:
   endpoints:
@@ -114,7 +128,21 @@ market:
     - NVDA
     - MSFT
     - GOOGL
+    - VOO
+    - VTI
+    - QQQ
+    - IVV
+    - SPY
+    - GC=F
+    - SI=F
+    - HG=F
+    - PA=F
+    - PL=F
   provider: composite
+  fundamentals:
+    cache-ttl-hours: ${MARKET_FUNDAMENTALS_CACHE_TTL_HOURS:24}
+    max-annual-reports: ${MARKET_FUNDAMENTALS_MAX_ANNUAL_REPORTS:5}
+    provider-order: ${MARKET_FUNDAMENTALS_PROVIDER_ORDER:FINNHUB,FMP,COINGECKO,INTERNAL_META}
   fx:
     scheduler-enabled: true
     provider-order:
@@ -126,6 +154,11 @@ market:
       - GBP
       - JPY
       - AED
+      - XAU
+      - XAG
+      - XPT
+      - XPD
+      - XCU
     tcmb-url: https://www.tcmb.gov.tr/kurlar/today.xml
     tcmb-api-key: ${TCMB_API_KEY:}
     tcmb-api-key-query-param: ${TCMB_API_KEY_QUERY_PARAM:key}
@@ -140,6 +173,23 @@ market:
     tefas-fontip: YAT
     tefas-history-lookback-days: 370
     tefas-history-chunk-inclusive-days: 89
+  bond:
+    scheduler-enabled: true
+    tracked:
+      - symbol: TRBOND1Y
+        evds-series: TP.KTF10
+      - symbol: TRBOND2Y
+        evds-series: TP.KTF11
+      - symbol: TRBOND3Y
+        evds-series: TP.KTF12
+      - symbol: TRBOND5Y
+        evds-series: TP.KTF13
+      - symbol: TRBOND10Y
+        evds-series: TP.KTF14
+  stock:
+    shares-verification:
+      enabled: ${MARKET_STOCK_SHARES_VERIFICATION_ENABLED:true}
+      cron: ${MARKET_STOCK_SHARES_VERIFICATION_CRON:0 0 3 * * MON}
 resilience:
   providers:
     tcmb:

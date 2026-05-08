@@ -18,6 +18,9 @@ public class FinnhubProperties {
     private String baseUrl = "https://finnhub.io";
     private String stockQuotePath = "/api/v1/quote";
     private String stockCandlePath = "/api/v1/stock/candle";
+    private String stockProfilePath = "/api/v1/stock/profile2";
+    private String stockFinancialsReportedPath = "/api/v1/stock/financials-reported";
+    private String stockMetricPath = "/api/v1/stock/metric";
     private String apiKey = "";
     /** Symbols that Finnhub should own for historical ingestion (e.g. AAPL, AMZN, NVDA). */
     private List<String> symbols = new ArrayList<>();

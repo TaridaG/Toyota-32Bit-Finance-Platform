@@ -40,10 +40,11 @@ public class PortfolioController {
 
     @GetMapping("/overview")
     public ApiResponse<PortfolioOverviewResponse> overview(
-            @RequestHeader(value = "X-Currency", required = false) String targetCurrency
+            @RequestHeader(value = "X-Currency", required = false) String targetCurrency,
+            @RequestParam(value = "portfolioId", required = false) Long portfolioId
     ) {
         return ApiResponse.success(
-                portfolioOverviewService.getMyOverview(targetCurrency)
+                portfolioOverviewService.getMyOverview(targetCurrency, portfolioId)
         );
     }
 

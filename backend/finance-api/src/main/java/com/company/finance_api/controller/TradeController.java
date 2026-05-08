@@ -2,7 +2,12 @@ package com.company.finance_api.controller;
 
 import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.domain.Transaction;
+import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
+import com.company.finance_api.dto.TradeExecutionRequest;
+import com.company.finance_api.dto.TradeExecutionResponse;
+import com.company.finance_api.dto.TradePreviewResponse;
 import com.company.finance_api.service.TradeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +30,12 @@ public class TradeController {
         );
     }
 
+    @PostMapping("/buy/order")
+    public ApiResponse<TradeExecutionResponse> buyOrder(@Valid @RequestBody TradeExecutionRequest request) {
+        Transaction tx = tradeService.buy(request);
+        return ApiResponse.success(toResponse(tx));
+    }
+
     @PostMapping("/sell")
     public ApiResponse<Transaction> sell(
             @RequestParam Long instrumentId,
@@ -32,6 +43,40 @@ public class TradeController {
     ) {
         return ApiResponse.success(
                 tradeService.sell(instrumentId, quantity)
+        );
+    }
+
+    @PostMapping("/sell/order")
+    public ApiResponse<TradeExecutionResponse> sellOrder(@Valid @RequestBody TradeExecutionRequest request) {
+        Transaction tx = tradeService.sell(request);
+        return ApiResponse.success(toResponse(tx));
+    }
+
+    @PostMapping("/preview")
+    public ApiResponse<TradePreviewResponse> preview(@Valid @RequestBody TradeExecutionRequest request) {
+        return ApiResponse.success(tradeService.preview(request));
+    }
+
+    @GetMapping("/instruments/{instrumentId}/price-coverage")
+    public ApiResponse<InstrumentPriceCoverageResponse> priceCoverage(@PathVariable Long instrumentId) {
+        return ApiResponse.success(tradeService.getPriceCoverage(instrumentId));
+    }
+
+    private TradeExecutionResponse toResponse(Transaction tx) {
+        return new TradeExecutionResponse(
+                tx.getId(),
+                tx.getInstrument().getId(),
+                tx.getInstrument().getSymbol(),
+                tx.getType().name(),
+                tx.getPurchaseMode().name(),
+                tx.getQuantity(),
+                tx.getPrice(),
+                tx.getTotalAmount(),
+                tx.getInputCurrency(),
+                tx.getInputAmount(),
+                tx.getFxRateUsed(),
+                tx.getAcquiredAt(),
+                tx.getCreatedAt()
         );
     }
 }

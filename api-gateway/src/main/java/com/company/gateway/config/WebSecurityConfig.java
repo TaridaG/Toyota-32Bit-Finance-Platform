@@ -71,7 +71,10 @@ public class WebSecurityConfig {
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
-        return "/api/public/register".equals(p) || "/api/public/login".equals(p) || "/api/public/refresh".equals(p);
+        return "/api/public/register".equals(p)
+                || "/api/public/register/send-code".equals(p)
+                || "/api/public/login".equals(p)
+                || "/api/public/refresh".equals(p);
     }
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -99,6 +102,8 @@ public class WebSecurityConfig {
                         .pathMatchers(HttpMethod.POST,
                                 "/api/public/register",
                                 "/api/public/register/",
+                                "/api/public/register/send-code",
+                                "/api/public/register/send-code/",
                                 "/api/public/login",
                                 "/api/public/login/",
                                 "/api/public/refresh",

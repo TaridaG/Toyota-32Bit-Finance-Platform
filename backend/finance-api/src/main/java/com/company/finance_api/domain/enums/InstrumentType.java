@@ -4,5 +4,6 @@ public enum InstrumentType {
     CRYPTO,
     STOCK,
     FX,
-    FUND
+    FUND,
+    BOND
 }

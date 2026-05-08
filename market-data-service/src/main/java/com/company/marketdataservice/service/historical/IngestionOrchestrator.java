@@ -97,6 +97,11 @@ public class IngestionOrchestrator {
                 }
                 continue;
             }
+            if ("PRICE".equalsIgnoreCase(state.getAssetType())) {
+                // If coverage is insufficient, stale completed chunks can pin checkpoint at "today"
+                // and prevent historical rehydration. Clear chunk checkpoints before re-queueing.
+                backfillChunkRepository.deleteByAssetTypeAndSymbol(state.getAssetType(), state.getSymbol());
+            }
             BackfillStatus status = BackfillStatus.fromValue(state.getStatus());
             if (status == BackfillStatus.COMPLETED) {
                 ingestionStateService.markNotStarted(state);

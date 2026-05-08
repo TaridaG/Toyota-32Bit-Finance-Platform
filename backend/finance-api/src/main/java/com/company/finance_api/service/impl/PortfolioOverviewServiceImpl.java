@@ -7,6 +7,7 @@ import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.dto.PortfolioOverviewItemResponse;
 import com.company.finance_api.dto.PortfolioOverviewResponse;
 import com.company.finance_api.portfolio.PositionCostBasisCalculator;
+import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.repository.TransactionRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.security.CurrentUserResolver;
@@ -47,6 +48,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
     private final PositionCostBasisCalculator positionCostBasisCalculator;
     private final PriceService priceService;
     private final CurrencyConversionService currencyConversionService;
+    private final ExternalPortfolioRepository externalPortfolioRepository;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
 
@@ -57,6 +59,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
             PositionCostBasisCalculator positionCostBasisCalculator,
             PriceService priceService,
             CurrencyConversionService currencyConversionService,
+            ExternalPortfolioRepository externalPortfolioRepository,
             ObjectMapper objectMapper,
             ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider
     ) {
@@ -66,15 +69,16 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
         this.positionCostBasisCalculator = positionCostBasisCalculator;
         this.priceService = priceService;
         this.currencyConversionService = currencyConversionService;
+        this.externalPortfolioRepository = externalPortfolioRepository;
         this.objectMapper = objectMapper;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
     }
 
     @Override
-    public PortfolioOverviewResponse getMyOverview(String targetCurrency) {
+    public PortfolioOverviewResponse getMyOverview(String targetCurrency, Long portfolioId) {
         UUID userId = currentUserResolver.getCurrentUserId();
         String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
-        String cacheKey = cacheKey(userId, normalizedCurrency);
+        String cacheKey = cacheKey(userId, normalizedCurrency, portfolioId);
         Optional<PortfolioOverviewResponse> cached = readFromCache(cacheKey);
         if (cached.isPresent()) {
             return cached.get();
@@ -82,7 +86,17 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
-        List<Transaction> transactions = transactionRepository.findByUserOrderByCreatedAtDesc(user);
+        List<Transaction> transactions;
+        if (portfolioId != null) {
+            var portfolio = externalPortfolioRepository.findByIdAndUserId(portfolioId, userId)
+                    .orElse(null);
+            if (portfolio == null) {
+                return emptyOverview(normalizedCurrency);
+            }
+            transactions = transactionRepository.findByUserAndExternalPortfolioOrderByCreatedAtDesc(user, portfolio);
+        } else {
+            transactions = transactionRepository.findByUserOrderByCreatedAtDesc(user);
+        }
         Map<Instrument, List<Transaction>> grouped = transactions.stream()
                 .collect(Collectors.groupingBy(Transaction::getInstrument));
 
@@ -201,7 +215,18 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
         }
     }
 
-    private String cacheKey(UUID userId, String currency) {
-        return "portfolio:overview:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT);
+    private String cacheKey(UUID userId, String currency, Long portfolioId) {
+        return "portfolio:overview:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT) + ":portfolio:" + (portfolioId == null ? "all" : portfolioId);
+    }
+
+    private PortfolioOverviewResponse emptyOverview(String currency) {
+        return new PortfolioOverviewResponse(
+                currency,
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP),
+                List.of()
+        );
     }
 }
