@@ -6,10 +6,15 @@ import axios from 'axios'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { loginWithPortalPassword } from '../../shared/api/publicAuth'
 import { persistAuthSession } from '../../shared/auth/session'
+import { fetchPortalProfile } from '../../features/profile/api/portalProfileApi'
+import { normalizeLocale } from '../../shared/i18n'
+import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
+import { SUPPORTED_CURRENCIES } from '../../shared/preferences/preferences'
 
 export function LoginPage() {
   const { t } = useTranslation('auth')
   useDocumentTitle(t('login.titleDoc'))
+  const { setLanguage, setCurrency } = useAppPreferences()
 
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -42,6 +47,19 @@ export function LoginPage() {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       })
+      try {
+        const profile = await fetchPortalProfile()
+        const locale = normalizeLocale(profile.preferredLocale)
+        if (locale) {
+          await setLanguage(locale)
+        }
+        const currency = profile.preferredCurrency?.trim().toUpperCase()
+        if (currency && (SUPPORTED_CURRENCIES as readonly string[]).includes(currency)) {
+          setCurrency(currency as (typeof SUPPORTED_CURRENCIES)[number])
+        }
+      } catch {
+        // keep current local preferences if profile preferences cannot be fetched now
+      }
       navigate('/app', { replace: true })
     } catch (e) {
       if (axios.isAxiosError(e) && e.response?.data && typeof e.response.data === 'object') {

@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { registerPortalUser } from '../../shared/api/publicRegistration'
+import { registerPortalUser, sendRegistrationVerificationCode } from '../../shared/api/publicRegistration'
 
 export function RegisterPage() {
   const { t } = useTranslation('auth')
@@ -17,8 +17,24 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
   const [passwordAgain, setPasswordAgain] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [verificationStep, setVerificationStep] = useState(false)
+  const [verifyCountdown, setVerifyCountdown] = useState(90)
+  const [resendCountdown, setResendCountdown] = useState(15)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
+
+  useEffect(() => {
+    if (!verificationStep) {
+      return
+    }
+    const timer = window.setInterval(() => {
+      setVerifyCountdown((prev) => (prev > 0 ? prev - 1 : 0))
+      setResendCountdown((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [verificationStep])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -59,12 +75,38 @@ export function RegisterPage() {
       return
     }
 
+    if (!verificationStep) {
+      setSendingCode(true)
+      try {
+        const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase())
+        setVerifyCountdown(sent.expiresInSeconds)
+        setResendCountdown(sent.resendInSeconds)
+        setVerificationStep(true)
+        return
+      } catch (e) {
+        if (e instanceof Error && e.message) {
+          setError(e.message)
+          return
+        }
+        setError(t('register.errors.generic'))
+      } finally {
+        setSendingCode(false)
+      }
+      return
+    }
+
+    if (!verificationCode.trim()) {
+      setError(t('register.errors.verificationCodeRequired'))
+      return
+    }
+
     setSubmitting(true)
     try {
       await registerPortalUser({
         email: email.trim().toLowerCase(),
         username: trimmedUsername.toLowerCase(),
         password,
+        verificationCode: verificationCode.trim(),
       })
       navigate('/login?registered=1', { replace: true })
     } catch (e) {
@@ -83,6 +125,27 @@ export function RegisterPage() {
       setError(t('register.errors.generic'))
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleResend = async () => {
+    if (resendCountdown > 0 || sendingCode) {
+      return
+    }
+    setError(null)
+    setSendingCode(true)
+    try {
+      const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase())
+      setVerifyCountdown(sent.expiresInSeconds)
+      setResendCountdown(sent.resendInSeconds)
+    } catch (e) {
+      if (e instanceof Error && e.message) {
+        setError(e.message)
+        return
+      }
+      setError(t('register.errors.generic'))
+    } finally {
+      setSendingCode(false)
     }
   }
 
@@ -105,6 +168,7 @@ export function RegisterPage() {
               onChange={(e) => setFullName(e.target.value)}
               placeholder={t('register.fullNamePlaceholder')}
               autoComplete="name"
+              disabled={verificationStep}
             />
 
             <label className="auth-label" htmlFor="email">
@@ -118,6 +182,7 @@ export function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('register.emailPlaceholder')}
               autoComplete="email"
+              disabled={verificationStep}
             />
 
             <label className="auth-label" htmlFor="username">
@@ -130,6 +195,7 @@ export function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder={t('register.usernamePlaceholder')}
               autoComplete="username"
+              disabled={verificationStep}
             />
 
             <label className="auth-label" htmlFor="newPassword">
@@ -143,6 +209,7 @@ export function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t('register.passwordPlaceholder')}
               autoComplete="new-password"
+              disabled={verificationStep}
             />
 
             <label className="auth-label" htmlFor="passwordAgain">
@@ -156,6 +223,7 @@ export function RegisterPage() {
               onChange={(e) => setPasswordAgain(e.target.value)}
               placeholder={t('register.passwordAgainPlaceholder')}
               autoComplete="new-password"
+              disabled={verificationStep}
             />
 
             <label className="auth-check">
@@ -163,14 +231,53 @@ export function RegisterPage() {
                 type="checkbox"
                 checked={acceptedTerms}
                 onChange={(e) => setAcceptedTerms(e.target.checked)}
+                disabled={verificationStep}
               />
               <span>{t('register.termsLabel')}</span>
             </label>
 
+            {verificationStep ? (
+              <>
+                <label className="auth-label" htmlFor="verificationCode">
+                  {t('register.verificationCodeLabel')}
+                </label>
+                <input
+                  id="verificationCode"
+                  className="auth-input"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder={t('register.verificationCodePlaceholder')}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                />
+                <p className="auth-help">
+                  {t('register.verificationExpiry', { seconds: verifyCountdown })}
+                </p>
+                <button
+                  type="button"
+                  className="auth-submit auth-submit-secondary"
+                  onClick={() => void handleResend()}
+                  disabled={resendCountdown > 0 || sendingCode}
+                >
+                  {resendCountdown > 0
+                    ? t('register.resendIn', { seconds: resendCountdown })
+                    : sendingCode
+                      ? t('register.resending')
+                      : t('register.resendCode')}
+                </button>
+              </>
+            ) : null}
+
             {error ? <p className="auth-error">{error}</p> : null}
 
             <button type="submit" className="auth-submit" disabled={submitting}>
-              {submitting ? t('register.submitting') : t('register.submit')}
+              {verificationStep
+                ? submitting
+                  ? t('register.verifying')
+                  : t('register.verifyAndSubmit')
+                : sendingCode
+                  ? t('register.sendingCode')
+                  : t('register.submit')}
             </button>
           </form>
 

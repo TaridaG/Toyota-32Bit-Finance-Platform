@@ -2,9 +2,17 @@ import { apiClient } from '../../../shared/api/client'
 import type {
   ApiResponse,
   CreatePortfolioPayload,
+  InstrumentPriceCoverage,
   Portfolio,
   PortfolioAllocation,
+  PortfolioOverview,
   PortfolioSummary,
+  TradeExecution,
+  TradePreview,
+  TradePreviewPayload,
+  TransactionHistoryFilters,
+  TransactionHistoryPage,
+  TransactionHistoryItem,
 } from '../../../shared/types/portfolio'
 
 export async function getPortfolios() {
@@ -27,6 +35,50 @@ export async function getPortfolioSummary(id: number) {
 export async function getPortfolioAllocation(id: number) {
   const response = await apiClient.get<ApiResponse<PortfolioAllocation[]>>(
     `/api/external/portfolios/${id}/allocation`,
+  )
+  return response.data.data
+}
+
+export async function previewTrade(payload: TradePreviewPayload) {
+  const response = await apiClient.post<ApiResponse<TradePreview>>('/api/trades/preview', payload)
+  return response.data.data
+}
+
+export async function buyTrade(payload: TradePreviewPayload) {
+  const response = await apiClient.post<ApiResponse<TradeExecution>>('/api/trades/buy/order', payload)
+  return response.data.data
+}
+
+export async function getTransactionHistory(portfolioId?: number | null) {
+  const query = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
+  const response = await apiClient.get<ApiResponse<TransactionHistoryItem[]>>(`/api/history/transactions${query}`)
+  return response.data.data
+}
+
+export async function getTransactionHistoryPage(page: number, size: number, filters: TransactionHistoryFilters, portfolioId?: number | null) {
+  const params = new URLSearchParams()
+  params.set('page', String(page))
+  params.set('size', String(size))
+  if (portfolioId != null) params.set('portfolioId', String(portfolioId))
+  if (filters.symbol) params.set('symbol', filters.symbol)
+  if (filters.type) params.set('type', filters.type)
+  if (filters.purchaseMode) params.set('purchaseMode', filters.purchaseMode)
+  if (filters.inputCurrency) params.set('inputCurrency', filters.inputCurrency)
+  if (filters.fromDate) params.set('fromDate', filters.fromDate)
+  if (filters.toDate) params.set('toDate', filters.toDate)
+  const response = await apiClient.get<ApiResponse<TransactionHistoryPage>>(`/api/history/transactions/page?${params.toString()}`)
+  return response.data.data
+}
+
+export async function getMyPortfolioOverview(portfolioId?: number | null) {
+  const query = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
+  const response = await apiClient.get<ApiResponse<PortfolioOverview>>(`/api/portfolio/overview${query}`)
+  return response.data.data
+}
+
+export async function getInstrumentPriceCoverage(instrumentId: number) {
+  const response = await apiClient.get<ApiResponse<InstrumentPriceCoverage>>(
+    `/api/trades/instruments/${instrumentId}/price-coverage`,
   )
   return response.data.data
 }

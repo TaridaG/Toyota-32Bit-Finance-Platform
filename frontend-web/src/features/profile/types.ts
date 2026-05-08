@@ -6,6 +6,8 @@ export type PortalProfile = {
   notifyProductUpdates: boolean
   /** ISO-8601 instant from the server; null if no profile photo is stored. */
   avatarUpdatedAt: string | null
+  preferredLocale: string
+  preferredCurrency: string
 }
 
 export type ApiEnvelope<T> = {

@@ -167,9 +167,8 @@ export function LandingPage() {
                     <strong className="landing-feature-card-symbol">
                       {instrument.symbol}
                       <span
-                        className={`landing-feature-status-dot${
-                          instrument.freshness === 'STALE' ? ' landing-feature-status-dot-stale' : ''
-                        }`}
+                        className={`landing-feature-status-dot${instrument.freshness === 'STALE' ? ' landing-feature-status-dot-stale' : ''
+                          }`}
                         aria-hidden
                       />
                     </strong>
@@ -221,9 +220,9 @@ export function LandingPage() {
             <p>
               {topReactionItem
                 ? t('ai.stats.reaction', {
-                    symbol: topReactionSymbol(topReactionItem),
-                    value: formatNumber(topReactionItem.reactionPercent1h, i18n.language, 2),
-                  })
+                  symbol: topReactionSymbol(topReactionItem),
+                  value: formatNumber(topReactionItem.reactionPercent1h, i18n.language, 2),
+                })
                 : t('ai.stats.reactionFallback')}
             </p>
           </div>

@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useMarkets } from '../../features/markets/hooks/useMarkets'
 import { useMarketInsights } from '../../features/markets/hooks/useMarketInsights'
-import type { MarketCategory, MarketOverviewItem } from '../../shared/types/market'
+import { fetchInstrumentFundamentals } from '../../features/markets/api/marketService'
+import type { InstrumentFundamentals, MarketCategory, MarketOverviewItem } from '../../shared/types/market'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { marketSortFieldFromUrl, type MarketSortField } from '../../features/markets/lib/marketSort'
+import { isAuthenticated } from '../../shared/auth/session'
+import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../features/markets/api/watchlistApi'
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
@@ -19,6 +22,31 @@ const SPARKLINE_HEIGHT = 22
 const SPARKLINE_PADDING = 2
 
 type GlobalMarketStatus = 'LIVE' | 'DELAYED' | 'EMPTY'
+
+function normalizeMarketCategory(raw: string | null): MarketCategory {
+  const key = (raw ?? '').trim().toLowerCase()
+  switch (key) {
+    case 'crypto':
+      return 'crypto'
+    case 'bist':
+      return 'bist'
+    case 'nasdaq':
+      return 'nasdaq'
+    case 'forex':
+      return 'forex'
+    case 'metals':
+      return 'metals'
+    case 'globalfutures':
+    case 'global_futures':
+    case 'global-futures':
+      return 'globalFutures'
+    case 'funds':
+      return 'funds'
+    case 'all':
+    default:
+      return 'all'
+  }
+}
 
 function toSparklinePoints(row: MarketOverviewItem): number[] {
   const safePrice = Number.isFinite(row.price) && row.price > 0 ? row.price : 1
@@ -56,9 +84,18 @@ function toSparklinePath(points: number[]): string {
 export function MarketsPage() {
   const { t, i18n } = useTranslation('markets')
   const { currency } = useAppPreferences()
+  const authenticated = isAuthenticated()
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
-  const [favorites, setFavorites] = useState<string[]>(['BTCUSDT', 'ETHUSDT', 'ASELS'])
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([])
+  const [favoriteSymbols, setFavoriteSymbols] = useState<string[]>([])
+  const [favoriteNotice, setFavoriteNotice] = useState<string | null>(null)
+  const [favoritePendingIds, setFavoritePendingIds] = useState<number[]>([])
+  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null)
+  const [fundamentalsBySymbol, setFundamentalsBySymbol] = useState<Record<string, InstrumentFundamentals>>({})
+  const [fundamentalsLoadingSymbol, setFundamentalsLoadingSymbol] = useState<string | null>(null)
+  const [fundamentalsErrorBySymbol, setFundamentalsErrorBySymbol] = useState<Record<string, string>>({})
+  const [fundamentalsPrefetchingSymbols, setFundamentalsPrefetchingSymbols] = useState<string[]>([])
   const [priceFlashBySymbol, setPriceFlashBySymbol] = useState<Record<string, 'up' | 'down'>>({})
   const [animatedPriceBySymbol, setAnimatedPriceBySymbol] = useState<Record<string, number>>({})
   const previousPriceBySymbolRef = useRef<Record<string, number>>({})
@@ -69,7 +106,7 @@ export function MarketsPage() {
 
   const page = Math.max(Number(searchParams.get('page') ?? DEFAULT_PAGE), 0)
   const size = Math.max(Number(searchParams.get('size') ?? DEFAULT_SIZE), 1)
-  const selectedCategory = (searchParams.get('category')?.toLowerCase() ?? DEFAULT_CATEGORY) as MarketCategory
+  const selectedCategory = normalizeMarketCategory(searchParams.get('category') ?? DEFAULT_CATEGORY)
   const searchTerm = searchParams.get('q') ?? ''
 
   const rawSort = searchParams.get('sort') ?? 'change1D,desc'
@@ -171,17 +208,112 @@ export function MarketsPage() {
       }),
     [i18n.language],
   )
+  const percentFormatFx = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+        signDisplay: 'always',
+      }),
+    [i18n.language],
+  )
+  const compactIntegerFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        notation: 'compact',
+        maximumFractionDigits: 2,
+      }),
+    [i18n.language],
+  )
+
+  const isRowFavorite = (row: MarketOverviewItem) =>
+    (row.instrumentId != null && favoriteIds.includes(row.instrumentId)) || favoriteSymbols.includes(row.symbol)
 
   const visibleRows = useMemo(
-    () => (showFavoritesOnly ? backendRows.filter((row) => favorites.includes(row.symbol)) : backendRows),
-    [backendRows, favorites, showFavoritesOnly],
+    () =>
+      showFavoritesOnly
+        ? backendRows.filter(
+            (row) =>
+              (row.instrumentId != null && favoriteIds.includes(row.instrumentId)) || favoriteSymbols.includes(row.symbol),
+          )
+        : backendRows,
+    [backendRows, favoriteIds, favoriteSymbols, showFavoritesOnly],
   )
 
   const clampedPage = Math.min(Math.max(page, 0), Math.max(totalPages - 1, 0))
 
-  const toggleFavorite = (symbol: string) => {
-    setFavorites((prev) => (prev.includes(symbol) ? prev.filter((item) => item !== symbol) : [...prev, symbol]))
+  const showFavoriteLoginNotice = () => {
+    const message =
+      i18n.language?.toLowerCase().startsWith('tr')
+        ? 'Please sign in to use favorites.'
+        : i18n.language?.toLowerCase().startsWith('de')
+          ? 'Please sign in to use favorites.'
+          : 'Please sign in to use favorites.'
+    setFavoriteNotice(message)
+    window.setTimeout(() => {
+      setFavoriteNotice((current) => (current === message ? null : current))
+    }, 3500)
   }
+
+  const toggleFavorite = async (row: MarketOverviewItem) => {
+    if (!authenticated) {
+      showFavoriteLoginNotice()
+      return
+    }
+    if (row.instrumentId == null) {
+      setFavoriteNotice(
+        i18n.language?.toLowerCase().startsWith('tr')
+          ? 'Favorites are not available for this asset yet.'
+          : i18n.language?.toLowerCase().startsWith('de')
+            ? 'Favorites are not available for this asset yet.'
+            : 'Favorites are not available for this asset yet.',
+      )
+      return
+    }
+    const instrumentId = row.instrumentId
+    if (favoritePendingIds.includes(instrumentId)) {
+      return
+    }
+    const currentlyFavorite = isRowFavorite(row)
+    setFavoritePendingIds((prev) => [...prev, instrumentId])
+    try {
+      if (currentlyFavorite) {
+        await removeWatchlistItem(instrumentId)
+        setFavoriteIds((prev) => prev.filter((id) => id !== instrumentId))
+        setFavoriteSymbols((prev) => prev.filter((s) => s !== row.symbol))
+      } else {
+        await addWatchlistItem(instrumentId)
+        setFavoriteIds((prev) => (prev.includes(instrumentId) ? prev : [...prev, instrumentId]))
+        setFavoriteSymbols((prev) => (prev.includes(row.symbol) ? prev : [...prev, row.symbol]))
+      }
+    } catch {
+      setFavoriteNotice(
+        i18n.language?.toLowerCase().startsWith('tr')
+          ? 'Could not update favorite. Please try again.'
+          : i18n.language?.toLowerCase().startsWith('de')
+            ? 'Could not update favorite. Please try again.'
+            : 'Could not update favorite. Please try again.',
+      )
+    } finally {
+      setFavoritePendingIds((prev) => prev.filter((id) => id !== instrumentId))
+    }
+  }
+
+  useEffect(() => {
+    if (!authenticated) {
+      setFavoriteIds([])
+      setFavoriteSymbols([])
+      return
+    }
+    void fetchWatchlist()
+      .then((rows) => {
+        setFavoriteIds(rows.map((item) => item.instrumentId))
+        setFavoriteSymbols(rows.map((item) => item.symbol))
+      })
+      .catch(() => {
+        // keep current client state if watchlist fetch fails
+      })
+  }, [authenticated])
 
   const handleSort = (field: MarketSortField) => {
     const nextDirection: SortDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc'
@@ -190,6 +322,90 @@ export function MarketsPage() {
       next.set('page', '0')
     })
   }
+
+  const loadFundamentals = async (symbol: string) => {
+    if (fundamentalsBySymbol[symbol]) {
+      return
+    }
+    setFundamentalsLoadingSymbol(symbol)
+    setFundamentalsErrorBySymbol((prev) => {
+      const next = { ...prev }
+      delete next[symbol]
+      return next
+    })
+    try {
+      const payload = await fetchInstrumentFundamentals(symbol)
+      setFundamentalsBySymbol((prev) => ({ ...prev, [symbol]: payload }))
+    } catch {
+      setFundamentalsErrorBySymbol((prev) => ({ ...prev, [symbol]: 'Detaylı finansal veriler şu anda alınamıyor.' }))
+    } finally {
+      setFundamentalsLoadingSymbol((current) => (current === symbol ? null : current))
+    }
+  }
+
+  useEffect(() => {
+    const targets = visibleRows
+      .map((row) => row.symbol)
+      .filter(
+        (symbol) =>
+          !fundamentalsBySymbol[symbol] &&
+          !fundamentalsPrefetchingSymbols.includes(symbol),
+      )
+    if (targets.length === 0) {
+      return
+    }
+    const batch = targets.slice(0, 8)
+    setFundamentalsPrefetchingSymbols((prev) => [...prev, ...batch])
+    Promise.all(
+      batch.map(async (symbol) => {
+        try {
+          const payload = await fetchInstrumentFundamentals(symbol)
+          setFundamentalsBySymbol((prev) => ({ ...prev, [symbol]: payload }))
+        } catch {
+          // keep row without market cap when unavailable
+        } finally {
+          setFundamentalsPrefetchingSymbols((prev) => prev.filter((item) => item !== symbol))
+        }
+      }),
+    ).catch(() => {
+      // no-op
+    })
+  }, [fundamentalsBySymbol, fundamentalsPrefetchingSymbols, visibleRows])
+
+  const toggleFundamentals = (symbol: string) => {
+    if (expandedSymbol === symbol) {
+      setExpandedSymbol(null)
+      return
+    }
+    setExpandedSymbol(symbol)
+    void loadFundamentals(symbol)
+  }
+
+  const formatMetric = (value: number | null | undefined, suffix = '') => {
+    if (value == null || !Number.isFinite(value)) return '—'
+    return `${compactIntegerFormat.format(value)}${suffix}`
+  }
+  const currencySymbolOf = (currencyCode: string | null | undefined) => {
+    const code = (currencyCode ?? '').trim().toUpperCase()
+    if (!code) return ''
+    try {
+      const parts = new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: code,
+        currencyDisplay: 'narrowSymbol',
+      }).formatToParts(1)
+      return parts.find((p) => p.type === 'currency')?.value ?? code
+    } catch {
+      return code
+    }
+  }
+  const formatMarketCap = (value: number | null | undefined, currencyCode: string | null | undefined) => {
+    if (value == null || !Number.isFinite(value)) return '—'
+    const symbol = currencySymbolOf(currencyCode)
+    return symbol ? `${symbol}${compactIntegerFormat.format(value)}` : compactIntegerFormat.format(value)
+  }
+  const hasEquityMetrics = (f: InstrumentFundamentals) =>
+    f.marketCapitalization != null || f.peTtm != null || f.epsTtm != null || f.annualStatements.length > 0
 
   const sortIndicator = (field: MarketSortField) => {
     if (sortField !== field) return ''
@@ -324,7 +540,7 @@ export function MarketsPage() {
 
           <div className="markets-toolbar">
             <div className="markets-filter-group" role="tablist" aria-label={t('categories.aria')}>
-              {(['all', 'crypto', 'stocks', 'forex', 'commodities'] as const).map((category) => (
+              {(['all', 'crypto', 'bist', 'nasdaq', 'forex', 'metals', 'globalFutures', 'funds'] as const).map((category) => (
                 <button
                   key={category}
                   type="button"
@@ -365,16 +581,28 @@ export function MarketsPage() {
               <option value={50}>{t('pagination.size50')}</option>
             </select>
           </div>
+          {favoriteNotice ? (
+            <div className="markets-status markets-status-delayed" style={{ marginBottom: '0.75rem' }}>
+              <span className="markets-status-dot" />
+              <span>{favoriteNotice}</span>
+            </div>
+          ) : null}
 
           <div className="markets-table-wrap">
             <table className="markets-table">
               <thead>
                 <tr>
                   <th />
+                  <th />
                   <th>
                     <button type="button" className="markets-sort-button" onClick={() => handleSort('symbol')}>
                       {t('table.symbol')}
                       {sortIndicator('symbol')}
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" className="markets-sort-button">
+                      Piyasa Degeri
                     </button>
                   </th>
                   <th>
@@ -441,14 +669,14 @@ export function MarketsPage() {
                 {loading ? (
                   Array.from({ length: Math.min(size, 6) }).map((_, idx) => (
                     <tr key={`skeleton-${idx}`}>
-                      <td colSpan={10}>
+                      <td colSpan={12}>
                         <div className="markets-skeleton-row" />
                       </td>
                     </tr>
                   ))
                 ) : error ? (
                   <tr>
-                    <td colSpan={10} className="markets-empty">
+                    <td colSpan={12} className="markets-empty">
                       <div className="markets-error-wrap">
                         <span>{error}</span>
                         <button type="button" className="markets-filter" onClick={() => void refetch()}>
@@ -460,6 +688,7 @@ export function MarketsPage() {
                 ) : visibleRows.length > 0 ? (
                   visibleRows.map((row: MarketOverviewItem) => {
                     const isPositive = (row.change24h ?? 0) >= 0
+                    const percentDisplay = row.category === 'FX' ? percentFormatFx : percentFormat
                     const animatedNat = animatedPriceBySymbol[row.symbol] ?? row.price
                     const nativeQ = row.nativeQuote ?? 'USD'
                     const nativeFmt = nativeQ === 'TRY' ? tryNativeFormat : usdNativeFormat
@@ -481,15 +710,27 @@ export function MarketsPage() {
                           ? 'markets-price-flash-down'
                           : undefined
                     return (
-                      <tr key={row.symbol}>
-                        <td>
+                      <Fragment key={row.symbol}>
+                        <tr>
+                          <td>
+                            <button
+                              type="button"
+                              aria-label={expandedSymbol === row.symbol ? 'Detayları kapat' : 'Detayları aç'}
+                              className={`markets-expand-toggle${expandedSymbol === row.symbol ? ' markets-expand-toggle-open' : ''}`}
+                              onClick={() => toggleFundamentals(row.symbol)}
+                            >
+                              {expandedSymbol === row.symbol ? '⌄' : '›'}
+                            </button>
+                          </td>
+                          <td>
                           <button
                             type="button"
-                            aria-label={favorites.includes(row.symbol) ? t('unfavorite') : t('favorite')}
-                            className={`markets-star${favorites.includes(row.symbol) ? ' markets-star-active' : ''}`}
-                            onClick={() => toggleFavorite(row.symbol)}
+                            aria-label={isRowFavorite(row) ? t('unfavorite') : t('favorite')}
+                            className={`markets-star${isRowFavorite(row) ? ' markets-star-active' : ''}`}
+                            onClick={() => void toggleFavorite(row)}
+                            disabled={row.instrumentId != null && favoritePendingIds.includes(row.instrumentId)}
                           >
-                            ▲
+                            {isRowFavorite(row) ? '★' : '☆'}
                           </button>
                         </td>
                         <td>
@@ -504,6 +745,12 @@ export function MarketsPage() {
                           </div>
                         </td>
                         <td className={`markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
+                          {formatMarketCap(
+                            fundamentalsBySymbol[row.symbol]?.marketCapitalization,
+                            fundamentalsBySymbol[row.symbol]?.currency ?? row.nativeQuote,
+                          )}
+                        </td>
+                        <td className={`markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
                           {nativeFmt.format(animatedNat)}
                         </td>
                         <td className="markets-price-converted-cell">
@@ -516,19 +763,19 @@ export function MarketsPage() {
                           )}
                         </td>
                         <td className={isPositive ? 'markets-positive' : 'markets-negative'}>
-                          {percentFormat.format(row.change1D ?? 0)}
+                          {percentDisplay.format(row.change1D ?? 0)}
                         </td>
                         <td className={(row.change1M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
-                          {percentFormat.format(row.change1M ?? 0)}
+                          {percentDisplay.format(row.change1M ?? 0)}
                         </td>
                         <td className={(row.change3M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
-                          {percentFormat.format(row.change3M ?? 0)}
+                          {percentDisplay.format(row.change3M ?? 0)}
                         </td>
                         <td className={(row.change6M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
-                          {percentFormat.format(row.change6M ?? 0)}
+                          {percentDisplay.format(row.change6M ?? 0)}
                         </td>
                         <td className={(row.change1Y ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
-                          {percentFormat.format(row.change1Y ?? 0)}
+                          {percentDisplay.format(row.change1Y ?? 0)}
                         </td>
                         <td>
                           {(() => {
@@ -548,13 +795,120 @@ export function MarketsPage() {
                               </svg>
                             )
                           })()}
-                        </td>
-                      </tr>
+                          </td>
+                        </tr>
+                        {expandedSymbol === row.symbol ? (
+                          <tr className="markets-fundamentals-row">
+                            <td colSpan={12}>
+                              <div className="markets-fundamentals-panel">
+                                {fundamentalsLoadingSymbol === row.symbol ? (
+                                  <div className="markets-skeleton-row" />
+                                ) : fundamentalsErrorBySymbol[row.symbol] ? (
+                                  <p className="markets-insights-empty">{fundamentalsErrorBySymbol[row.symbol]}</p>
+                                ) : fundamentalsBySymbol[row.symbol] ? (
+                                  <>
+                                    <div className="markets-fundamentals-grid">
+                                      <div>
+                                        <span>Saglayici</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].provider}</strong>
+                                      </div>
+                                      <div>
+                                        <span>Sirket</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].companyName ?? row.name}</strong>
+                                      </div>
+                                      <div>
+                                        <span>Sektor</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].industry ?? '—'}</strong>
+                                      </div>
+                                      <div>
+                                        <span>Piyasa</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].exchange ?? row.category ?? '—'}</strong>
+                                      </div>
+                                      <div>
+                                        <span>Para Birimi</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].currency ?? '—'}</strong>
+                                      </div>
+                                      <div>
+                                        <span>Ulke</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].country ?? '—'}</strong>
+                                      </div>
+                                      <div>
+                                        <span>Kurulus / IPO</span>
+                                        <strong>{fundamentalsBySymbol[row.symbol].ipoDate ?? '—'}</strong>
+                                      </div>
+                                      {fundamentalsBySymbol[row.symbol].website ? (
+                                        <div>
+                                          <span>Web</span>
+                                          <strong>{fundamentalsBySymbol[row.symbol].website}</strong>
+                                        </div>
+                                      ) : null}
+                                      {hasEquityMetrics(fundamentalsBySymbol[row.symbol]) ? (
+                                        <>
+                                          <div>
+                                            <span>Piyasa Degeri</span>
+                                            <strong>
+                                              {formatMarketCap(
+                                                fundamentalsBySymbol[row.symbol].marketCapitalization,
+                                                fundamentalsBySymbol[row.symbol].currency ?? row.nativeQuote,
+                                              )}
+                                            </strong>
+                                          </div>
+                                          <div>
+                                            <span>F/K (TTM)</span>
+                                            <strong>{formatMetric(fundamentalsBySymbol[row.symbol].peTtm)}</strong>
+                                          </div>
+                                          <div>
+                                            <span>EPS (TTM)</span>
+                                            <strong>{formatMetric(fundamentalsBySymbol[row.symbol].epsTtm)}</strong>
+                                          </div>
+                                        </>
+                                      ) : null}
+                                    </div>
+                                    {fundamentalsBySymbol[row.symbol].annualStatements.length > 0 ? (
+                                      <div className="markets-fundamentals-financials">
+                                        <h4>Yillik Finansal Ozet</h4>
+                                        <div className="markets-fundamentals-financials-table">
+                                          <table>
+                                            <thead>
+                                              <tr>
+                                                <th>Yil</th>
+                                                <th>Ciro</th>
+                                                <th>Net Kar</th>
+                                                <th>Varlik</th>
+                                                <th>Yukumluluk</th>
+                                                <th>Operasyonel Nakit Akisi</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {fundamentalsBySymbol[row.symbol].annualStatements.map((item, index) => (
+                                                <tr key={`${row.symbol}-fin-${item.year ?? 'na'}-${index}`}>
+                                                  <td>{item.year ?? '—'}</td>
+                                                  <td>{formatMetric(item.revenue)}</td>
+                                                  <td>{formatMetric(item.netIncome)}</td>
+                                                  <td>{formatMetric(item.totalAssets)}</td>
+                                                  <td>{formatMetric(item.totalLiabilities)}</td>
+                                                  <td>{formatMetric(item.operatingCashFlow)}</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </>
+                                ) : (
+                                  <p className="markets-insights-empty">Detayli veri bulunamadi.</p>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
                     )
                   })
                 ) : (
                   <tr>
-                    <td colSpan={10} className="markets-empty">
+                    <td colSpan={12} className="markets-empty">
                       {t('noMatches')}
                     </td>
                   </tr>
