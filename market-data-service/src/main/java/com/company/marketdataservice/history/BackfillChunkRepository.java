@@ -106,6 +106,15 @@ public interface BackfillChunkRepository extends JpaRepository<BackfillChunkEntr
             Instant windowEnd
     );
 
+    @Modifying
+    @Transactional
+    @Query(value = """
+            DELETE FROM mds_backfill_chunk
+            WHERE asset_type = :assetType
+              AND symbol = :symbol
+            """, nativeQuery = true)
+    int deleteByAssetTypeAndSymbol(@Param("assetType") String assetType, @Param("symbol") String symbol);
+
     @Query(value = """
             SELECT MIN(created_at), MAX(completed_at)
             FROM mds_backfill_chunk

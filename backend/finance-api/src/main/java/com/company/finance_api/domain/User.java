@@ -37,6 +37,12 @@ public class User {
     @Column(name = "profile_avatar_updated_at")
     private Instant profileAvatarUpdatedAt;
 
+    @Column(name = "preferred_locale", nullable = false, length = 8)
+    private String preferredLocale = "en";
+
+    @Column(name = "preferred_currency", nullable = false, length = 8)
+    private String preferredCurrency = "USD";
+
     protected User() {
         // JPA only
     }
@@ -84,6 +90,22 @@ public class User {
 
     public void setProfileAvatarUpdatedAt(Instant profileAvatarUpdatedAt) {
         this.profileAvatarUpdatedAt = profileAvatarUpdatedAt;
+    }
+
+    public String getPreferredLocale() {
+        return preferredLocale;
+    }
+
+    public void setPreferredLocale(String preferredLocale) {
+        this.preferredLocale = preferredLocale;
+    }
+
+    public String getPreferredCurrency() {
+        return preferredCurrency;
+    }
+
+    public void setPreferredCurrency(String preferredCurrency) {
+        this.preferredCurrency = preferredCurrency;
     }
 
     public void changeUsername(String newUsername) {

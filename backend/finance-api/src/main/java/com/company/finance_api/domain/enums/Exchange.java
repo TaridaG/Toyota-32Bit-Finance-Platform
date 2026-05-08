@@ -3,5 +3,7 @@ package com.company.finance_api.domain.enums;
 public enum Exchange {
     BINANCE,
     BIST,
-    TCMB
+    TCMB,
+    NASDAQ,
+    FINNHUB
 }

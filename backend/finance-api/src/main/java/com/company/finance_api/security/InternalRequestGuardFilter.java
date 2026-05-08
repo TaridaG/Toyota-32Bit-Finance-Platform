@@ -44,6 +44,7 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
         // Public self-service auth (no JWT yet; gateway must not forward spoofed X-USERNAME)
         if ("POST".equalsIgnoreCase(request.getMethod())
                 && (path.endsWith("/api/public/register")
+                || path.endsWith("/api/public/register/send-code")
                 || path.endsWith("/api/public/login")
                 || path.endsWith("/api/public/refresh"))) {
             filterChain.doFilter(request, response);

@@ -32,9 +32,11 @@ public class TestGatewayRoutesConfig {
                 .route("finance-api-public", r -> r.order(-1)
                         .path(
                                 "/api/public/register",
+                                "/api/public/register/send-code",
                                 "/api/public/login",
                                 "/api/public/refresh",
                                 "/api/public/register/",
+                                "/api/public/register/send-code/",
                                 "/api/public/login/",
                                 "/api/public/refresh/")
                         .uri(financeBaseUri))

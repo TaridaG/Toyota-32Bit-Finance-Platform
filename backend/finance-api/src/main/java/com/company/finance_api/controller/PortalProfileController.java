@@ -5,6 +5,7 @@ import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
 import com.company.finance_api.dto.PortalProfileResponse;
 import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
+import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
 import com.company.finance_api.dto.PortalUpdatePhoneRequest;
 import com.company.finance_api.dto.PublicLoginResponse;
 import com.company.finance_api.profile.PortalProfileService;
@@ -67,6 +68,11 @@ public class PortalProfileController {
             @Valid @RequestBody PortalUpdateNotificationsRequest request
     ) {
         return ApiResponse.success(portalProfileService.updateNotifications(request));
+    }
+
+    @PutMapping("/preferences")
+    public ApiResponse<PortalProfileResponse> updatePreferences(@Valid @RequestBody PortalUpdatePreferencesRequest request) {
+        return ApiResponse.success(portalProfileService.updatePreferences(request));
     }
 
     @GetMapping(value = "/avatar", produces = MediaType.IMAGE_JPEG_VALUE)

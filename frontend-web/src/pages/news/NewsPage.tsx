@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { tickerItems, topGainers, topLosers } from './mockData'
+import { topGainers, topLosers } from './mockData'
 import type { NewsCategory, NewsDataPoint, SentimentType } from './types'
 import { fetchNewsOriginal, type NewsApiItem } from '../../features/news/api/newsService'
 import { useNews } from '../../features/news/hooks/useNews'
-import { MarketTicker } from './components/MarketTicker'
 import { NewsCard } from './components/NewsCard'
 import { TrendingList } from './components/TrendingList'
 import { SentimentChart } from './components/SentimentChart'
@@ -69,19 +68,6 @@ export function NewsPage() {
   return (
     <>
       <section className="fi-news-page">
-        <header className="card fi-news-header">
-          <div>
-            <p className="fi-news-kicker">{t('kicker')}</p>
-            <h2>{t('title')}</h2>
-            <p>{t('lead')}</p>
-          </div>
-          <div className="fi-news-ticker-grid">
-            {tickerItems.map((item) => (
-              <MarketTicker key={item.symbol} item={item} />
-            ))}
-          </div>
-        </header>
-
         <section className="card fi-filter-bar">
           <div className="fi-filter-group">
             <span>{t('categoryTitle')}</span>
@@ -134,9 +120,6 @@ export function NewsPage() {
 
         <div className="fi-main-grid">
           <article className="card fi-news-feed">
-            <div className="fi-panel-head">
-              <h3>{t('streamTitle')}</h3>
-            </div>
             <div className="fi-news-list">
               {streamLoading ? (
                 <p className="fi-empty">{t('common:loading')}</p>

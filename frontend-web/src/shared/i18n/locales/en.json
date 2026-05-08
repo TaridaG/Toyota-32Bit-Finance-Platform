@@ -16,6 +16,13 @@
       "searchAria": "Search",
       "download": { "aria": "Download app", "title": "Download the app", "subtitle": "iOS & Android", "moreOptions": "More download options" },
       "locale": { "aria": "Language and currency" },
+      "notifications": {
+        "aria": "Notifications",
+        "title": "Notifications",
+        "loginRequired": "Please sign in to enable your notifications.",
+        "empty": "You have no notifications yet.",
+        "loadError": "Notifications could not be loaded."
+      },
       "theme": { "label": "Theme", "light": "Light", "dark": "Dark", "switchToLight": "Switch to light theme", "switchToDark": "Switch to dark theme" },
       "mobile": { "close": "Close", "openMenu": "Open menu", "closeMenu": "Close menu" },
       "profileMenu": {
@@ -231,7 +238,16 @@
       "passwordAgainPlaceholder": "Repeat your password",
       "termsLabel": "I accept the terms of use and privacy policy.",
       "submit": "Sign Up",
+      "sendingCode": "Sending verification code...",
       "submitting": "Creating account...",
+      "verificationCodeLabel": "Email verification code",
+      "verificationCodePlaceholder": "6-digit code",
+      "verificationExpiry": "Code expires in: {{seconds}}s",
+      "resendCode": "Resend code",
+      "resending": "Sending code...",
+      "resendIn": "Resend ({{seconds}}s)",
+      "verifyAndSubmit": "Verify code and sign up",
+      "verifying": "Verifying...",
       "haveAccount": "Already have an account?",
       "loginNow": "Log in",
       "errors": {
@@ -241,6 +257,7 @@
         "usernameInvalid": "Username may only contain letters, digits, dot, underscore, and hyphen.",
         "passwordMin": "Password must be at least 8 characters.",
         "passwordsNotMatch": "Passwords do not match.",
+        "verificationCodeRequired": "Verification code is required.",
         "termsRequired": "You must accept terms and conditions to continue.",
         "generic": "Registration could not be completed. Please try again."
       }
@@ -250,8 +267,8 @@
     "titleDoc": "Markets | Finance Platform",
     "kicker": "Live Desk",
     "title": "Markets",
-    "lead": "Track crypto, equities, FX, and commodities from a single dashboard.",
-    "categories": { "aria": "Market category filters", "all": "All", "crypto": "Crypto", "stocks": "Stocks", "forex": "Forex", "commodities": "Commodities" },
+    "lead": "Track crypto, BIST, NASDAQ, FX, spot metals, global commodity futures, and funds from one dashboard.",
+    "categories": { "aria": "Market category filters", "all": "All", "crypto": "Crypto", "bist": "BIST", "nasdaq": "NASDAQ", "stocks": "Stocks", "forex": "Forex", "metals": "Spot Metals", "globalFutures": "Global Futures", "funds": "Funds" },
     "table": { "symbol": "Symbol", "price": "Price", "priceHint": "Left: native quote (TRY or USD). Right: same spot in your header currency.", "priceConvertedSort": "Sort by value in selected currency", "change24h": "24h", "high24h": "24h High", "low24h": "24h Low", "exchange": "Exchange" },
     "searchLabel": "Search",
     "searchPlaceholder": "Symbol or asset name",
@@ -339,7 +356,26 @@
       "navAria": "Portfolio dashboard navigation",
       "quickAria": "Portfolio quick links",
       "logout": "Logout",
-      "items": { "dashboard": "Dashboard", "markets": "Markets", "portfolio": "Portfolio", "news": "My News", "analysis": "My Analysis", "targets": "My Targets", "watchlist": "Watchlist", "settings": "Settings" }
+      "items": { "dashboard": "Dashboard", "markets": "Add to Portfolio", "portfolio": "Transaction History", "news": "My News", "analysis": "My Analysis", "targets": "My Targets", "watchlist": "Watchlist", "settings": "Settings" }
+    },
+    "watchlist": {
+      "title": "My Watchlist",
+      "subtitle": "Only your favorite instruments are listed here.",
+      "empty": "No favorites yet. Add favorites from Markets page.",
+      "loadError": "Watchlist could not be loaded.",
+      "chartEmpty": "No chart data found for this instrument.",
+      "chartLoadError": "Chart data could not be loaded.",
+      "columns": { "symbol": "Symbol", "name": "Name", "price": "Price" },
+      "addPanel": {
+        "title": "Add To Favorites",
+        "searchPlaceholder": "Search symbol or instrument name",
+        "add": "Add",
+        "addedShort": "Added",
+        "added": "Instrument has been added to favorites.",
+        "addError": "Could not add to favorites. Please try again.",
+        "noResults": "No instruments match your search.",
+        "categories": { "all": "All", "bist": "BIST", "nasdaq": "NASDAQ", "crypto": "Crypto", "forex": "Forex", "metals": "Metals/Futures", "funds": "Funds" }
+      }
     },
     "insights": {
       "items": {
@@ -369,3 +405,5 @@
     }
   }
 }
+
+

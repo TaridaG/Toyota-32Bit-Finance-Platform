@@ -73,6 +73,17 @@ export async function updatePortalNotifications(
   return assertSuccessData(data)
 }
 
+export async function updatePortalPreferences(
+  preferredLocale: string,
+  preferredCurrency: string,
+): Promise<PortalProfile> {
+  const { data } = await apiClient.put<ApiEnvelope<PortalProfile>>(`${BASE}/preferences`, {
+    preferredLocale,
+    preferredCurrency,
+  })
+  return assertSuccessData(data)
+}
+
 export async function uploadPortalAvatar(file: File): Promise<PortalProfile> {
   const formData = new FormData()
   formData.append('file', file)

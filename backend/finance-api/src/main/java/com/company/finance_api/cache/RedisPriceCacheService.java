@@ -32,11 +32,15 @@ public class RedisPriceCacheService implements PriceCacheService {
             Long instrumentId,
             PriceType priceType
     ) {
-        return Optional.ofNullable(
-                redisTemplate.opsForValue().get(
-                        key(instrumentId, priceType)
-                )
-        );
+        String cacheKey = key(instrumentId, priceType);
+        try {
+            return Optional.ofNullable(redisTemplate.opsForValue().get(cacheKey));
+        } catch (ClassCastException ex) {
+            // Old cache payloads can be deserialized as LinkedHashMap after serializer changes.
+            // Evict incompatible entry and allow DB fallback path.
+            redisTemplate.delete(cacheKey);
+            return Optional.empty();
+        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.company.marketdataservice.provider.finnhub;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.company.marketdataservice.config.FinnhubProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
@@ -27,17 +28,10 @@ public class FinnhubClient {
     }
 
     public FinnhubCandleResponse fetchStockCandles(String symbol, String resolution, long fromEpochSec, long toEpochSec) {
-        String apiKey = properties.getApiKey() == null ? "" : properties.getApiKey().trim();
-        if (apiKey.isEmpty()) {
-            throw new IllegalStateException("Finnhub API key is not configured");
-        }
+        String apiKey = requireApiKey();
         String normalized = normalizeSymbol(symbol);
         String encoded = URLEncoder.encode(normalized, StandardCharsets.UTF_8);
-        String base = properties.getBaseUrl().replaceAll("/+$", "");
-        String path = properties.getStockCandlePath().startsWith("/")
-                ? properties.getStockCandlePath()
-                : "/" + properties.getStockCandlePath();
-        String uri = base + path
+        String uri = buildPath(properties.getStockCandlePath())
                 + "?symbol=" + encoded
                 + "&resolution=" + resolution
                 + "&from=" + fromEpochSec
@@ -67,17 +61,10 @@ public class FinnhubClient {
     }
 
     public BigDecimal fetchLiveQuotePrice(String symbol) {
-        String apiKey = properties.getApiKey() == null ? "" : properties.getApiKey().trim();
-        if (apiKey.isEmpty()) {
-            throw new IllegalStateException("Finnhub API key is not configured");
-        }
+        String apiKey = requireApiKey();
         String normalized = normalizeSymbol(symbol);
         String encoded = URLEncoder.encode(normalized, StandardCharsets.UTF_8);
-        String base = properties.getBaseUrl().replaceAll("/+$", "");
-        String path = properties.getStockQuotePath().startsWith("/")
-                ? properties.getStockQuotePath()
-                : "/" + properties.getStockQuotePath();
-        String uri = base + path + "?symbol=" + encoded + "&token=" + apiKey;
+        String uri = buildPath(properties.getStockQuotePath()) + "?symbol=" + encoded + "&token=" + apiKey;
         try {
             FinnhubQuoteResponse response = finnhubWebClient.get()
                     .uri(uri)
@@ -103,6 +90,73 @@ public class FinnhubClient {
         } catch (Exception ex) {
             throw new IllegalStateException("Finnhub request failed symbol=" + normalized, ex);
         }
+    }
+
+    public JsonNode fetchCompanyProfile(String symbol) {
+        String normalized = normalizeSymbol(symbol);
+        String uri = buildPath(properties.getStockProfilePath())
+                + "?symbol=" + encode(normalized)
+                + "&token=" + requireApiKey();
+        return fetchJson(uri, normalized);
+    }
+
+    public JsonNode fetchFinancialsReported(String symbol) {
+        String normalized = normalizeSymbol(symbol);
+        String uri = buildPath(properties.getStockFinancialsReportedPath())
+                + "?symbol=" + encode(normalized)
+                + "&token=" + requireApiKey();
+        return fetchJson(uri, normalized);
+    }
+
+    public JsonNode fetchBasicFinancials(String symbol) {
+        String normalized = normalizeSymbol(symbol);
+        String uri = buildPath(properties.getStockMetricPath())
+                + "?symbol=" + encode(normalized)
+                + "&metric=all"
+                + "&token=" + requireApiKey();
+        return fetchJson(uri, normalized);
+    }
+
+    private JsonNode fetchJson(String uri, String normalizedSymbol) {
+        try {
+            return finnhubWebClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            HttpStatusCode status = ex.getStatusCode();
+            if (status.is4xxClientError()) {
+                throw new IllegalArgumentException(
+                        "Finnhub rejected symbol=" + normalizedSymbol + " status=" + status.value(),
+                        ex
+                );
+            }
+            throw new IllegalStateException(
+                    "Finnhub request failed symbol=" + normalizedSymbol + " status=" + status.value(),
+                    ex
+            );
+        } catch (Exception ex) {
+            throw new IllegalStateException("Finnhub request failed symbol=" + normalizedSymbol, ex);
+        }
+    }
+
+    private String requireApiKey() {
+        String apiKey = properties.getApiKey() == null ? "" : properties.getApiKey().trim();
+        if (apiKey.isEmpty()) {
+            throw new IllegalStateException("Finnhub API key is not configured");
+        }
+        return apiKey;
+    }
+
+    private String buildPath(String path) {
+        String base = properties.getBaseUrl().replaceAll("/+$", "");
+        String normalizedPath = path.startsWith("/") ? path : "/" + path;
+        return base + normalizedPath;
+    }
+
+    private static String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     private static String normalizeSymbol(String symbol) {

@@ -12,5 +12,7 @@ public interface ExternalPortfolioRepository extends JpaRepository<ExternalPortf
     List<ExternalPortfolio> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
     Optional<ExternalPortfolio> findByIdAndUserId(Long id, UUID userId);
+
+    long countByUserId(UUID userId);
 }
 

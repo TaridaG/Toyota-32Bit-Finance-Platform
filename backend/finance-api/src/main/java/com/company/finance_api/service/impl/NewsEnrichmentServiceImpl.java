@@ -288,7 +288,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     private record NewsServiceApiResponse<T>(
             boolean success,
             T data
-    ) {
+            ) {
+
     }
 
     private record NewsServicePageResponse<T>(
@@ -298,7 +299,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             int size,
             long totalElements,
             int totalPages
-    ) {
+            ) {
+
     }
 
     private record NewsServiceNewsItem(
@@ -312,20 +314,23 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             String sourceName,
             String category,
             Instant publishedAt
-    ) {
+            ) {
+
     }
 
     private record NewsServiceNewsDetailItem(
             Long id,
             String title,
             String summary
-    ) {
+            ) {
+
     }
 
     private record AnalyticsApiResponse<T>(
             boolean success,
             T data
-    ) {
+            ) {
+
     }
 
     private record AnalyticsCandleDto(
@@ -334,7 +339,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             BigDecimal high,
             BigDecimal low,
             BigDecimal close
-    ) {
+            ) {
+
         Instant timeAnchor() {
             if (openTime != null) {
                 return openTime;

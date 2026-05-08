@@ -24,6 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class ExternalPortfolioServiceImpl implements ExternalPortfolioService {
+    private static final int MAX_PORTFOLIOS_PER_USER = 5;
 
     private final ExternalPortfolioRepository portfolioRepository;
     private final ExternalPositionLotRepository lotRepository;
@@ -32,6 +33,9 @@ public class ExternalPortfolioServiceImpl implements ExternalPortfolioService {
 
     @Override
     public ExternalPortfolioResponse createPortfolio(UUID userId, CreateExternalPortfolioRequest request) {
+        if (portfolioRepository.countByUserId(userId) >= MAX_PORTFOLIOS_PER_USER) {
+            throw new IllegalStateException("Maximum portfolio limit reached (5)");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

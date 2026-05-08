@@ -14,6 +14,8 @@ import {
 } from '../../auth/session'
 import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
 import { usePortalAvatarObjectUrl } from '../../../features/profile/hooks/usePortalAvatarObjectUrl'
+import { updatePortalPreferences } from '../../../features/profile/api/portalProfileApi'
+import { fetchMyNotifications, type NotificationItem } from '../../../features/notifications/api/notificationApi'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -36,8 +38,7 @@ const appNavItems: AppNavItem[] = [
   { to: '/app/markets', labelKey: 'header.navApp.markets' },
   { to: '/app/my-portfolio', labelKey: 'header.navApp.myPortfolio' },
   { to: '/app/analysis', labelKey: 'header.navApp.analysis' },
-  { to: '/app/portfolio', labelKey: 'header.navApp.portfolio' },
-  { to: '/app/simulation', labelKey: 'header.navApp.simulation' },
+  { to: '/app/news', labelKey: 'header.navPublic.news' },
 ]
 
 const publicNavItems: PublicNavItem[] = [
@@ -93,6 +94,17 @@ function IconLanguage() {
   )
 }
 
+function IconBell() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M15 18H9" />
+      <path d="M6 18h12" />
+      <path d="M7.5 18V11a4.5 4.5 0 1 1 9 0v7" />
+      <path d="M12 3.5v1" />
+    </svg>
+  )
+}
+
 function IconSun() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -122,6 +134,10 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [downloadOpen, setDownloadOpen] = useState(false)
   const [localeOpen, setLocaleOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [notificationsError, setNotificationsError] = useState<string | null>(null)
   const [serverAvatarUpdatedAt, setServerAvatarUpdatedAt] = useState<string | null>(null)
   const [profileImgBroken, setProfileImgBroken] = useState(false)
   const profileAnchorRef = useRef<HTMLDivElement>(null)
@@ -187,11 +203,34 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [profileOpen])
 
+  useEffect(() => {
+    if (!notificationsOpen || !isAuthenticated) {
+      return
+    }
+    setNotificationsLoading(true)
+    setNotificationsError(null)
+    void fetchMyNotifications()
+      .then((items) => {
+        setNotifications(
+          [...items].sort(
+            (a, b) => Date.parse(b.triggeredAt ?? '') - Date.parse(a.triggeredAt ?? ''),
+          ),
+        )
+      })
+      .catch(() => {
+        setNotificationsError(t('header.notifications.loadError'))
+      })
+      .finally(() => {
+        setNotificationsLoading(false)
+      })
+  }, [isAuthenticated, notificationsOpen, t])
+
   const closeMenu = () => setMenuOpen(false)
   const closeDesktopPanels = () => {
     setDownloadOpen(false)
     setLocaleOpen(false)
     setProfileOpen(false)
+    setNotificationsOpen(false)
   }
 
   const handleThemeToggle = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -204,6 +243,13 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
   const handleSelectLocale = async (locale: (typeof SUPPORTED_LOCALES)[number]) => {
     await setLanguage(locale)
+    if (isAuthenticated) {
+      try {
+        await updatePortalPreferences(locale, currency)
+      } catch {
+        // keep local preference even if backend sync fails temporarily
+      }
+    }
     setLocaleOpen(false)
   }
 
@@ -266,6 +312,54 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
           <button type="button" className="portal-icon-button" aria-label={t('header.searchAria')}>
             <IconSearch />
           </button>
+
+          <div className="portal-popover-anchor">
+            <button
+              type="button"
+              className={`portal-icon-button${notificationsOpen ? ' portal-icon-button-active' : ''}`}
+              aria-label={t('header.notifications.aria')}
+              aria-expanded={notificationsOpen}
+              onClick={() => {
+                setNotificationsOpen((prev) => !prev)
+                setDownloadOpen(false)
+                setLocaleOpen(false)
+                setProfileOpen(false)
+              }}
+            >
+              <IconBell />
+            </button>
+            {notificationsOpen ? (
+              <div className="portal-popover portal-notifications-popover">
+                <div className="portal-notifications-header">{t('header.notifications.title')}</div>
+                {!isAuthenticated ? (
+                  <div className="portal-notifications-empty">
+                    {t('header.notifications.loginRequired')}
+                  </div>
+                ) : notificationsLoading ? (
+                  <div className="portal-notifications-empty">{t('common.loading')}</div>
+                ) : notificationsError ? (
+                  <div className="portal-notifications-empty">{notificationsError}</div>
+                ) : notifications.length === 0 ? (
+                  <div className="portal-notifications-empty">{t('header.notifications.empty')}</div>
+                ) : (
+                  <ul className="portal-notifications-list">
+                    {notifications.map((item, idx) => (
+                      <li
+                        key={`${item.instrumentSymbol}-${item.triggeredAt}-${idx}`}
+                        className="portal-notifications-item"
+                      >
+                        <div className="portal-notifications-symbol">{item.instrumentSymbol}</div>
+                        <div className="portal-notifications-meta">
+                          <span>{item.condition}</span>
+                          <span>{new Date(item.triggeredAt).toLocaleString()}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
+          </div>
 
           {isAuthenticated ? (
             <div className="portal-popover-anchor" ref={profileAnchorRef}>
@@ -415,7 +509,15 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                         <button
                           type="button"
                           className={currency === item ? 'portal-locale-item-active' : undefined}
-                          onClick={() => setCurrency(item)}
+                          onClick={() => {
+                            setCurrency(item)
+                            if (!isAuthenticated) {
+                              return
+                            }
+                            void updatePortalPreferences(currentLocale, item).catch(() => {
+                              // keep local preference even if backend sync fails temporarily
+                            })
+                          }}
                         >
                           {CURRENCY_LABELS[item]}
                         </button>

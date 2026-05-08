@@ -180,6 +180,21 @@ public class EvdsHistoricalFxProvider implements HistoricalFxProvider {
         if ("AEDTRY".equals(canonical)) {
             return new Pair("AED", "TRY");
         }
+        if ("XAUTRY".equals(canonical)) {
+            return new Pair("XAU", "TRY");
+        }
+        if ("XAGTRY".equals(canonical)) {
+            return new Pair("XAG", "TRY");
+        }
+        if ("XPTTRY".equals(canonical)) {
+            return new Pair("XPT", "TRY");
+        }
+        if ("XPDTRY".equals(canonical)) {
+            return new Pair("XPD", "TRY");
+        }
+        if ("XCUTRY".equals(canonical)) {
+            return new Pair("XCU", "TRY");
+        }
         return null;
     }
 

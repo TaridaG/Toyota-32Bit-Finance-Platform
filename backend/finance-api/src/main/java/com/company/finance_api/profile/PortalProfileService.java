@@ -5,6 +5,7 @@ import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
 import com.company.finance_api.dto.PortalProfileResponse;
 import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
+import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
 import com.company.finance_api.dto.PortalUpdatePhoneRequest;
 import com.company.finance_api.dto.PublicLoginResponse;
 import com.company.finance_api.exception.ResourceNotFoundException;
@@ -29,6 +30,8 @@ import java.util.UUID;
 
 @Service
 public class PortalProfileService {
+    private static final String DEFAULT_PREFERRED_LOCALE = "en";
+    private static final String DEFAULT_PREFERRED_CURRENCY = "USD";
 
     private final CurrentUserResolver currentUserResolver;
     private final UserRepository userRepository;
@@ -56,14 +59,7 @@ public class PortalProfileService {
     @Transactional(readOnly = true)
     public PortalProfileResponse getProfile() {
         User user = loadCurrentUser();
-        return new PortalProfileResponse(
-                user.getEmail(),
-                user.getUsername(),
-                user.getPhone(),
-                user.isNotifySecurityAlerts(),
-                user.isNotifyProductUpdates(),
-                user.getProfileAvatarUpdatedAt()
-        );
+        return mapProfile(user);
     }
 
     @Transactional(readOnly = true)
@@ -178,6 +174,15 @@ public class PortalProfileService {
         return mapProfile(user);
     }
 
+    @Transactional
+    public PortalProfileResponse updatePreferences(PortalUpdatePreferencesRequest request) {
+        User user = loadCurrentUser();
+        user.setPreferredLocale(normalizePreferredLocale(request.getPreferredLocale()));
+        user.setPreferredCurrency(normalizePreferredCurrency(request.getPreferredCurrency()));
+        userRepository.save(user);
+        return mapProfile(user);
+    }
+
     private PortalProfileResponse mapProfile(User user) {
         return new PortalProfileResponse(
                 user.getEmail(),
@@ -185,7 +190,9 @@ public class PortalProfileService {
                 user.getPhone(),
                 user.isNotifySecurityAlerts(),
                 user.isNotifyProductUpdates(),
-                user.getProfileAvatarUpdatedAt()
+                user.getProfileAvatarUpdatedAt(),
+                normalizePreferredLocale(user.getPreferredLocale()),
+                normalizePreferredCurrency(user.getPreferredCurrency())
         );
     }
 
@@ -224,5 +231,33 @@ public class PortalProfileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phone is too long");
         }
         return compact;
+    }
+
+    private String normalizePreferredLocale(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return DEFAULT_PREFERRED_LOCALE;
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if (normalized.contains("-")) {
+            normalized = normalized.substring(0, normalized.indexOf('-'));
+        }
+        if (normalized.contains("_")) {
+            normalized = normalized.substring(0, normalized.indexOf('_'));
+        }
+        return switch (normalized) {
+            case "en", "tr", "de" -> normalized;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported preferred locale");
+        };
+    }
+
+    private String normalizePreferredCurrency(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return DEFAULT_PREFERRED_CURRENCY;
+        }
+        String normalized = raw.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "USD", "EUR", "TRY", "GBP", "JPY", "AED" -> normalized;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported preferred currency");
+        };
     }
 }

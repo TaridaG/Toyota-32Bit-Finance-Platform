@@ -9,9 +9,11 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -113,11 +115,24 @@ public class NewsTranslationService {
             }
         }
 
+        List<Long> idsStillWithoutRow = articleList.stream()
+                .map(NewsArticle::getId)
+                .filter(id -> !existingByArticleId.containsKey(id))
+                .toList();
+        if (!idsStillWithoutRow.isEmpty()) {
+            translationRepository.findByNewsArticleIdInAndLanguageCode(idsStillWithoutRow, language).forEach(
+                    row -> existingByArticleId.put(row.getNewsArticle().getId(), row));
+        }
+
         return articleList.stream().collect(Collectors.toMap(
                 NewsArticle::getId,
                 article -> {
                     NewsArticleTranslation tr = existingByArticleId.get(article.getId());
                     if (tr == null) {
+                        return asOriginalProjection(article);
+                    }
+                    if (isLikelyFailedTranslationCopy(article, tr.getTitleTranslated(), tr.getSummaryTranslated(), language)) {
+                        translationRepository.delete(tr);
                         return asOriginalProjection(article);
                     }
                     return new NewsTextProjection(
@@ -139,12 +154,18 @@ public class NewsTranslationService {
             if (titleTranslated.isBlank()) {
                 return saveFallback(article, language);
             }
+            if (isLikelyFailedTranslationCopy(article, titleTranslated, summaryTranslated, language)) {
+                log.warn("NEWS_TRANSLATION_SKIP_UNCHANGED_FOREIGN articleId={} lang={}", article.getId(), language);
+                return null;
+            }
             NewsArticleTranslation entity = new NewsArticleTranslation();
             entity.setNewsArticle(article);
             entity.setLanguageCode(language);
             entity.setTitleTranslated(titleTranslated);
             entity.setSummaryTranslated(summaryTranslated);
             return translationRepository.save(entity);
+        } catch (DataIntegrityViolationException dup) {
+            return translationRepository.findByNewsArticleIdAndLanguageCode(article.getId(), language).orElse(null);
         } catch (Exception ex) {
             log.warn("NEWS_TRANSLATION_SAVE_FAIL articleId={} lang={} reason={}", article.getId(), language, ex.toString());
             return saveFallback(article, language);
@@ -152,6 +173,10 @@ public class NewsTranslationService {
     }
 
     private NewsArticleTranslation saveFallback(NewsArticle article, String language) {
+        if (!"en".equals(language)) {
+            log.warn("NEWS_TRANSLATION_FALLBACK_SKIP_NON_EN articleId={} lang={}", article.getId(), language);
+            return null;
+        }
         try {
             NewsArticleTranslation entity = new NewsArticleTranslation();
             entity.setNewsArticle(article);
@@ -159,6 +184,8 @@ public class NewsTranslationService {
             entity.setTitleTranslated(trimToLength(article.getTitle(), 500));
             entity.setSummaryTranslated(trimToLength(nz(article.getSummary()), 2000));
             return translationRepository.save(entity);
+        } catch (DataIntegrityViolationException dup) {
+            return translationRepository.findByNewsArticleIdAndLanguageCode(article.getId(), language).orElse(null);
         } catch (Exception fallbackEx) {
             log.warn("NEWS_TRANSLATION_FALLBACK_FAIL articleId={} lang={} reason={}", article.getId(), language, fallbackEx.toString());
             return null;
@@ -239,6 +266,63 @@ public class NewsTranslationService {
         );
     }
 
+    /**
+     * MyMemory (and similar) often return the source string unchanged on quota/errors; saveFallback used to persist that
+     * as a non-English row, so the API reported translated=true while the user still saw English. We only treat it as a
+     * failed translation when the heuristic source language differs from the requested target (e.g. en article, tr target).
+     */
+    private static boolean isLikelyFailedTranslationCopy(
+            NewsArticle article,
+            String titleTranslated,
+            String summaryTranslated,
+            String targetLang
+    ) {
+        if (targetLang == null || targetLang.isBlank() || "en".equals(targetLang)) {
+            return false;
+        }
+        if (!isUnchangedFromOriginal(article, titleTranslated, summaryTranslated)) {
+            return false;
+        }
+        String heuristicSource = heuristicSourceLanguage(nz(article.getTitle()) + " " + nz(article.getSummary()));
+        return !heuristicSource.equals(targetLang);
+    }
+
+    private static boolean isUnchangedFromOriginal(NewsArticle article, String titleTranslated, String summaryTranslated) {
+        return normalizeForCompare(trimToLength(nz(titleTranslated), 500))
+                .equals(normalizeForCompare(trimToLength(article.getTitle(), 500)))
+                && normalizeForCompare(trimToLength(nz(summaryTranslated), 2000))
+                .equals(normalizeForCompare(trimToLength(nz(article.getSummary()), 2000)));
+    }
+
+    /**
+     * MyMemory often swaps typographic apostrophes/quotes; without this, English source and "fake" de/tr rows
+     * fail {@link String#equals} and poison rows survive (translated=true with English body).
+     */
+    private static String normalizeForCompare(String value) {
+        String s = Normalizer.normalize(nz(value).trim(), Normalizer.Form.NFC);
+        s = s.replace('\u2019', '\'')
+                .replace('\u2018', '\'')
+                .replace('\u201c', '"')
+                .replace('\u201d', '"')
+                .replace('\u00a0', ' ')
+                .replace('\r', ' ')
+                .replace("\u200b", "");
+        s = s.replaceAll("\\s+", " ");
+        return s.trim();
+    }
+
+    private static String heuristicSourceLanguage(String text) {
+        String lower = text.toLowerCase(Locale.ROOT);
+        if (lower.contains("ğ") || lower.contains("ü") || lower.contains("ş")
+                || lower.contains("ı") || lower.contains("ö") || lower.contains("ç")) {
+            return "tr";
+        }
+        if (lower.contains("ß") || lower.contains("ä")) {
+            return "de";
+        }
+        return "en";
+    }
+
     private static String trimToLength(String value, int max) {
         String normalized = nz(value).trim();
         if (normalized.length() <= max) {
@@ -272,6 +356,7 @@ public class NewsTranslationService {
             String summaryTranslated,
             String translatedLanguage,
             boolean translated
-    ) {
+            ) {
+
     }
 }

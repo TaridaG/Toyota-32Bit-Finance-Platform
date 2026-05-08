@@ -14,5 +14,10 @@ public interface ProviderInstrumentMappingRepository extends JpaRepository<Provi
             String providerSymbol
     );
 
+    Optional<ProviderInstrumentMapping> findFirstByProviderIgnoreCaseAndInstrumentIdAndActiveTrueOrderByPriorityAsc(
+            String provider,
+            Long instrumentId
+    );
+
     List<ProviderInstrumentMapping> findByInstrumentIdAndActiveTrueOrderByPriorityAsc(Long instrumentId);
 }

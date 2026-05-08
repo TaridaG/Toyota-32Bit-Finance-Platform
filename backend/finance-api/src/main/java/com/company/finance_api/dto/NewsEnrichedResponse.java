@@ -18,5 +18,6 @@ public record NewsEnrichedResponse(
         String sentiment,
         List<String> relatedSymbols,
         BigDecimal reactionPercent1h
-) {
+        ) {
+
 }

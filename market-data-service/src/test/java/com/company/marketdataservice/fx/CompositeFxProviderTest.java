@@ -2,6 +2,7 @@ package com.company.marketdataservice.fx;
 
 import com.company.marketdataservice.config.FxMarketProperties;
 import com.company.marketdataservice.fx.exchangerate.ExchangeRateApiFxProvider;
+import com.company.marketdataservice.fx.stooq.StooqMetalSpotFxProvider;
 import com.company.marketdataservice.fx.tcmb.TcmbFxProvider;
 import org.junit.jupiter.api.Test;
 
@@ -37,8 +38,10 @@ class CompositeFxProviderTest {
 
         FxMarketProperties props = new FxMarketProperties();
         props.setProviderOrder(List.of("TCMB", "EXCHANGE_API"));
+        StooqMetalSpotFxProvider stooq = mock(StooqMetalSpotFxProvider.class);
+        when(stooq.fetchLatestRates()).thenReturn(List.of());
 
-        CompositeFxProvider composite = new CompositeFxProvider(tcmb, api, props);
+        CompositeFxProvider composite = new CompositeFxProvider(tcmb, api, stooq, props);
 
         assertEquals(List.of(snap), composite.fetchLatestRates());
     }
@@ -61,8 +64,10 @@ class CompositeFxProviderTest {
         ExchangeRateApiFxProvider api = mock(ExchangeRateApiFxProvider.class);
         FxMarketProperties props = new FxMarketProperties();
         props.setProviderOrder(List.of("TCMB", "EXCHANGE_API"));
+        StooqMetalSpotFxProvider stooq = mock(StooqMetalSpotFxProvider.class);
+        when(stooq.fetchLatestRates()).thenReturn(List.of());
 
-        CompositeFxProvider composite = new CompositeFxProvider(tcmb, api, props);
+        CompositeFxProvider composite = new CompositeFxProvider(tcmb, api, stooq, props);
 
         assertEquals(List.of(tcmbSnap), composite.fetchLatestRates());
     }

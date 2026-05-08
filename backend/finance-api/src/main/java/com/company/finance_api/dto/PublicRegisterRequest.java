@@ -20,6 +20,10 @@ public class PublicRegisterRequest {
     @Size(min = 8, max = 128)
     private String password;
 
+    @NotBlank
+    @Size(min = 4, max = 12)
+    private String verificationCode;
+
     public String getEmail() {
         return email;
     }
@@ -42,5 +46,13 @@ public class PublicRegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
     }
 }

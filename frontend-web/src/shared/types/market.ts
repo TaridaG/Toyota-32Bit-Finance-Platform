@@ -1,4 +1,4 @@
-export type MarketCategory = 'all' | 'crypto' | 'stocks' | 'forex' | 'commodities'
+export type MarketCategory = 'all' | 'crypto' | 'bist' | 'nasdaq' | 'forex' | 'metals' | 'globalFutures' | 'funds'
 
 export type MarketNativeQuote = 'TRY' | 'USD'
 
@@ -35,6 +35,35 @@ export type MarketOverviewPageResponse = {
 export type MarketInsightsResponse = {
   topGainers: MarketOverviewItem[]
   topLosers: MarketOverviewItem[]
+}
+
+export type AnnualFinancialStatement = {
+  year: number | null
+  revenue: number | null
+  netIncome: number | null
+  totalAssets: number | null
+  totalLiabilities: number | null
+  operatingCashFlow: number | null
+}
+
+export type InstrumentFundamentals = {
+  symbol: string
+  provider: string
+  providerSymbol: string
+  companyName: string | null
+  country: string | null
+  currency: string | null
+  exchange: string | null
+  ipoDate: string | null
+  industry: string | null
+  website: string | null
+  marketCapitalization: number | null
+  sharesOutstanding: number | null
+  peTtm: number | null
+  epsTtm: number | null
+  fetchedAt: string
+  cacheHit: boolean
+  annualStatements: AnnualFinancialStatement[]
 }
 
 export type ApiResponse<T> = {

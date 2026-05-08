@@ -6,8 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface MarketPriceHistoryRepository extends JpaRepository<MarketPriceHistoryEntry, Long> {
 
@@ -50,6 +52,15 @@ public interface MarketPriceHistoryRepository extends JpaRepository<MarketPriceH
             @Param("instrumentSymbol") String instrumentSymbol,
             Pageable pageable
     );
+
+    @Query(value = """
+            SELECT price
+            FROM mds_market_price_history
+            WHERE instrument_symbol = :symbol
+            ORDER BY observed_at DESC, id DESC
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<BigDecimal> findLatestPriceValue(@Param("symbol") String symbol);
 
     @Query(value = """
             SELECT DISTINCT ON (instrument_symbol)

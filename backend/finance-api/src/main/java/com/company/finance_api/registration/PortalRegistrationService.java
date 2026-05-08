@@ -22,17 +22,20 @@ public class PortalRegistrationService {
     private final KeycloakRealmAdminClient keycloakRealmAdminClient;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final RegistrationEmailVerificationService registrationEmailVerificationService;
 
     public PortalRegistrationService(
             RegistrationProperties registrationProperties,
             KeycloakRealmAdminClient keycloakRealmAdminClient,
             UserRepository userRepository,
-            UserService userService
+            UserService userService,
+            RegistrationEmailVerificationService registrationEmailVerificationService
     ) {
         this.registrationProperties = registrationProperties;
         this.keycloakRealmAdminClient = keycloakRealmAdminClient;
         this.userRepository = userRepository;
         this.userService = userService;
+        this.registrationEmailVerificationService = registrationEmailVerificationService;
     }
 
     public PublicRegisterResponse register(PublicRegisterRequest request) {
@@ -42,6 +45,7 @@ public class PortalRegistrationService {
         String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
         String username = request.getUsername().trim().toLowerCase(Locale.ROOT);
         String password = request.getPassword();
+        registrationEmailVerificationService.verifyCodeOrThrow(email, request.getVerificationCode());
 
         var existingByEmail = userRepository.findByEmail(email);
         if (existingByEmail.isPresent()) {

@@ -165,6 +165,13 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - CLIENTS_NEWS_BASE_URL=http://news-service:8082
       - APP_REGISTRATION_ENABLED=true
+      - APP_REGISTRATION_VERIFICATION_ENABLED=true
+      - APP_REGISTRATION_VERIFICATION_HASH_SECRET=finance-email-verify-secret
+      - SPRING_MAIL_HOST=smtp.gmail.com
+      - SPRING_MAIL_PORT=587
+      - SPRING_MAIL_USERNAME=32bitdemofinanceplatformmm@gmail.com
+      - SPRING_MAIL_PASSWORD=mpxnlgmbyehkiqwm
+      - APP_REGISTRATION_VERIFICATION_FROM=32bitdemofinanceplatformmm@gmail.com
       - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
     networks:
       - finance-net
@@ -295,6 +302,8 @@ services:
       - NEWS_RSS_READ_TIMEOUT_MS=${NEWS_RSS_READ_TIMEOUT_MS:-10000}
       - NEWS_RSS_MAX_ENTRIES_PER_FEED=${NEWS_RSS_MAX_ENTRIES_PER_FEED:-100}
       - NEWS_RSS_USER_AGENT=${NEWS_RSS_USER_AGENT:-finance-news-service/1.0}
+      # Optional: raises MyMemory free tier; see https://mymemory.translated.net/doc/usagelimits.php
+      - NEWS_TRANSLATION_MYMEMORY_EMAIL=${NEWS_TRANSLATION_MYMEMORY_EMAIL:-}
       - JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=/tmp -XX:MaxRAMPercentage=75.0
     restart: unless-stopped
     read_only: true

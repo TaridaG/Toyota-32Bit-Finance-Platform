@@ -190,8 +190,9 @@ news:
       - de
     default-language: en
     backfill-enabled: true
-    backfill-batch-size: 50
-    backfill-delay-ms: 60000
+    # Larger backlog for articles ingested before translation was enabled (tunable per env).
+    backfill-batch-size: 80
+    backfill-delay-ms: 45000
     mymemory:
       base-url: ${NEWS_TRANSLATION_MYMEMORY_BASE_URL:https://api.mymemory.translated.net}
       timeout-ms: ${NEWS_TRANSLATION_TIMEOUT_MS:5000}

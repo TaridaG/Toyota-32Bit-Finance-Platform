@@ -1,5 +1,10 @@
 import { apiClient } from '../../../shared/api/client'
-import type { MarketCategory, MarketInsightsResponse, MarketOverviewPageResponse } from '../../../shared/types/market'
+import type {
+  InstrumentFundamentals,
+  MarketCategory,
+  MarketInsightsResponse,
+  MarketOverviewPageResponse,
+} from '../../../shared/types/market'
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
 import {
   buildFxTryHub,
@@ -26,15 +31,21 @@ type FetchMarketsParams = {
 
 const categoryToQueryParam: Record<Exclude<MarketCategory, 'all'>, string> = {
   crypto: 'CRYPTO',
-  stocks: 'STOCK',
+  bist: 'STOCK',
+  nasdaq: 'STOCK',
   forex: 'FX',
-  commodities: 'FUND',
+  metals: 'FX',
+  globalFutures: 'STOCK',
+  funds: 'FUND',
 }
 
 type MarketPriceApiItem = {
   symbol?: string
   price?: number | string
   value?: number | string
+  source?: string
+  category?: string | null
+  instrumentType?: string | null
   timestamp?: string | null
   change24h?: number | string | null
   high24h?: number | string | null
@@ -47,6 +58,12 @@ type FxRateApiItem = {
   ask?: number | string
   mid?: number | string
   timestamp?: string | null
+}
+
+type InstrumentCatalogItem = {
+  id?: number | string
+  symbol?: string
+  name?: string
 }
 
 type HistoryPoint = {
@@ -76,7 +93,29 @@ type ParsedHistoryPoint = {
   value: number
 }
 
-function toCategory(symbol: string): string {
+const FUND_SYMBOLS = new Set(['VOO', 'VTI', 'QQQ', 'IVV', 'SPY'])
+const SPOT_METAL_SYMBOLS = new Set(['XAUTRY', 'XAGTRY', 'XPTTRY', 'XPDTRY', 'XCUTRY'])
+const METAL_FUTURES_SYMBOLS = new Set(['GC=F', 'SI=F', 'HG=F', 'PA=F', 'PL=F'])
+const METAL_SYMBOLS = new Set([...SPOT_METAL_SYMBOLS, ...METAL_FUTURES_SYMBOLS])
+type InstrumentMetadata = {
+  id: number
+  name: string | null
+}
+
+let instrumentMetadataBySymbolCache: Record<string, InstrumentMetadata> | null = null
+let instrumentMetadataBySymbolPromise: Promise<Record<string, InstrumentMetadata>> | null = null
+
+function toCategory(symbol: string, item?: MarketPriceApiItem): string {
+  const hinted =
+    (item?.instrumentType ?? item?.category ?? '')
+      .toString()
+      .trim()
+      .toUpperCase()
+  if (hinted === 'FUND' || hinted === 'BOND' || hinted === 'FX' || hinted === 'CRYPTO' || hinted === 'STOCK') {
+    return hinted
+  }
+  if (METAL_SYMBOLS.has(symbol)) return 'METAL'
+  if (FUND_SYMBOLS.has(symbol)) return 'FUND'
   if (symbol.endsWith('USDT') || symbol.endsWith('USD')) return 'CRYPTO'
   if (symbol.endsWith('TRY') || symbol.includes('/')) return 'FX'
   return 'STOCK'
@@ -108,12 +147,13 @@ function normalizeMarketRows(items: MarketPriceApiItem[]) {
         symbol,
         name: symbol,
         price,
+        source: item.source ? String(item.source).trim().toUpperCase() : null,
         timestamp: item.timestamp ?? null,
         freshness: toFreshness(item.timestamp),
         change24h: toNumber(item.change24h ?? 0, 0),
         high24h: toNumber(item.high24h ?? item.price ?? item.value ?? 0, price),
         low24h: toNumber(item.low24h ?? item.price ?? item.value ?? 0, price),
-        category: toCategory(symbol),
+        category: toCategory(symbol, item),
         instrumentId: null,
       }
     })
@@ -129,6 +169,7 @@ function normalizeFxRows(items: FxRateApiItem[]) {
         symbol,
         name: symbol,
         price,
+        source: 'TCMB',
         timestamp: item.timestamp ?? null,
         freshness: toFreshness(item.timestamp),
         change24h: 0,
@@ -140,7 +181,75 @@ function normalizeFxRows(items: FxRateApiItem[]) {
     })
 }
 
+function toInstrumentMapPayload(
+  responseData:
+    | { success?: boolean; data?: InstrumentCatalogItem[] | null }
+    | InstrumentCatalogItem[]
+    | null
+    | undefined,
+): InstrumentCatalogItem[] {
+  if (Array.isArray(responseData)) {
+    return responseData
+  }
+  if (Array.isArray(responseData?.data)) {
+    return responseData.data
+  }
+  return []
+}
+
+async function fetchInstrumentMetadataBySymbolMap(): Promise<Record<string, InstrumentMetadata>> {
+  if (instrumentMetadataBySymbolCache) {
+    return instrumentMetadataBySymbolCache
+  }
+  if (instrumentMetadataBySymbolPromise) {
+    return instrumentMetadataBySymbolPromise
+  }
+  instrumentMetadataBySymbolPromise = apiClient
+    .get<{ success?: boolean; data?: InstrumentCatalogItem[] } | InstrumentCatalogItem[]>('/api/instruments')
+    .then(({ data }) => {
+      const items = toInstrumentMapPayload(data)
+      const map: Record<string, InstrumentMetadata> = {}
+      items.forEach((item) => {
+        const symbol = typeof item?.symbol === 'string' ? item.symbol.trim().toUpperCase() : ''
+        const id = Number(item?.id)
+        const name = typeof item?.name === 'string' && item.name.trim().length > 0 ? item.name.trim() : null
+        if (symbol && Number.isFinite(id)) {
+          map[symbol] = { id, name }
+        }
+      })
+      instrumentMetadataBySymbolCache = map
+      return map
+    })
+    .catch(() => ({}))
+    .finally(() => {
+      instrumentMetadataBySymbolPromise = null
+    })
+  return instrumentMetadataBySymbolPromise
+}
+
 export type CatalogRow = ReturnType<typeof normalizeMarketRows>[number] | ReturnType<typeof normalizeFxRows>[number]
+
+function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): CatalogRow[] {
+  if (!category || category === 'all') {
+    return rows
+  }
+  if (category === 'bist') {
+    return rows.filter((row) => row.category === 'STOCK' && row.source === 'YAHOO')
+  }
+  if (category === 'nasdaq') {
+    return rows.filter((row) => row.category === 'STOCK' && row.source === 'FINNHUB')
+  }
+  if (category === 'forex') {
+    return rows.filter((row) => row.category === 'FX' && !METAL_SYMBOLS.has(row.symbol))
+  }
+  if (category === 'metals') {
+    return rows.filter((row) => SPOT_METAL_SYMBOLS.has(row.symbol))
+  }
+  if (category === 'globalFutures') {
+    return rows.filter((row) => METAL_FUTURES_SYMBOLS.has(row.symbol))
+  }
+  return rows.filter((row) => row.category === categoryToQueryParam[category])
+}
 
 /** Cached slice of the wire catalog after category + search filters (prices + FX mids). */
 export type MarketCatalogSnapshot = {
@@ -336,14 +445,19 @@ export async function fetchMarketCatalogSnapshot(params: {
       ? fxResponse.data.data
       : []
 
-  const normalizedRows = [
+  const [instrumentMetadataBySymbol, normalizedRows] = await Promise.all([
+    fetchInstrumentMetadataBySymbolMap(),
+    Promise.resolve([
     ...normalizeMarketRows(responseItems),
     ...normalizeFxRows(fxResponseItems),
-  ]
-  const filteredByCategory =
-    category && category !== 'all'
-      ? normalizedRows.filter((row) => row.category === categoryToQueryParam[category])
-      : normalizedRows
+    ]),
+  ])
+  const normalizedRowsWithInstrumentId = normalizedRows.map((row) => ({
+    ...row,
+    name: instrumentMetadataBySymbol[row.symbol]?.name ?? row.name,
+    instrumentId: instrumentMetadataBySymbol[row.symbol]?.id ?? null,
+  }))
+  const filteredByCategory = filterRowsByCategory(normalizedRowsWithInstrumentId, category)
   const filteredBySearch = query
     ? filteredByCategory.filter((row) => row.symbol.includes(query.toUpperCase()))
     : filteredByCategory
@@ -485,4 +599,11 @@ export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
     topGainers: gainersPage.content,
     topLosers: losersPage.content,
   }
+}
+
+export async function fetchInstrumentFundamentals(symbol: string, forceRefresh = false): Promise<InstrumentFundamentals> {
+  const response = await apiClient.get<InstrumentFundamentals>(`/api/market/instruments/${symbol}/fundamentals`, {
+    params: { forceRefresh },
+  })
+  return response.data
 }
