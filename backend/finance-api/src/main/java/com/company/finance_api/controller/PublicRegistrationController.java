@@ -5,9 +5,12 @@ import com.company.finance_api.dto.PublicRegisterRequest;
 import com.company.finance_api.dto.PublicRegisterResponse;
 import com.company.finance_api.dto.PublicSendVerificationCodeRequest;
 import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
 import com.company.finance_api.registration.PortalRegistrationService;
 import com.company.finance_api.registration.RegistrationEmailVerificationService;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,5 +39,10 @@ public class PublicRegistrationController {
     @PostMapping("/register")
     public ApiResponse<PublicRegisterResponse> register(@Valid @RequestBody PublicRegisterRequest request) {
         return ApiResponse.success(portalRegistrationService.register(request));
+    }
+
+    @GetMapping("/register/username-availability")
+    public ApiResponse<PublicUsernameAvailabilityResponse> checkUsernameAvailability(@RequestParam("username") String username) {
+        return ApiResponse.success(portalRegistrationService.checkUsernameAvailability(username));
     }
 }

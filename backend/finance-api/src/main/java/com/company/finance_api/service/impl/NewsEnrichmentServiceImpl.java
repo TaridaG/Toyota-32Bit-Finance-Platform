@@ -68,17 +68,27 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
 
     @Override
-    public NewsEnrichedPageResponse getEnrichedNews(int page, int size, String language) {
+    public NewsEnrichedPageResponse getEnrichedNews(int page, int size, String language, String category, String sentiment, Integer maxAgeMinutes) {
         int resolvedPage = Math.max(page, 0);
         int resolvedSize = Math.max(size, 1);
         String resolvedLang = normalizeLanguage(language);
-        String cacheKey = "news:enriched:lang:" + resolvedLang + ":page:" + resolvedPage + ":size:" + resolvedSize;
+        String resolvedCategory = normalizeCategoryFilter(category);
+        String resolvedSentiment = normalizeSentimentFilter(sentiment);
+        Integer resolvedMaxAgeMinutes = normalizeMaxAge(maxAgeMinutes);
+        String cacheKey = "news:enriched:lang:" + resolvedLang
+                + ":page:" + resolvedPage
+                + ":size:" + resolvedSize
+                + ":category:" + resolvedCategory
+                + ":sentiment:" + resolvedSentiment
+                + ":maxAge:" + (resolvedMaxAgeMinutes == null ? "all" : resolvedMaxAgeMinutes);
         Optional<NewsEnrichedPageResponse> cached = readFromCache(cacheKey);
         if (cached.isPresent()) {
             return cached.get();
         }
-
-        NewsServicePageResponse<NewsServiceNewsItem> upstream = fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, false);
+        boolean hasFilters = !"all".equals(resolvedCategory) || !"all".equals(resolvedSentiment) || resolvedMaxAgeMinutes != null;
+        NewsServicePageResponse<NewsServiceNewsItem> upstream = hasFilters
+                ? collectFilteredUpstreamPage(resolvedPage, resolvedSize, resolvedLang, resolvedCategory, resolvedSentiment, resolvedMaxAgeMinutes)
+                : fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, false);
         List<String> symbols;
         try {
             symbols = instrumentService.getAllActive().stream()
@@ -104,6 +114,48 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         );
         writeToCache(cacheKey, response);
         return response;
+    }
+
+    private NewsServicePageResponse<NewsServiceNewsItem> collectFilteredUpstreamPage(
+            int page,
+            int size,
+            String language,
+            String category,
+            String sentiment,
+            Integer maxAgeMinutes
+    ) {
+        final int scanPageSize = Math.max(50, Math.min(200, size * 5));
+        final long startIndex = (long) page * size;
+        final long endExclusive = startIndex + size;
+
+        List<NewsServiceNewsItem> selectedPageItems = new ArrayList<>();
+        long filteredTotal = 0L;
+        int upstreamPageIndex = 0;
+        int upstreamTotalPages = Integer.MAX_VALUE;
+
+        while (upstreamPageIndex < upstreamTotalPages) {
+            NewsServicePageResponse<NewsServiceNewsItem> upstreamPage =
+                    fetchNewsPage(upstreamPageIndex, scanPageSize, language, false);
+            upstreamTotalPages = Math.max(upstreamPage.totalPages(), upstreamPageIndex + 1);
+
+            for (NewsServiceNewsItem item : upstreamPage.content()) {
+                if (!matchesFilters(item, category, sentiment, maxAgeMinutes)) {
+                    continue;
+                }
+                if (filteredTotal >= startIndex && filteredTotal < endExclusive) {
+                    selectedPageItems.add(item);
+                }
+                filteredTotal++;
+            }
+
+            upstreamPageIndex++;
+            if (upstreamPage.content().isEmpty()) {
+                break;
+            }
+        }
+
+        int totalPages = filteredTotal == 0 ? 0 : (int) Math.ceil((double) filteredTotal / size);
+        return new NewsServicePageResponse<>(selectedPageItems, page, size, filteredTotal, totalPages);
     }
 
     @Override
@@ -167,6 +219,40 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             return "negative";
         }
         return "neutral";
+    }
+
+    private boolean matchesFilters(NewsServiceNewsItem item, String category, String sentiment, Integer maxAgeMinutes) {
+        if (!"all".equals(category) && !category.equals(mapCategoryToUi(item.category()))) {
+            return false;
+        }
+        if (!"all".equals(sentiment)) {
+            String resolved = resolveSentiment((nz(item.title()) + " " + nz(item.summary())).toLowerCase(Locale.ROOT));
+            if (!sentiment.equals(resolved)) {
+                return false;
+            }
+        }
+        if (maxAgeMinutes != null) {
+            if (item.publishedAt() == null) {
+                return false;
+            }
+            Instant threshold = Instant.now().minusSeconds(maxAgeMinutes.longValue() * 60L);
+            if (item.publishedAt().isBefore(threshold)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String mapCategoryToUi(String category) {
+        String c = category == null ? "" : category.toUpperCase(Locale.ROOT);
+        return switch (c) {
+            case "CRYPTO" -> "crypto";
+            case "FX" -> "fx";
+            case "VIOP" -> "viop";
+            case "STOCK" -> "bist";
+            case "FUND", "BOND", "GENERAL_ECONOMY" -> "macro";
+            default -> "macro";
+        };
     }
 
     private List<String> extractSymbols(String text, List<String> knownSymbols) {
@@ -364,6 +450,29 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             normalized = normalized.split("-")[0];
         }
         return normalized.isBlank() ? "en" : normalized;
+    }
+
+    private static String normalizeCategoryFilter(String category) {
+        if (!StringUtils.hasText(category)) {
+            return "all";
+        }
+        String normalized = category.trim().toLowerCase(Locale.ROOT);
+        return Set.of("all", "bist", "viop", "fx", "crypto", "macro").contains(normalized) ? normalized : "all";
+    }
+
+    private static String normalizeSentimentFilter(String sentiment) {
+        if (!StringUtils.hasText(sentiment)) {
+            return "all";
+        }
+        String normalized = sentiment.trim().toLowerCase(Locale.ROOT);
+        return Set.of("all", "positive", "negative", "neutral").contains(normalized) ? normalized : "all";
+    }
+
+    private static Integer normalizeMaxAge(Integer maxAgeMinutes) {
+        if (maxAgeMinutes == null || maxAgeMinutes <= 0) {
+            return null;
+        }
+        return maxAgeMinutes;
     }
 
     private static String nz(String value) {

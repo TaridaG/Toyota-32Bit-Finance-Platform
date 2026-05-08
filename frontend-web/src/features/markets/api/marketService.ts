@@ -227,7 +227,19 @@ async function fetchInstrumentMetadataBySymbolMap(): Promise<Record<string, Inst
   return instrumentMetadataBySymbolPromise
 }
 
-export type CatalogRow = ReturnType<typeof normalizeMarketRows>[number] | ReturnType<typeof normalizeFxRows>[number]
+export type CatalogRow = {
+  symbol: string
+  name: string
+  price: number
+  source: string | null
+  timestamp: string | null
+  freshness: 'LIVE' | 'STALE'
+  change24h: number
+  high24h: number
+  low24h: number
+  category: string
+  instrumentId: number | null
+}
 
 function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): CatalogRow[] {
   if (!category || category === 'all') {
@@ -257,12 +269,88 @@ export type MarketCatalogSnapshot = {
   fxResponseItems: FxRateApiItem[]
 }
 
+type TrendMeta = {
+  trendScore?: number
+  trendLabel?: 'WEAK' | 'NEUTRAL' | 'STRONG' | 'VERY_STRONG'
+  trendPercentile?: number
+  trendRelativeWeekly?: number
+}
+
 type CatalogRowWithPeriods = CatalogRow & {
   change1D: number
   change1M: number
   change3M: number
   change6M: number
   change1Y: number
+} & TrendMeta
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
+}
+
+function stddev(values: number[], mean: number): number {
+  if (values.length === 0) return 0
+  const variance = values.reduce((acc, value) => acc + (value - mean) ** 2, 0) / values.length
+  return Math.sqrt(variance)
+}
+
+function weeklySignal(row: { change1M?: number | null; change1D?: number | null; change24h?: number | null }): number {
+  // Prefer 1M-based weekly estimate for consistency across instruments; fallback to 1D.
+  if (row.change1M != null && Number.isFinite(row.change1M)) {
+    return row.change1M / 4
+  }
+  return row.change1D ?? row.change24h ?? 0
+}
+
+function labelForTrendScore(score: number): 'WEAK' | 'NEUTRAL' | 'STRONG' | 'VERY_STRONG' {
+  if (score < 35) return 'WEAK'
+  if (score < 65) return 'NEUTRAL'
+  if (score < 85) return 'STRONG'
+  return 'VERY_STRONG'
+}
+
+function enrichContextualTrendScores<T extends CatalogRow & Partial<CatalogRowWithPeriods>>(rows: T[]): (T & TrendMeta)[] {
+  if (rows.length === 0) return rows
+  const signals = rows.map((row) => weeklySignal(row))
+  const med = median(signals)
+  const mean = signals.reduce((acc, value) => acc + value, 0) / signals.length
+  const sigma = Math.max(stddev(signals, mean), 0.0001)
+  const dispersion = Math.max(
+    median(signals.map((value) => Math.abs(value - med))),
+    0.0001,
+  )
+  const breadth = signals.filter((value) => value > 0).length / signals.length
+  const sortedSignals = [...signals].sort((a, b) => a - b)
+  return rows.map((row) => {
+    const signal = weeklySignal(row)
+    const belowOrEqual = sortedSignals.filter((value) => value <= signal).length
+    const percentile = (belowOrEqual / sortedSignals.length) * 100
+    const relativeWeekly = signal - med
+    const z = (signal - mean) / sigma
+    const percentileScore = percentile
+    const relativeScore = clamp(50 + (relativeWeekly / dispersion) * 20, 0, 100)
+    const anomalyScore = clamp(50 + z * 10, 0, 100)
+    const breadthAdjust = signal >= 0 ? (0.5 - breadth) * 15 : -(0.5 - breadth) * 15
+    const trendScore = clamp(
+      percentileScore * 0.5 + relativeScore * 0.3 + anomalyScore * 0.2 + breadthAdjust,
+      0,
+      100,
+    )
+    return {
+      ...row,
+      trendScore,
+      trendLabel: labelForTrendScore(trendScore),
+      trendPercentile: percentile,
+      trendRelativeWeekly: relativeWeekly,
+    }
+  })
 }
 
 /**
@@ -452,7 +540,7 @@ export async function fetchMarketCatalogSnapshot(params: {
     ...normalizeFxRows(fxResponseItems),
     ]),
   ])
-  const normalizedRowsWithInstrumentId = normalizedRows.map((row) => ({
+  const normalizedRowsWithInstrumentId: CatalogRow[] = normalizedRows.map((row) => ({
     ...row,
     name: instrumentMetadataBySymbol[row.symbol]?.name ?? row.name,
     instrumentId: instrumentMetadataBySymbol[row.symbol]?.id ?? null,
@@ -477,7 +565,7 @@ export async function buildMarketOverviewFromCatalog(
   const { field: sortMetricField } = parseMarketSortQuery(sort)
   let summaryBySymbol: Record<string, PeriodChanges & { price: number }> = {}
   let fxPeriodBySymbol: Record<string, PeriodChanges> = {}
-  let rowsForSort: CatalogRow[] | CatalogRowWithPeriods[] = [...snapshot.filteredRows]
+  let rowsForSort: Array<CatalogRow | CatalogRowWithPeriods> = [...snapshot.filteredRows]
 
   if (sortRequiresPeriodPrefetch(sortMetricField)) {
     const loaded = await enrichCatalogRowsWithPeriodMetrics(rowsForSort as CatalogRow[])
@@ -495,6 +583,8 @@ export async function buildMarketOverviewFromCatalog(
       return { ...r, [SORT_DISPLAY_AMOUNT_KEY]: amt }
     })
   }
+
+  rowsForSort = enrichContextualTrendScores(rowsForSort)
 
   const sorted = sortMarketOverviewRows(rowsForSort, sort)
 
@@ -529,6 +619,7 @@ export async function buildMarketOverviewFromCatalog(
   const content = basePageRows.map((rawRow) => {
     const { [SORT_DISPLAY_AMOUNT_KEY]: _sortMetric, ...row } = rawRow as typeof rawRow &
       Record<string, number | null | undefined>
+    const trendAwareRow = row as CatalogRowWithPeriods & TrendMeta
     const summary =
       row.category === 'FX'
         ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
@@ -550,6 +641,10 @@ export async function buildMarketOverviewFromCatalog(
       change3M: summary.change3M ?? 0,
       change6M: summary.change6M ?? 0,
       change1Y: summary.change1Y ?? 0,
+      trendScore: trendAwareRow.trendScore ?? null,
+      trendLabel: trendAwareRow.trendLabel ?? null,
+      trendPercentile: trendAwareRow.trendPercentile ?? null,
+      trendRelativeWeekly: trendAwareRow.trendRelativeWeekly ?? null,
     }
   })
   const totalElements = sorted.length

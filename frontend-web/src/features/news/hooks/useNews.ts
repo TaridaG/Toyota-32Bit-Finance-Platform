@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchNews, type NewsApiItem } from '../api/newsService'
+import { fetchNews, type NewsApiItem, type NewsFetchFilters } from '../api/newsService'
 
 type UseNewsResult = {
   data: NewsApiItem[]
@@ -12,7 +12,7 @@ type UseNewsResult = {
   refetch: () => Promise<void>
 }
 
-export function useNews(page = 0, size = 20, language?: string): UseNewsResult {
+export function useNews(page = 0, size = 20, language?: string, filters?: NewsFetchFilters): UseNewsResult {
   const [data, setData] = useState<NewsApiItem[]>([])
   const [totalElements, setTotalElements] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -23,7 +23,7 @@ export function useNews(page = 0, size = 20, language?: string): UseNewsResult {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetchNews(page, size, language)
+      const response = await fetchNews(page, size, language, filters)
       setData(response.content ?? [])
       setTotalElements(response.totalElements ?? 0)
       setTotalPages(response.totalPages ?? 0)
@@ -32,7 +32,7 @@ export function useNews(page = 0, size = 20, language?: string): UseNewsResult {
     } finally {
       setLoading(false)
     }
-  }, [language, page, size])
+  }, [filters, language, page, size])
 
   useEffect(() => {
     void refetch()

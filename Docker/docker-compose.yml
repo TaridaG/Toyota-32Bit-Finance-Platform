@@ -64,10 +64,17 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
     container_name: keycloak
-    command: ["start-dev", "--import-realm"]
+    command: ["start-dev"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: finance
+      KC_DB_PASSWORD: 123456
       # Canonical issuer for browser / SPA tokens (must match gateway app.security.jwt.issuer-uri).
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME: localhost

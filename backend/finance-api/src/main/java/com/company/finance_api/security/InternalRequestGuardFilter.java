@@ -50,6 +50,11 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        if ("GET".equalsIgnoreCase(request.getMethod())
+                && path.endsWith("/api/public/register/username-availability")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // Public instrument discovery is allowed for guest users.
         if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/instruments")) {
             filterChain.doFilter(request, response);

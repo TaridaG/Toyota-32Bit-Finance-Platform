@@ -40,6 +40,19 @@ type SendCodeEnvelope = {
   }
 }
 
+type UsernameAvailabilityEnvelope = {
+  success: boolean
+  data?: {
+    normalizedUsername: string
+    available: boolean
+    suggestions: string[]
+  }
+  error?: {
+    code?: string
+    message?: string
+  }
+}
+
 export async function sendRegistrationVerificationCode(email: string): Promise<{ expiresInSeconds: number; resendInSeconds: number }> {
   const { data } = await apiClient.post<SendCodeEnvelope>('/api/public/register/send-code', { email })
   if (!data.success || !data.data) {
@@ -48,5 +61,23 @@ export async function sendRegistrationVerificationCode(email: string): Promise<{
   return {
     expiresInSeconds: data.data.expiresInSeconds,
     resendInSeconds: data.data.resendInSeconds,
+  }
+}
+
+export async function checkUsernameAvailability(username: string): Promise<{
+  normalizedUsername: string
+  available: boolean
+  suggestions: string[]
+}> {
+  const { data } = await apiClient.get<UsernameAvailabilityEnvelope>('/api/public/register/username-availability', {
+    params: { username },
+  })
+  if (!data.success || !data.data) {
+    throw new Error(data.error?.message ?? 'Username availability check failed')
+  }
+  return {
+    normalizedUsername: data.data.normalizedUsername,
+    available: data.data.available,
+    suggestions: Array.isArray(data.data.suggestions) ? data.data.suggestions : [],
   }
 }

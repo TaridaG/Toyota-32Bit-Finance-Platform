@@ -12,6 +12,7 @@ export const MARKET_SORT_FIELDS = [
   'change3M',
   'change6M',
   'change1Y',
+  'trendScore',
 ] as const
 export type MarketSortField = (typeof MARKET_SORT_FIELDS)[number]
 
@@ -55,6 +56,7 @@ export type MarketSortableRow = {
   change3M?: number
   change6M?: number
   change1Y?: number
+  trendScore?: number
   [SORT_DISPLAY_AMOUNT_KEY]?: number | null
 }
 
@@ -75,6 +77,8 @@ export function metricForSortField(row: MarketSortableRow, field: MarketSortFiel
       return row.change6M ?? 0
     case 'change1Y':
       return row.change1Y ?? 0
+    case 'trendScore':
+      return row.trendScore ?? 0
     default:
       return 0
   }

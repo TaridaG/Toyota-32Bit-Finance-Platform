@@ -5,6 +5,7 @@ import { topGainers, topLosers } from './mockData'
 import type { NewsCategory, NewsDataPoint, SentimentType } from './types'
 import { fetchNewsOriginal, type NewsApiItem } from '../../features/news/api/newsService'
 import { useNews } from '../../features/news/hooks/useNews'
+import type { NewsFetchFilters } from '../../features/news/api/newsService'
 import { NewsCard } from './components/NewsCard'
 import { TrendingList } from './components/TrendingList'
 import { SentimentChart } from './components/SentimentChart'
@@ -14,6 +15,10 @@ export function NewsPage() {
   const { t, i18n } = useTranslation('newsPage')
   const [page, setPage] = useState(0)
   const pageSize = 10
+  const defaultFilters: NewsFetchFilters = { category: 'all', range: 'all', sentiment: 'all' }
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<NewsFetchFilters>(defaultFilters)
+  const [appliedFilters, setAppliedFilters] = useState<NewsFetchFilters>(defaultFilters)
   const {
     data: streamApiData,
     loading: streamLoading,
@@ -21,11 +26,7 @@ export function NewsPage() {
     refetch: refetchStream,
     totalElements,
     totalPages,
-  } = useNews(page, pageSize, i18n.language)
-  const [selectedCategory, setSelectedCategory] = useState<NewsCategory>('all')
-  /** Default "all" so server-side pagination is not wiped by a 24h window (older pages are always >24h old). */
-  const [selectedRange, setSelectedRange] = useState<'all' | '1h' | '6h' | '24h'>('all')
-  const [selectedSentiment, setSelectedSentiment] = useState<'all' | SentimentType>('all')
+  } = useNews(page, pageSize, i18n.language, appliedFilters)
   const [selectedNews, setSelectedNews] = useState<NewsDataPoint | null>(null)
   useDocumentTitle(t('titleDoc'))
 
@@ -34,25 +35,13 @@ export function NewsPage() {
     [streamApiData, t],
   )
 
-  const filteredStreamNews = useMemo(() => {
-    const byCategory =
-      selectedCategory === 'all' ? streamNews : streamNews.filter((item) => item.category === selectedCategory)
-    const bySentiment =
-      selectedSentiment === 'all' ? byCategory : byCategory.filter((item) => item.sentiment === selectedSentiment)
-    if (selectedRange === 'all') {
-      return bySentiment
-    }
-    const maxMinutes = selectedRange === '1h' ? 60 : selectedRange === '6h' ? 360 : 1440
-    return bySentiment.filter((item) => item.timeAgoMinutes <= maxMinutes)
-  }, [selectedCategory, selectedRange, selectedSentiment, streamNews])
-
   const sentimentCounts = useMemo(
     () => ({
-      positive: filteredStreamNews.filter((item) => item.sentiment === 'positive').length,
-      negative: filteredStreamNews.filter((item) => item.sentiment === 'negative').length,
-      neutral: filteredStreamNews.filter((item) => item.sentiment === 'neutral').length,
+      positive: streamNews.filter((item) => item.sentiment === 'positive').length,
+      negative: streamNews.filter((item) => item.sentiment === 'negative').length,
+      neutral: streamNews.filter((item) => item.sentiment === 'neutral').length,
     }),
-    [filteredStreamNews],
+    [streamNews],
   )
 
   const aiInsight = useMemo(() => {
@@ -68,58 +57,91 @@ export function NewsPage() {
   return (
     <>
       <section className="fi-news-page">
-        <section className="card fi-filter-bar">
-          <div className="fi-filter-group">
-            <span>{t('categoryTitle')}</span>
-            <div>
-              {(['all', 'bist', 'viop', 'fx', 'crypto', 'macro'] as const).map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  className={`fi-filter-chip${selectedCategory === category ? ' fi-filter-chip-active' : ''}`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {t(`categories.${category}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="fi-filter-group">
-            <span>{t('timeRangeTitle')}</span>
-            <div>
-              {(['all', '1h', '6h', '24h'] as const).map((range) => (
-                <button
-                  key={range}
-                  type="button"
-                  className={`fi-filter-chip${selectedRange === range ? ' fi-filter-chip-active' : ''}`}
-                  onClick={() => setSelectedRange(range)}
-                >
-                  {range === 'all' ? t('timeRangeAll') : range}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="fi-filter-group">
-            <span>{t('sentimentTitle')}</span>
-            <div>
-              {(['all', 'positive', 'negative', 'neutral'] as const).map((sentiment) => (
-                <button
-                  key={sentiment}
-                  type="button"
-                  className={`fi-filter-chip${selectedSentiment === sentiment ? ' fi-filter-chip-active' : ''}`}
-                  onClick={() => setSelectedSentiment(sentiment)}
-                >
-                  {t(`sentiment.${sentiment}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <div className="fi-main-grid">
           <article className="card fi-news-feed">
+            <div className="fi-news-feed-head">
+              <div className="fi-inline-filter-wrap">
+                <button type="button" className="fi-filter-toggle fi-inline-filter-button" onClick={() => setFiltersOpen((prev) => !prev)}>
+                  <IconFilter />
+                  {t('filterToggle')}
+                  <span aria-hidden>{filtersOpen ? '▲' : '▼'}</span>
+                </button>
+                {filtersOpen ? (
+                  <div className="fi-inline-filter-popover">
+                    <div className="fi-filter-group">
+                      <span>{t('categoryTitle')}</span>
+                      <div>
+                        {(['all', 'bist', 'viop', 'fx', 'crypto', 'macro'] as const).map((category) => (
+                          <button
+                            key={category}
+                            type="button"
+                            className={`fi-filter-chip${draftFilters.category === category ? ' fi-filter-chip-active' : ''}`}
+                            onClick={() => setDraftFilters((prev) => ({ ...prev, category }))}
+                          >
+                            {t(`categories.${category}`)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="fi-filter-group">
+                      <span>{t('timeRangeTitle')}</span>
+                      <div>
+                        {(['all', '1h', '6h', '24h'] as const).map((range) => (
+                          <button
+                            key={range}
+                            type="button"
+                            className={`fi-filter-chip${draftFilters.range === range ? ' fi-filter-chip-active' : ''}`}
+                            onClick={() => setDraftFilters((prev) => ({ ...prev, range }))}
+                          >
+                            {range === 'all' ? t('timeRangeAll') : range}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="fi-filter-group">
+                      <span>{t('sentimentTitle')}</span>
+                      <div>
+                        {(['all', 'positive', 'negative', 'neutral'] as const).map((sentiment) => (
+                          <button
+                            key={sentiment}
+                            type="button"
+                            className={`fi-filter-chip${draftFilters.sentiment === sentiment ? ' fi-filter-chip-active' : ''}`}
+                            onClick={() => setDraftFilters((prev) => ({ ...prev, sentiment: sentiment as 'all' | SentimentType }))}
+                          >
+                            {t(`sentiment.${sentiment}`)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="fi-filter-actions">
+                      <button
+                        type="button"
+                        className="fi-filter-chip fi-filter-chip-active"
+                        onClick={() => {
+                          setAppliedFilters(draftFilters)
+                          setPage(0)
+                          setFiltersOpen(false)
+                        }}
+                      >
+                        {t('applyFilters')}
+                      </button>
+                      <button
+                        type="button"
+                        className="fi-filter-chip"
+                        onClick={() => {
+                          setDraftFilters(defaultFilters)
+                          setAppliedFilters(defaultFilters)
+                          setPage(0)
+                          setFiltersOpen(false)
+                        }}
+                      >
+                        {t('clearFilters')}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
             <div className="fi-news-list">
               {streamLoading ? (
                 <p className="fi-empty">{t('common:loading')}</p>
@@ -130,8 +152,8 @@ export function NewsPage() {
                     {t('common:retry')}
                   </button>
                 </div>
-              ) : filteredStreamNews.length > 0 ? (
-                filteredStreamNews.map((item) => (
+              ) : streamNews.length > 0 ? (
+                streamNews.map((item) => (
                   <NewsCard
                     key={item.id}
                     item={item}
@@ -208,6 +230,14 @@ export function NewsPage() {
   )
 }
 
+function IconFilter() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="fi-filter-icon">
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </svg>
+  )
+}
+
 function mapNewsItem(item: NewsApiItem, t: (key: string, options?: Record<string, unknown>) => string): NewsDataPoint {
   const titleTranslated = stripHtml(item.title?.trim() || '-')
   const summaryTranslated = stripHtml(item.summary?.trim() || '-')
@@ -242,6 +272,7 @@ function stripHtml(value: string): string {
 
 function mapCategory(category: string | null | undefined): Exclude<NewsCategory, 'all'> {
   const c = (category ?? '').toUpperCase()
+  if (c === 'VIOP') return 'viop'
   if (c === 'CRYPTO') return 'crypto'
   if (c === 'FX') return 'fx'
   if (c === 'STOCK') return 'bist'

@@ -4,7 +4,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { registerPortalUser, sendRegistrationVerificationCode } from '../../shared/api/publicRegistration'
+import {
+  checkUsernameAvailability,
+  registerPortalUser,
+  sendRegistrationVerificationCode,
+} from '../../shared/api/publicRegistration'
 
 export function RegisterPage() {
   const { t } = useTranslation('auth')
@@ -24,6 +28,8 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
+  const [usernameCheckState, setUsernameCheckState] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([])
 
   useEffect(() => {
     if (!verificationStep) {
@@ -35,6 +41,36 @@ export function RegisterPage() {
     }, 1000)
     return () => window.clearInterval(timer)
   }, [verificationStep])
+
+  useEffect(() => {
+    if (verificationStep) {
+      return
+    }
+    const trimmed = username.trim().toLowerCase()
+    if (!trimmed) {
+      setUsernameCheckState('idle')
+      setUsernameSuggestions([])
+      return
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) {
+      setUsernameCheckState('idle')
+      setUsernameSuggestions([])
+      return
+    }
+    setUsernameCheckState('checking')
+    const timer = window.setTimeout(() => {
+      void checkUsernameAvailability(trimmed)
+        .then((result) => {
+          setUsernameCheckState(result.available ? 'available' : 'taken')
+          setUsernameSuggestions(result.available ? [] : result.suggestions.slice(0, 3))
+        })
+        .catch(() => {
+          setUsernameCheckState('idle')
+          setUsernameSuggestions([])
+        })
+    }, 2000)
+    return () => window.clearTimeout(timer)
+  }, [username, verificationStep])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -76,6 +112,14 @@ export function RegisterPage() {
     }
 
     if (!verificationStep) {
+      if (usernameCheckState === 'checking') {
+        setError(t('register.usernameChecking'))
+        return
+      }
+      if (usernameCheckState === 'taken') {
+        setError(t('register.usernameTaken'))
+        return
+      }
       setSendingCode(true)
       try {
         const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase())
@@ -188,15 +232,47 @@ export function RegisterPage() {
             <label className="auth-label" htmlFor="username">
               {t('register.usernameLabel')}
             </label>
-            <input
-              id="username"
-              className="auth-input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('register.usernamePlaceholder')}
-              autoComplete="username"
-              disabled={verificationStep}
-            />
+            <div className="auth-input-wrap">
+              <input
+                id="username"
+                className="auth-input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={t('register.usernamePlaceholder')}
+                autoComplete="username"
+                disabled={verificationStep}
+              />
+              {usernameCheckState === 'checking' ? (
+                <span className="auth-input-status auth-input-status-spinner" aria-label={t('register.usernameChecking')} />
+              ) : null}
+              {usernameCheckState === 'available' ? (
+                <span className="auth-input-status auth-input-status-ok" aria-label={t('register.usernameAvailable')}>✓</span>
+              ) : null}
+              {usernameCheckState === 'taken' ? (
+                <span className="auth-input-status auth-input-status-bad" aria-label={t('register.usernameTaken')}>✕</span>
+              ) : null}
+            </div>
+            {usernameCheckState === 'taken' ? (
+              <p className="auth-help auth-help-warning">{t('register.usernameTaken')}</p>
+            ) : null}
+            {usernameSuggestions.length > 0 ? (
+              <div className="auth-username-suggestions">
+                <span>{t('register.usernameSuggestionsTitle')}</span>
+                <div>
+                  {usernameSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      className="auth-username-suggestion"
+                      onClick={() => setUsername(suggestion)}
+                      disabled={verificationStep}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <label className="auth-label" htmlFor="newPassword">
               {t('register.passwordLabel')}

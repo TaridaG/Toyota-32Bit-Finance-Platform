@@ -87,7 +87,7 @@ export function inferNativeQuote(symbol: string, category: string | null | undef
     return 'USD'
   }
   if (cat === 'FUND') {
-    return 'TRY'
+    return 'USD'
   }
   if (cat === 'STOCK') {
     return BIST_TRY_QUOTED_SYMBOLS.has(s) ? 'TRY' : 'USD'

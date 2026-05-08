@@ -44,6 +44,9 @@ public class PortalLoginService {
         // Match PortalRegistrationService: Keycloak stores email/username lowercased (ROOT).
         String identity = request.getUsername().trim().toLowerCase(Locale.ROOT);
         Optional<User> portalUser = resolvePortalUser(identity);
+        if (portalUser.isPresent() && !portalUser.get().isActive()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account is pending deletion");
+        }
         String keycloakUsername = resolveKeycloakUsername(identity, portalUser);
 
         try {

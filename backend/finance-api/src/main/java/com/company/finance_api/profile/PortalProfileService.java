@@ -3,11 +3,14 @@ package com.company.finance_api.profile;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
+import com.company.finance_api.dto.PortalDeleteAccountRequest;
 import com.company.finance_api.dto.PortalProfileResponse;
 import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
 import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
 import com.company.finance_api.dto.PortalUpdatePhoneRequest;
 import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.event.UserDeletionRequestedEvent;
+import com.company.finance_api.event.kafka.KafkaTopics;
 import com.company.finance_api.exception.ResourceNotFoundException;
 import com.company.finance_api.identity.KeycloakDirectGrantClient;
 import com.company.finance_api.identity.KeycloakRealmAdminClient;
@@ -15,6 +18,7 @@ import com.company.finance_api.profile.avatar.ProfileAvatarImageProcessor;
 import com.company.finance_api.profile.avatar.ProfileAvatarStorage;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.security.CurrentUserResolver;
+import com.company.finance_api.service.OutboxService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +43,7 @@ public class PortalProfileService {
     private final KeycloakDirectGrantClient keycloakDirectGrantClient;
     private final ProfileAvatarStorage profileAvatarStorage;
     private final ProfileAvatarImageProcessor profileAvatarImageProcessor;
+    private final OutboxService outboxService;
 
     public PortalProfileService(
             CurrentUserResolver currentUserResolver,
@@ -46,7 +51,8 @@ public class PortalProfileService {
             KeycloakRealmAdminClient keycloakRealmAdminClient,
             KeycloakDirectGrantClient keycloakDirectGrantClient,
             ProfileAvatarStorage profileAvatarStorage,
-            ProfileAvatarImageProcessor profileAvatarImageProcessor
+            ProfileAvatarImageProcessor profileAvatarImageProcessor,
+            OutboxService outboxService
     ) {
         this.currentUserResolver = currentUserResolver;
         this.userRepository = userRepository;
@@ -54,6 +60,7 @@ public class PortalProfileService {
         this.keycloakDirectGrantClient = keycloakDirectGrantClient;
         this.profileAvatarStorage = profileAvatarStorage;
         this.profileAvatarImageProcessor = profileAvatarImageProcessor;
+        this.outboxService = outboxService;
     }
 
     @Transactional(readOnly = true)
@@ -181,6 +188,22 @@ public class PortalProfileService {
         user.setPreferredCurrency(normalizePreferredCurrency(request.getPreferredCurrency()));
         userRepository.save(user);
         return mapProfile(user);
+    }
+
+    @Transactional
+    public void requestDeleteAccount(PortalDeleteAccountRequest request) {
+        User user = loadCurrentUser();
+        if (user.isDeletionRequested()) {
+            return;
+        }
+        verifyCurrentPassword(user.getUsername(), request.getCurrentPassword());
+        user.markDeletionRequested(Instant.now());
+        userRepository.save(user);
+        outboxService.enqueue(
+                KafkaTopics.INTERNAL_USER_DELETE_REQUESTED,
+                user.getId().toString(),
+                new UserDeletionRequestedEvent(user.getId(), user.getUsername(), user.getEmail())
+        );
     }
 
     private PortalProfileResponse mapProfile(User user) {
