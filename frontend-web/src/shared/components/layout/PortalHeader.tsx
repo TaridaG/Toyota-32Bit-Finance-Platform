@@ -336,7 +336,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                     {t('header.notifications.loginRequired')}
                   </div>
                 ) : notificationsLoading ? (
-                  <div className="portal-notifications-empty">{t('common.loading')}</div>
+                  <div className="portal-notifications-empty">{t('loading')}</div>
                 ) : notificationsError ? (
                   <div className="portal-notifications-empty">{notificationsError}</div>
                 ) : notifications.length === 0 ? (
@@ -484,8 +484,8 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
             {localeOpen ? (
               <div className="portal-popover portal-locale-popover">
                 <div className="portal-locale-col">
-                  <h4>{t('common.language')}</h4>
-                  <input type="text" placeholder={t('common.search')} />
+                  <h4>{t('language')}</h4>
+                  <input type="text" placeholder={t('search')} />
                   <ul>
                     {SUPPORTED_LOCALES.map((locale) => (
                       <li key={locale}>
@@ -501,8 +501,8 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                   </ul>
                 </div>
                 <div className="portal-locale-col">
-                  <h4>{t('common.currency')}</h4>
-                  <input type="text" placeholder={t('common.search')} />
+                  <h4>{t('currency')}</h4>
+                  <input type="text" placeholder={t('search')} />
                   <ul>
                     {SUPPORTED_CURRENCIES.map((item) => (
                       <li key={item}>
@@ -610,8 +610,8 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
             ) : null}
 
             <div className="portal-mobile-search">
-              <span>{t('common.search')}</span>
-              <input type="text" placeholder={t('common.search')} />
+              <span>{t('search')}</span>
+              <input type="text" placeholder={t('search')} />
             </div>
 
             <nav className="portal-mobile-list" aria-label="Mobil navigasyon">
@@ -668,7 +668,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                   </button>
                 </div>
               </div>
-              <p>{t('common.support247')}</p>
+              <p>{t('support247')}</p>
               {isAuthenticated ? (
                 <button
                   className="portal-action-secondary"

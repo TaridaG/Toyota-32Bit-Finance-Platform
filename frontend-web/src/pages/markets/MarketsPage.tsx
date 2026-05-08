@@ -81,6 +81,20 @@ function toSparklinePath(points: number[]): string {
     .join(' ')
 }
 
+function trendLabelText(label: MarketOverviewItem['trendLabel']): string {
+  switch (label) {
+    case 'WEAK':
+      return 'Zayif'
+    case 'STRONG':
+      return 'Guclu'
+    case 'VERY_STRONG':
+      return 'Asiri Guclu'
+    case 'NEUTRAL':
+    default:
+      return 'Notr'
+  }
+}
+
 export function MarketsPage() {
   const { t, i18n } = useTranslation('markets')
   const { currency } = useAppPreferences()
@@ -168,6 +182,7 @@ export function MarketsPage() {
       new Intl.NumberFormat(i18n.language, {
         style: 'currency',
         currency: 'TRY',
+        currencyDisplay: 'narrowSymbol',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }),
@@ -659,8 +674,9 @@ export function MarketsPage() {
                     </button>
                   </th>
                   <th>
-                    <button type="button" className="markets-sort-button">
-                      Trend
+                    <button type="button" className="markets-sort-button" onClick={() => handleSort('trendScore')}>
+                      Trend Skoru
+                      {sortIndicator('trendScore')}
                     </button>
                   </th>
                 </tr>
@@ -782,17 +798,28 @@ export function MarketsPage() {
                             const points = toSparklinePoints(row)
                             const path = toSparklinePath(points)
                             const isTrendUp = points[points.length - 1] >= points[0]
+                            const score = row.trendScore ?? 0
+                            const trendClass =
+                              score < 35 ? 'markets-trend-badge-weak' : score < 65 ? 'markets-trend-badge-neutral' : 'markets-trend-badge-strong'
+                            const tooltip = `P${(row.trendPercentile ?? 0).toFixed(0)} | Medyana gore ${percentDisplay.format(
+                              row.trendRelativeWeekly ?? 0,
+                            )}`
                             return (
-                              <svg
-                                className="sparkline sparkline-compact"
-                                viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
-                                aria-label={`${row.symbol} trend`}
-                              >
-                                <path
-                                  d={path}
-                                  className={isTrendUp ? 'sparkline-line-positive' : 'sparkline-line-negative'}
-                                />
-                              </svg>
+                              <div className="markets-trend-cell" title={tooltip}>
+                                <span className={`markets-trend-badge ${trendClass}`}>
+                                  {score.toFixed(0)} · {trendLabelText(row.trendLabel)}
+                                </span>
+                                <svg
+                                  className="sparkline sparkline-compact"
+                                  viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
+                                  aria-label={`${row.symbol} trend`}
+                                >
+                                  <path
+                                    d={path}
+                                    className={isTrendUp ? 'sparkline-line-positive' : 'sparkline-line-negative'}
+                                  />
+                                </svg>
+                              </div>
                             )
                           })()}
                           </td>

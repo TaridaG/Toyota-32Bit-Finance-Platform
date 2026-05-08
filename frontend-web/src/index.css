@@ -1322,6 +1322,79 @@ button:disabled {
   font: inherit;
 }
 
+.auth-input-wrap {
+  position: relative;
+}
+
+.auth-input-wrap .auth-input {
+  width: 100%;
+  padding-right: 2rem;
+}
+
+.auth-input-status {
+  position: absolute;
+  right: 0.62rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.auth-input-status-ok {
+  color: #16a34a;
+}
+
+.auth-input-status-bad {
+  color: #dc2626;
+}
+
+.auth-input-status-spinner {
+  width: 0.86rem;
+  height: 0.86rem;
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  border-top-color: #2563eb;
+  animation: auth-spin 0.75s linear infinite;
+}
+
+.auth-help-warning {
+  color: #b45309;
+}
+
+.auth-username-suggestions {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.auth-username-suggestions > span {
+  font-size: 0.8rem;
+  color: var(--color-text-soft);
+}
+
+.auth-username-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.auth-username-suggestion {
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  border-radius: 999px;
+  padding: 0.25rem 0.62rem;
+  font-size: 0.78rem;
+}
+
+@keyframes auth-spin {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
 .auth-input:focus {
   outline: none;
   border-color: #2563eb;
@@ -1786,6 +1859,40 @@ button:disabled {
 .sparkline-compact {
   width: 48px;
   height: 17px;
+}
+
+.markets-trend-cell {
+  display: grid;
+  gap: 0.28rem;
+  justify-items: start;
+}
+
+.markets-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.12rem 0.48rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.markets-trend-badge-weak {
+  color: #fecaca;
+  background: rgba(220, 38, 38, 0.16);
+  border-color: rgba(220, 38, 38, 0.42);
+}
+
+.markets-trend-badge-neutral {
+  color: #fde68a;
+  background: rgba(217, 119, 6, 0.16);
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.markets-trend-badge-strong {
+  color: #86efac;
+  background: rgba(22, 163, 74, 0.16);
+  border-color: rgba(22, 163, 74, 0.4);
 }
 
 .sparkline-line-positive,
@@ -3557,6 +3664,82 @@ button:disabled {
   gap: 0.65rem;
 }
 
+.fi-filter-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.fi-filter-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.fi-filter-toggle {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.fi-filter-summary {
+  font-size: 0.76rem;
+  color: var(--color-text-soft);
+}
+
+.fi-news-feed-head {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.fi-inline-filter-wrap {
+  position: relative;
+}
+
+.fi-inline-filter-button {
+  gap: 0.36rem;
+}
+
+.fi-filter-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.fi-inline-filter-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 20;
+  width: min(560px, 90vw);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+  padding: 0.62rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.fi-filter-panel-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
 .fi-filter-group {
   display: grid;
   gap: 0.35rem;
@@ -3586,6 +3769,14 @@ button:disabled {
   border-color: #3b82f6;
   background: #dbeafe;
   color: #1d4ed8;
+}
+
+.fi-filter-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .fi-main-grid {
@@ -3943,6 +4134,17 @@ button:disabled {
   background: rgba(59, 130, 246, 0.2);
   color: #93c5fd;
   border-color: #3b82f6;
+}
+
+:root[data-theme='dark'] .fi-filter-toggle {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  color: #dbeafe;
+}
+
+:root[data-theme='dark'] .fi-inline-filter-popover {
+  border-color: rgba(148, 163, 184, 0.3);
+  background: #0f172a;
 }
 
 .fi-analysis-page {
@@ -4325,6 +4527,7 @@ button:disabled {
 
   .fi-news-ticker-grid,
   .fi-filter-bar,
+  .fi-filter-panel-body,
   .fi-main-grid {
     grid-template-columns: 1fr;
   }

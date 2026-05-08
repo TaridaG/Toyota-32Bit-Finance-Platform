@@ -18,6 +18,10 @@ export type MarketOverviewItem = {
   change3M?: number | null
   change6M?: number | null
   change1Y?: number | null
+  trendScore?: number | null
+  trendLabel?: 'WEAK' | 'NEUTRAL' | 'STRONG' | 'VERY_STRONG' | null
+  trendPercentile?: number | null
+  trendRelativeWeekly?: number | null
   high24h: number | null
   low24h: number | null
   category: string | null

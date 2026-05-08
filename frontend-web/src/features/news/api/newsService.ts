@@ -35,9 +35,40 @@ export type NewsOriginalResponse = {
   summary: string | null
 }
 
-export async function fetchNews(page: number, size: number, language?: string): Promise<PageResponse<NewsApiItem>> {
+export type NewsFetchFilters = {
+  category: 'all' | 'bist' | 'viop' | 'fx' | 'crypto' | 'macro'
+  range: 'all' | '1h' | '6h' | '24h'
+  sentiment: 'all' | 'positive' | 'negative' | 'neutral'
+}
+
+function maxAgeMinutesForRange(range: NewsFetchFilters['range']): number | undefined {
+  switch (range) {
+    case '1h':
+      return 60
+    case '6h':
+      return 360
+    case '24h':
+      return 1440
+    default:
+      return undefined
+  }
+}
+
+export async function fetchNews(
+  page: number,
+  size: number,
+  language?: string,
+  filters?: NewsFetchFilters,
+): Promise<PageResponse<NewsApiItem>> {
+  const maxAgeMinutes = maxAgeMinutesForRange(filters?.range ?? 'all')
   const response = await apiClient.get<ApiResponse<PageResponse<NewsApiItem>>>('/api/news/enriched', {
-    params: { page, size },
+    params: {
+      page,
+      size,
+      category: filters?.category && filters.category !== 'all' ? filters.category : undefined,
+      sentiment: filters?.sentiment && filters.sentiment !== 'all' ? filters.sentiment : undefined,
+      maxAgeMinutes,
+    },
     headers: language ? { 'X-Language': language } : undefined,
   })
   return response.data.data
