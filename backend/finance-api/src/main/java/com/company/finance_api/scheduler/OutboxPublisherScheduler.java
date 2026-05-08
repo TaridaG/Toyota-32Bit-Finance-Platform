@@ -39,7 +39,7 @@ public class OutboxPublisherScheduler {
         Instant now = Instant.now();
 
         List<OutboxEvent> batch = outboxEventRepository.lockBatch(
-                OutboxStatus.NEW, OutboxStatus.RETRY, now, PageRequest.of(0, batchSize)
+                OutboxStatus.NEW, OutboxStatus.RETRY, now, "internal.", PageRequest.of(0, batchSize)
         );
 
         if (batch.isEmpty()) return;

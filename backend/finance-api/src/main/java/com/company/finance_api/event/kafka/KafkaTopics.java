@@ -8,4 +8,5 @@ public final class KafkaTopics {
     public static final String TRANSACTION_EXECUTED = "transaction-executed";
     public static final String WATCHLIST_ITEM_ADDED = "watchlist.item.added";
     public static final String WATCHLIST_ITEM_REMOVED = "watchlist.item.removed";
+    public static final String INTERNAL_USER_DELETE_REQUESTED = "internal.user.delete.requested";
 }

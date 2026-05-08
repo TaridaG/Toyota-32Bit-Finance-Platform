@@ -3,6 +3,7 @@ package com.company.finance_api.controller;
 import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
+import com.company.finance_api.dto.PortalDeleteAccountRequest;
 import com.company.finance_api.dto.PortalProfileResponse;
 import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
 import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
@@ -109,5 +110,11 @@ public class PortalProfileController {
     @DeleteMapping("/avatar")
     public ApiResponse<PortalProfileResponse> deleteAvatar() {
         return ApiResponse.success(portalProfileService.deleteAvatar());
+    }
+
+    @PostMapping("/delete-account")
+    public ApiResponse<Void> requestDeleteAccount(@Valid @RequestBody PortalDeleteAccountRequest request) {
+        portalProfileService.requestDeleteAccount(request);
+        return ApiResponse.success(null);
     }
 }

@@ -43,6 +43,9 @@ public class User {
     @Column(name = "preferred_currency", nullable = false, length = 8)
     private String preferredCurrency = "USD";
 
+    @Column(name = "deletion_requested_at")
+    private Instant deletionRequestedAt;
+
     protected User() {
         // JPA only
     }
@@ -122,5 +125,18 @@ public class User {
 
     public void setNotifyProductUpdates(boolean notifyProductUpdates) {
         this.notifyProductUpdates = notifyProductUpdates;
+    }
+
+    public Instant getDeletionRequestedAt() {
+        return deletionRequestedAt;
+    }
+
+    public boolean isDeletionRequested() {
+        return deletionRequestedAt != null;
+    }
+
+    public void markDeletionRequested(Instant requestedAt) {
+        this.active = false;
+        this.deletionRequestedAt = requestedAt;
     }
 }

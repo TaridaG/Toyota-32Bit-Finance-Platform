@@ -63,6 +63,29 @@ public class WebSecurityConfig {
         return uriPath != null && matchesPublicAuthPostPath(uriPath);
     }
 
+    private static boolean isPublicUnauthenticatedGet(ServerWebExchange exchange) {
+        if (!HttpMethod.GET.equals(exchange.getRequest().getMethod())) {
+            return false;
+        }
+        String path = exchange.getRequest().getPath().value();
+        if (matchesPublicAuthGetPath(path)) {
+            return true;
+        }
+        String uriPath = exchange.getRequest().getURI().getPath();
+        return uriPath != null && matchesPublicAuthGetPath(uriPath);
+    }
+
+    private static boolean matchesPublicAuthGetPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        String p = path;
+        if (p.endsWith("/") && p.length() > 1) {
+            p = p.substring(0, p.length() - 1);
+        }
+        return p.startsWith("/api/public/");
+    }
+
     private static boolean matchesPublicAuthPostPath(String path) {
         if (path == null || path.isBlank()) {
             return false;
@@ -110,6 +133,7 @@ public class WebSecurityConfig {
                                 "/api/public/refresh/")
                                 .permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/market/**", "/market/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/public/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/news/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/instruments/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
@@ -125,6 +149,7 @@ public class WebSecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .bearerTokenConverter(exchange -> isPublicUnauthenticatedPost(exchange)
+                                        || isPublicUnauthenticatedGet(exchange)
                                         || isPublicAnonymousGet(exchange)
                                 ? Mono.empty()
                                 : defaultBearer.convert(exchange))

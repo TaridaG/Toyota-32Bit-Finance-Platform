@@ -23,11 +23,14 @@ public class NewsAggregationController {
 
     @GetMapping("/enriched")
     public ApiResponse<NewsEnrichedPageResponse> listEnriched(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "sentiment", required = false) String sentiment,
+            @RequestParam(name = "maxAgeMinutes", required = false) Integer maxAgeMinutes,
             @RequestHeader(value = "X-Language", required = false) String language
     ) {
-        return ApiResponse.success(newsEnrichmentService.getEnrichedNews(page, size, language));
+        return ApiResponse.success(newsEnrichmentService.getEnrichedNews(page, size, language, category, sentiment, maxAgeMinutes));
     }
 
     @GetMapping("/enriched/{id}/original")

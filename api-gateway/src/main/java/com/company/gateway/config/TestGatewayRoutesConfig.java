@@ -30,15 +30,7 @@ public class TestGatewayRoutesConfig {
     public RouteLocator routes(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route("finance-api-public", r -> r.order(-1)
-                        .path(
-                                "/api/public/register",
-                                "/api/public/register/send-code",
-                                "/api/public/login",
-                                "/api/public/refresh",
-                                "/api/public/register/",
-                                "/api/public/register/send-code/",
-                                "/api/public/login/",
-                                "/api/public/refresh/")
+                        .path("/api/public/**")
                         .uri(financeBaseUri))
                 .route("market-data-service-api", r -> r.path("/api/market/**")
                 .uri(marketBaseUri))
