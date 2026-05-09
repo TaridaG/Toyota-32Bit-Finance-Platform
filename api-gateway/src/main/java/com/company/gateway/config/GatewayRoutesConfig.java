@@ -41,6 +41,9 @@ public class GatewayRoutesConfig {
                 .route("finance-api-public", r -> r.order(-1)
                         .path("/api/public/**")
                         .uri(financeBaseUri))
+                .route("finance-market-fundamentals", r -> r.order(-10)
+                        .path("/api/market/instruments/*/fundamentals")
+                        .uri(financeBaseUri))
                 .route("market-data-service-api", r -> r.path("/api/market/**")
                 .filters(f -> f
                 .circuitBreaker(cb -> cb

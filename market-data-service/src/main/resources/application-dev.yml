@@ -1,0 +1,3 @@
+# Local IDE next to finance-api (:8080). Vite split proxy sends /api/market/* here.
+server:
+  port: 8082

@@ -64,7 +64,8 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
     container_name: keycloak
-    command: ["start-dev"]
+    # Import realm JSON from /opt/keycloak/data/import on startup (seed users e.g. admin1 — see keycloak/realm-finance.json).
+    command: ["start-dev", "--import-realm"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -389,6 +390,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - VITE_PROXY_TARGET=http://api-gateway:8080
+      # Single /api proxy — split routing would send /api/market to localhost:8082 inside the container (broken).
+      - VITE_DEV_PROXY_GATEWAY=true
     volumes:
       - ../frontend-web:/app
       - frontend_web_node_modules:/app/node_modules

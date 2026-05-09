@@ -2,7 +2,10 @@ package com.company.finance_api.repository;
 
 import com.company.finance_api.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,4 +21,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsernameIgnoreCase(String username);
 
     List<User> findByActiveTrue();
+
+    /** Portal accounts not in deletion workflow (still on roster). */
+    @Query("select count(u) from User u where u.deletionRequestedAt is null")
+    long countByNotPendingDeletion();
+
+    @Query("select count(u) from User u where u.createdAt >= :from and u.createdAt < :to and u.deletionRequestedAt is null")
+    long countCreatedInRangeExcludingPendingDeletion(@Param("from") Instant from, @Param("to") Instant to);
 }
