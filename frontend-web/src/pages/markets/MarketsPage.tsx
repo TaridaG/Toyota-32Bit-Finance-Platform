@@ -13,7 +13,7 @@ import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../fea
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
-const DEFAULT_SIZE = 20
+const DEFAULT_SIZE = 10
 const DEFAULT_CATEGORY = 'all'
 const PRICE_FLASH_MS = 500
 const PRICE_ANIMATION_MS = 300

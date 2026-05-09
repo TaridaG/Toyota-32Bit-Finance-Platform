@@ -6,6 +6,8 @@ import type {
   Portfolio,
   PortfolioAllocation,
   PortfolioOverview,
+  PortfolioValueSnapshot,
+  PortfolioTradeFlow,
   PortfolioSummary,
   TradeExecution,
   TradePreview,
@@ -73,6 +75,20 @@ export async function getTransactionHistoryPage(page: number, size: number, filt
 export async function getMyPortfolioOverview(portfolioId?: number | null) {
   const query = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
   const response = await apiClient.get<ApiResponse<PortfolioOverview>>(`/api/portfolio/overview${query}`)
+  return response.data.data
+}
+
+export async function getPortfolioSnapshots(portfolioId: number) {
+  const response = await apiClient.get<ApiResponse<PortfolioValueSnapshot[]>>(
+    `/api/portfolio/snapshots?portfolioId=${portfolioId}`,
+  )
+  return response.data.data
+}
+
+export async function getPortfolioTradeFlow(portfolioId: number) {
+  const response = await apiClient.get<ApiResponse<PortfolioTradeFlow>>(
+    `/api/portfolio/trade-flow?portfolioId=${portfolioId}`,
+  )
   return response.data.data
 }
 
