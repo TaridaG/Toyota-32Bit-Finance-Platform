@@ -56,7 +56,11 @@ export function useChartMarkers(
     const plugin = createSeriesMarkers(candleSeries, [], { autoScale: true, zOrder: 'top' })
     pluginRef.current = plugin
     return () => {
-      plugin.detach()
+      try {
+        plugin.detach()
+      } catch {
+        /* series/chart disposed */
+      }
       pluginRef.current = null
     }
   }, [candleSeries])

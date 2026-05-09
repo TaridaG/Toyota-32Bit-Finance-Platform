@@ -11,6 +11,7 @@ import {
   getAuthClaims,
   getProfileDisplayLabel,
   getProfileInitials,
+  isAdminUser,
 } from '../../auth/session'
 import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
 import { usePortalAvatarObjectUrl } from '../../../features/profile/hooks/usePortalAvatarObjectUrl'
@@ -40,6 +41,8 @@ const appNavItems: AppNavItem[] = [
   { to: '/app/analysis', labelKey: 'header.navApp.analysis' },
   { to: '/app/news', labelKey: 'header.navPublic.news' },
 ]
+
+const appNavAdminItem: AppNavItem = { to: '/admin', labelKey: 'header.navApp.admin' }
 
 const publicNavItems: PublicNavItem[] = [
   { labelKey: 'header.navPublic.markets', to: '/markets' },
@@ -253,6 +256,9 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     setLocaleOpen(false)
   }
 
+  const appNavForSession =
+    isAuthenticated && isAdminUser() ? [...appNavItems, appNavAdminItem] : appNavItems
+
   return (
     <header className="portal-header">
       <div className="portal-header-inner">
@@ -263,7 +269,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
         <nav className="portal-nav portal-nav-desktop" aria-label="Ana navigasyon">
           {isAuthenticated
-            ? appNavItems.map((item) => (
+            ? appNavForSession.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -616,7 +622,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
             <nav className="portal-mobile-list" aria-label="Mobil navigasyon">
               {isAuthenticated
-                ? appNavItems.map((item) => (
+                ? appNavForSession.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}

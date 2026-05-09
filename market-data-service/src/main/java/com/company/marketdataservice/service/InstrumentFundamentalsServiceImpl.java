@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -69,11 +70,7 @@ public class InstrumentFundamentalsServiceImpl implements InstrumentFundamentals
         if (canonicalSymbol == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "symbol is blank");
         }
-        InstrumentCatalogEntry instrument = instrumentCatalogRepository.findByCanonicalSymbolAndActiveTrue(canonicalSymbol)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Instrument not found in catalog: " + canonicalSymbol
-                ));
+        InstrumentCatalogEntry instrument = resolveCatalogEntry(canonicalSymbol);
 
         Optional<InstrumentFundamentalsCacheEntry> cachedOpt = cacheRepository.findById(instrument.getInstrumentId());
         if (!forceRefresh && cachedOpt.isPresent()) {
@@ -99,7 +96,6 @@ public class InstrumentFundamentalsServiceImpl implements InstrumentFundamentals
         cacheEntry.setProviderSymbol(fresh.providerSymbol());
         cacheEntry.setPayloadJson(serialize(fresh.withCacheHit(false)));
         cacheEntry.setFetchedAt(now);
-        // Persist fundamentals as long-lived data; only refresh yearly (or forceRefresh).
         cacheEntry.setExpiresAt(now.plusSeconds(Math.max(cacheTtlHours, 24L * 365L) * 3600L));
         cacheRepository.save(cacheEntry);
 
@@ -126,6 +122,34 @@ public class InstrumentFundamentalsServiceImpl implements InstrumentFundamentals
             }
         }
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No fundamentals provider available for symbol");
+    }
+
+    /**
+     * Stocks/crypto are seeded in {@code mds_instrument_catalog}. FX pairs from TCMB often appear in
+     * prices first; catalog rows may lag. TRY crosses get a synthetic catalog row so INTERNAL_META
+     * can answer without Finnhub/FMP (they are not meaningful for spot FX).
+     */
+    private InstrumentCatalogEntry resolveCatalogEntry(String canonicalSymbol) {
+        return instrumentCatalogRepository.findByCanonicalSymbolAndActiveTrue(canonicalSymbol)
+                .or(() -> syntheticTryFxCross(canonicalSymbol))
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Instrument not found in catalog: " + canonicalSymbol
+                ));
+    }
+
+    private static Optional<InstrumentCatalogEntry> syntheticTryFxCross(String canonicalSymbol) {
+        if (!StringUtils.hasText(canonicalSymbol)
+                || !canonicalSymbol.endsWith("TRY")
+                || canonicalSymbol.length() <= 3) {
+            return Optional.empty();
+        }
+        String base = canonicalSymbol.substring(0, canonicalSymbol.length() - 3);
+        if (!base.matches("[A-Z0-9]+")) {
+            return Optional.empty();
+        }
+        long syntheticId = 9_000_000_000L + Math.floorMod(canonicalSymbol.hashCode(), 999_999_999);
+        return Optional.of(InstrumentCatalogEntry.fxFromFinance(syntheticId, canonicalSymbol, base, "TRY"));
     }
 
     private List<ProviderCandidate> buildProviderCandidates(InstrumentCatalogEntry instrument) {

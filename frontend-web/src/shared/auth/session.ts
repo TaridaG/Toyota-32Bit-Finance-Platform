@@ -59,6 +59,57 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
+function asRoleArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim().toUpperCase())
+}
+
+/**
+ * Realm / client roles from the access token (Keycloak: realm_access.roles, resource_access.*.roles).
+ */
+export function getAuthRoles(): string[] {
+  const token = getStoredToken()
+  if (!token) {
+    return []
+  }
+  const payload = decodeJwtPayload(token)
+  if (!payload) {
+    return []
+  }
+  const roles = new Set<string>()
+  const realmAccess = payload.realm_access
+  if (realmAccess && typeof realmAccess === 'object' && realmAccess !== null && 'roles' in realmAccess) {
+    asRoleArray((realmAccess as { roles?: unknown }).roles).forEach((r) => roles.add(r))
+  }
+  asRoleArray(payload.roles).forEach((r) => roles.add(r))
+  const resourceAccess = payload.resource_access
+  if (resourceAccess && typeof resourceAccess === 'object' && resourceAccess !== null) {
+    for (const entry of Object.values(resourceAccess)) {
+      if (entry && typeof entry === 'object' && entry !== null && 'roles' in entry) {
+        asRoleArray((entry as { roles?: unknown }).roles).forEach((r) => roles.add(r))
+      }
+    }
+  }
+  return [...roles]
+}
+
+export function hasRealmRole(role: string): boolean {
+  const normalized = role.trim().toUpperCase()
+  if (!normalized) {
+    return false
+  }
+  return getAuthRoles().includes(normalized)
+}
+
+/** Matches Keycloak realm role {@code ADMIN} used by the API gateway for /api/admin/**. */
+export function isAdminUser(): boolean {
+  return hasRealmRole('ADMIN')
+}
+
 export function getAuthClaims(): AuthClaims | null {
   const token = getStoredToken()
   if (!token) {

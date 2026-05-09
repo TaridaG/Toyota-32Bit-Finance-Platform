@@ -83,7 +83,16 @@ setApiLocaleHeader(initialLocale)
 
 const resources: Record<
   SupportedLocale,
-  { common: object; landing: object; auth: object; markets: object; newsPage: object; analysis: object; portfolio: object }
+  {
+    common: object
+    landing: object
+    auth: object
+    markets: object
+    newsPage: object
+    analysis: object
+    portfolio: object
+    admin: object
+  }
 > = {
   en: {
     common: (en as { common?: object }).common ?? {},
@@ -93,6 +102,7 @@ const resources: Record<
     newsPage: (en as { newsPage?: object }).newsPage ?? {},
     analysis: (en as { analysis?: object }).analysis ?? {},
     portfolio: (en as { portfolio?: object }).portfolio ?? {},
+    admin: (en as { admin?: object }).admin ?? {},
   },
   tr: {
     common: (tr as { common?: object }).common ?? {},
@@ -102,6 +112,7 @@ const resources: Record<
     newsPage: (tr as { newsPage?: object }).newsPage ?? {},
     analysis: (tr as { analysis?: object }).analysis ?? {},
     portfolio: (tr as { portfolio?: object }).portfolio ?? {},
+    admin: (tr as { admin?: object }).admin ?? {},
   },
   de: {
     common: (de as { common?: object }).common ?? {},
@@ -111,6 +122,7 @@ const resources: Record<
     newsPage: (de as { newsPage?: object }).newsPage ?? {},
     analysis: (de as { analysis?: object }).analysis ?? {},
     portfolio: (de as { portfolio?: object }).portfolio ?? {},
+    admin: (de as { admin?: object }).admin ?? {},
   },
 }
 
@@ -118,7 +130,7 @@ void i18n.use(initReactI18next).init({
   resources,
   lng: initialLocale,
   defaultNS: 'common',
-  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'analysis', 'portfolio'],
+  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'analysis', 'portfolio', 'admin'],
   fallbackNS: 'common',
   fallbackLng: DEFAULT_LOCALE,
   interpolation: {

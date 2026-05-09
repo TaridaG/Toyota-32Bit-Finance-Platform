@@ -357,16 +357,20 @@ function enrichContextualTrendScores<T extends CatalogRow & Partial<CatalogRowWi
  * Loads 1D–1Y metrics for every visible catalog row (one summary batch + parallel FX history).
  * Required before sorting by any period column so ordering matches displayed values.
  */
+function rowUsesFxHistory(row: CatalogRow): boolean {
+  return row.category === 'FX' || SPOT_METAL_SYMBOLS.has(row.symbol)
+}
+
 async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
   rows: CatalogRowWithPeriods[]
   summaryBySymbol: Record<string, PeriodChanges & { price: number }>
   fxPeriodBySymbol: Record<string, PeriodChanges>
 }> {
-  const nonFx = rows.filter((r) => r.category !== 'FX')
-  const fxRows = rows.filter((r) => r.category === 'FX')
+  const summaryRows = rows.filter((r) => !rowUsesFxHistory(r))
+  const fxRows = rows.filter((r) => rowUsesFxHistory(r))
   let summaryBySymbol: Record<string, PeriodChanges & { price: number }> = {}
   try {
-    summaryBySymbol = nonFx.length > 0 ? await fetchPricesSummary(nonFx.map((r) => r.symbol)) : {}
+    summaryBySymbol = summaryRows.length > 0 ? await fetchPricesSummary(summaryRows.map((r) => r.symbol)) : {}
   } catch {
     summaryBySymbol = {}
   }
@@ -382,8 +386,19 @@ async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
     }),
   )
   const merged: CatalogRowWithPeriods[] = rows.map((row) => {
-    if (row.category === 'FX') {
-      const s = fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+    if (rowUsesFxHistory(row)) {
+      let s = fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+      if (SPOT_METAL_SYMBOLS.has(row.symbol)) {
+        const fromSummary = summaryBySymbol[row.symbol]
+        if (fromSummary) {
+          const sumP = fromSummary.change1D ** 2 + fromSummary.change1M ** 2 + fromSummary.change1Y ** 2
+          const fxP = s.change1D ** 2 + s.change1M ** 2 + s.change1Y ** 2
+          if (sumP > fxP) {
+            const { price: _p, ...rest } = fromSummary
+            s = rest
+          }
+        }
+      }
       return {
         ...row,
         change24h: s.change1D,
@@ -486,27 +501,36 @@ function computePeriodChanges(points: HistoryPoint[]): PeriodChanges {
   }
 }
 
+const SUMMARY_REQUEST_CHUNK = 40
+
 async function fetchPricesSummary(symbols: string[]): Promise<Record<string, PeriodChanges & { price: number }>> {
   if (symbols.length === 0) {
     return {}
   }
-  const response = await apiClient.get<Record<string, SummaryItem>>('/api/market/prices/summary', {
-    params: { symbols: symbols.join(',') },
-  })
-  const data = response.data ?? {}
   const out: Record<string, PeriodChanges & { price: number }> = {}
-  for (const symbol of symbols) {
-    const item = data[symbol]
-    if (!item) {
-      continue
-    }
-    out[symbol] = {
-      price: toNumber(item.price ?? 0, 0),
-      change1D: toNumber(item.change1D ?? 0, 0),
-      change1M: toNumber(item.change1M ?? 0, 0),
-      change3M: toNumber(item.change3M ?? 0, 0),
-      change6M: toNumber(item.change6M ?? 0, 0),
-      change1Y: toNumber(item.change1Y ?? 0, 0),
+  for (let i = 0; i < symbols.length; i += SUMMARY_REQUEST_CHUNK) {
+    const chunk = symbols.slice(i, i + SUMMARY_REQUEST_CHUNK)
+    try {
+      const response = await apiClient.get<Record<string, SummaryItem>>('/api/market/prices/summary', {
+        params: { symbols: chunk.join(',') },
+      })
+      const data = response.data ?? {}
+      for (const symbol of chunk) {
+        const item = data[symbol]
+        if (!item) {
+          continue
+        }
+        out[symbol] = {
+          price: toNumber(item.price ?? 0, 0),
+          change1D: toNumber(item.change1D ?? 0, 0),
+          change1M: toNumber(item.change1M ?? 0, 0),
+          change3M: toNumber(item.change3M ?? 0, 0),
+          change6M: toNumber(item.change6M ?? 0, 0),
+          change1Y: toNumber(item.change1Y ?? 0, 0),
+        }
+      }
+    } catch {
+      /* skip chunk — avoid one bad batch failing the whole markets table */
     }
   }
   return out
@@ -519,19 +543,30 @@ export async function fetchMarketCatalogSnapshot(params: {
 }): Promise<MarketCatalogSnapshot> {
   const category = params.category
   const query = params.query?.trim()
-  const response = await apiClient.get<MarketPriceApiItem[] | { data?: MarketPriceApiItem[] }>('/api/market/prices')
-  const responseItems = Array.isArray(response.data)
-    ? response.data
-    : Array.isArray(response.data?.data)
-      ? response.data.data
-      : []
 
-  const fxResponse = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/market/fx')
-  const fxResponseItems = Array.isArray(fxResponse.data)
-    ? fxResponse.data
-    : Array.isArray(fxResponse.data?.data)
-      ? fxResponse.data.data
-      : []
+  let responseItems: MarketPriceApiItem[] = []
+  try {
+    const response = await apiClient.get<MarketPriceApiItem[] | { data?: MarketPriceApiItem[] }>('/api/market/prices')
+    responseItems = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : []
+  } catch {
+    responseItems = []
+  }
+
+  let fxResponseItems: FxRateApiItem[] = []
+  try {
+    const fxResponse = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/market/fx')
+    fxResponseItems = Array.isArray(fxResponse.data)
+      ? fxResponse.data
+      : Array.isArray(fxResponse.data?.data)
+        ? fxResponse.data.data
+        : []
+  } catch {
+    fxResponseItems = []
+  }
 
   const [instrumentMetadataBySymbol, normalizedRows] = await Promise.all([
     fetchInstrumentMetadataBySymbolMap(),
@@ -595,13 +630,13 @@ export async function buildMarketOverviewFromCatalog(
   const basePageRows = sorted.slice(start, end)
 
   if (sortRequiresPageSummaryFetch(sortMetricField)) {
-    const summarySymbols = basePageRows.filter((row) => row.category !== 'FX').map((row) => row.symbol)
+    const summarySymbols = basePageRows.filter((row) => !rowUsesFxHistory(row)).map((row) => row.symbol)
     try {
       summaryBySymbol = summarySymbols.length > 0 ? await fetchPricesSummary(summarySymbols) : {}
     } catch {
       summaryBySymbol = {}
     }
-    const fxSymbols = basePageRows.filter((row) => row.category === 'FX').map((row) => row.symbol)
+    const fxSymbols = basePageRows.filter((row) => rowUsesFxHistory(row)).map((row) => row.symbol)
     await Promise.all(
       fxSymbols.map(async (symbol) => {
         try {
@@ -620,10 +655,9 @@ export async function buildMarketOverviewFromCatalog(
     const { [SORT_DISPLAY_AMOUNT_KEY]: _sortMetric, ...row } = rawRow as typeof rawRow &
       Record<string, number | null | undefined>
     const trendAwareRow = row as CatalogRowWithPeriods & TrendMeta
-    const summary =
-      row.category === 'FX'
-        ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
-        : summaryBySymbol[row.symbol] ?? {}
+    const summary = rowUsesFxHistory(row as CatalogRow)
+      ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
+      : summaryBySymbol[row.symbol] ?? {}
     const nativeQuote = inferNativeQuote(row.symbol, row.category ?? null)
     const displayAmount =
       fxHub != null ? convertToDisplayCurrency(row.price ?? 0, nativeQuote, displayCurrency, fxHub) : null
@@ -696,8 +730,45 @@ export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
   }
 }
 
+/** Spot FX vs TRY: no equity fundamentals; avoid /fundamentals 404 when BFF/MDS catalog lags prices. */
+function isTryFxFundamentalsLocal(symbol: string): boolean {
+  const s = symbol.trim().toUpperCase()
+  if (!s.endsWith('TRY') || s.length <= 3) return false
+  const base = s.slice(0, -3)
+  if (!/^[A-Z0-9]+$/.test(base)) return false
+  if (base.length === 3 && /^X[A-Z]{2}$/.test(base)) return false
+  return true
+}
+
+function syntheticTryFxFundamentals(symbol: string): InstrumentFundamentals {
+  const s = symbol.trim().toUpperCase()
+  return {
+    symbol: s,
+    provider: 'INTERNAL_META',
+    providerSymbol: s,
+    companyName: `${s} Exchange Rate`,
+    country: null,
+    currency: 'TRY',
+    exchange: null,
+    ipoDate: null,
+    industry: 'Foreign Exchange',
+    website: null,
+    marketCapitalization: null,
+    sharesOutstanding: null,
+    peTtm: null,
+    epsTtm: null,
+    fetchedAt: new Date().toISOString(),
+    cacheHit: false,
+    annualStatements: [],
+  }
+}
+
 export async function fetchInstrumentFundamentals(symbol: string, forceRefresh = false): Promise<InstrumentFundamentals> {
-  const response = await apiClient.get<InstrumentFundamentals>(`/api/market/instruments/${symbol}/fundamentals`, {
+  if (isTryFxFundamentalsLocal(symbol)) {
+    void forceRefresh
+    return syntheticTryFxFundamentals(symbol)
+  }
+  const response = await apiClient.get<InstrumentFundamentals>(`/api/market/instruments/${encodeURIComponent(symbol.trim())}/fundamentals`, {
     params: { forceRefresh },
   })
   return response.data
