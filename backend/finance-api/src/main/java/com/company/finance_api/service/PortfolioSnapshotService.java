@@ -11,5 +11,5 @@ public interface PortfolioSnapshotService {
 
     void createSnapshotsForAllUsers();
 
-    List<PortfolioSnapshot> getMySnapshots();
+    List<PortfolioSnapshot> getMySnapshots(Long portfolioId);
 }

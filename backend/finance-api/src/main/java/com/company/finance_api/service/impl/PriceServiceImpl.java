@@ -78,6 +78,22 @@ public class PriceServiceImpl implements PriceService {
     }
 
     @Override
+    public Optional<InstrumentPrice> getLatestValuationPriceBefore(Instrument instrument, Instant exclusiveEnd) {
+        for (PriceType priceType : VALUATION_PRICE_TYPES) {
+            Optional<InstrumentPrice> fromDb = priceRepository
+                    .findFirstByInstrumentAndPriceTypeAndTimestampLessThanOrderByTimestampDesc(
+                            instrument,
+                            priceType,
+                            exclusiveEnd
+                    );
+            if (fromDb.isPresent()) {
+                return fromDb;
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public List<InstrumentPrice> getPriceHistory(
             Instrument instrument,
             PriceType priceType,

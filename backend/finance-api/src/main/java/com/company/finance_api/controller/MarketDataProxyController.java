@@ -20,9 +20,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Forwards browser / SPA traffic for market-data-service routes through finance-api so local Vite
- * only needs {@code VITE_PROXY_TARGET} (:8080). {@code /api/market/instruments/.../fundamentals} is
- * handled by {@link MarketFundamentalsPassthroughController}. {@code /api/market/overview} and
- * {@code /api/market/insights} stay on {@link MarketOverviewController}.
+ * only needs {@code VITE_PROXY_TARGET} (:8080). API gateway sends {@code /api/market/instruments/.../fundamentals}
+ * straight to market-data-service; finance still exposes {@link MarketFundamentalsPassthroughController} for
+ * direct finance calls. {@code /api/market/overview} and {@code /api/market/insights} stay on {@link MarketOverviewController}.
  */
 @RestController
 public class MarketDataProxyController {

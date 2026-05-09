@@ -1,6 +1,7 @@
 package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.Instrument;
+import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.Transaction;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.InstrumentType;
@@ -26,6 +27,9 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -100,16 +104,26 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
         Map<Instrument, List<Transaction>> grouped = transactions.stream()
                 .collect(Collectors.groupingBy(Transaction::getInstrument));
 
+        Instant startOfTodayUtc = LocalDate.now(ZoneOffset.UTC)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+
         List<PortfolioOverviewItemResponse> items = new ArrayList<>();
         BigDecimal totalValue = BigDecimal.ZERO;
         BigDecimal totalCost = BigDecimal.ZERO;
+        BigDecimal totalYesterdayValue = BigDecimal.ZERO;
 
         for (Map.Entry<Instrument, List<Transaction>> entry : grouped.entrySet()) {
             Instrument instrument = entry.getKey();
-            PositionCostBasisCalculator.PositionCostBasis basis = positionCostBasisCalculator.calculate(entry.getValue());
+            List<Transaction> instrumentTx = entry.getValue();
+            PositionCostBasisCalculator.PositionCostBasis basis = positionCostBasisCalculator.calculate(instrumentTx);
             if (basis.quantity().compareTo(BigDecimal.ZERO) <= 0) {
                 continue;
             }
+
+            PositionCostBasisCalculator.PositionCostBasis basisBeforeToday =
+                    positionCostBasisCalculator.calculateHoldingsBefore(instrumentTx, startOfTodayUtc);
+            BigDecimal quantityMarkPriorDay = basisBeforeToday.quantity();
 
             BigDecimal avgBuyPrice = convertAndScale(basis.averageCost(), instrument.getType(), normalizedCurrency);
             BigDecimal positionCost = convertAndScale(basis.totalCost(), instrument.getType(), normalizedCurrency);
@@ -120,6 +134,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                     .orElse(null);
 
             BigDecimal value = null;
+            BigDecimal priorDayValue = null;
             BigDecimal pnl = null;
             BigDecimal pnlPercent = null;
 
@@ -131,6 +146,20 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                             .divide(positionCost, 4, RoundingMode.HALF_UP);
                 }
                 totalValue = totalValue.add(value);
+
+                if (quantityMarkPriorDay.compareTo(BigDecimal.ZERO) > 0) {
+                    Optional<BigDecimal> priorConvertedOpt = priceService
+                            .getLatestValuationPriceBefore(instrument, startOfTodayUtc)
+                            .map(InstrumentPrice::getPrice)
+                            .map(p -> convertAndScale(p, instrument.getType(), normalizedCurrency));
+                    if (priorConvertedOpt.isPresent()) {
+                        BigDecimal yesterdayLine = applyScale(
+                                priorConvertedOpt.get().multiply(quantityMarkPriorDay),
+                                instrument.getType());
+                        totalYesterdayValue = totalYesterdayValue.add(yesterdayLine);
+                        priorDayValue = yesterdayLine;
+                    }
+                }
             }
 
             items.add(new PortfolioOverviewItemResponse(
@@ -138,10 +167,12 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                     instrument.getSymbol(),
                     instrument.getName(),
                     instrument.getType().name(),
+                    instrument.getExchange() != null ? instrument.getExchange().name() : null,
                     basis.quantity(),
                     avgBuyPrice,
                     currentPrice,
                     value,
+                    priorDayValue,
                     pnl,
                     pnlPercent
             ));
@@ -154,12 +185,15 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                 ? totalPnl.multiply(BigDecimal.valueOf(100)).divide(totalCost, 4, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
+        BigDecimal dayOverDayChange = applyScale(totalValue.subtract(totalYesterdayValue), InstrumentType.STOCK);
+
         PortfolioOverviewResponse response = new PortfolioOverviewResponse(
                 normalizedCurrency,
                 applyScale(totalValue, InstrumentType.STOCK),
                 applyScale(totalCost, InstrumentType.STOCK),
                 applyScale(totalPnl, InstrumentType.STOCK),
                 totalPnlPercent,
+                dayOverDayChange,
                 items
         );
         writeToCache(cacheKey, response);
@@ -216,7 +250,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
     }
 
     private String cacheKey(UUID userId, String currency, Long portfolioId) {
-        return "portfolio:overview:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT) + ":portfolio:" + (portfolioId == null ? "all" : portfolioId);
+        return "portfolio:overview:v5:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT) + ":portfolio:" + (portfolioId == null ? "all" : portfolioId);
     }
 
     private PortfolioOverviewResponse emptyOverview(String currency) {
@@ -226,6 +260,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                 BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                 BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                 BigDecimal.ZERO.setScale(4, RoundingMode.HALF_UP),
+                BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                 List.of()
         );
     }

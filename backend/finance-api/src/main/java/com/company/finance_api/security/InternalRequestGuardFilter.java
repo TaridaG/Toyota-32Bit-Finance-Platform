@@ -60,6 +60,12 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        // Public market catalog pages (gateway forwards here; must not require X-USERNAME).
+        if ("GET".equalsIgnoreCase(request.getMethod())
+                && (path.startsWith("/api/market/overview") || path.startsWith("/api/market/insights"))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // Public MDS fundamentals (read-only; same data as unauthenticated market prices).
         if ("GET".equalsIgnoreCase(request.getMethod())
                 && path.startsWith("/api/market/instruments/")

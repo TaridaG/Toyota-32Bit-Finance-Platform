@@ -5,10 +5,12 @@ import com.company.finance_api.domain.PortfolioSnapshot;
 import com.company.finance_api.dto.PortfolioPositionResponse;
 import com.company.finance_api.dto.PortfolioOverviewResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
+import com.company.finance_api.dto.PortfolioTradeFlowResponse;
 import com.company.finance_api.dto.PortfolioValuationResponse;
 import com.company.finance_api.service.PortfolioOverviewService;
 import com.company.finance_api.service.PortfolioService;
 import com.company.finance_api.service.PortfolioSnapshotService;
+import com.company.finance_api.service.PortfolioTradeFlowService;
 import com.company.finance_api.service.PortfolioValuationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,7 @@ public class PortfolioController {
     private final PortfolioOverviewService portfolioOverviewService;
     private final PortfolioSnapshotService portfolioSnapshotService;
     private final PortfolioValuationService portfolioValuationService;
+    private final PortfolioTradeFlowService portfolioTradeFlowService;
 
     @GetMapping
     public ApiResponse<List<PortfolioPositionResponse>> myPortfolio() {
@@ -53,7 +56,16 @@ public class PortfolioController {
         return ApiResponse.success(portfolioValuationService.getMyValuation());
     }
     @GetMapping("/snapshots")
-    public ApiResponse<List<PortfolioSnapshot>> snapshots() {
-        return ApiResponse.success(portfolioSnapshotService.getMySnapshots());
+    public ApiResponse<List<PortfolioSnapshot>> snapshots(
+            @RequestParam(value = "portfolioId") Long portfolioId) {
+        return ApiResponse.success(portfolioSnapshotService.getMySnapshots(portfolioId));
+    }
+
+    @GetMapping("/trade-flow")
+    public ApiResponse<PortfolioTradeFlowResponse> tradeFlow(
+            @RequestHeader(value = "X-Currency", required = false) String targetCurrency,
+            @RequestParam(value = "portfolioId") Long portfolioId
+    ) {
+        return ApiResponse.success(portfolioTradeFlowService.getMyTradeFlow(targetCurrency, portfolioId));
     }
 }

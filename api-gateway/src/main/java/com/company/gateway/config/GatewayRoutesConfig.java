@@ -41,8 +41,9 @@ public class GatewayRoutesConfig {
                 .route("finance-api-public", r -> r.order(-1)
                         .path("/api/public/**")
                         .uri(financeBaseUri))
-                .route("finance-market-fundamentals", r -> r.order(-10)
-                        .path("/api/market/instruments/*/fundamentals")
+                // finance-api owns overview/insights only; prices, fundamentals, etc. hit MDS like before (avoids finance→MDS hop + 502s).
+                .route("finance-market-overview-insights", r -> r.order(-12)
+                        .path("/api/market/overview", "/api/market/overview/", "/api/market/insights", "/api/market/insights/")
                         .uri(financeBaseUri))
                 .route("market-data-service-api", r -> r.path("/api/market/**")
                 .filters(f -> f

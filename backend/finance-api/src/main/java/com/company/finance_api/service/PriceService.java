@@ -18,6 +18,11 @@ public interface PriceService {
 
     Optional<InstrumentPrice> getLatestValuationPrice(Instrument instrument);
 
+    /**
+     * Latest stored valuation tick strictly before {@code exclusiveEnd} (e.g. start of today UTC for “yesterday” snapshot).
+     */
+    Optional<InstrumentPrice> getLatestValuationPriceBefore(Instrument instrument, Instant exclusiveEnd);
+
     // Grafik için zaman serisi
     List<InstrumentPrice> getPriceHistory(
             Instrument instrument,

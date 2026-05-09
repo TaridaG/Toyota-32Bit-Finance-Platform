@@ -37,4 +37,8 @@ public class PortfolioSnapshot {
     // EKLE
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    /** When set, snapshot is for this external portfolio; legacy rows may be null. */
+    @Column(name = "external_portfolio_id")
+    private Long externalPortfolioId;
 }
