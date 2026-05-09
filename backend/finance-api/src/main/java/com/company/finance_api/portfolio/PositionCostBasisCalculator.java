@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 
@@ -14,15 +15,37 @@ public class PositionCostBasisCalculator {
 
     private static final int SCALE = 6;
 
-    public PositionCostBasis calculate(List<Transaction> transactions) {
-        BigDecimal quantity = BigDecimal.ZERO;
-        BigDecimal totalCost = BigDecimal.ZERO;
-
+    /**
+     * Holdings after applying only transactions whose effective time is strictly before {@code cutoffExclusive}
+     * (e.g. start of today UTC for “yesterday close” mark-to-market).
+     */
+    public PositionCostBasis calculateHoldingsBefore(List<Transaction> transactions, Instant cutoffExclusive) {
         List<Transaction> ordered = transactions.stream()
+                .filter(tx -> effectiveInstant(tx).isBefore(cutoffExclusive))
                 .sorted(Comparator
-                        .comparing(Transaction::getCreatedAt)
+                        .comparing(PositionCostBasisCalculator::effectiveInstant)
                         .thenComparing(Transaction::getId))
                 .toList();
+        return foldCostBasis(ordered);
+    }
+
+    public PositionCostBasis calculate(List<Transaction> transactions) {
+        List<Transaction> ordered = transactions.stream()
+                .sorted(Comparator
+                        .comparing(PositionCostBasisCalculator::effectiveInstant)
+                        .thenComparing(Transaction::getId))
+                .toList();
+        return foldCostBasis(ordered);
+    }
+
+    private static Instant effectiveInstant(Transaction tx) {
+        Instant acquired = tx.getAcquiredAt();
+        return acquired != null ? acquired : tx.getCreatedAt();
+    }
+
+    private PositionCostBasis foldCostBasis(List<Transaction> ordered) {
+        BigDecimal quantity = BigDecimal.ZERO;
+        BigDecimal totalCost = BigDecimal.ZERO;
 
         for (Transaction tx : ordered) {
             BigDecimal txQuantity = tx.getQuantity();

@@ -106,4 +106,19 @@ class GatewayRoutingTests {
         Assertions.assertEquals("/api/market/crypto/latest", recorded.getPath());
         Assertions.assertNull(recorded.getHeader("X-USER-ID"));
     }
+
+    @Test
+    void market_fundamentals_should_route_to_market_service_not_finance() throws Exception {
+        marketMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"symbol\":\"BTCUSDT\"}")
+                .addHeader("Content-Type", "application/json"));
+
+        webTestClient.get()
+                .uri("/api/market/instruments/BTCUSDT/fundamentals?forceRefresh=false")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"symbol\":\"BTCUSDT\"}");
+
+        RecordedRequest recorded = marketMock.takeRequest();
+        Assertions.assertEquals("/api/market/instruments/BTCUSDT/fundamentals?forceRefresh=false", recorded.getPath());
+    }
 }

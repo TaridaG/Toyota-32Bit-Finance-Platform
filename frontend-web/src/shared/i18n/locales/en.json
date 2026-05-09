@@ -353,9 +353,80 @@
     "valueTitle": "Portfolio Value",
     "profitTitle": "Total Profits",
     "distributionTitle": "Portfolio Distribution",
+    "changeTitle": "Buy & sell",
     "assetsTitle": "My Assets",
+    "transactionHistoryTitle": "Transaction history",
+    "transactionHistoryEmpty": "No trades recorded yet.",
+    "txTypeBuy": "Buy",
+    "txTypeSell": "Sell",
     "insightTitle": "Market Insight",
     "fromLastYear": "from last year",
+    "sinceYesterday": "vs. prior day (UTC)",
+    "valueChart": {
+      "empty": "History will appear after the server records a few portfolio snapshots for this account.",
+      "rangeAria": "Portfolio value chart range"
+    },
+    "tradeFlow": {
+      "buyLabel": "Buys",
+      "diffLabel": "Diff.",
+      "sellLabel": "Sells",
+      "netLabel": "Net (period)",
+      "loading": "Loading…",
+      "pctInfinity": "∞",
+      "empty": "Cumulative buy vs. sell cash flow will appear after you record trades.",
+      "rangeAria": "Buy/sell flow chart range"
+    },
+    "pnlDonut": {
+      "aria": "Unrealized gain versus loss amounts as a share of total move",
+      "winners": "In profit",
+      "losers": "In loss",
+      "empty": "No positions with gain or loss yet.",
+      "legendAria": "Profit vs loss split"
+    },
+    "allocation": {
+      "detailTitle": "Portfolio allocation",
+      "byInstrumentTitle": "Asset allocation",
+      "byCategoryTitle": "Asset categories",
+      "back": "Back to overview",
+      "empty": "No holdings with a market value yet.",
+      "other": "Other",
+      "weight": "Weight",
+      "value": "Value",
+      "symbol": "Symbol",
+      "quantity": "Qty",
+      "pnlPctShort": "P/L %",
+      "sortActivate": "Click to sort",
+      "sortAsc": "Sorted ascending — click to reverse",
+      "sortDesc": "Sorted descending — click to reverse",
+      "legendAria": "Allocation breakdown",
+      "tooltipWeight": "Weight",
+      "tooltipAllocRow": "Weight Δ (pp)",
+      "tooltipPriceRow": "Price",
+      "tooltipPending": "—",
+      "tooltipFootnote": "Portfolio weight history is not available yet. Price % is a live market reference; 1W uses ≈ ¼ of 1M when no weekly series exists.",
+      "tooltipFootnoteCategory": "1D uses your positions and last prices before today (UTC). Category total value % and weight Δ (pp) are rolled up from those marks. Longer horizons are not available for buckets yet.",
+      "period1d": "1D",
+      "period1w": "1W",
+      "period1y": "1Y",
+      "marketsAria": "Allocation by market",
+      "exchange": {
+        "BINANCE": "Crypto (Binance)",
+        "BIST": "BIST",
+        "NASDAQ": "NASDAQ",
+        "TCMB": "FX (TCMB)",
+        "FINNHUB": "Global"
+      },
+      "instrumentType": {
+        "CRYPTO": "Crypto",
+        "STOCK": "Stocks",
+        "FX": "FX",
+        "FUND": "Funds",
+        "BOND": "Bonds"
+      },
+      "ofPortfolio": "of portfolio",
+      "inPortfolio": "in portfolio",
+      "moreCategories": "Also includes: {{labels}}"
+    },
     "actions": { "yearly": "Yearly", "viewAll": "View All" },
     "legend": { "stocks": "Stocks", "funds": "Funds", "bonds": "Bonds", "reits": "REITs" },
     "sidebar": {
@@ -365,7 +436,8 @@
       "navAria": "Portfolio dashboard navigation",
       "quickAria": "Portfolio quick links",
       "logout": "Logout",
-      "items": { "dashboard": "Dashboard", "markets": "Add to Portfolio", "portfolio": "Transaction History", "news": "My News", "analysis": "My Analysis", "targets": "My Targets", "watchlist": "Watchlist", "settings": "Settings" }
+      "addPortfolioOption": "+ New portfolio",
+      "items": { "dashboard": "Dashboard", "markets": "Add to Portfolio", "portfolio": "Transaction History", "allocation": "Portfolio distribution", "news": "My News", "analysis": "My Analysis", "targets": "My Targets", "watchlist": "Watchlist", "settings": "Settings" }
     },
     "watchlist": {
       "title": "My Watchlist",

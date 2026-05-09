@@ -123,12 +123,38 @@ export type PortfolioOverviewItem = {
   symbol: string
   name: string
   type: string
+  /** Exchange enum from API (e.g. BIST, BINANCE); optional when unknown. */
+  exchange?: string | null
   quantity: number
   avgBuyPrice: number
   currentPrice: number
   value: number
+  /** Prior-day mark (UTC cut-off) in overview currency; null when unavailable. */
+  priorDayValue?: number | null
   pnl: number
   pnlPercent: number
+}
+
+export type PortfolioValueSnapshot = {
+  id: number
+  userId: string
+  totalCost: number
+  totalValue: number
+  unrealizedPnl: number
+  createdAt: string
+  externalPortfolioId?: number | null
+}
+
+/** Signed cash flow per trade in overview currency (X-Currency): buy positive, sell negative. */
+export type PortfolioTradeFlowPoint = {
+  transactionId: number
+  createdAt: string
+  signedAmount: number
+}
+
+export type PortfolioTradeFlow = {
+  currency: string
+  points: PortfolioTradeFlowPoint[]
 }
 
 export type PortfolioOverview = {
@@ -137,6 +163,8 @@ export type PortfolioOverview = {
   totalCost: number
   totalPnl: number
   totalPnlPercent: number
+  /** Same positions marked with last price before start of today (UTC) vs current. */
+  dayOverDayChange?: number | null
   items: PortfolioOverviewItem[]
 }
 

@@ -32,6 +32,12 @@ public interface InstrumentPriceRepository
             PriceType priceType
     );
 
+    Optional<InstrumentPrice> findFirstByInstrumentAndPriceTypeAndTimestampLessThanOrderByTimestampDesc(
+            Instrument instrument,
+            PriceType priceType,
+            Instant instant
+    );
+
     // Zaman aralığı (grafik çizimi için)
     List<InstrumentPrice> findByInstrumentAndPriceTypeAndTimestampBetweenOrderByTimestampAsc(
             Instrument instrument,

@@ -9,4 +9,7 @@ import java.util.UUID;
 public interface PortfolioSnapshotRepository extends JpaRepository<PortfolioSnapshot, Long> {
 
     List<PortfolioSnapshot> findByUserIdOrderByCreatedAtAsc(UUID userId);
+
+    List<PortfolioSnapshot> findByUserIdAndExternalPortfolioIdOrderByCreatedAtAsc(
+            UUID userId, Long externalPortfolioId);
 }

@@ -13,6 +13,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 
     List<Transaction> findByUserOrderByCreatedAtDesc(User user);
     List<Transaction> findByUserAndExternalPortfolioOrderByCreatedAtDesc(User user, ExternalPortfolio externalPortfolio);
+    List<Transaction> findByUserAndExternalPortfolioOrderByCreatedAtAsc(User user, ExternalPortfolio externalPortfolio);
     List<Transaction> findByUserAndInstrument(User user, Instrument instrument);
     List<Transaction> findByUserAndInstrumentAndExternalPortfolio(User user, Instrument instrument, ExternalPortfolio externalPortfolio);
 }
