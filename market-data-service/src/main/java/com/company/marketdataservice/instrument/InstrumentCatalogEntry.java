@@ -34,4 +34,16 @@ public class InstrumentCatalogEntry {
 
     protected InstrumentCatalogEntry() {
     }
+
+    /** Catalog row backed by {@code public.instruments} when MDS catalog was not seeded yet. */
+    public static InstrumentCatalogEntry fxFromFinance(long instrumentId, String canonicalSymbol, String baseCurrency, String quoteCurrency) {
+        InstrumentCatalogEntry e = new InstrumentCatalogEntry();
+        e.setInstrumentId(instrumentId);
+        e.setCanonicalSymbol(canonicalSymbol);
+        e.setAssetClass("FX");
+        e.setBaseCurrency(baseCurrency);
+        e.setQuoteCurrency(quoteCurrency);
+        e.setActive(true);
+        return e;
+    }
 }

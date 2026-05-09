@@ -11,7 +11,7 @@
     "support247": "7/24 Destek",
     "header": {
       "navPublic": { "markets": "Piyasalar", "myPortfolio": "Portföyüm", "analysis": "Analiz", "news": "Haberler" },
-      "navApp": { "markets": "Piyasalar", "myPortfolio": "Portföyüm", "analysis": "Analiz", "portfolio": "Portföy", "simulation": "Simülasyon" },
+      "navApp": { "markets": "Piyasalar", "myPortfolio": "Portföyüm", "analysis": "Analiz", "portfolio": "Portföy", "simulation": "Simülasyon", "admin": "Yönetim" },
       "actions": { "login": "Giriş Yap", "register": "Kaydol", "logout": "Çıkış Yap" },
       "searchAria": "Ara",
       "download": { "aria": "Uygulamayı indir", "title": "Uygulamayı indir", "subtitle": "iOS & Android", "moreOptions": "Daha fazla seçenek" },
@@ -265,6 +265,141 @@
   "markets": { "titleDoc": "Piyasalar | Finans Platformu", "kicker": "Canlı Masa", "title": "Piyasalar", "lead": "Kripto, BIST, NASDAQ, döviz, spot maden, yurtdışı vadeli emtia ve fon piyasalarını tek ekrandan takip edin.", "categories": { "aria": "Piyasa kategori filtreleri", "all": "Tümü", "crypto": "Kripto", "bist": "BIST", "nasdaq": "NASDAQ", "stocks": "Hisse", "forex": "Döviz", "metals": "Maden (Spot)", "globalFutures": "Yurtdışı Vadeli", "funds": "Fon" }, "table": { "symbol": "Sembol", "price": "Fiyat", "priceHint": "Sol: yerel kotasyon (TRY veya USD). Sağ: üst menüde seçtiğiniz para birimi.", "priceConvertedSort": "Seçili para birimindeki tutara göre sırala", "change24h": "24s", "high24h": "24s En Yüksek", "low24h": "24s En Düşük", "exchange": "Piyasa" }, "searchLabel": "Ara", "searchPlaceholder": "Sembol veya varlık adı", "favoritesOnly": "Favoriler", "favorite": "Favorilere ekle", "unfavorite": "Favorilerden çıkar", "noMatches": "Bu filtreye uygun enstrüman bulunamadı.", "lastUpdated": "Son güncelleme: şimdi", "insights": { "topGainers": "En Çok Yükselenler", "topLosers": "En Çok Düşenler", "noGainers": "Yükselen veri bulunamadı.", "noLosers": "Düşen veri bulunamadı.", "loadError": "Piyasa içgörüleri yüklenemedi." }, "pagination": { "prev": "Önceki", "next": "Sonraki", "pageSizeAria": "Sayfa boyutu", "size10": "10 / sayfa", "size20": "20 / sayfa", "size50": "50 / sayfa", "summary": "Sayfa {{page}} / {{totalPages}} - {{totalElements}} kayıt" } },
   "newsPage": { "titleDoc": "Haberler | Finans Platformu", "kicker": "Canlı Haber Masası", "title": "Güncel Haberler", "lead": "Piyasa başlıklarını anlık takip edin.", "streamTitle": "Haber Akışı", "risingTitle": "Yükselenler", "fallingTitle": "Düşenler", "sentimentTitle": "Duygu Dağılımı", "categoryTitle": "Kategori", "timeRangeTitle": "Zaman Aralığı","filterToggle": "Filtreler", "applyFilters": "Filtrele", "clearFilters": "Filtreyi Temizle", "filterSummaryAll": "Tum haberler listeleniyor", "filterSummaryActive": "Filtreli gorunum aktif", "timeRangeAll": "Tümü", "noNews": "Haber bulunamadı", "loadError": "Haberler yüklenemedi.", "closeDetails": "Detayları kapat", "marketReaction": "Piyasa Tepkisi", "reactionLast1h": "Son 1 saatte %{{value}}", "newsCountLabel": "haber", "aiInsightTitle": "Yapay Zeka İçgörüsü", "aiInsightPositive": "Pozitif haber akışı güçleniyor.", "aiInsightNegative": "Korumacı pozisyonlanma öne çıkıyor.", "aiInsightNeutral": "Haber akışı dengeli seyrediyor.", "time": { "minutesAgo": "{{count}} dk önce", "hoursAgo": "{{count}} saat önce" }, "sentiment": { "all": "Tümü", "positive": "Pozitif", "negative": "Negatif", "neutral": "Nötr" }, "categories": { "all": "Tümü", "bist": "BIST", "viop": "VIOP", "fx": "FX", "crypto": "Kripto", "macro": "Makro" } },
   "analysis": { "titleDoc": "Analiz | Finans Platformu", "compareTitle": "Karşılaştır", "assetDetailsTitle": "Varlık Detayı", "relatedNewsTitle": "İlgili Haberler", "performanceTableTitle": "Performans Tablosu", "syncedWithRange": "{{range}} ile senkron", "sortNews": "Haber sırala:", "sort": { "byTime": "Zamana Göre", "byImpact": "Etkiye Göre" }, "controls": { "showNews": "Haberi göster", "showMA20": "HO20 göster", "showMA50": "HO50 göster", "showRSI": "RSI göster", "showCompare": "Karşılaştırmayı göster", "drawNone": "Çizim: Yok", "drawTrend": "Çizim: Trend çizgisi", "drawMarker": "Çizim: İşaret", "drawHLevel": "Çizim: Yatay seviye" }, "indicatorsLoading": "Göstergeler yükleniyor...", "indicatorsDisabled": "Göstergeler geçici olarak devre dışı.", "assetSelector": { "searchPlaceholder": "Varlık ara (THYAO, BTC, USDTRY...)", "types": { "all": "Tüm Türler", "stock": "Hisse", "crypto": "Kripto", "fx": "FX", "commodity": "Emtia", "index": "Endeks" } }, "readout": { "crosshair": "Canlı imleç", "pinnedBar": "Sabit çubuk" }, "periods": { "daily": "Günlük", "weekly": "Haftalık", "monthly": "Aylık", "yearly": "Yıllık" }, "volumeLabel": "Hacim", "marketCapLabel": "Piyasa Değeri", "columns": { "asset": "Varlık", "daily": "Günlük %", "weekly": "Haftalık %", "monthly": "Aylık %", "yearly": "Yıllık %" } },
-  "portfolio": { "titleDoc": "Portföyüm | Finans Platformu", "topGainers": "En çok yükselenler:", "valueTitle": "Portföy Değeri", "profitTitle": "Toplam Kar", "distributionTitle": "Portföy Dağılımı", "assetsTitle": "Varlıklarım", "insightTitle": "Piyasa İçgörüsü", "fromLastYear": "geçen yıla göre", "actions": { "yearly": "Yıllık", "viewAll": "Tümünü Gör" }, "legend": { "stocks": "Hisseler", "funds": "Fonlar", "bonds": "Tahviller", "reits": "GYO" }, "sidebar": { "expand": "Paneli Aç", "collapse": "Paneli Kapat", "portfolios": "Portföylerim", "navAria": "Portföy navigasyonu", "quickAria": "Hızlı bağlantılar", "logout": "Çıkış", "items": { "dashboard": "Dashboard", "markets": "Portföye Ekle", "portfolio": "İşlem Geçmişi", "news": "Haberlerim", "analysis": "Analizim", "targets": "Hedefim", "watchlist": "İzleme Listem", "settings": "Ayarlar" } }, "watchlist": { "title": "İzleme Listem", "subtitle": "Burada yalnızca favori enstrümanların listelenir.", "empty": "Henüz favori enstrüman yok. Piyasalar sayfasından ekleyebilirsin.", "loadError": "İzleme listesi yüklenemedi.", "chartEmpty": "Bu enstrüman için grafik verisi bulunamadı.", "chartLoadError": "Grafik verisi yüklenemedi.", "columns": { "symbol": "Sembol", "name": "Ad", "price": "Fiyat" }, "addPanel": { "title": "Favorilere Ekle", "searchPlaceholder": "Sembol veya enstrüman adı ara", "add": "Ekle", "addedShort": "Eklendi", "added": "Enstrüman favorilere eklendi.", "addError": "Favoriye eklenemedi. Tekrar deneyin.", "noResults": "Aramaya uygun enstrüman bulunamadı.", "categories": { "all": "Tümü", "bist": "BIST", "nasdaq": "NASDAQ", "crypto": "Kripto", "forex": "Döviz", "metals": "Maden/Futures", "funds": "Fon" } } }, "insights": { "items": { "tesla": { "title": "Tesla teslimat sonrası yükseldi", "detail": "TSLA büyüme verisiyle yukarı kapattı." }, "apple": { "title": "Apple geri alım programını genişletti", "detail": "AAPL uzun vadeli yatırımcıları destekleyen adım attı." }, "nvidia": { "title": "NVIDIA yeni AI yol haritasını açıkladı", "detail": "Kurumsal AI talebinde artış bekleniyor." }, "banking": { "title": "Banka hisseleri politika sonrası dengelendi", "detail": "Büyük bankalarda toparlanma izlendi." } } }, "external": { "titleDoc": "Dış Portföy | Finans Platformu", "title": "Dış Portföy", "create": "Portföy Oluştur", "creating": "Oluşturuluyor...", "promptName": "Portföy adı", "portfolios": "Portföyler", "loadingPortfolios": "Portföyler yükleniyor...", "noPortfolios": "Portföy bulunamadı.", "summary": "Özet", "summaryHint": "Özeti görmek için portföy seçin.", "allocation": "Dağılım", "allocationHint": "Dağılımı görmek için portföy seçin.", "totalCost": "Toplam Maliyet", "marketValue": "Piyasa Değeri", "pnl": "Kar/Zarar", "pnlPercent": "Kar/Zarar %" } }
+  "portfolio": { "titleDoc": "Portföyüm | Finans Platformu", "topGainers": "En çok yükselenler:", "valueTitle": "Portföy Değeri", "profitTitle": "Toplam Kar", "distributionTitle": "Portföy Dağılımı", "assetsTitle": "Varlıklarım", "insightTitle": "Piyasa İçgörüsü", "fromLastYear": "geçen yıla göre", "actions": { "yearly": "Yıllık", "viewAll": "Tümünü Gör" }, "legend": { "stocks": "Hisseler", "funds": "Fonlar", "bonds": "Tahviller", "reits": "GYO" }, "sidebar": { "expand": "Paneli Aç", "collapse": "Paneli Kapat", "portfolios": "Portföylerim", "navAria": "Portföy navigasyonu", "quickAria": "Hızlı bağlantılar", "logout": "Çıkış", "items": { "dashboard": "Dashboard", "markets": "Portföye Ekle", "portfolio": "İşlem Geçmişi", "news": "Haberlerim", "analysis": "Analizim", "targets": "Hedefim", "watchlist": "İzleme Listem", "settings": "Ayarlar" } }, "watchlist": { "title": "İzleme Listem", "subtitle": "Burada yalnızca favori enstrümanların listelenir.", "empty": "Henüz favori enstrüman yok. Piyasalar sayfasından ekleyebilirsin.", "loadError": "İzleme listesi yüklenemedi.", "chartEmpty": "Bu enstrüman için grafik verisi bulunamadı.", "chartLoadError": "Grafik verisi yüklenemedi.", "columns": { "symbol": "Sembol", "name": "Ad", "price": "Fiyat" }, "addPanel": { "title": "Favorilere Ekle", "searchPlaceholder": "Sembol veya enstrüman adı ara", "add": "Ekle", "addedShort": "Eklendi", "added": "Enstrüman favorilere eklendi.", "addError": "Favoriye eklenemedi. Tekrar deneyin.", "noResults": "Aramaya uygun enstrüman bulunamadı.", "categories": { "all": "Tümü", "bist": "BIST", "nasdaq": "NASDAQ", "crypto": "Kripto", "forex": "Döviz", "metals": "Maden/Futures", "funds": "Fon" } } }, "insights": { "items": { "tesla": { "title": "Tesla teslimat sonrası yükseldi", "detail": "TSLA büyüme verisiyle yukarı kapattı." }, "apple": { "title": "Apple geri alım programını genişletti", "detail": "AAPL uzun vadeli yatırımcıları destekleyen adım attı." }, "nvidia": { "title": "NVIDIA yeni AI yol haritasını açıkladı", "detail": "Kurumsal AI talebinde artış bekleniyor." }, "banking": { "title": "Banka hisseleri politika sonrası dengelendi", "detail": "Büyük bankalarda toparlanma izlendi." } } }, "external": { "titleDoc": "Dış Portföy | Finans Platformu", "title": "Dış Portföy", "create": "Portföy Oluştur", "creating": "Oluşturuluyor...", "promptName": "Portföy adı", "portfolios": "Portföyler", "loadingPortfolios": "Portföyler yükleniyor...", "noPortfolios": "Portföy bulunamadı.", "summary": "Özet", "summaryHint": "Özeti görmek için portföy seçin.", "allocation": "Dağılım", "allocationHint": "Dağılımı görmek için portföy seçin.", "totalCost": "Toplam Maliyet", "marketValue": "Piyasa Değeri", "pnl": "Kar/Zarar", "pnlPercent": "Kar/Zarar %" } },
+  "admin": {
+    "title": "Operasyon",
+    "kicker": "Dahili",
+    "sidebarAria": "Yönetim menüsü",
+    "mockBanner": "Örnek veri — API bağlantısı sonraki adımda.",
+    "nav": {
+      "overview": "Dashboard",
+      "users": "Kullanıcılar ve erişim",
+      "portfolios": "Portföyler ve pozisyonlar",
+      "marketData": "Piyasa verisi",
+      "news": "Haber toplama",
+      "system": "Sistem sağlığı"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "lead": "Sistem genel durumu ve özet istatistikler",
+      "refresh": "Yenile",
+      "mockTag": "Örnek",
+      "kpiAria": "Özet göstergeler",
+      "kpi": {
+        "totalUsers": "Toplam kullanıcı",
+        "activePortfolios": "Aktif portföy",
+        "marketStreams": "Market verisi akışları",
+        "newsSources": "Haber kaynakları",
+        "systemStatus": "Sistem durumu",
+        "avgLatency": "Ortalama gecikme",
+        "deltaUsers": "+2,48% · son 7 gün",
+        "deltaPortfolios": "+1,37% · son 7 gün",
+        "deltaUsersPct": "+2,48%",
+        "deltaPortfoliosPct": "+1,37%",
+        "comparedToLast7Days": "Son 7 güne göre",
+        "comparedToPrevWindow": "Önceki pencereye göre",
+        "latencyImproved": "Önceki pencereye göre −0,18 sn",
+        "latencyDeltaShort": "−0,18 sn",
+        "activeLabel": "aktif",
+        "passiveLabel": "pasif",
+        "errorsLabel": "hata",
+        "statusHealthy": "Sağlıklı",
+        "allSystemsRunning": "Tüm sistemler çalışıyor",
+        "latencyTarget": "Hedef: < {{value}} sn",
+        "healthSegmentsAria": "Sağlık özeti: {{lit}} / {{total}} bileşen sorunsuz",
+        "signupVelocityWow": "Yeni kayıt momentumu (7g / önceki 7g)",
+        "usersMetricLoadError": "Canlı kullanıcı sayısı alınamadı — API veya ADMIN yetkisi (gateway)."
+      },
+      "dataFlow": {
+        "title": "Veri akış durumu",
+        "subtitle": "Son 24 saat — toplu alım sağlığı",
+        "legendSuccess": "Başarılı",
+        "legendError": "Hatalı",
+        "legendWarn": "Uyarı"
+      },
+      "latency": {
+        "title": "Veri gecikme özeti",
+        "subtitle": "Bağlantılar arası dağılım",
+        "avgLabel": "Ortalama",
+        "band": {
+          "live": "Canlı (< 1 sn)",
+          "good": "İyi (1 sn – 3 sn)",
+          "medium": "Orta (3 sn – 5 sn)",
+          "bad": "Kötü (> 5 sn)"
+        }
+      },
+      "tables": {
+        "streamsTitle": "Veri akışları durumu",
+        "newsTitle": "Son haber akışları",
+        "colSource": "Kaynak",
+        "colType": "Tür",
+        "colStatus": "Durum",
+        "colLatency": "Gecikme",
+        "colLastUpdate": "Son güncelleme",
+        "colSuccess": "Başarı oranı",
+        "colLastNews": "Son haber",
+        "colNewsCount": "Haber sayısı",
+        "viewAllStreams": "Tüm veri akışlarını görüntüle",
+        "viewAllNews": "Tüm haber kaynaklarını görüntüle"
+      },
+      "status": {
+        "live": "Canlı",
+        "good": "İyi",
+        "medium": "Orta",
+        "bad": "Kötü"
+      },
+      "newsStatus": {
+        "live": "Canlı",
+        "degraded": "Bozulmuş",
+        "error": "Hata"
+      },
+      "category": {
+        "crypto": "Kripto",
+        "equity": "Hisse senedi",
+        "fx": "Forex",
+        "news": "Haber"
+      }
+    },
+    "labels": { "fx": "Kur bazı:", "cadence": "Sıklık:", "lastOk": "Son başarılı:" },
+    "table": {
+      "symbol": "Sembol",
+      "name": "Ad",
+      "share": "Pay",
+      "holders": "Sahip sayısı",
+      "username": "Kullanıcı adı",
+      "email": "E-posta",
+      "registered": "Kayıt",
+      "state": "Durum"
+    },
+    "usersPage": { "title": "Kullanıcılar ve erişim", "lead": "Arama, dondurma, silme akışı ve Keycloak eşlemesi buraya bağlanacak." },
+    "portfoliosPage": { "title": "Portföyler ve pozisyonlar", "lead": "Toplam maruziyet, konsantrasyon ve enstrüman popülerliği." },
+    "marketDataPage": { "title": "Piyasa verisi", "lead": "Sağlayıcı kaydı, çekim planları, kur politikası ve hata bütçesi." },
+    "newsPage": { "title": "Haber toplama", "lead": "Akışlar, çeviri hattı, Kafka konuları ve manuel tetikler." },
+    "systemPage": { "title": "Sistem sağlığı", "lead": "Servisler, kuyruklar, önbellek ve outbox gecikmesi — gözlemlenebilirlik ile." },
+    "totalUsersPage": {
+      "refreshed": "Veri anı: {{time}}",
+      "loadError": "Kullanıcı metrikleri yüklenemedi. Ağ veya yetkinizi kontrol edin.",
+      "retry": "Tekrar dene",
+      "rosterDefinition": "Silme sürecinde olmayan portal hesapları (users tablosu).",
+      "newLast7": "Son 7 günde yeni kayıt",
+      "newPrev7": "Önceki 7 günde yeni kayıt",
+      "wowMomentum": "Haftadan haftaya momentum",
+      "dailySignupsTitle": "Günlük yeni kayıtlar (UTC)",
+      "dailySignupsSub": "Son 7 tam gün, silme bekleyenler hariç"
+    },
+    "sectionPages": {
+      "kpiTotalUsers": "Kullanıcı sayıları, büyüme ve segmentasyon bu sayfada ayrıntılandırılacak.",
+      "kpiActivePortfolios": "Aktif portföy metrikleri, dağılım ve trendler burada toplanacak.",
+      "kpiMarketStreams": "Market verisi akış sayıları, aktif/pasif durum ve sağlayıcı özeti.",
+      "kpiNewsSources": "Haber kaynağı sayıları, hata durumu ve kapsam özeti.",
+      "kpiSystemStatus": "Bileşen sağlığı, synthetic kontroller ve genel operasyonel durum.",
+      "kpiAvgLatency": "Uçtan uca gecikme trendi, hedef eşikleri ve alarmlar.",
+      "dataFlow": "24 saatlik alım başarı/hata/uyarı serileri ve kırılımlar.",
+      "latencySummary": "Bağlantı gecikmesi bant dağılımı ve ortalama — konnektör bazlı detay.",
+      "dataStreamsTable": "Kaynak bazlı gecikme, başarı oranı ve son güncelleme — tam liste ve filtreler.",
+      "newsStreamsTable": "Haber sağlayıcıları, gecikme ve haber hacmi — tam liste ve filtreler."
+    },
+    "placeholder": { "body": "Bu bölüm sonraki iterasyon için iskelet. Grafik ve tablolar sözleşme netleşince /api/admin/* ile bağlanacak." }
+  }
 }
 

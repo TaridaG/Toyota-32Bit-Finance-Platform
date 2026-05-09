@@ -60,6 +60,13 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        // Public MDS fundamentals (read-only; same data as unauthenticated market prices).
+        if ("GET".equalsIgnoreCase(request.getMethod())
+                && path.startsWith("/api/market/instruments/")
+                && path.endsWith("/fundamentals")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // Public news stream endpoints are allowed for guest users.
         if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/news")) {
             filterChain.doFilter(request, response);

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ColorType, createChart, CrosshairMode, type IChartApi } from 'lightweight-charts'
 
 const defaultLayoutOptions = {
@@ -30,6 +30,7 @@ export function useChart() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const chartMountRef = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
+  const instanceRef = useRef<IChartApi | null>(null)
   const [chart, setChart] = useState<IChartApi | null>(null)
 
   useLayoutEffect(() => {
@@ -45,12 +46,13 @@ export function useChart() {
       ...defaultLayoutOptions,
     })
 
+    instanceRef.current = instance
     chartRef.current = instance
     setChart(instance)
     let disposed = false
 
     const ro = new ResizeObserver(() => {
-      if (disposed) return
+      if (disposed || !outer.isConnected) return
       const w = outer.clientWidth
       const h = Math.max(outer.clientHeight || 460, 320)
       try {
@@ -65,8 +67,22 @@ export function useChart() {
       disposed = true
       ro.disconnect()
       chartRef.current = null
-      instance.remove()
       setChart(null)
+    }
+  }, [])
+
+  // Remove the chart in a passive-effect cleanup so layout cleanups (series) and other
+  // hooks' subscribeClick / subscribeCrosshairMove unsubscribes still see a live instance.
+  useEffect(() => {
+    return () => {
+      const inst = instanceRef.current
+      instanceRef.current = null
+      if (!inst) return
+      try {
+        inst.remove()
+      } catch {
+        // Race with internal rAF/resize after dispose.
+      }
     }
   }, [])
 

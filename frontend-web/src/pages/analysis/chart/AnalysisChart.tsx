@@ -149,7 +149,13 @@ export function AnalysisChart({
     }
 
     chart.subscribeClick(handler)
-    return () => chart.unsubscribeClick(handler)
+    return () => {
+      try {
+        chart.unsubscribeClick(handler)
+      } catch {
+        /* chart.remove() may have run in useChart passive cleanup */
+      }
+    }
   }, [chart])
 
   return (

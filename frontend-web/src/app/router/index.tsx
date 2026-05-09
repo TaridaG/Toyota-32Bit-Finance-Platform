@@ -12,7 +12,12 @@ import { ProfileSettingsPage } from '../../pages/profile/ProfileSettingsPage'
 import { LandingPage } from '../../pages/public/LandingPage'
 import { LoginPage } from '../../pages/public/LoginPage'
 import { RegisterPage } from '../../pages/public/RegisterPage'
-import { PublicOnly, RequireAuth } from './RouteGuards'
+import { PublicOnly, RequireAdmin, RequireAuth } from './RouteGuards'
+import { AdminLayout } from '../../pages/admin/AdminLayout'
+import { AdminOverviewPage } from '../../pages/admin/AdminOverviewPage'
+import { AdminPlaceholderPage } from '../../pages/admin/AdminPlaceholderPage'
+import { ADMIN_KPI_TOTAL_USERS_PATH, ADMIN_SECTION_ROUTES } from '../../features/admin/adminSectionRoutes'
+import { AdminTotalUsersPage } from '../../pages/admin/AdminTotalUsersPage'
 
 export const appRouter = createBrowserRouter([
   {
@@ -62,6 +67,29 @@ export const appRouter = createBrowserRouter([
       {
         path: 'analysis',
         element: <AnalysisPage />,
+      },
+      {
+        path: 'admin',
+        element: (
+          <RequireAuth>
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, element: <AdminOverviewPage /> },
+          { path: ADMIN_KPI_TOTAL_USERS_PATH, element: <AdminTotalUsersPage /> },
+          ...ADMIN_SECTION_ROUTES.filter((r) => r.path !== ADMIN_KPI_TOTAL_USERS_PATH).map((r) => ({
+            path: r.path,
+            element: <AdminPlaceholderPage titleKey={r.titleKey} leadKey={r.leadKey} />,
+          })),
+          { path: 'users', element: <Navigate to="/admin/kpi/total-users" replace /> },
+          { path: 'portfolios', element: <Navigate to="/admin/kpi/active-portfolios" replace /> },
+          { path: 'market-data', element: <Navigate to="/admin/kpi/market-streams" replace /> },
+          { path: 'news', element: <Navigate to="/admin/kpi/news-sources" replace /> },
+          { path: 'system', element: <Navigate to="/admin/kpi/system-status" replace /> },
+        ],
       },
       {
         path: 'app',

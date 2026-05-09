@@ -11,7 +11,7 @@
     "support247": "24/7 Support",
     "header": {
       "navPublic": { "markets": "Markets", "myPortfolio": "My Portfolio", "analysis": "Analysis", "news": "News" },
-      "navApp": { "markets": "Markets", "myPortfolio": "My Portfolio", "analysis": "Analysis", "portfolio": "Portfolio", "simulation": "Simulation" },
+      "navApp": { "markets": "Markets", "myPortfolio": "My Portfolio", "analysis": "Analysis", "portfolio": "Portfolio", "simulation": "Simulation", "admin": "Admin" },
       "actions": { "login": "Log In", "register": "Sign Up", "logout": "Log Out" },
       "searchAria": "Search",
       "download": { "aria": "Download app", "title": "Download the app", "subtitle": "iOS & Android", "moreOptions": "More download options" },
@@ -411,6 +411,162 @@
       "marketValue": "Market Value",
       "pnl": "Profit/Loss",
       "pnlPercent": "Profit/Loss %"
+    }
+  },
+  "admin": {
+    "title": "Operations",
+    "kicker": "Internal",
+    "sidebarAria": "Admin navigation",
+    "mockBanner": "Mock data — APIs will be wired in a later step.",
+    "nav": {
+      "overview": "Dashboard",
+      "users": "Users & access",
+      "portfolios": "Portfolios & positions",
+      "marketData": "Market data",
+      "news": "News ingestion",
+      "system": "System health"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "lead": "System-wide status and summary statistics",
+      "refresh": "Refresh",
+      "mockTag": "Mock",
+      "kpiAria": "Summary indicators",
+      "kpi": {
+        "totalUsers": "Total users",
+        "activePortfolios": "Active portfolios",
+        "marketStreams": "Market data streams",
+        "newsSources": "News sources",
+        "systemStatus": "System status",
+        "avgLatency": "Average latency",
+        "deltaUsers": "+2.48% · last 7 days",
+        "deltaPortfolios": "+1.37% · last 7 days",
+        "deltaUsersPct": "+2.48%",
+        "deltaPortfoliosPct": "+1.37%",
+        "comparedToLast7Days": "vs last 7 days",
+        "comparedToPrevWindow": "vs previous window",
+        "latencyImproved": "−0.18s vs previous window",
+        "latencyDeltaShort": "−0.18s",
+        "activeLabel": "active",
+        "passiveLabel": "passive",
+        "errorsLabel": "errors",
+        "statusHealthy": "Healthy",
+        "allSystemsRunning": "All systems operational",
+        "latencyTarget": "Target: < {{value}}s",
+        "healthSegmentsAria": "Health summary: {{lit}} of {{total}} subsystems nominal",
+        "signupVelocityWow": "New signup momentum (7d / prior 7d)",
+        "usersMetricLoadError": "Live user count unavailable — check API reachability and ADMIN role on the gateway."
+      },
+      "dataFlow": {
+        "title": "Data flow status",
+        "subtitle": "Last 24 hours — aggregate ingest health",
+        "legendSuccess": "Successful",
+        "legendError": "Failed",
+        "legendWarn": "Warning"
+      },
+      "latency": {
+        "title": "Latency summary",
+        "subtitle": "Distribution across connectors",
+        "avgLabel": "Average",
+        "band": {
+          "live": "Live (< 1s)",
+          "good": "Good (1s – 3s)",
+          "medium": "Medium (3s – 5s)",
+          "bad": "Poor (> 5s)"
+        }
+      },
+      "tables": {
+        "streamsTitle": "Data streams status",
+        "newsTitle": "Latest news streams",
+        "colSource": "Source",
+        "colType": "Type",
+        "colStatus": "Status",
+        "colLatency": "Latency",
+        "colLastUpdate": "Last update",
+        "colSuccess": "Success rate",
+        "colLastNews": "Last news",
+        "colNewsCount": "News count",
+        "viewAllStreams": "View all data streams",
+        "viewAllNews": "View all news sources"
+      },
+      "status": {
+        "live": "Live",
+        "good": "Good",
+        "medium": "Medium",
+        "bad": "Poor"
+      },
+      "newsStatus": {
+        "live": "Live",
+        "degraded": "Degraded",
+        "error": "Error"
+      },
+      "category": {
+        "crypto": "Crypto",
+        "equity": "Equity",
+        "fx": "FX",
+        "news": "News"
+      }
+    },
+    "labels": {
+      "fx": "FX basis:",
+      "cadence": "Cadence:",
+      "lastOk": "Last OK:"
+    },
+    "table": {
+      "symbol": "Symbol",
+      "name": "Name",
+      "share": "Share",
+      "holders": "Holders",
+      "username": "Username",
+      "email": "Email",
+      "registered": "Registered",
+      "state": "State"
+    },
+    "usersPage": {
+      "title": "Users & access",
+      "lead": "Search, freeze, deletion workflow, and Keycloak sync will connect here."
+    },
+    "portfoliosPage": {
+      "title": "Portfolios & positions",
+      "lead": "Aggregate exposure, concentration risk, and instrument popularity."
+    },
+    "marketDataPage": {
+      "title": "Market data",
+      "lead": "Provider registry, fetch schedules, FX conversion policy, and error budgets."
+    },
+    "newsPage": {
+      "title": "News ingestion",
+      "lead": "Feeds, translation pipeline, Kafka topics, and manual ingest triggers."
+    },
+    "systemPage": {
+      "title": "System health",
+      "lead": "Services, queues, caches, and outbox lag — tied to observability backends."
+    },
+    "totalUsersPage": {
+      "refreshed": "Snapshot: {{time}}",
+      "loadError": "Could not load user metrics. Check network or permissions.",
+      "retry": "Retry",
+      "rosterDefinition": "Portal accounts not in deletion workflow (users table).",
+      "newLast7": "New registrations (last 7 days)",
+      "newPrev7": "New registrations (prior 7 days)",
+      "wowMomentum": "Week-over-week momentum",
+      "dailySignupsTitle": "Daily new sign-ups (UTC)",
+      "dailySignupsSub": "Last 7 full days, excluding accounts pending deletion"
+    },
+    "sectionPages": {
+      "kpiTotalUsers": "User counts, growth, and segmentation will be detailed on this page.",
+      "kpiActivePortfolios": "Active portfolio metrics, distribution, and trends.",
+      "kpiMarketStreams": "Market data stream counts, active vs passive, and provider summary.",
+      "kpiNewsSources": "News source counts, error state, and coverage summary.",
+      "kpiSystemStatus": "Component health, synthetic checks, and overall operational state.",
+      "kpiAvgLatency": "End-to-end latency trends, thresholds, and alerts.",
+      "dataFlow": "24h ingest success/error/warning series and breakdowns.",
+      "latencySummary": "Connector latency band distribution and averages — per-connector drill-down.",
+      "dataStreamsTable": "Per-source latency, success rate, and last update — full list and filters.",
+      "newsStreamsTable": "News providers, latency, and volume — full list and filters."
+    },
+    "placeholder": {
+      "body": "This section is scaffolded for the next iteration. Charts and tables will bind to /api/admin/* once contracts are finalized."
     }
   }
 }

@@ -71,31 +71,35 @@ export function useCandleVolumeData(
     }
 
     if (!chart || !series) return
-    const prev = prevCandlesRef.current
-    const canIncremental =
-      prev.length > 0 &&
-      candles.length >= prev.length &&
-      prev.every((point, index) => candles[index]?.time === point.time)
+    try {
+      const prev = prevCandlesRef.current
+      const canIncremental =
+        prev.length > 0 &&
+        candles.length >= prev.length &&
+        prev.every((point, index) => candles[index]?.time === point.time)
 
-    if (canIncremental) {
-      for (let i = prev.length - 1; i < candles.length; i += 1) {
-        if (i < 0) continue
-        series.candle.update(toCandlestickData(candles[i]))
-        series.volume.update(toVolumeHistogramData(candles[i]))
+      if (canIncremental) {
+        for (let i = prev.length - 1; i < candles.length; i += 1) {
+          if (i < 0) continue
+          series.candle.update(toCandlestickData(candles[i]))
+          series.volume.update(toVolumeHistogramData(candles[i]))
+        }
+        if (candles.length > prev.length) {
+          chart.timeScale().scrollToRealTime()
+        }
+      } else {
+        series.candle.setData(candles.map(toCandlestickData))
+        series.volume.setData(candles.map(toVolumeHistogramData))
       }
-      if (candles.length > prev.length) {
-        chart.timeScale().scrollToRealTime()
-      }
-    } else {
-      series.candle.setData(candles.map(toCandlestickData))
-      series.volume.setData(candles.map(toVolumeHistogramData))
-    }
-    prevCandlesRef.current = candles
+      prevCandlesRef.current = candles
 
-    const shouldFit = prevFitKeyRef.current === null || prevFitKeyRef.current !== fitContentKey
-    prevFitKeyRef.current = fitContentKey
-    if (shouldFit) {
-      chart.timeScale().fitContent()
+      const shouldFit = prevFitKeyRef.current === null || prevFitKeyRef.current !== fitContentKey
+      prevFitKeyRef.current = fitContentKey
+      if (shouldFit) {
+        chart.timeScale().fitContent()
+      }
+    } catch {
+      /* unmount / chart.remove racing with data update */
     }
   }, [chart, series, candles, fitContentKey])
 }

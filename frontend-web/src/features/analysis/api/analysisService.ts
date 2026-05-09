@@ -61,8 +61,13 @@ const RANGE_TO_HISTORY_DAYS: Partial<Record<AnalysisRange, number>> = {
 }
 const DAY_MS = 24 * 60 * 60 * 1000
 
-function toSymbol(symbol: string): string {
+/** Strip non-alphanumeric chars for analytics API path segments (e.g. "BTC-USD" → "BTCUSD"). */
+export function normalizeAnalysisInstrumentSymbol(symbol: string): string {
   return symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+}
+
+function toSymbol(symbol: string): string {
+  return normalizeAnalysisInstrumentSymbol(symbol)
 }
 
 function toDateParamUTC(ts: number): string {
@@ -95,6 +100,9 @@ function mapCandle(dto: AnalyticsCandleDto): CandlePoint | null {
 
 export async function fetchCandles(symbol: string, range: AnalysisRange): Promise<CandlePoint[]> {
   const normalized = toSymbol(symbol)
+  if (!normalized) {
+    return []
+  }
   const interval = RANGE_TO_INTERVAL[range]
   const fromTs = Date.now() - RANGE_TO_MS[range]
   const historyDays = RANGE_TO_HISTORY_DAYS[range]
@@ -141,8 +149,8 @@ async function fetchHistoryCandles(symbol: string, range: AnalysisRange, fromTs:
   if (!targetDays) {
     return []
   }
-  // Backend validates (to-from+1) <= 365 days for each request.
-  // Keep each chunk safely within 365-day inclusive window.
+  // Backend caps each request span via market.history.query.max-range-days (default ~5y).
+  // Chunk requests to stay within that cap and avoid huge single payloads.
   const chunkMs = 364 * DAY_MS
   let cursorFrom = fromTs
   const allPoints: HistoryPointDto[] = []

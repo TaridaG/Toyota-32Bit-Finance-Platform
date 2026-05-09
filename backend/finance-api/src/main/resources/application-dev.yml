@@ -35,6 +35,11 @@ spring:
     market-price:
       delay-ms: 15000
 
+clients:
+  market-data:
+    # MDS URL used by MarketDataProxyController and MarketOverviewServiceImpl.
+    base-url: ${CLIENTS_MARKET_DATA_BASE_URL:http://localhost:8082}
+
 app:
   expose-internal-errors: true
   security:

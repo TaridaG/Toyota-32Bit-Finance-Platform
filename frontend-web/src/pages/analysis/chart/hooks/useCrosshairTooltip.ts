@@ -140,7 +140,11 @@ export function useCrosshairTooltip({
 
     chart.subscribeCrosshairMove(handler)
     return () => {
-      chart.unsubscribeCrosshairMove(handler)
+      try {
+        chart.unsubscribeCrosshairMove(handler)
+      } catch {
+        /* chart may already be removed */
+      }
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [chart, candleSeries])
