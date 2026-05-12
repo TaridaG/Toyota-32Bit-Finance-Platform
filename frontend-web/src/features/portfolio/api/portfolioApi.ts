@@ -22,6 +22,17 @@ export async function getPortfolios() {
   return response.data.data
 }
 
+export async function deletePortfolio(id: number) {
+  await apiClient.delete(`/api/external/portfolios/${id}`)
+}
+
+export async function patchPortfolioAmountsHidden(id: number, amountsHidden: boolean): Promise<Portfolio> {
+  const response = await apiClient.patch<ApiResponse<Portfolio>>(`/api/external/portfolios/${id}`, {
+    amountsHidden,
+  })
+  return response.data.data
+}
+
 export async function createPortfolio(payload: CreatePortfolioPayload) {
   const response = await apiClient.post<ApiResponse<Portfolio>>('/api/external/portfolios', payload)
   return response.data.data
@@ -72,9 +83,13 @@ export async function getTransactionHistoryPage(page: number, size: number, filt
   return response.data.data
 }
 
-export async function getMyPortfolioOverview(portfolioId?: number | null) {
+export async function getMyPortfolioOverview(portfolioId?: number | null, displayCurrency?: string | null) {
   const query = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
-  const response = await apiClient.get<ApiResponse<PortfolioOverview>>(`/api/portfolio/overview${query}`)
+  const headers =
+    displayCurrency != null && displayCurrency.trim().length > 0
+      ? { 'X-Currency': displayCurrency.trim().toUpperCase() }
+      : undefined
+  const response = await apiClient.get<ApiResponse<PortfolioOverview>>(`/api/portfolio/overview${query}`, { headers })
   return response.data.data
 }
 
@@ -85,9 +100,14 @@ export async function getPortfolioSnapshots(portfolioId: number) {
   return response.data.data
 }
 
-export async function getPortfolioTradeFlow(portfolioId: number) {
+export async function getPortfolioTradeFlow(portfolioId: number, displayCurrency?: string | null) {
+  const headers =
+    displayCurrency != null && displayCurrency.trim().length > 0
+      ? { 'X-Currency': displayCurrency.trim().toUpperCase() }
+      : undefined
   const response = await apiClient.get<ApiResponse<PortfolioTradeFlow>>(
     `/api/portfolio/trade-flow?portfolioId=${portfolioId}`,
+    { headers },
   )
   return response.data.data
 }

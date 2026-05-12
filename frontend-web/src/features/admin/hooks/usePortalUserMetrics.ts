@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fetchPortalUserMetrics, type PortalUserMetrics } from '../api/portalUserMetrics'
-import { formatAdminInteger, formatWowPercent, sparklineFromDailyCounts } from '../formatAdminNumbers'
+import { useTranslation } from 'react-i18next'
+import { fetchPortalUserMetrics, type PortalAdminDashboardMetrics } from '../api/portalUserMetrics'
+import { formatAdminInteger, formatWowPercent, padSevenDayInts } from '../formatAdminNumbers'
 
 export type PortalUserMetricsState =
   | { status: 'loading' }
-  | { status: 'ok'; data: PortalUserMetrics }
+  | { status: 'ok'; data: PortalAdminDashboardMetrics }
   | { status: 'error'; message: string }
 
 /** Live snapshot for the admin dashboard “total users” KPI card (never falls back to mock on error). */
@@ -16,9 +17,17 @@ export type UsersKpiLive =
       valueFormatted: string
       deltaFormatted: string
       trend: 'up' | 'down' | 'flat'
+      /** Raw UTC-day bucket counts (sparkline scales internally). */
       sparkline: number[]
+      sparklineSecondary?: number[]
       footCaptionKey: string
     }
+
+/** “Piyasa varlıkları” / instruments catalog count on the dashboard. */
+export type StreamsKpiLive =
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string }
+  | { kind: 'live'; totalFormatted: string; sparkline: number[] }
 
 export function usePortalUserMetrics() {
   const [state, setState] = useState<PortalUserMetricsState>({ status: 'loading' })
@@ -41,14 +50,15 @@ export function usePortalUserMetrics() {
   return { state, refetch: load }
 }
 
-/** Fetches portal user metrics and maps them to dashboard KPI shape (with loading / error fallbacks). */
-export function useAdminPortalUsersKpiLive(language: string) {
-  const { state: portalUsersState, refetch: refetchPortalUsers } = usePortalUserMetrics()
+/** One {@link usePortalUserMetrics} fetch drives both “total users” and “active portfolios” KPI cards. */
+export function usePortalAdminDashboardKpis(language: string) {
+  const { t } = useTranslation('admin')
+  const { state, refetch } = usePortalUserMetrics()
 
   const usersLive = useMemo((): UsersKpiLive => {
-    if (portalUsersState.status === 'loading') return { kind: 'loading' }
-    if (portalUsersState.status === 'error') return { kind: 'error', message: portalUsersState.message }
-    const d = portalUsersState.data
+    if (state.status === 'loading') return { kind: 'loading' }
+    if (state.status === 'error') return { kind: 'error', message: state.message }
+    const d = state.data
     const pct = d.newUsersWeekOverWeekPercent
     const trend: 'up' | 'down' | 'flat' =
       pct > 0.0001 ? 'up' : pct < -0.0001 ? 'down' : 'flat'
@@ -57,10 +67,69 @@ export function useAdminPortalUsersKpiLive(language: string) {
       valueFormatted: formatAdminInteger(d.totalUsers, language),
       deltaFormatted: formatWowPercent(pct, language),
       trend,
-      sparkline: sparklineFromDailyCounts(d.newRegistrationsDailyLast7Utc),
-      footCaptionKey: 'dashboard.kpi.signupVelocityWow',
+      sparkline: padSevenDayInts(d.newRegistrationsDailyLast7Utc),
+      sparklineSecondary: padSevenDayInts(d.userDeletionRequestsDailyLast7Utc),
+      footCaptionKey: 'dashboard.kpi.userFlowSparkFoot',
     }
-  }, [portalUsersState, language])
+  }, [state, language])
 
-  return { usersLive, refetchPortalUsers }
+  const portfoliosLive = useMemo((): UsersKpiLive => {
+    if (state.status === 'loading') return { kind: 'loading' }
+    if (state.status === 'error') return { kind: 'error', message: state.message }
+    const d = state.data
+    if (d.portfolioMetricsAvailable === false) {
+      return { kind: 'error', message: t('dashboard.kpi.portfoliosMetricLoadError') }
+    }
+    if (typeof d.totalPortfolios !== 'number') {
+      return {
+        kind: 'error',
+        message:
+          'Portfolio metrics missing from API response — deploy finance-api with combined /portal-users payload.',
+      }
+    }
+    const pct = d.newPortfoliosWeekOverWeekPercent
+    const trend: 'up' | 'down' | 'flat' =
+      pct > 0.0001 ? 'up' : pct < -0.0001 ? 'down' : 'flat'
+    return {
+      kind: 'live',
+      valueFormatted: formatAdminInteger(d.totalPortfolios, language),
+      deltaFormatted: formatWowPercent(pct, language),
+      trend,
+      sparkline: padSevenDayInts(d.newPortfoliosDailyLast7Utc),
+      sparklineSecondary: padSevenDayInts(d.portfolioUpdatesExistingDailyLast7Utc),
+      footCaptionKey: 'dashboard.kpi.portfolioFlowSparkFoot',
+    }
+  }, [state, language, t])
+
+  const instrumentsStreamsLive = useMemo((): StreamsKpiLive => {
+    if (state.status === 'loading') return { kind: 'loading' }
+    if (state.status === 'error') return { kind: 'error', message: state.message }
+    const d = state.data
+    const raw: unknown = d.totalInstruments
+    const n =
+      typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string' && /^\d+$/.test(raw.trim())
+          ? Number(raw.trim())
+          : NaN
+    if (!Number.isFinite(n)) {
+      return {
+        kind: 'error',
+        message: t('dashboard.kpi.instrumentsMetricLoadError'),
+      }
+    }
+    return {
+      kind: 'live',
+      totalFormatted: formatAdminInteger(n, language),
+      sparkline: padSevenDayInts(d.instrumentDistinctWithPriceDailyLast7Utc),
+    }
+  }, [state, language, t])
+
+  return { usersLive, portfoliosLive, instrumentsStreamsLive, refetchPortalDashboard: refetch }
+}
+
+/** @deprecated Prefer {@link usePortalAdminDashboardKpis} on the overview page (single refetch). */
+export function useAdminPortalUsersKpiLive(language: string) {
+  const { usersLive, refetchPortalDashboard } = usePortalAdminDashboardKpis(language)
+  return { usersLive, refetchPortalUsers: refetchPortalDashboard }
 }

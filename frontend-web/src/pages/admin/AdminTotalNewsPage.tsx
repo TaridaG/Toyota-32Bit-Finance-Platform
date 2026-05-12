@@ -3,12 +3,11 @@ import { useTranslation } from 'react-i18next'
 import {
   addUtcDaysIso,
   utcTodayIsoDate,
-  type UserAnalyticsPresetParam,
-  type UserAnalyticsQuery,
-} from '../../features/admin/api/adminUserAnalyticsApi'
-import { useAdminUserAnalytics } from '../../features/admin/hooks/useAdminUserAnalytics'
-import { AdminUserAnalyticsEnterprise } from './AdminUserAnalyticsEnterprise'
-import { AdminUserDirectorySection } from './AdminUserDirectorySection'
+  type NewsAnalyticsPresetParam,
+  type NewsAnalyticsQuery,
+} from '../../features/admin/api/adminNewsAnalyticsApi'
+import { useAdminNewsAnalytics } from '../../features/admin/hooks/useAdminNewsAnalytics'
+import { AdminNewsAnalyticsEnterprise } from './AdminNewsAnalyticsEnterprise'
 
 const MAX_CUSTOM_DAYS = 120
 
@@ -20,15 +19,15 @@ function utcSpanInclusiveDays(fromIso: string, toIso: string): number {
   return Math.floor((t(toIso) - t(fromIso)) / 86400000) + 1
 }
 
-export function AdminTotalUsersPage() {
+export function AdminTotalNewsPage() {
   const { t } = useTranslation('admin')
   const todayUtc = utcTodayIsoDate()
-  const [query, setQuery] = useState<UserAnalyticsQuery>({ kind: 'preset', preset: '7d' })
+  const [query, setQuery] = useState<NewsAnalyticsQuery>({ kind: 'preset', preset: '7d' })
   const [customFrom, setCustomFrom] = useState(() => addUtcDaysIso(todayUtc, -29))
   const [customTo, setCustomTo] = useState(todayUtc)
   const [rangeError, setRangeError] = useState<string | null>(null)
 
-  const { state, refetch } = useAdminUserAnalytics(query)
+  const { state, refetch } = useAdminNewsAnalytics(query)
 
   useEffect(() => {
     if (query.kind === 'custom') {
@@ -43,7 +42,7 @@ export function AdminTotalUsersPage() {
     }
   }, [state])
 
-  const selectPreset = (p: UserAnalyticsPresetParam) => {
+  const selectPreset = (p: NewsAnalyticsPresetParam) => {
     setRangeError(null)
     setQuery({ kind: 'preset', preset: p })
   }
@@ -77,7 +76,7 @@ export function AdminTotalUsersPage() {
 
   return (
     <div className="fi-admin-page fi-admin-total-users fi-admin-total-users--enterprise">
-      <AdminUserAnalyticsEnterprise
+      <AdminNewsAnalyticsEnterprise
         query={query}
         onSelectPreset={selectPreset}
         onSelectCustomDefault={selectCustomDefault}
@@ -90,7 +89,6 @@ export function AdminTotalUsersPage() {
         analytics={state}
         onRefresh={refetch}
       />
-      <AdminUserDirectorySection />
     </div>
   )
 }

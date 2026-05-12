@@ -2,6 +2,10 @@ export type Portfolio = {
   id: number
   name: string
   baseCurrency: string
+  /** ISO local date-time from API when present */
+  createdAt?: string | null
+  /** When true, dashboard/allocation amounts for this portfolio are masked in the UI. */
+  amountsHidden?: boolean
 }
 
 export type PositionSummary = {
@@ -48,7 +52,8 @@ export type TradePreviewPayload = {
   inputMode: TradeInputMode
   lots?: number
   amount?: number
-  inputCurrency: 'TRY' | 'USD' | 'EUR'
+  /** Ödeme para birimi: TRY-kotasyonlu varlıklar TRY, aksi USD (UI kilitler). */
+  inputCurrency: 'TRY' | 'USD'
   purchaseMode: PurchaseMode
   acquiredAt?: string
   unitPrice?: number
@@ -94,6 +99,8 @@ export type TransactionHistoryItem = {
   quantity: number
   price: number
   totalAmount: number
+  /** Listing currency for price/totalAmount (TRY for XAUTRY, USD for AMZN, …). */
+  quoteCurrency?: string | null
   inputCurrency: string | null
   inputAmount: number | null
   fxRateUsed: number | null

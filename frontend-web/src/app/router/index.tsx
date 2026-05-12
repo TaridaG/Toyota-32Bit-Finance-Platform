@@ -17,6 +17,9 @@ import { AdminLayout } from '../../pages/admin/AdminLayout'
 import { AdminOverviewPage } from '../../pages/admin/AdminOverviewPage'
 import { AdminPlaceholderPage } from '../../pages/admin/AdminPlaceholderPage'
 import { ADMIN_KPI_TOTAL_USERS_PATH, ADMIN_SECTION_ROUTES } from '../../features/admin/adminSectionRoutes'
+import { AdminAvgLatencyPage } from '../../pages/admin/AdminAvgLatencyPage'
+import { AdminTotalNewsPage } from '../../pages/admin/AdminTotalNewsPage'
+import { AdminTotalPortfoliosPage } from '../../pages/admin/AdminTotalPortfoliosPage'
 import { AdminTotalUsersPage } from '../../pages/admin/AdminTotalUsersPage'
 
 export const appRouter = createBrowserRouter([
@@ -82,7 +85,16 @@ export const appRouter = createBrowserRouter([
           { path: ADMIN_KPI_TOTAL_USERS_PATH, element: <AdminTotalUsersPage /> },
           ...ADMIN_SECTION_ROUTES.filter((r) => r.path !== ADMIN_KPI_TOTAL_USERS_PATH).map((r) => ({
             path: r.path,
-            element: <AdminPlaceholderPage titleKey={r.titleKey} leadKey={r.leadKey} />,
+            element:
+              r.path === 'kpi/avg-latency' ? (
+                <AdminAvgLatencyPage />
+              ) : r.path === 'kpi/news-sources' ? (
+                <AdminTotalNewsPage />
+              ) : r.path === 'kpi/active-portfolios' ? (
+                <AdminTotalPortfoliosPage />
+              ) : (
+                <AdminPlaceholderPage titleKey={r.titleKey} leadKey={r.leadKey} />
+              ),
           })),
           { path: 'users', element: <Navigate to="/admin/kpi/total-users" replace /> },
           { path: 'portfolios', element: <Navigate to="/admin/kpi/active-portfolios" replace /> },

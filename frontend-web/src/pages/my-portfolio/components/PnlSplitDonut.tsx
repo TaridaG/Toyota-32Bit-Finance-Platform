@@ -55,6 +55,7 @@ type Props = {
   currencyFormat: Intl.NumberFormat
   pctFormat: Intl.NumberFormat
   sharePctDisplay: Intl.NumberFormat
+  hideAmounts?: boolean
 }
 
 export function PnlSplitDonut({
@@ -64,6 +65,7 @@ export function PnlSplitDonut({
   currencyFormat,
   pctFormat,
   sharePctDisplay,
+  hideAmounts = false,
 }: Props) {
   const { t } = useTranslation('portfolio')
   const [hovered, setHovered] = useState<number | null>(null)
@@ -159,10 +161,26 @@ export function PnlSplitDonut({
   const active = hovered != null ? segments[hovered] : null
 
   if (!hasData) {
+    const trackR = (R_OUT + R_IN) / 2
+    const trackW = R_OUT - R_IN
     return (
-      <p className="my-portfolio-pnl-donut-empty" style={{ textAlign: 'center', color: 'var(--color-text-soft)' }}>
-        {t('pnlDonut.empty')}
-      </p>
+      <div className="my-portfolio-pnl-donut-shell my-portfolio-pnl-donut-shell--empty">
+        <div className="my-portfolio-pnl-donut-visual-wrap">
+          <svg className="my-portfolio-pnl-donut-svg" viewBox="0 0 100 100" aria-hidden>
+            <circle
+              cx={CX}
+              cy={CY}
+              r={trackR}
+              fill="none"
+              stroke="rgba(148, 163, 184, 0.22)"
+              strokeWidth={trackW}
+            />
+          </svg>
+          <div className="my-portfolio-pnl-donut-center my-portfolio-pnl-donut-center--muted">
+            <span className="my-portfolio-pnl-donut-empty-caption">{t('pnlDonut.empty')}</span>
+          </div>
+        </div>
+      </div>
     )
   }
 
@@ -202,11 +220,20 @@ export function PnlSplitDonut({
           })}
         </svg>
         <div className="my-portfolio-pnl-donut-center">
-          <strong>{currencyFormat.format(totalPnl)}</strong>
-          <span>
-            {pctFormat.format(totalPnlPercent)}
-            %
-          </span>
+          {hideAmounts ? (
+            <>
+              <strong>••••</strong>
+              <span>•••</span>
+            </>
+          ) : (
+            <>
+              <strong>{currencyFormat.format(totalPnl)}</strong>
+              <span>
+                {pctFormat.format(totalPnlPercent)}
+                %
+              </span>
+            </>
+          )}
         </div>
       </div>
 
@@ -232,7 +259,7 @@ export function PnlSplitDonut({
         ))}
       </ul>
 
-      {active != null && hovered != null ? (
+      {active != null && hovered != null && !hideAmounts ? (
         <div
           className="my-portfolio-allocation-tooltip my-portfolio-pnl-donut-tooltip"
           style={{ left: tooltipPos.x + 16, top: tooltipPos.y + 16 }}
