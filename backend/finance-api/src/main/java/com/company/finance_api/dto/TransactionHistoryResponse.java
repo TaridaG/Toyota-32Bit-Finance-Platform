@@ -18,5 +18,7 @@ public record TransactionHistoryResponse(
         BigDecimal inputAmount,
         BigDecimal fxRateUsed,
         Instant acquiredAt,
-        Instant createdAt
+        Instant createdAt,
+        /** ISO currency for {@code price} / {@code totalAmount} (listing currency). */
+        String quoteCurrency
 ) {}

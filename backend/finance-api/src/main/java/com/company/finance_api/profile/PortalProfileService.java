@@ -79,6 +79,18 @@ public class PortalProfileService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
+    /** Admin-only: load another user's avatar bytes (same storage as portal). */
+    @Transactional(readOnly = true)
+    public byte[] readAvatarForAdminByUserId(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (user.getProfileAvatarUpdatedAt() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        return profileAvatarStorage.load(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
     @Transactional
     public PortalProfileResponse uploadAvatar(MultipartFile file) {
         if (file == null || file.isEmpty()) {

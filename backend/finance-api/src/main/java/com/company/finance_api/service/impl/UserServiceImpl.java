@@ -34,6 +34,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = new User(email, username);
+        user.setEmailVerified(true);
         User savedUser = userRepository.save(user);
 
         return savedUser;

@@ -42,5 +42,6 @@ class AdminPortalUserMetricsServiceTest {
         var dto = service.snapshot();
         assertThat(dto.totalUsers()).isEqualTo(1);
         assertThat(dto.newRegistrationsDailyLast7Utc()).hasSize(7);
+        assertThat(dto.userDeletionRequestsDailyLast7Utc()).hasSize(7);
     }
 }

@@ -11,6 +11,7 @@ import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRe
 import com.company.finance_api.repository.TransactionRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.security.CurrentUserResolver;
+import com.company.finance_api.portfolio.InstrumentListingCurrency;
 import com.company.finance_api.service.CurrencyConversionService;
 import com.company.finance_api.service.PortfolioTradeFlowService;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,6 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -66,7 +66,7 @@ public class PortfolioTradeFlowServiceImpl implements PortfolioTradeFlowService 
         List<PortfolioTradeFlowPointResponse> points = new ArrayList<>(txs.size());
         for (Transaction tx : txs) {
             Instrument ins = tx.getInstrument();
-            BigDecimal notional = notionalInTarget(tx, ins, normalizedCurrency);
+            BigDecimal notional = notionalInTarget(ins, tx.getTotalAmount(), normalizedCurrency);
             if (notional == null) {
                 continue;
             }
@@ -79,33 +79,23 @@ public class PortfolioTradeFlowServiceImpl implements PortfolioTradeFlowService 
         return new PortfolioTradeFlowResponse(normalizedCurrency, points);
     }
 
-    private BigDecimal notionalInTarget(Transaction tx, Instrument ins, String target) {
-        String normalizedTarget = currencyConversionService.normalizeCurrency(target);
-        if (tx.getInputAmount() != null && tx.getInputCurrency() != null && !tx.getInputCurrency().isBlank()) {
-            String ic = currencyConversionService.normalizeCurrency(tx.getInputCurrency());
-            if (ic.equals(normalizedTarget)) {
-                return tx.getInputAmount().setScale(2, RoundingMode.HALF_UP);
-            }
+    /**
+     * Uses {@code totalAmount} (price × quantity) in the instrument's quote currency, then converts
+     * to the dashboard currency. This matches {@link PortfolioOverviewServiceImpl} cost basis logic
+     * and avoids treating {@code inputAmount} (user wallet leg) as instrument notional when the
+     * two diverge or were stored inconsistently.
+     */
+    private BigDecimal notionalInTarget(Instrument ins, BigDecimal totalAmount, String target) {
+        if (totalAmount == null) {
+            return null;
         }
-        String insCur = resolveInstrumentCurrency(ins);
-        BigDecimal conv = currencyConversionService.convert(tx.getTotalAmount(), insCur, normalizedTarget);
+        String normalizedTarget = currencyConversionService.normalizeCurrency(target);
+        String insCur = InstrumentListingCurrency.resolve(ins);
+        BigDecimal conv = currencyConversionService.convert(totalAmount, insCur, normalizedTarget);
         if (conv == null) {
-            conv = tx.getTotalAmount();
+            return null;
         }
         return conv.setScale(2, RoundingMode.HALF_UP);
     }
 
-    private String resolveInstrumentCurrency(Instrument instrument) {
-        if (instrument.getExchange() != null && "BIST".equalsIgnoreCase(instrument.getExchange().name())) {
-            return "TRY";
-        }
-        String symbol = instrument.getSymbol() == null ? "" : instrument.getSymbol().toUpperCase(Locale.ROOT);
-        if (symbol.endsWith("TRY")) {
-            return "TRY";
-        }
-        if (symbol.endsWith("EUR")) {
-            return "EUR";
-        }
-        return "USD";
-    }
 }

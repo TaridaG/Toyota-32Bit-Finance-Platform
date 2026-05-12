@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long> {
@@ -76,4 +78,27 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long> 
             @Param("language") String language,
             Pageable pageable
     );
+
+    long countByActiveTrue();
+
+    @Query("select count(distinct n.sourceName) from NewsArticle n where n.active = true")
+    long countDistinctSourceNameByActiveTrue();
+
+    @Query("select count(n) from NewsArticle n where n.active = true and n.createdAt >= :from and n.createdAt < :to")
+    long countCreatedBetweenActiveTrue(@Param("from") Instant from, @Param("to") Instant to);
+
+    @Query("""
+            select count(n) from NewsArticle n
+            where n.active = true
+              and exists (
+                  select 1 from NewsArticleTranslation t
+                  where t.newsArticle = n and lower(t.languageCode) = lower(:lang)
+              )
+            """)
+    long countActiveWithTranslationLanguage(@Param("lang") String lang);
+
+    List<NewsArticle> findByActiveTrueOrderByPublishedAtDesc(Pageable pageable);
+
+    @Query("select count(n) from NewsArticle n where n.active = true and n.publishedAt >= :from and n.publishedAt < :to")
+    long countPublishedBetween(@Param("from") Instant from, @Param("to") Instant to);
 }

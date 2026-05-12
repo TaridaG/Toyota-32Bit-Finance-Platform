@@ -20,7 +20,6 @@ export function buildTradeFlowFromHistory(
   items: TransactionHistoryItem[],
   targetCurrency: string,
 ): PortfolioTradeFlow {
-  const tc = targetCurrency.trim().toUpperCase()
   const sorted = [...items].sort((a, b) => {
     const ta = Date.parse(a.createdAt)
     const tb = Date.parse(b.createdAt)
@@ -32,13 +31,9 @@ export function buildTradeFlowFromHistory(
     const side = row.type?.toUpperCase()
     if (side !== 'BUY' && side !== 'SELL') continue
 
-    const ic = row.inputCurrency?.trim().toUpperCase() ?? ''
-    let notional: number
-    if (ic === tc && row.inputAmount != null && Number.isFinite(row.inputAmount)) {
-      notional = row.inputAmount
-    } else {
-      notional = Number(row.totalAmount)
-    }
+    // Listing-currency notional (price × qty). Do not use inputAmount here: wallet currency can
+    // differ from display currency (e.g. GBP dashboard, TRY-paid XAUTRY) and this path has no FX.
+    const notional = Number(row.totalAmount)
     if (!Number.isFinite(notional)) continue
 
     const signed = side === 'BUY' ? notional : -notional
@@ -57,7 +52,7 @@ export function buildTradeFlowFromHistory(
  */
 export async function loadTradeFlowForPortfolio(portfolioId: number, currency: string): Promise<PortfolioTradeFlow> {
   try {
-    const data = await getPortfolioTradeFlow(portfolioId)
+    const data = await getPortfolioTradeFlow(portfolioId, currency)
     return normalizeTradeFlowApi(data, currency)
   } catch {
     try {

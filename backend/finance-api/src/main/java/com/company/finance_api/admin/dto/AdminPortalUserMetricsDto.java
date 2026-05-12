@@ -12,6 +12,8 @@ public record AdminPortalUserMetricsDto(
         long newUsersPrevious7Days,
         double newUsersWeekOverWeekPercent,
         List<Integer> newRegistrationsDailyLast7Utc,
+        /** Users who started account deletion in that UTC day (parallel to {@link #newRegistrationsDailyLast7Utc}). */
+        List<Integer> userDeletionRequestsDailyLast7Utc,
         Instant generatedAt
 ) {
 }

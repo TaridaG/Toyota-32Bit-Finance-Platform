@@ -5,6 +5,8 @@ import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.service.CurrencyConversionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,12 +20,35 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * FX conversion for portfolio and market views.
+ * <p>
+ * <b>Primary model (TRY hub):</b> TCMB-style instruments {@code USDTRY}, {@code EURTRY}, {@code GBPTRY},
+ * {@code JPYTRY}, {@code AEDTRY} quote <strong>TRY per 1 unit of the base currency</strong> (same convention
+ * as {@code USDTRY} in this codebase). Any supported display currency is reached as
+ * {@code amount → TRY → target}, so the UI’s {@code X-Currency} choice uses the same cross-rates everywhere.
+ * <p>
+ * <b>Fallback:</b> If the TRY bridge is incomplete, the legacy USD triangle ({@code EURUSD}, {@code GBPUSD},
+ * {@code JPYUSD}, {@code USDTRY}) is used. If both fail, {@link #convert} returns {@code null} (callers must
+ * not treat foreign-currency magnitudes as already converted).
+ */
 @Service
 public class CurrencyConversionServiceImpl implements CurrencyConversionService {
 
+    private static final Logger log = LoggerFactory.getLogger(CurrencyConversionServiceImpl.class);
+
     private static final String USD = "USD";
-    private static final Set<String> SUPPORTED = Set.of("USD", "EUR", "TRY", "GBP", "JPY");
-    private static final Set<String> REQUIRED_RATE_SYMBOLS = Set.of("USDTRY", "EURUSD", "GBPUSD", "JPYUSD");
+    /** Must match selectable UI currencies (see {@code frontend-web} preferences). */
+    private static final Set<String> SUPPORTED = Set.of("USD", "EUR", "TRY", "GBP", "JPY", "AED");
+
+    /**
+     * All symbols we attempt to load. TRY crosses are preferred; USD pairs back-fill when a TRY quote is missing.
+     */
+    private static final List<String> RATE_SYMBOL_LOAD_ORDER = List.of(
+            "USDTRY", "EURTRY", "GBPTRY", "JPYTRY", "AEDTRY",
+            "EURUSD", "GBPUSD", "JPYUSD"
+    );
+
     private static final Duration RATE_CACHE_TTL = Duration.ofSeconds(5);
     private static final List<PriceType> RATE_PRICE_TYPES = List.of(PriceType.FX_MID, PriceType.MARKET, PriceType.FUND_NAV);
 
@@ -53,16 +78,22 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
         }
 
         Map<String, BigDecimal> rates = getRatesSnapshot();
-        BigDecimal amountInUsd = toUsd(price, source, rates);
-        if (amountInUsd == null) {
-            return price;
+
+        BigDecimal viaTry = convertThroughTryHub(price, source, target, rates);
+        if (viaTry != null) {
+            return viaTry;
         }
 
-        BigDecimal converted = fromUsd(amountInUsd, target, rates);
-        if (converted == null) {
-            return price;
+        BigDecimal amountInUsd = toUsdLegacy(price, source, rates);
+        if (amountInUsd == null) {
+            log.debug("FX_CONVERT_FAIL no_try_hub no_usd_leg from={} to={}", source, target);
+            return null;
         }
-        return converted;
+        BigDecimal legacy = fromUsdLegacy(amountInUsd, target, rates);
+        if (legacy == null) {
+            log.debug("FX_CONVERT_FAIL legacy_to_null from={} to={}", source, target);
+        }
+        return legacy;
     }
 
     @Override
@@ -93,7 +124,7 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
                 return cachedRates;
             }
             Map<String, BigDecimal> next = new ConcurrentHashMap<>();
-            for (String symbol : REQUIRED_RATE_SYMBOLS) {
+            for (String symbol : RATE_SYMBOL_LOAD_ORDER) {
                 resolveLatestFxRate(symbol).ifPresent(rate -> {
                     if (rate.compareTo(BigDecimal.ZERO) > 0) {
                         next.put(symbol, rate);
@@ -123,37 +154,112 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
         return Optional.empty();
     }
 
-    private BigDecimal toUsd(BigDecimal amount, String from, Map<String, BigDecimal> rates) {
+    /**
+     * Converts using TRY as the intermediate numeraire (TRY per 1 unit of each fiat).
+     */
+    private BigDecimal convertThroughTryHub(BigDecimal amount, String from, String to, Map<String, BigDecimal> rates) {
+        BigDecimal inTry = toTryAmount(amount, from, rates);
+        if (inTry == null) {
+            return null;
+        }
+        return fromTryAmount(inTry, to, rates);
+    }
+
+    private BigDecimal toTryAmount(BigDecimal amount, String from, Map<String, BigDecimal> rates) {
         return switch (from) {
-            case "USD" ->
-                amount;
-            case "TRY" ->
-                divide(amount, rates.get("USDTRY"));
-            case "EUR" ->
-                multiply(amount, rates.get("EURUSD"));
-            case "GBP" ->
-                multiply(amount, rates.get("GBPUSD"));
-            case "JPY" ->
-                multiply(amount, rates.get("JPYUSD"));
-            default ->
-                null;
+            case "TRY" -> amount;
+            case "USD" -> multiply(amount, rates.get("USDTRY"));
+            case "EUR" -> firstNonNull(
+                    multiply(amount, rates.get("EURTRY")),
+                    multiplyChain(amount, rates.get("EURUSD"), rates.get("USDTRY"))
+            );
+            case "GBP" -> firstNonNull(
+                    multiply(amount, rates.get("GBPTRY")),
+                    multiplyChain(amount, rates.get("GBPUSD"), rates.get("USDTRY"))
+            );
+            case "JPY" -> firstNonNull(
+                    multiply(amount, rates.get("JPYTRY")),
+                    multiplyChain(amount, rates.get("JPYUSD"), rates.get("USDTRY"))
+            );
+            case "AED" -> multiply(amount, rates.get("AEDTRY"));
+            default -> null;
         };
     }
 
-    private BigDecimal fromUsd(BigDecimal usdAmount, String to, Map<String, BigDecimal> rates) {
+    private BigDecimal fromTryAmount(BigDecimal tryAmount, String to, Map<String, BigDecimal> rates) {
         return switch (to) {
-            case "USD" ->
-                usdAmount;
-            case "TRY" ->
-                multiply(usdAmount, rates.get("USDTRY"));
-            case "EUR" ->
-                divide(usdAmount, rates.get("EURUSD"));
-            case "GBP" ->
-                divide(usdAmount, rates.get("GBPUSD"));
-            case "JPY" ->
-                divide(usdAmount, rates.get("JPYUSD"));
-            default ->
-                null;
+            case "TRY" -> tryAmount;
+            case "USD" -> divide(tryAmount, rates.get("USDTRY"));
+            case "EUR" -> firstNonNull(
+                    divide(tryAmount, rates.get("EURTRY")),
+                    divide(divide(tryAmount, rates.get("USDTRY")), rates.get("EURUSD"))
+            );
+            case "GBP" -> firstNonNull(
+                    divide(tryAmount, rates.get("GBPTRY")),
+                    divide(divide(tryAmount, rates.get("USDTRY")), rates.get("GBPUSD"))
+            );
+            case "JPY" -> firstNonNull(
+                    divide(tryAmount, rates.get("JPYTRY")),
+                    divide(divide(tryAmount, rates.get("USDTRY")), rates.get("JPYUSD"))
+            );
+            case "AED" -> divide(tryAmount, rates.get("AEDTRY"));
+            default -> null;
+        };
+    }
+
+    private static BigDecimal firstNonNull(BigDecimal a, BigDecimal b) {
+        return a != null ? a : b;
+    }
+
+    private BigDecimal multiplyChain(BigDecimal amount, BigDecimal first, BigDecimal second) {
+        if (amount == null) {
+            return null;
+        }
+        return multiply(multiply(amount, first), second);
+    }
+
+    /** Legacy USD-centered paths (kept as fallback). */
+    private BigDecimal toUsdLegacy(BigDecimal amount, String from, Map<String, BigDecimal> rates) {
+        return switch (from) {
+            case "USD" -> amount;
+            case "TRY" -> divide(amount, rates.get("USDTRY"));
+            case "EUR" -> multiply(amount, rates.get("EURUSD"));
+            case "GBP" -> {
+                BigDecimal viaUsd = multiply(amount, rates.get("GBPUSD"));
+                if (viaUsd != null) {
+                    yield viaUsd;
+                }
+                BigDecimal tryLeg = multiply(amount, rates.get("GBPTRY"));
+                yield divide(tryLeg, rates.get("USDTRY"));
+            }
+            case "JPY" -> multiply(amount, rates.get("JPYUSD"));
+            case "AED" -> {
+                BigDecimal tryA = multiply(amount, rates.get("AEDTRY"));
+                yield divide(tryA, rates.get("USDTRY"));
+            }
+            default -> null;
+        };
+    }
+
+    private BigDecimal fromUsdLegacy(BigDecimal usdAmount, String to, Map<String, BigDecimal> rates) {
+        return switch (to) {
+            case "USD" -> usdAmount;
+            case "TRY" -> multiply(usdAmount, rates.get("USDTRY"));
+            case "EUR" -> divide(usdAmount, rates.get("EURUSD"));
+            case "GBP" -> {
+                BigDecimal viaUsd = divide(usdAmount, rates.get("GBPUSD"));
+                if (viaUsd != null) {
+                    yield viaUsd;
+                }
+                BigDecimal tryCross = multiply(usdAmount, rates.get("USDTRY"));
+                yield divide(tryCross, rates.get("GBPTRY"));
+            }
+            case "JPY" -> divide(usdAmount, rates.get("JPYUSD"));
+            case "AED" -> {
+                BigDecimal tryCross = multiply(usdAmount, rates.get("USDTRY"));
+                yield divide(tryCross, rates.get("AEDTRY"));
+            }
+            default -> null;
         };
     }
 

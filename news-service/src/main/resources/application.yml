@@ -29,7 +29,14 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${JWT_ISSUER_URI}
+          # Optional when using app.security.jwt.jwk-set-uri (Docker / multi-host iss).
+          issuer-uri: ${JWT_ISSUER_URI:}
+
+# In-cluster JWKS (see finance-api). When set, overrides issuer-only decoding so browser iss (:8085) matches.
+app:
+  security:
+    jwt:
+      jwk-set-uri: ${APP_SECURITY_JWT_JWK_SET_URI:}
 
 management:
   endpoints:

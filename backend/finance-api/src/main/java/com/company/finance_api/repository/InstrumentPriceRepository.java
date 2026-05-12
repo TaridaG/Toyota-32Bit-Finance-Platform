@@ -62,4 +62,8 @@ public interface InstrumentPriceRepository
             @Param("priceType") String priceType,
             @Param("target") Instant target
     );
+
+    /** Distinct instruments that received at least one price row in the window (market data “touch”). */
+    @Query("select count(distinct ip.instrument.id) from InstrumentPrice ip where ip.timestamp >= :from and ip.timestamp < :to")
+    long countDistinctInstrumentsWithPriceBetween(@Param("from") Instant from, @Param("to") Instant to);
 }

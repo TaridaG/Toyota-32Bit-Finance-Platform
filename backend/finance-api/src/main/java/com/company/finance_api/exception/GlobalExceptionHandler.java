@@ -11,10 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -68,18 +71,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(error));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleRuntime(RuntimeException ex) {
-        String msg = ex.getMessage();
-        if (!StringUtils.hasText(msg)) {
-            msg = ex.getClass().getSimpleName();
-        }
-        ApiError error = new ApiError("RUNTIME_ERROR", msg);
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(error));
-    }
-
     /**
      * Checked IO failures (often propagate past {@link RuntimeException} handlers), JDBC {@link SQLException}, etc.
      */
@@ -110,6 +101,86 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(error));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleIllegalState(IllegalStateException ex) {
+        ApiError error = new ApiError("CONFLICT_ERROR", ex.getMessage());
+        return ApiResponse.error(error);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNotFound(ResourceNotFoundException ex) {
+        return ApiResponse.error(
+                new ApiError("NOT_FOUND", ex.getMessage())
+        );
+    }
+
+    /**
+     * Spring MVC: no controller matched and static resource lookup failed (often an outdated
+     * deployment missing a newer route, or a wrong path). Must be handled before {@link RuntimeException}
+     * so we do not return HTTP 400 for a missing endpoint.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException ex) {
+        String path = ex.getResourcePath();
+        String msg = StringUtils.hasText(path)
+                ? "No handler or static resource for: " + path
+                : "No handler or static resource for this path";
+        ApiError error = new ApiError("NOT_FOUND", msg);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(error));
+    }
+
+    @ExceptionHandler(AccessDeniedBusinessException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<Void> handleAccessDenied(AccessDeniedBusinessException ex) {
+        return ApiResponse.error(
+                new ApiError("ACCESS_DENIED", ex.getMessage())
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation", ex);
+        ApiError error = new ApiError(
+                "DATA_INTEGRITY",
+                "The change conflicts with existing data (for example a foreign key). Try again after refreshing."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(error));
+    }
+
+    /**
+     * JPA / JDBC failures are {@link RuntimeException}s but must not be masked as generic HTTP 400
+     * (see {@link #handleRuntime}).
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataAccess(DataAccessException ex) {
+        log.error("Data access failure", ex);
+        Throwable root = ex.getMostSpecificCause();
+        String detail = root.getMessage();
+        if (!StringUtils.hasText(detail)) {
+            detail = ex.getMessage();
+        }
+        if (!StringUtils.hasText(detail)) {
+            detail = "Database access error";
+        }
+        ApiError error = new ApiError("DATA_ACCESS", detail);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.error(error));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRuntime(RuntimeException ex) {
+        log.warn("Runtime exception mapped to HTTP 400 (see handler order for more specific types)", ex);
+        String msg = ex.getMessage();
+        if (!StringUtils.hasText(msg)) {
+            msg = ex.getClass().getSimpleName();
+        }
+        ApiError error = new ApiError("RUNTIME_ERROR", msg);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(error));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
         log.error("Unhandled exception mapped to 500", ex);
@@ -123,27 +194,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(error));
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiResponse<Void> handleIllegalState(IllegalStateException ex) {
-        ApiError error = new ApiError("CONFLICT_ERROR", ex.getMessage());
-        return ApiResponse.error(error);
-    }
-    @ExceptionHandler(ResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiResponse<Void> handleNotFound(ResourceNotFoundException ex) {
-        return ApiResponse.error(
-                new ApiError("NOT_FOUND", ex.getMessage())
-        );
-    }
-
-    @ExceptionHandler(AccessDeniedBusinessException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ApiResponse<Void> handleAccessDenied(AccessDeniedBusinessException ex) {
-        return ApiResponse.error(
-                new ApiError("ACCESS_DENIED", ex.getMessage())
-        );
     }
 }

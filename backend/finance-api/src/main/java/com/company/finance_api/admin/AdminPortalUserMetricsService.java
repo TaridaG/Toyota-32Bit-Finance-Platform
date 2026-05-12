@@ -33,6 +33,7 @@ public class AdminPortalUserMetricsService {
         double wow = weekOverWeekPercent(last7, prev7);
 
         List<Integer> daily = dailyNewRegistrationsUtcLast7Days(now);
+        List<Integer> deletionDaily = dailyDeletionRequestsUtcLast7Days(now);
 
         return new AdminPortalUserMetricsDto(
                 totalUsers,
@@ -40,6 +41,7 @@ public class AdminPortalUserMetricsService {
                 prev7,
                 wow,
                 daily,
+                deletionDaily,
                 now
         );
     }
@@ -59,6 +61,18 @@ public class AdminPortalUserMetricsService {
             Instant start = d.atStartOfDay(ZoneOffset.UTC).toInstant();
             Instant end = start.plus(1, ChronoUnit.DAYS);
             out.add((int) Math.min(Integer.MAX_VALUE, userRepository.countCreatedInRangeExcludingPendingDeletion(start, end)));
+        }
+        return out;
+    }
+
+    private List<Integer> dailyDeletionRequestsUtcLast7Days(Instant now) {
+        LocalDate todayUtc = LocalDate.ofInstant(now, ZoneOffset.UTC);
+        List<Integer> out = new ArrayList<>(7);
+        for (int i = 6; i >= 0; i--) {
+            LocalDate d = todayUtc.minusDays(i);
+            Instant start = d.atStartOfDay(ZoneOffset.UTC).toInstant();
+            Instant end = start.plus(1, ChronoUnit.DAYS);
+            out.add((int) Math.min(Integer.MAX_VALUE, userRepository.countDeletionRequestedInRange(start, end)));
         }
         return out;
     }

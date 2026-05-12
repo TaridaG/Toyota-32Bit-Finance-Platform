@@ -6,6 +6,7 @@ import com.company.finance_api.portfolio.external.dto.CreateExternalPositionRequ
 import com.company.finance_api.portfolio.external.dto.ExternalPortfolioAllocationResponse;
 import com.company.finance_api.portfolio.external.dto.ExternalPortfolioResponse;
 import com.company.finance_api.portfolio.external.dto.ExternalPortfolioSummaryResponse;
+import com.company.finance_api.portfolio.external.dto.PatchExternalPortfolioRequest;
 import com.company.finance_api.portfolio.external.service.ExternalPortfolioService;
 import com.company.finance_api.portfolio.external.service.ExternalPortfolioValuationService;
 import com.company.finance_api.security.CurrentUserResolver;
@@ -37,6 +38,28 @@ public class ExternalPortfolioController {
     public ApiResponse<List<ExternalPortfolioResponse>> list() {
         UUID userId = currentUserResolver.getCurrentUserId();
         return ApiResponse.success(service.getUserPortfolios(userId));
+    }
+
+    @GetMapping("/{portfolioId}")
+    public ApiResponse<ExternalPortfolioResponse> getOne(@PathVariable Long portfolioId) {
+        UUID userId = currentUserResolver.getCurrentUserId();
+        return ApiResponse.success(service.getPortfolio(userId, portfolioId));
+    }
+
+    @PatchMapping("/{portfolioId}")
+    public ApiResponse<ExternalPortfolioResponse> patch(
+            @PathVariable Long portfolioId,
+            @Valid @RequestBody PatchExternalPortfolioRequest request
+    ) {
+        UUID userId = currentUserResolver.getCurrentUserId();
+        return ApiResponse.success(service.patchPortfolio(userId, portfolioId, request));
+    }
+
+    @DeleteMapping("/{portfolioId}")
+    public ApiResponse<Void> delete(@PathVariable Long portfolioId) {
+        UUID userId = currentUserResolver.getCurrentUserId();
+        service.deletePortfolio(userId, portfolioId);
+        return ApiResponse.success(null);
     }
 
     @PostMapping("/{portfolioId}/positions")
