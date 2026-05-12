@@ -21,7 +21,7 @@ export const ADMIN_SECTION_ROUTES = [
   },
   {
     path: 'kpi/news-sources',
-    titleKey: 'dashboard.kpi.newsSources',
+    titleKey: 'dashboard.kpi.newsArticles',
     leadKey: 'sectionPages.kpiNewsSources',
   },
   {
@@ -33,26 +33,6 @@ export const ADMIN_SECTION_ROUTES = [
     path: 'kpi/avg-latency',
     titleKey: 'dashboard.kpi.avgLatency',
     leadKey: 'sectionPages.kpiAvgLatency',
-  },
-  {
-    path: 'dashboard/data-flow',
-    titleKey: 'dashboard.dataFlow.title',
-    leadKey: 'sectionPages.dataFlow',
-  },
-  {
-    path: 'dashboard/latency-summary',
-    titleKey: 'dashboard.latency.title',
-    leadKey: 'sectionPages.latencySummary',
-  },
-  {
-    path: 'dashboard/data-streams',
-    titleKey: 'dashboard.tables.streamsTitle',
-    leadKey: 'sectionPages.dataStreamsTable',
-  },
-  {
-    path: 'dashboard/news-streams',
-    titleKey: 'dashboard.tables.newsTitle',
-    leadKey: 'sectionPages.newsStreamsTable',
   },
 ] as const
 
@@ -78,10 +58,3 @@ const KPI_PATH_BY_ID: Record<string, string> = {
 export function adminKpiSectionPath(kpiId: string): string | undefined {
   return KPI_PATH_BY_ID[kpiId]
 }
-
-export const ADMIN_DASH_SECTION_LINKS = {
-  dataFlow: '/admin/dashboard/data-flow',
-  latencySummary: '/admin/dashboard/latency-summary',
-  dataStreams: '/admin/dashboard/data-streams',
-  newsStreams: '/admin/dashboard/news-streams',
-} as const

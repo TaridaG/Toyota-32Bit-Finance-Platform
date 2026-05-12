@@ -119,12 +119,16 @@ export async function ensureFreshAccessToken(minComfortableTtlMs = 600_000): Pro
   return expMs > now
 }
 
+function isPublicNewsCatalogUrl(url: string): boolean {
+  return url.includes('/api/news') && !url.includes('/api/news/admin')
+}
+
 /** 401 on these URLs should not force logout (public catalog / auth endpoints). */
 function isPublicDataOrAuthUrl(url: string): boolean {
   return (
     url.includes('/api/public/') ||
     url.includes('/api/market') ||
-    url.includes('/api/news') ||
+    isPublicNewsCatalogUrl(url) ||
     url.includes('/api/instruments') ||
     url.includes('/api/analytics')
   )
@@ -149,7 +153,7 @@ function isPublicCatalogGetRequest(config: InternalAxiosRequestConfig): boolean 
   const path = (config.baseURL ?? '') + (config.url ?? '')
   return (
     path.includes('/api/market') ||
-    path.includes('/api/news') ||
+    isPublicNewsCatalogUrl(path) ||
     path.includes('/api/instruments') ||
     path.includes('/api/analytics')
   )

@@ -73,8 +73,10 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        // Public news stream endpoints are allowed for guest users.
-        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/news")) {
+        // Public news stream endpoints are allowed for guest users (not admin metrics / ingest).
+        if ("GET".equalsIgnoreCase(request.getMethod())
+                && path.startsWith("/api/news")
+                && !path.startsWith("/api/news/admin")) {
             filterChain.doFilter(request, response);
             return;
         }

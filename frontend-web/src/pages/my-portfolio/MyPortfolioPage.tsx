@@ -5,12 +5,14 @@ import { fetchMarketOverview } from '../../features/markets/api/marketService'
 import {
   buyTrade,
   createPortfolio,
+  deletePortfolio,
   getInstrumentPriceCoverage,
   getMyPortfolioOverview,
   getPortfolioSnapshots,
   getPortfolios,
   getTransactionHistory,
   getTransactionHistoryPage,
+  patchPortfolioAmountsHidden,
   previewTrade,
 } from '../../features/portfolio/api/portfolioApi'
 import type {
@@ -26,12 +28,7 @@ import type {
 } from '../../shared/types/portfolio'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
 import { PnlSplitDonut } from './components/PnlSplitDonut'
-import {
-  PortfolioValueHistoryChart,
-  VALUE_CHART_RANGES,
-  valueChartRangeLabel,
-  type ValueChartRange,
-} from './components/PortfolioValueHistoryChart'
+import { PortfolioValueHistoryChart } from './components/PortfolioValueHistoryChart'
 import { TradeFlowHistoryChart, tradeFlowPeriodTotals } from './components/TradeFlowHistoryChart'
 import { loadTradeFlowForPortfolio } from '../../features/portfolio/lib/loadTradeFlowForPortfolio'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
@@ -43,6 +40,11 @@ const MyPortfolioWatchlistSection = lazy(async () => {
 
 const MAX_USER_PORTFOLIOS = 5
 const CREATE_PORTFOLIO_SELECT_VALUE = '__create_portfolio__'
+const MASKED_MONEY_LABEL = '••••'
+
+function maskedNumberFormatShim(): Intl.NumberFormat {
+  return { format: () => MASKED_MONEY_LABEL } as unknown as Intl.NumberFormat
+}
 
 const DOD_EPS = 1e-6
 
@@ -57,6 +59,22 @@ function parseApiDecimal(value: unknown, fallback: number): number {
   }
   const n = Number(value)
   return Number.isFinite(n) ? n : fallback
+}
+
+/** Listing currency for price/totalAmount when API omits quoteCurrency (older payloads). */
+function inferInstrumentQuoteCurrency(symbol: string): 'TRY' | 'USD' | 'EUR' {
+  const s = symbol.trim().toUpperCase()
+  if (s.endsWith('TRY')) return 'TRY'
+  if (s.endsWith('EUR')) return 'EUR'
+  return 'USD'
+}
+
+/** Listing quote bucket for filtering instruments to a portfolio base (TRY vs USD). */
+function marketOptionListingQuote(opt: MarketOption): 'TRY' | 'USD' {
+  const n = (opt.nativeQuote ?? '').trim().toUpperCase()
+  if (n === 'TRY') return 'TRY'
+  if (n === 'USD' || n === 'EUR') return 'USD'
+  return inferInstrumentQuoteCurrency(opt.symbol) === 'TRY' ? 'TRY' : 'USD'
 }
 
 const RECENT_TX_PREVIEW_SIZE = 4
@@ -487,8 +505,13 @@ export function MyPortfolioPage() {
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null)
   const [showCreatePortfolioModal, setShowCreatePortfolioModal] = useState(false)
   const [newPortfolioName, setNewPortfolioName] = useState('')
+  const [newPortfolioBaseCurrency, setNewPortfolioBaseCurrency] = useState<'TRY' | 'USD'>('TRY')
   const [portfolioActionLoading, setPortfolioActionLoading] = useState(false)
   const [portfolioActionError, setPortfolioActionError] = useState<string | null>(null)
+  const [portfolioSettingsError, setPortfolioSettingsError] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; name: string } | null>(null)
+  const [deletePortfolioSubmitting, setDeletePortfolioSubmitting] = useState(false)
+  const [amountsHiddenSaving, setAmountsHiddenSaving] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeSection, setActiveSection] = useState<string>('dashboard')
   const [marketOptions, setMarketOptions] = useState<MarketOption[]>([])
@@ -521,8 +544,6 @@ export function MyPortfolioPage() {
     toDate: '',
   })
   const [overview, setOverview] = useState<PortfolioOverview | null>(null)
-  const [valueChartRange, setValueChartRange] = useState<ValueChartRange>('3m')
-  const [tradeFlowChartRange, setTradeFlowChartRange] = useState<ValueChartRange>('3m')
   const [tradeFlow, setTradeFlow] = useState<PortfolioTradeFlow | null>(null)
   const [tradeFlowHydrated, setTradeFlowHydrated] = useState(false)
   const [recentTxPreview, setRecentTxPreview] = useState<TransactionHistoryItem[]>([])
@@ -534,13 +555,11 @@ export function MyPortfolioPage() {
   const [instrumentQuery, setInstrumentQuery] = useState('')
   const [purchaseMode, setPurchaseMode] = useState<PurchaseMode>('NOW')
   const [inputMode, setInputMode] = useState<TradeInputMode>('LOTS')
-  const [inputCurrency, setInputCurrency] = useState<'TRY' | 'USD' | 'EUR'>('USD')
   const [lots, setLots] = useState('1')
   const [amount, setAmount] = useState('')
   const [acquiredAt, setAcquiredAt] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
   const [unitPriceUsed, setUnitPriceUsed] = useState<number | null>(null)
-  const [fxRateUsed, setFxRateUsed] = useState<number | null>(null)
   const [manualUnitPriceRequired, setManualUnitPriceRequired] = useState(false)
   const [firstAvailableDate, setFirstAvailableDate] = useState<string | null>(null)
   const [lastEditedField, setLastEditedField] = useState<'lots' | 'amount'>('lots')
@@ -615,11 +634,39 @@ export function MyPortfolioPage() {
     [i18n.language],
   )
 
+  const selectedPortfolio = useMemo(
+    () =>
+      selectedPortfolioId != null ? portfolios.find((p) => p.id === selectedPortfolioId) ?? null : null,
+    [portfolios, selectedPortfolioId],
+  )
+  const hideMoney = selectedPortfolio?.amountsHidden === true
+
+  /** Valuation and instrument catalog for the selected portfolio (fallback: app preference). */
+  const valuationCurrency = useMemo((): 'TRY' | 'USD' => {
+    const bc = selectedPortfolio?.baseCurrency?.trim().toUpperCase()
+    if (bc === 'TRY') return 'TRY'
+    if (bc === 'USD') return 'USD'
+    return displayCurrency === 'TRY' ? 'TRY' : 'USD'
+  }, [selectedPortfolio, displayCurrency])
+
+  const displayDashboardCurrencyFormat = useMemo(
+    () => (hideMoney ? maskedNumberFormatShim() : dashboardCurrencyFormat),
+    [hideMoney, dashboardCurrencyFormat],
+  )
+
+  const displayDashboardDayChangeFormat = useMemo(
+    () => (hideMoney ? maskedNumberFormatShim() : dashboardDayChangeFormat),
+    [hideMoney, dashboardDayChangeFormat],
+  )
+
   const formatTxMoney = useCallback(
     (row: TransactionHistoryItem) => {
-      const rawCur = row.inputCurrency ?? dashboardCurrency
+      if (hideMoney) return MASKED_MONEY_LABEL
+      const qc = row.quoteCurrency?.trim().toUpperCase()
+      const rawCur =
+        qc === 'TRY' || qc === 'USD' || qc === 'EUR' ? qc : inferInstrumentQuoteCurrency(row.instrumentSymbol)
       const cur = rawCur === 'TRY' || rawCur === 'USD' || rawCur === 'EUR' ? rawCur : dashboardCurrency
-      const amt = parseApiDecimal(row.inputAmount ?? row.totalAmount, 0)
+      const amt = parseApiDecimal(row.totalAmount, 0)
       try {
         return new Intl.NumberFormat(i18n.language, {
           style: 'currency',
@@ -634,7 +681,7 @@ export function MyPortfolioPage() {
         }).format(amt)
       }
     },
-    [i18n.language, dashboardCurrency],
+    [hideMoney, i18n.language, dashboardCurrency],
   )
 
   const distribution = useMemo(() => buildPortfolioDistribution(overview), [overview])
@@ -676,10 +723,8 @@ export function MyPortfolioPage() {
 
   const categoryDonutRows = useMemo(() => buildCategoryDonutRows(overview, t), [overview, t])
 
-  const tradeFlowTotals = useMemo(
-    () => tradeFlowPeriodTotals(tradeFlow?.points ?? [], tradeFlowChartRange),
-    [tradeFlow, tradeFlowChartRange],
-  )
+  /** Üstteki alım/satım özetleri: sabit son 1 ay penceresi (aralık butonları kaldırıldı). */
+  const tradeFlowTotals = useMemo(() => tradeFlowPeriodTotals(tradeFlow?.points ?? [], '1m'), [tradeFlow])
 
   /** Satım − alım oranı (alım bazlı). Satım fazlaysa pozitif (+, yeşil); alım fazlaysa negatif (kırmızı). */
   const tradeFlowFark = useMemo(() => {
@@ -733,7 +778,7 @@ export function MyPortfolioPage() {
       size: 200,
       category: 'all',
       sort: 'symbol,asc',
-      displayCurrency: 'USD',
+      displayCurrency: valuationCurrency,
     })
       .then((res) => {
         const options: MarketOption[] = res.content
@@ -745,12 +790,30 @@ export function MyPortfolioPage() {
             nativeQuote: row.nativeQuote ?? null,
           }))
         setMarketOptions(options)
-        if (!selectedInstrumentId && options.length > 0) {
-          setSelectedInstrumentId(options[0].instrumentId)
-        }
       })
       .finally(() => setMarketLoading(false))
-  }, [activeSection, selectedInstrumentId])
+  }, [activeSection, valuationCurrency])
+
+  const selectedInstrument = useMemo(
+    () => marketOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null,
+    [marketOptions, selectedInstrumentId],
+  )
+
+  /** BIST / TRY-kotasyonlu FX (nativeQuote TRY) → ödeme TRY; ABD hisse, kripto, USD-FX → USD (backend fiyat ekseni). */
+  const tradePaymentCurrency = useMemo((): 'TRY' | 'USD' => {
+    return selectedInstrument?.nativeQuote === 'TRY' ? 'TRY' : 'USD'
+  }, [selectedInstrument])
+
+  /** Alım önizlemesi: birim fiyat ve tutar enstrüman kotasyonunda (BIST → TRY). */
+  const tradeQuoteCurrencyFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: tradePaymentCurrency,
+        maximumFractionDigits: 2,
+      }),
+    [i18n.language, tradePaymentCurrency],
+  )
 
   const loadHistoryPage = useCallback(
     async (page: number, filters: TransactionHistoryFilters) => {
@@ -863,8 +926,8 @@ export function MyPortfolioPage() {
     if (activeSection !== 'dashboard' && activeSection !== 'markets' && activeSection !== 'allocation') {
       return
     }
-    void getMyPortfolioOverview(selectedPortfolioId).then((data) => setOverview(data)).catch(() => setOverview(null))
-  }, [activeSection, selectedPortfolioId, displayCurrency])
+    void getMyPortfolioOverview(selectedPortfolioId, valuationCurrency).then((data) => setOverview(data)).catch(() => setOverview(null))
+  }, [activeSection, selectedPortfolioId, valuationCurrency])
 
   useEffect(() => {
     if (selectedPortfolioId == null) {
@@ -880,7 +943,7 @@ export function MyPortfolioPage() {
     let cancelled = false
     setTradeFlowHydrated(false)
     setTradeFlow(null)
-    void loadTradeFlowForPortfolio(selectedPortfolioId, displayCurrency).then((flow) => {
+    void loadTradeFlowForPortfolio(selectedPortfolioId, valuationCurrency).then((flow) => {
       if (!cancelled) {
         setTradeFlow(flow)
         setTradeFlowHydrated(true)
@@ -889,7 +952,7 @@ export function MyPortfolioPage() {
     return () => {
       cancelled = true
     }
-  }, [activeSection, selectedPortfolioId, displayCurrency])
+  }, [activeSection, selectedPortfolioId, valuationCurrency])
 
   useEffect(() => {
     if (selectedPortfolioId == null || activeSection !== 'dashboard') {
@@ -929,7 +992,7 @@ export function MyPortfolioPage() {
       size: 200,
       category: 'all',
       query: selected.symbol,
-      displayCurrency: 'USD',
+      displayCurrency: valuationCurrency,
     })
       .then((page) => {
         const row = page.content.find((item) => item.symbol === selected.symbol)
@@ -950,7 +1013,7 @@ export function MyPortfolioPage() {
           change1Y: null,
         })
       })
-  }, [activeSection, selectedInstrumentId, marketOptions])
+  }, [activeSection, selectedInstrumentId, marketOptions, valuationCurrency])
 
   useEffect(() => {
     if (activeSection !== 'markets' || selectedInstrumentId == null) return
@@ -979,7 +1042,7 @@ export function MyPortfolioPage() {
             portfolioId: selectedPortfolioId ?? undefined,
             inputMode,
             lots: Number.isFinite(lotsNumber) && lotsNumber > 0 ? lotsNumber : undefined,
-            inputCurrency,
+            inputCurrency: tradePaymentCurrency,
             purchaseMode,
             acquiredAt: normalizedAcquiredAt,
             unitPrice: purchaseMode === 'PAST' && unitPrice ? Number(unitPrice) : undefined,
@@ -989,7 +1052,7 @@ export function MyPortfolioPage() {
             portfolioId: selectedPortfolioId ?? undefined,
             inputMode,
             amount: Number.isFinite(amountNumber) && amountNumber > 0 ? amountNumber : undefined,
-            inputCurrency,
+            inputCurrency: tradePaymentCurrency,
             purchaseMode,
             acquiredAt: normalizedAcquiredAt,
             unitPrice: purchaseMode === 'PAST' && unitPrice ? Number(unitPrice) : undefined,
@@ -1005,13 +1068,12 @@ export function MyPortfolioPage() {
           purchaseMode,
           inputMode: 'LOTS',
           lots: 1,
-          inputCurrency,
+          inputCurrency: tradePaymentCurrency,
           acquiredAt: normalizedAcquiredAt,
           unitPrice: unitPrice ? Number(unitPrice) : undefined,
         })
           .then((preview) => {
             setUnitPriceUsed(preview.unitPriceUsed)
-            setFxRateUsed(preview.fxRateUsed)
             if (!unitPrice) {
               setUnitPrice(String(preview.unitPriceUsed))
             }
@@ -1039,7 +1101,6 @@ export function MyPortfolioPage() {
       void previewTrade(payload)
         .then((preview) => {
           setUnitPriceUsed(preview.unitPriceUsed)
-          setFxRateUsed(preview.fxRateUsed)
           if (purchaseMode === 'PAST' && !unitPrice) {
             setUnitPrice(String(preview.unitPriceUsed))
           }
@@ -1065,17 +1126,38 @@ export function MyPortfolioPage() {
         })
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [activeSection, selectedInstrumentId, selectedPortfolioId, inputMode, lots, amount, inputCurrency, purchaseMode, acquiredAt, unitPrice, lastEditedField])
+  }, [
+    activeSection,
+    selectedInstrumentId,
+    selectedPortfolioId,
+    inputMode,
+    lots,
+    amount,
+    tradePaymentCurrency,
+    purchaseMode,
+    acquiredAt,
+    unitPrice,
+    lastEditedField,
+  ])
 
-  const selectedInstrument = useMemo(
-    () => marketOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null,
-    [marketOptions, selectedInstrumentId],
-  )
   const filteredMarketOptions = useMemo(() => {
+    const quoteTarget = valuationCurrency
+    const byQuote = marketOptions.filter((item) => marketOptionListingQuote(item) === quoteTarget)
     const q = instrumentQuery.trim().toLowerCase()
-    if (!q) return marketOptions
-    return marketOptions.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
-  }, [instrumentQuery, marketOptions])
+    if (!q) return byQuote
+    return byQuote.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
+  }, [instrumentQuery, marketOptions, valuationCurrency])
+
+  useEffect(() => {
+    if (activeSection !== 'markets') return
+    if (filteredMarketOptions.length === 0) {
+      setSelectedInstrumentId(null)
+      return
+    }
+    if (selectedInstrumentId == null || !filteredMarketOptions.some((o) => o.instrumentId === selectedInstrumentId)) {
+      setSelectedInstrumentId(filteredMarketOptions[0].instrumentId)
+    }
+  }, [activeSection, filteredMarketOptions, selectedInstrumentId])
   const parsedAmount = Number(amount)
   const parsedLots = Number(lots)
   const previewTotal = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
@@ -1085,7 +1167,7 @@ export function MyPortfolioPage() {
     const baseTotal = Number(overview?.totalValue ?? 0)
     const selectedSymbol = selectedInstrument?.symbol ?? ''
     const pendingValue =
-      inputCurrency === (overview?.currency ?? 'USD')
+      tradePaymentCurrency === (overview?.currency ?? 'USD')
         ? previewTotal
         : unitPriceUsed != null && previewLots > 0
           ? unitPriceUsed * previewLots
@@ -1104,7 +1186,7 @@ export function MyPortfolioPage() {
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
-  }, [overview, selectedInstrument, previewTotal, previewLots, inputCurrency, unitPriceUsed])
+  }, [overview, selectedInstrument, previewTotal, previewLots, tradePaymentCurrency, unitPriceUsed])
 
   const submitTrade = async () => {
     if (selectedInstrumentId == null || selectedPortfolioId == null) {
@@ -1120,7 +1202,7 @@ export function MyPortfolioPage() {
             portfolioId: selectedPortfolioId ?? undefined,
             inputMode,
             lots: Number(lots),
-            inputCurrency,
+            inputCurrency: tradePaymentCurrency,
             purchaseMode,
             acquiredAt: normalizedAcquiredAt,
             unitPrice: purchaseMode === 'PAST' ? Number(unitPrice) : undefined,
@@ -1130,7 +1212,7 @@ export function MyPortfolioPage() {
             portfolioId: selectedPortfolioId ?? undefined,
             inputMode,
             amount: Number(amount),
-            inputCurrency,
+            inputCurrency: tradePaymentCurrency,
             purchaseMode,
             acquiredAt: normalizedAcquiredAt,
             unitPrice: purchaseMode === 'PAST' ? Number(unitPrice) : undefined,
@@ -1149,9 +1231,9 @@ export function MyPortfolioPage() {
       setTradeSuccess('Islem basariyla kaydedildi.')
       setIsPreviewStep(false)
       await loadHistoryPage(0, appliedHistoryFilters)
-      const updatedOverview = await getMyPortfolioOverview(selectedPortfolioId)
+      const updatedOverview = await getMyPortfolioOverview(selectedPortfolioId, valuationCurrency)
       setOverview(updatedOverview)
-      setTradeFlow(await loadTradeFlowForPortfolio(selectedPortfolioId, displayCurrency))
+      setTradeFlow(await loadTradeFlowForPortfolio(selectedPortfolioId, valuationCurrency))
     } catch (error) {
       const message = extractApiErrorMessage(error)
       setTradeError(message || 'Islem kaydedilemedi.')
@@ -1167,6 +1249,7 @@ export function MyPortfolioPage() {
     }
     setPortfolioActionError(null)
     setNewPortfolioName('')
+    setNewPortfolioBaseCurrency('TRY')
     setShowCreatePortfolioModal(true)
   }
 
@@ -1183,7 +1266,7 @@ export function MyPortfolioPage() {
     setPortfolioActionLoading(true)
     setPortfolioActionError(null)
     try {
-      const created = await createPortfolio({ name })
+      const created = await createPortfolio({ name, baseCurrency: newPortfolioBaseCurrency })
       await refreshPortfolios()
       setSelectedPortfolioId(created.id)
       setShowCreatePortfolioModal(false)
@@ -1194,6 +1277,59 @@ export function MyPortfolioPage() {
     }
   }
 
+  const settingsPortfolioCreatedDisplay = useMemo(() => {
+    const raw = selectedPortfolio?.createdAt
+    if (!raw) return null
+    try {
+      const d = new Date(raw.includes('T') ? raw : `${raw}Z`)
+      if (Number.isNaN(d.getTime())) return raw
+      return d.toLocaleString(i18n.language, { dateStyle: 'long', timeStyle: 'short' })
+    } catch {
+      return raw
+    }
+  }, [selectedPortfolio?.createdAt, i18n.language])
+
+  useEffect(() => {
+    if (activeSection !== 'settings') {
+      setPortfolioSettingsError(null)
+    }
+  }, [activeSection])
+
+  useEffect(() => {
+    if (deleteConfirm && selectedPortfolioId != null && deleteConfirm.id !== selectedPortfolioId) {
+      setDeleteConfirm(null)
+    }
+  }, [deleteConfirm, selectedPortfolioId])
+
+  const handleToggleAmountsHidden = async (portfolioId: number, next: boolean) => {
+    setAmountsHiddenSaving(true)
+    setPortfolioSettingsError(null)
+    try {
+      await patchPortfolioAmountsHidden(portfolioId, next)
+      await refreshPortfolios()
+    } catch (error) {
+      setPortfolioSettingsError(extractApiErrorMessage(error) || t('settingsPage.saveAmountsHiddenError'))
+    } finally {
+      setAmountsHiddenSaving(false)
+    }
+  }
+
+  const handleConfirmDeletePortfolio = async () => {
+    const target = deleteConfirm
+    if (!target) return
+    setDeletePortfolioSubmitting(true)
+    setPortfolioSettingsError(null)
+    try {
+      await deletePortfolio(target.id)
+      setDeleteConfirm(null)
+      setActiveSection('dashboard')
+      await refreshPortfolios()
+    } catch (error) {
+      setPortfolioSettingsError(extractApiErrorMessage(error) || t('settingsPage.deletePortfolioError'))
+    } finally {
+      setDeletePortfolioSubmitting(false)
+    }
+  }
 
   return (
     <section className="my-portfolio-page">
@@ -1239,7 +1375,9 @@ export function MyPortfolioPage() {
                       </option>
                     ))}
                     {portfolios.length < MAX_USER_PORTFOLIOS ? (
-                      <option value={CREATE_PORTFOLIO_SELECT_VALUE}>{t('sidebar.addPortfolioOption')}</option>
+                      <option value={CREATE_PORTFOLIO_SELECT_VALUE}>
+                        {portfolios.length === 0 ? t('sidebar.addPortfolioOptionFirst') : t('sidebar.addPortfolioOptionMore')}
+                      </option>
                     ) : null}
                   </select>
                 </>
@@ -1303,6 +1441,11 @@ export function MyPortfolioPage() {
             <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
               <h2 className="my-portfolio-trade-title">Portfoye Yeni Enstruman Ekle</h2>
               <p className="my-portfolio-trade-subtitle">Enstruman sec, lot veya tutar gir, aninda maliyet/lot hesapla.</p>
+              {selectedPortfolioId != null && selectedPortfolio ? (
+                <p className="my-portfolio-trade-listing-hint" role="note">
+                  {valuationCurrency === 'TRY' ? t('marketsAdd.listingHintTry') : t('marketsAdd.listingHintUsd')}
+                </p>
+              ) : null}
 
               <div className={`my-portfolio-trade-shell${isPreviewStep ? ' is-preview' : ''}`}>
                 <div className="my-portfolio-trade-form-panel">
@@ -1427,16 +1570,11 @@ export function MyPortfolioPage() {
 
                     <label className="my-portfolio-trade-field">
                       <span>Para Birimi</span>
-                      <select value={inputCurrency} onChange={(event) => setInputCurrency(event.target.value as 'TRY' | 'USD' | 'EUR')} disabled={isPreviewStep}>
-                        <option value="TRY">TRY</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                      </select>
-                    </label>
-
-                    <label className="my-portfolio-trade-field">
-                      <span>Kur</span>
-                      <input value={fxRateUsed == null ? '' : fxRateUsed.toFixed(6)} readOnly />
+                      <input
+                        readOnly
+                        value={tradePaymentCurrency === 'TRY' ? 'TRY (TL)' : 'USD'}
+                        title="BIST ve TRY kotasyonlu varliklarda TL; digerlerinde USD — sistem fiyat eksenine uyar."
+                      />
                     </label>
 
                     <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
@@ -1462,7 +1600,7 @@ export function MyPortfolioPage() {
                             setAcquiredAt(event.target.value)
                             setUnitPrice('')
                             setManualUnitPriceRequired(false)
-                          setUnitPriceUsed(null)
+                            setUnitPriceUsed(null)
                           }}
                           disabled={isPreviewStep}
                         />
@@ -1480,7 +1618,10 @@ export function MyPortfolioPage() {
                       <p><span>Lot</span><strong>{lots || '-'}</strong></p>
                       <p><span>Toplam Tutar</span><strong>{amount || '-'}</strong></p>
                       <p><span>Alim Fiyati</span><strong>{unitPriceUsed ?? unitPrice ?? '-'}</strong></p>
-                      <p><span>Para Birimi</span><strong>{inputCurrency}</strong></p>
+                      <p>
+                        <span>Para Birimi</span>
+                        <strong>{tradePaymentCurrency === 'TRY' ? 'TRY (TL)' : 'USD'}</strong>
+                      </p>
                       {purchaseMode === 'PAST' ? <p><span>Alim Tarihi</span><strong>{acquiredAt || '-'}</strong></p> : null}
                     </div>
                   ) : null}
@@ -1519,8 +1660,8 @@ export function MyPortfolioPage() {
                   <h4>Portfoy Dagilimi</h4>
                   <div className="my-portfolio-preview-ring" />
                   <div className="my-portfolio-preview-stats">
-                    <div><span>Toplam Tutar</span><strong>{currencyFormat.format(previewTotal || 0)}</strong></div>
-                    <div><span>Maliyet / Lot</span><strong>{unitPriceUsed == null ? '—' : currencyFormat.format(unitPriceUsed)}</strong></div>
+                    <div><span>Toplam Tutar</span><strong>{tradeQuoteCurrencyFormat.format(previewTotal || 0)}</strong></div>
+                    <div><span>Maliyet / Lot</span><strong>{unitPriceUsed == null ? '—' : tradeQuoteCurrencyFormat.format(unitPriceUsed)}</strong></div>
                     <div><span>Toplam Lot</span><strong>{previewLots.toFixed(4)}</strong></div>
                     <div><span>Enstruman PB</span><strong>{selectedInstrument?.nativeQuote ?? '—'}</strong></div>
                   </div>
@@ -1618,7 +1759,7 @@ export function MyPortfolioPage() {
                     }))
                   }
                 >
-                  <option value="">PB (Tum)</option>
+                  <option value="">Odeme PB (Tum)</option>
                   <option value="TRY">TRY</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
@@ -1656,8 +1797,7 @@ export function MyPortfolioPage() {
                         <th>Alim Tipi</th>
                         <th>Lot</th>
                         <th>Maliyet</th>
-                        <th>PB</th>
-                        <th>Kur</th>
+                        <th>Liste PB</th>
                         <th>Tarih</th>
                       </tr>
                     </thead>
@@ -1672,9 +1812,12 @@ export function MyPortfolioPage() {
                             </span>
                           </td>
                           <td>{row.quantity}</td>
-                          <td>{row.inputAmount ?? row.totalAmount}</td>
-                          <td>{row.inputCurrency ?? 'USD'}</td>
-                          <td>{row.fxRateUsed ?? 1}</td>
+                          <td>{formatTxMoney(row)}</td>
+                          <td>
+                            {row.quoteCurrency?.trim()
+                              ? row.quoteCurrency.trim().toUpperCase()
+                              : inferInstrumentQuoteCurrency(row.instrumentSymbol)}
+                          </td>
                           <td>{new Date(row.acquiredAt ?? row.createdAt).toLocaleString(i18n.language)}</td>
                         </tr>
                       ))}
@@ -1729,7 +1872,7 @@ export function MyPortfolioPage() {
                         <AllocationDonut
                           rows={instrumentDonutRows}
                           sharePctDisplay={sharePctDisplay}
-                          currencyFormat={dashboardCurrencyFormat}
+                          currencyFormat={displayDashboardCurrencyFormat}
                           ariaLabel={`${t('allocation.byInstrumentTitle')} — ${t('distributionTitle')}`}
                         />
                       </section>
@@ -1740,7 +1883,7 @@ export function MyPortfolioPage() {
                         <AllocationDonut
                           rows={categoryDonutRows}
                           sharePctDisplay={sharePctDisplay}
-                          currencyFormat={dashboardCurrencyFormat}
+                          currencyFormat={displayDashboardCurrencyFormat}
                           ariaLabel={`${t('allocation.byCategoryTitle')} — ${t('distributionTitle')}`}
                           donutVariant="category"
                         />
@@ -1846,7 +1989,7 @@ export function MyPortfolioPage() {
                               {formatHoldingQuantity(row.quantity, i18n.language)}
                             </td>
                             <td className="my-portfolio-allocation-num">{sharePctDisplay.format(row.sharePct)}%</td>
-                            <td className="my-portfolio-allocation-num">{dashboardCurrencyFormat.format(row.value)}</td>
+                            <td className="my-portfolio-allocation-num">{displayDashboardCurrencyFormat.format(row.value)}</td>
                             <td
                               className={`my-portfolio-allocation-num${row.pnlPercent > 1e-9 ? ' my-portfolio-up' : row.pnlPercent < -1e-9 ? ' my-portfolio-down' : ''}`}
                             >
@@ -1868,10 +2011,88 @@ export function MyPortfolioPage() {
             </Suspense>
           ) : null}
 
+          {activeSection === 'settings' ? (
+            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+              <h2 className="my-portfolio-trade-title">{t('settingsPage.title')}</h2>
+              <p className="my-portfolio-trade-subtitle">{t('settingsPage.scopeHint')}</p>
+              {portfolioSettingsError ? <p className="auth-error">{portfolioSettingsError}</p> : null}
+              {selectedPortfolioId == null || !selectedPortfolio ? (
+                <p className="my-portfolio-trade-subtitle">{t('settingsPage.pickPortfolio')}</p>
+              ) : (
+                <>
+                  <div
+                    className="my-portfolio-settings-active-summary"
+                    role="region"
+                    aria-label={t('settingsPage.activeKicker')}
+                  >
+                    <p className="my-portfolio-settings-active-summary-kicker">{t('settingsPage.activeKicker')}</p>
+                    <h3 className="my-portfolio-settings-active-summary-name" title={t('settingsPage.portfolioNameLabel')}>
+                      {selectedPortfolio.name}
+                    </h3>
+                    <dl className="my-portfolio-settings-dl">
+                      <div>
+                        <dt>{t('settingsPage.createdAtLabel')}</dt>
+                        <dd>
+                          {settingsPortfolioCreatedDisplay ?? t('settingsPage.createdUnknown')}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{t('settingsPage.baseCurrencyLabel')}</dt>
+                        <dd>{selectedPortfolio.baseCurrency}</dd>
+                      </div>
+                      <div>
+                        <dt>{t('settingsPage.quotaLabel')}</dt>
+                        <dd>
+                          {t('settingsPage.quotaSummary', {
+                            used: portfolios.length,
+                            max: MAX_USER_PORTFOLIOS,
+                          })}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <h4 className="my-portfolio-settings-section-title">{t('settingsPage.privacySection')}</h4>
+                  <label className="my-portfolio-settings-toggle" htmlFor="pf-hide-amounts">
+                    <input
+                      id="pf-hide-amounts"
+                      type="checkbox"
+                      checked={hideMoney}
+                      disabled={amountsHiddenSaving || deletePortfolioSubmitting}
+                      aria-describedby="pf-hide-amounts-help"
+                      onChange={(event) => void handleToggleAmountsHidden(selectedPortfolio.id, event.target.checked)}
+                    />
+                    <span>{t('settingsPage.hideAmountsLabel')}</span>
+                  </label>
+                  <p id="pf-hide-amounts-help" className="my-portfolio-trade-subtitle my-portfolio-settings-help">
+                    {t('settingsPage.hideAmountsHelp')}
+                  </p>
+
+                  <h4 className="my-portfolio-settings-section-title">{t('settingsPage.dangerSection')}</h4>
+                  <p className="my-portfolio-trade-subtitle my-portfolio-settings-help">{t('settingsPage.deleteCtaHint')}</p>
+                  <div className="my-portfolio-settings-actions">
+                    <button
+                      type="button"
+                      className="auth-submit"
+                      disabled={deletePortfolioSubmitting || amountsHiddenSaving}
+                      onClick={() => {
+                        setPortfolioSettingsError(null)
+                        setDeleteConfirm({ id: selectedPortfolio.id, name: selectedPortfolio.name })
+                      }}
+                    >
+                      {t('settingsPage.deleteCta')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </article>
+          ) : null}
+
           {activeSection !== 'watchlist' &&
           activeSection !== 'markets' &&
           activeSection !== 'portfolio' &&
-          activeSection !== 'allocation' ? (
+          activeSection !== 'allocation' &&
+          activeSection !== 'settings' ? (
             <>
               <div className="my-portfolio-gainers">
                 <span>{t('topGainers')}</span>
@@ -1890,24 +2111,12 @@ export function MyPortfolioPage() {
             <article className="card my-portfolio-card">
               <div className="my-portfolio-card-head">
                 <h3>{t('valueTitle')}</h3>
-                <div className="my-portfolio-value-range-btns" role="group" aria-label={t('valueChart.rangeAria')}>
-                  {VALUE_CHART_RANGES.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      className={`my-portfolio-value-range-btn${valueChartRange === r ? ' is-active' : ''}`}
-                      onClick={() => setValueChartRange(r)}
-                    >
-                      {valueChartRangeLabel(r)}
-                    </button>
-                  ))}
-                </div>
               </div>
               <p className="my-portfolio-main-value">
                 {selectedPortfolioId == null
                   ? '—'
                   : overview
-                    ? dashboardCurrencyFormat.format(Number(overview.totalValue ?? 0))
+                    ? displayDashboardCurrencyFormat.format(Number(overview.totalValue ?? 0))
                     : '…'}
               </p>
               <p
@@ -1932,11 +2141,11 @@ export function MyPortfolioPage() {
                     const pct = showPct ? (dod / priorClose) * 100 : null
                     return (
                       <>
-                        <span className="my-portfolio-dod-amount">{dashboardDayChangeFormat.format(dod)}</span>
+                        <span className="my-portfolio-dod-amount">{displayDashboardDayChangeFormat.format(dod)}</span>
                         {pct != null && showPct ? (
                           <span className="my-portfolio-dod-pct">
                             {' '}
-                            ({dashboardPctFormat.format(pct)}%)
+                            ({hideMoney ? '•••' : dashboardPctFormat.format(pct)}%)
                           </span>
                         ) : null}
                         <span className="my-portfolio-dod-suffix">
@@ -1949,40 +2158,46 @@ export function MyPortfolioPage() {
                 )}
               </p>
               {selectedPortfolioId == null ? null : (
-                <PortfolioValueHistoryChart
-                  range={valueChartRange}
-                  snapshots={valueSnapshots}
-                  liveTotalValue={overview ? parseApiDecimal(overview.totalValue, 0) : null}
-                  height={200}
-                  isDark={isDarkTheme}
-                  emptyLabel={t('valueChart.empty')}
-                  locale={i18n.language}
-                />
+                <>
+                  <PortfolioValueHistoryChart
+                    snapshots={valueSnapshots}
+                    liveTotalValue={overview ? parseApiDecimal(overview.totalValue, 0) : null}
+                    height={200}
+                    isDark={isDarkTheme}
+                    emptyLabel={t('valueChart.empty')}
+                    locale={i18n.language}
+                    maskAmounts={hideMoney}
+                  />
+                </>
               )}
             </article>
 
             <article className="card my-portfolio-card" aria-labelledby="portfolio-change-heading">
               <div className="my-portfolio-card-head">
                 <h3 id="portfolio-change-heading">{t('changeTitle')}</h3>
-                <div className="my-portfolio-value-range-btns" role="group" aria-label={t('tradeFlow.rangeAria')}>
-                  {VALUE_CHART_RANGES.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      className={`my-portfolio-value-range-btn${tradeFlowChartRange === r ? ' is-active' : ''}`}
-                      onClick={() => setTradeFlowChartRange(r)}
-                    >
-                      {valueChartRangeLabel(r)}
-                    </button>
-                  ))}
-                </div>
               </div>
-              <div className="my-portfolio-trade-flow-net">
+              <div
+                className={`my-portfolio-trade-flow-net${
+                  selectedPortfolioId != null &&
+                  tradeFlowHydrated &&
+                  tradeFlowTotals.net > DOD_EPS
+                    ? ' my-portfolio-trade-flow-net--buy-heavy'
+                    : selectedPortfolioId != null &&
+                        tradeFlowHydrated &&
+                        tradeFlowTotals.net < -DOD_EPS
+                      ? ' my-portfolio-trade-flow-net--sell-heavy'
+                      : selectedPortfolioId != null && tradeFlowHydrated
+                        ? ' my-portfolio-trade-flow-net--balanced'
+                        : ''
+                }`}
+              >
                 {selectedPortfolioId == null
                   ? '—'
                   : !tradeFlowHydrated
                     ? t('tradeFlow.loading')
-                    : dashboardCurrencyFormat.format(tradeFlowTotals.net)}
+                    : hideMoney
+                      ? '•••'
+                      : displayDashboardCurrencyFormat.format(tradeFlowTotals.net)}
               </div>
               <div className="my-portfolio-trade-flow-totals">
                 <div>
@@ -1992,7 +2207,7 @@ export function MyPortfolioPage() {
                       ? '—'
                       : !tradeFlowHydrated
                         ? t('tradeFlow.loading')
-                        : dashboardCurrencyFormat.format(tradeFlowTotals.buy)}
+                        : displayDashboardCurrencyFormat.format(tradeFlowTotals.buy)}
                   </strong>
                 </div>
                 <div>
@@ -2028,7 +2243,7 @@ export function MyPortfolioPage() {
                       ? '—'
                       : !tradeFlowHydrated
                         ? t('tradeFlow.loading')
-                        : dashboardCurrencyFormat.format(tradeFlowTotals.sell)}
+                        : displayDashboardCurrencyFormat.format(tradeFlowTotals.sell)}
                   </strong>
                 </div>
               </div>
@@ -2038,14 +2253,16 @@ export function MyPortfolioPage() {
                   {t('tradeFlow.loading')}
                 </div>
               ) : (
-                <TradeFlowHistoryChart
-                  range={tradeFlowChartRange}
-                  points={tradeFlow?.points ?? []}
-                  height={200}
-                  isDark={isDarkTheme}
-                  emptyLabel={t('tradeFlow.empty')}
-                  locale={i18n.language}
-                />
+                <>
+                  <TradeFlowHistoryChart
+                    points={tradeFlow?.points ?? []}
+                    height={200}
+                    isDark={isDarkTheme}
+                    emptyLabel={t('tradeFlow.empty')}
+                    locale={i18n.language}
+                    maskAmounts={hideMoney}
+                  />
+                </>
               )}
             </article>
 
@@ -2062,9 +2279,10 @@ export function MyPortfolioPage() {
                   items={overview.items}
                   totalPnl={parseApiDecimal(overview.totalPnl, 0)}
                   totalPnlPercent={parseApiDecimal(overview.totalPnlPercent, 0)}
-                  currencyFormat={dashboardCurrencyFormat}
+                  currencyFormat={displayDashboardCurrencyFormat}
                   pctFormat={dashboardPctFormat}
                   sharePctDisplay={sharePctDisplay}
+                  hideAmounts={hideMoney}
                 />
               )}
             </article>
@@ -2109,7 +2327,7 @@ export function MyPortfolioPage() {
                           <strong>{row.symbol}</strong>
                           <small>{sharePctDisplay.format(row.sharePct)}%</small>
                         </div>
-                        <span>{dashboardCurrencyFormat.format(row.value)}</span>
+                        <span>{displayDashboardCurrencyFormat.format(row.value)}</span>
                       </li>
                     ))}
                   </ul>
@@ -2200,17 +2418,72 @@ export function MyPortfolioPage() {
           ) : null}
         </div>
       </div>
-      {showCreatePortfolioModal ? (
-        <div className="my-portfolio-modal-overlay" role="dialog" aria-modal="true">
+      {deleteConfirm ? (
+        <div className="my-portfolio-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pf-del-title">
           <div className="my-portfolio-modal card">
-            <h4>Ilk Portfoyunuzu Olusturun</h4>
-            <p>Portfoy islemleri icin bir portfoy adi girmeniz gerekiyor (maksimum 5 adet).</p>
-            <input
-              value={newPortfolioName}
-              onChange={(event) => setNewPortfolioName(event.target.value)}
-              placeholder="Ornek: Core Portfolio"
-              maxLength={120}
-            />
+            <h3 id="pf-del-title">{t('settingsPage.deleteModalTitle')}</h3>
+            <p>{t('settingsPage.deleteModalBody', { name: deleteConfirm.name })}</p>
+            <div className="my-portfolio-modal-actions">
+              <button
+                type="button"
+                className="auth-submit auth-submit-secondary"
+                disabled={deletePortfolioSubmitting}
+                onClick={() => setDeleteConfirm(null)}
+              >
+                {t('settingsPage.cancel')}
+              </button>
+              <button
+                type="button"
+                className="auth-submit"
+                disabled={deletePortfolioSubmitting}
+                onClick={() => void handleConfirmDeletePortfolio()}
+              >
+                {deletePortfolioSubmitting ? t('settingsPage.deleting') : t('settingsPage.confirmDelete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showCreatePortfolioModal ? (
+        <div className="my-portfolio-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pf-create-title">
+          <div className="my-portfolio-modal card">
+            <h4 id="pf-create-title">
+              {portfolios.length === 0 ? t('createPortfolioModal.titleFirst') : t('createPortfolioModal.titleMore')}
+            </h4>
+            <p>
+              {portfolios.length === 0 ? t('createPortfolioModal.leadFirst') : t('createPortfolioModal.leadMore')}
+            </p>
+            <label className="my-portfolio-modal-field">
+              <span>{t('createPortfolioModal.nameLabel')}</span>
+              <input
+                value={newPortfolioName}
+                onChange={(event) => setNewPortfolioName(event.target.value)}
+                placeholder={t('createPortfolioModal.namePlaceholder')}
+                maxLength={120}
+              />
+            </label>
+            <div className="my-portfolio-modal-field">
+              <span className="my-portfolio-modal-field-label">{t('createPortfolioModal.currencyLabel')}</span>
+              <div className="my-portfolio-currency-grid" role="group" aria-label={t('createPortfolioModal.currencyLabel')}>
+                <button
+                  type="button"
+                  className={`my-portfolio-currency-chip${newPortfolioBaseCurrency === 'TRY' ? ' is-active' : ''}`}
+                  onClick={() => setNewPortfolioBaseCurrency('TRY')}
+                  disabled={portfolioActionLoading}
+                >
+                  {t('createPortfolioModal.tryChip')}
+                </button>
+                <button
+                  type="button"
+                  className={`my-portfolio-currency-chip${newPortfolioBaseCurrency === 'USD' ? ' is-active' : ''}`}
+                  onClick={() => setNewPortfolioBaseCurrency('USD')}
+                  disabled={portfolioActionLoading}
+                >
+                  {t('createPortfolioModal.usdChip')}
+                </button>
+              </div>
+            </div>
             {portfolioActionError ? <p className="auth-error">{portfolioActionError}</p> : null}
             <div className="my-portfolio-modal-actions">
               {portfolios.length > 0 ? (
@@ -2220,11 +2493,11 @@ export function MyPortfolioPage() {
                   onClick={() => setShowCreatePortfolioModal(false)}
                   disabled={portfolioActionLoading}
                 >
-                  Vazgec
+                  {t('createPortfolioModal.cancel')}
                 </button>
               ) : null}
               <button type="button" className="auth-submit" onClick={() => void handleCreatePortfolio()} disabled={portfolioActionLoading}>
-                {portfolioActionLoading ? 'Olusturuluyor...' : 'Portfoy Olustur'}
+                {portfolioActionLoading ? t('createPortfolioModal.creating') : t('createPortfolioModal.create')}
               </button>
             </div>
           </div>

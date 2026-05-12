@@ -10,5 +10,8 @@ public class ExternalPortfolioResponse {
     private Long id;
     private String name;
     private String baseCurrency;
+    /** ISO-8601 local date-time (server default zone). */
+    private String createdAt;
+    private boolean amountsHidden;
 }
 

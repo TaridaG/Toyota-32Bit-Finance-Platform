@@ -7,6 +7,7 @@ import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.dto.PortfolioOverviewItemResponse;
 import com.company.finance_api.dto.PortfolioOverviewResponse;
+import com.company.finance_api.portfolio.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.PositionCostBasisCalculator;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.repository.TransactionRepository;
@@ -125,12 +126,19 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                     positionCostBasisCalculator.calculateHoldingsBefore(instrumentTx, startOfTodayUtc);
             BigDecimal quantityMarkPriorDay = basisBeforeToday.quantity();
 
-            BigDecimal avgBuyPrice = convertAndScale(basis.averageCost(), instrument.getType(), normalizedCurrency);
-            BigDecimal positionCost = convertAndScale(basis.totalCost(), instrument.getType(), normalizedCurrency);
+            BigDecimal avgBuyPrice = convertAndScale(basis.averageCost(), instrument, normalizedCurrency);
+            BigDecimal positionCost = convertAndScale(basis.totalCost(), instrument, normalizedCurrency);
+            if (avgBuyPrice == null || positionCost == null) {
+                log.warn(
+                        "PORTFOLIO_OVERVIEW_FX_SKIP symbol={} reason=cost_or_avg_conversion_null target={}",
+                        instrument.getSymbol(),
+                        normalizedCurrency);
+                continue;
+            }
             totalCost = totalCost.add(positionCost);
 
             BigDecimal currentPrice = priceService.getLatestValuationPrice(instrument)
-                    .map(price -> convertAndScale(price.getPrice(), instrument.getType(), normalizedCurrency))
+                    .map(price -> convertAndScale(price.getPrice(), instrument, normalizedCurrency))
                     .orElse(null);
 
             BigDecimal value = null;
@@ -151,7 +159,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
                     Optional<BigDecimal> priorConvertedOpt = priceService
                             .getLatestValuationPriceBefore(instrument, startOfTodayUtc)
                             .map(InstrumentPrice::getPrice)
-                            .map(p -> convertAndScale(p, instrument.getType(), normalizedCurrency));
+                            .map(p -> convertAndScale(p, instrument, normalizedCurrency));
                     if (priorConvertedOpt.isPresent()) {
                         BigDecimal yesterdayLine = applyScale(
                                 priorConvertedOpt.get().multiply(quantityMarkPriorDay),
@@ -200,9 +208,19 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
         return response;
     }
 
-    private BigDecimal convertAndScale(BigDecimal value, InstrumentType type, String targetCurrency) {
-        BigDecimal converted = currencyConversionService.convert(value, USD, targetCurrency);
-        return applyScale(converted, type);
+    /**
+     * Converts a value that is expressed in the instrument's listing/quote currency
+     * (TRY for XAUTRY, USD for US equities, etc.) into the portfolio display currency.
+     * Historically this path incorrectly assumed USD for all instruments, which blew up
+     * TRY-denominated cost bases when the UI was in TRY.
+     */
+    private BigDecimal convertAndScale(BigDecimal value, Instrument instrument, String targetCurrency) {
+        if (value == null) {
+            return null;
+        }
+        String source = InstrumentListingCurrency.resolve(instrument);
+        BigDecimal converted = currencyConversionService.convert(value, source, targetCurrency);
+        return applyScale(converted, instrument.getType());
     }
 
     private BigDecimal applyScale(BigDecimal value, InstrumentType type) {
@@ -250,7 +268,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
     }
 
     private String cacheKey(UUID userId, String currency, Long portfolioId) {
-        return "portfolio:overview:v5:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT) + ":portfolio:" + (portfolioId == null ? "all" : portfolioId);
+        return "portfolio:overview:v8:user:" + userId + ":currency:" + currency.toUpperCase(Locale.ROOT) + ":portfolio:" + (portfolioId == null ? "all" : portfolioId);
     }
 
     private PortfolioOverviewResponse emptyOverview(String currency) {

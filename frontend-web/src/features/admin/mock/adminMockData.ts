@@ -59,11 +59,11 @@ export function getAdminOverviewMock(): AdminOverviewMock {
       {
         variant: 'news',
         id: 'news',
-        labelKey: 'dashboard.kpi.newsSources',
-        total: 16,
-        active: 15,
+        labelKey: 'dashboard.kpi.newsArticles',
+        total: 1842,
+        active: 16,
         errors: 1,
-        sparkline: kpiSparkline(14, 3.6),
+        sparkline: [12, 22, 18, 28, 24, 31, 35],
         accent: 'purple',
       },
       {

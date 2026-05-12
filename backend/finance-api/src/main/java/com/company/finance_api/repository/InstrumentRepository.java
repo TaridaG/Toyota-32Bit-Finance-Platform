@@ -9,6 +9,8 @@ import java.util.Optional;
 
 public interface InstrumentRepository extends JpaRepository<Instrument, Long> {
 
+    long countByActiveTrue();
+
     List<Instrument> findByActiveTrue();
 
     List<Instrument> findByTypeAndActiveTrue(InstrumentType type);

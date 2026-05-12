@@ -9,6 +9,7 @@ import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRe
 import com.company.finance_api.repository.TransactionRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.security.CurrentUserResolver;
+import com.company.finance_api.portfolio.InstrumentListingCurrency;
 import com.company.finance_api.service.TransactionHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -147,7 +148,8 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
                 tx.getInputAmount(),
                 tx.getFxRateUsed(),
                 tx.getAcquiredAt(),
-                tx.getCreatedAt()
+                tx.getCreatedAt(),
+                InstrumentListingCurrency.resolve(tx.getInstrument())
         );
     }
 

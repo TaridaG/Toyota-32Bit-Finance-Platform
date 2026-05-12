@@ -35,6 +35,10 @@ public class ExternalPortfolio {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /** UI: hide monetary amounts for this portfolio (reserved; default false). */
+    @Column(name = "amounts_hidden", nullable = false)
+    private boolean amountsHidden = false;
+
     public ExternalPortfolio(User user, String name, String baseCurrency) {
         this.user = user;
         this.name = name;

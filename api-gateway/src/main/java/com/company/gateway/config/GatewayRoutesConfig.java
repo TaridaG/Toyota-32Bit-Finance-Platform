@@ -60,10 +60,11 @@ public class GatewayRoutesConfig {
                 .setFallbackUri("forward:/fallback/market"))
                 )
                 .uri(marketBaseUri))
-                .route("finance-api-news-enriched", r -> r.order(-2)
-                        .path("/api/news/enriched", "/api/news/enriched/")
+                // Must be higher priority than finance-api /api/** (order 0), otherwise /api/news/admin/* hits finance-api.
+                .route("finance-api-news-enriched", r -> r.order(-10)
+                        .path("/api/news/enriched", "/api/news/enriched/", "/api/news/enriched/**")
                         .uri(financeBaseUri))
-                .route("news-service", r -> r.order(1).path("/api/news/**")
+                .route("news-service", r -> r.order(-9).path("/api/news/**")
                 .filters(f -> f
                 .circuitBreaker(cb -> cb
                 .setName("newsCircuitBreaker")
@@ -84,7 +85,7 @@ public class GatewayRoutesConfig {
                 .setFallbackUri("forward:/fallback/analytics"))
                 )
                 .uri(analyticsBaseUri))
-                .route("finance-api", r -> r.path("/api/**", "/health")
+                .route("finance-api", r -> r.order(0).path("/api/**", "/health")
                 .filters(f -> f
                 .requestRateLimiter(rl -> rl
                 .setRateLimiter(apiRateLimiter)

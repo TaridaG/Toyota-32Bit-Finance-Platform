@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmail(String email);
@@ -28,4 +30,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("select count(u) from User u where u.createdAt >= :from and u.createdAt < :to and u.deletionRequestedAt is null")
     long countCreatedInRangeExcludingPendingDeletion(@Param("from") Instant from, @Param("to") Instant to);
+
+    /** Account deletion workflow started in {@code [from, to)} (UTC semantics from callers). */
+    @Query("select count(u) from User u where u.deletionRequestedAt is not null and u.deletionRequestedAt >= :from and u.deletionRequestedAt < :to")
+    long countDeletionRequestedInRange(@Param("from") Instant from, @Param("to") Instant to);
+
+    /** Roster members with {@code active == true} (may still include accounts pending other workflows). */
+    @Query("select count(u) from User u where u.deletionRequestedAt is null and u.active = true")
+    long countActiveRoster();
+
+    @Query("select u from User u where u.deletionRequestedAt is null order by u.createdAt desc")
+    List<User> findRosterByCreatedAtDesc(Pageable pageable);
 }

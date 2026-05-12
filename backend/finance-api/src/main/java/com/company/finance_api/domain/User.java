@@ -1,7 +1,11 @@
 package com.company.finance_api.domain;
 
+import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -46,6 +50,13 @@ public class User {
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = true;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<ExternalPortfolio> externalPortfolios = new ArrayList<>();
+
     protected User() {
         // JPA only
     }
@@ -53,6 +64,7 @@ public class User {
     public User(String email, String username) {
         this.email = email;
         this.username = username;
+        this.emailVerified = true;
     }
 
     public UUID getId() {
@@ -138,5 +150,17 @@ public class User {
     public void markDeletionRequested(Instant requestedAt) {
         this.active = false;
         this.deletionRequestedAt = requestedAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public List<ExternalPortfolio> getExternalPortfolios() {
+        return externalPortfolios;
     }
 }

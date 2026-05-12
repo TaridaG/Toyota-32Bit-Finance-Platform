@@ -9,6 +9,7 @@ import com.company.finance_api.dto.TradeExecutionRequest;
 import com.company.finance_api.dto.TradePreviewResponse;
 import com.company.finance_api.event.TransactionExecutedEvent;
 import com.company.finance_api.event.publisher.TransactionEventPublisher;
+import com.company.finance_api.portfolio.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.repository.*;
@@ -27,8 +28,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.sql.Timestamp;
-import java.util.Locale;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -201,14 +202,24 @@ public class TradeServiceImpl implements TradeService {
     public InstrumentPriceCoverageResponse getPriceCoverage(Long instrumentId) {
         Instrument instrument = instrumentRepository.findById(instrumentId)
                 .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
-        Optional<Instant> first = findFirstAvailablePriceDate(instrument);
-        Optional<Instant> last = findLastAvailablePriceDate(instrument);
+        Optional<Instant> first = earliestKnownPriceInstant(instrument);
+        Optional<Instant> last = latestKnownPriceInstant(instrument);
         return new InstrumentPriceCoverageResponse(
                 instrument.getId(),
                 instrument.getSymbol(),
                 first.orElse(null),
                 last.orElse(null)
         );
+    }
+
+    private Optional<Instant> earliestKnownPriceInstant(Instrument instrument) {
+        String canonical = instrument.getSymbol().trim().toUpperCase(Locale.ROOT);
+        return minInstant(findFirstAvailablePriceDate(instrument), findFirstAvailableFxRateDate(canonical));
+    }
+
+    private Optional<Instant> latestKnownPriceInstant(Instrument instrument) {
+        String canonical = instrument.getSymbol().trim().toUpperCase(Locale.ROOT);
+        return maxInstant(findLastAvailablePriceDate(instrument), findLastAvailableFxRateDate(canonical));
     }
 
     private Computation compute(TradeExecutionRequest request, Instrument instrument) {
@@ -218,7 +229,7 @@ public class TradeServiceImpl implements TradeService {
         if (request.getPurchaseMode() == null) {
             throw new IllegalArgumentException("purchaseMode is required");
         }
-        String instrumentCurrency = resolveInstrumentCurrency(instrument);
+        String instrumentCurrency = InstrumentListingCurrency.resolve(instrument);
         String inputCurrency = currencyConversionService.normalizeCurrency(request.getInputCurrency());
         UnitPriceResolution unitPriceResolution = resolveUnitPrice(request, instrument, instrumentCurrency);
         BigDecimal unitPrice = unitPriceResolution.unitPrice();
@@ -288,7 +299,7 @@ public class TradeServiceImpl implements TradeService {
                         "HISTORICAL_MARKET_DATA"
                 );
             }
-            String firstAvailable = findFirstAvailablePriceDate(instrument)
+            String firstAvailable = earliestKnownPriceInstant(instrument)
                     .map(value -> DateTimeFormatter.ISO_LOCAL_DATE.format(value.atZone(ZoneOffset.UTC)))
                     .orElse("unknown");
             throw new IllegalArgumentException(
@@ -297,13 +308,9 @@ public class TradeServiceImpl implements TradeService {
         }
         BigDecimal valuationPrice = fetchLatestValuationPriceDirect(instrument);
         if ("TRY".equals(instrumentCurrency) && valuationPrice != null) {
-            // Existing market valuation prices are normalized to USD in parts of the stack.
-            // Convert back when trading a TRY-quoted instrument.
-            return new UnitPriceResolution(
-                    currencyConversionService.convert(valuationPrice, "USD", "TRY").setScale(6, RoundingMode.HALF_UP),
-                    false,
-                    "LIVE_MARKET_DATA"
-            );
+            // MARKET rows for BIST / TRY-native symbols are stored in TRY (MDS publishes Yahoo .IS spot as-is).
+            // Do not treat them as USD and multiply by USDTRY — that inflates unit prices (~30–40×).
+            return new UnitPriceResolution(valuationPrice.setScale(6, RoundingMode.HALF_UP), false, "LIVE_MARKET_DATA");
         }
         return new UnitPriceResolution(valuationPrice.setScale(6, RoundingMode.HALF_UP), false, "LIVE_MARKET_DATA");
     }
@@ -335,6 +342,15 @@ public class TradeServiceImpl implements TradeService {
     }
 
     private Optional<BigDecimal> fetchHistoricalPriceFromMds(String symbol, Instant target) {
+        String sym = symbol.trim().toUpperCase(Locale.ROOT);
+        Optional<BigDecimal> fromMarket = queryMdsMarketPriceHistory(sym, target);
+        if (fromMarket.isPresent()) {
+            return fromMarket;
+        }
+        return queryMdsFxMidHistory(sym, target);
+    }
+
+    private Optional<BigDecimal> queryMdsMarketPriceHistory(String symbol, Instant target) {
         String sql = """
                 SELECT price
                 FROM public.mds_market_price_history
@@ -350,6 +366,74 @@ public class TradeServiceImpl implements TradeService {
                 symbol,
                 Timestamp.from(target)
         );
+    }
+
+    /**
+     * TCMB / composite FX snapshots are persisted to {@code mds_fx_rate_history} (mid), not {@code mds_market_price_history}.
+     */
+    private Optional<BigDecimal> queryMdsFxMidHistory(String canonicalSymbol, Instant target) {
+        String sql = """
+                SELECT mid AS price
+                FROM public.mds_fx_rate_history
+                WHERE canonical_symbol = ?
+                  AND observed_at <= CAST(? AS TIMESTAMPTZ)
+                ORDER BY observed_at DESC, id DESC
+                LIMIT 1
+                """;
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next() ? Optional.of(rs.getBigDecimal(1)) : Optional.empty(),
+                canonicalSymbol,
+                Timestamp.from(target)
+        );
+    }
+
+    private Optional<Instant> findFirstAvailableFxRateDate(String canonicalSymbol) {
+        String sql = """
+                SELECT observed_at
+                FROM public.mds_fx_rate_history
+                WHERE canonical_symbol = ?
+                ORDER BY observed_at ASC, id ASC
+                LIMIT 1
+                """;
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next() ? Optional.of(rs.getTimestamp(1).toInstant()) : Optional.empty(),
+                canonicalSymbol.trim().toUpperCase(Locale.ROOT));
+    }
+
+    private Optional<Instant> findLastAvailableFxRateDate(String canonicalSymbol) {
+        String sql = """
+                SELECT observed_at
+                FROM public.mds_fx_rate_history
+                WHERE canonical_symbol = ?
+                ORDER BY observed_at DESC, id DESC
+                LIMIT 1
+                """;
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next() ? Optional.of(rs.getTimestamp(1).toInstant()) : Optional.empty(),
+                canonicalSymbol.trim().toUpperCase(Locale.ROOT));
+    }
+
+    private static Optional<Instant> minInstant(Optional<Instant> a, Optional<Instant> b) {
+        if (a.isEmpty()) {
+            return b;
+        }
+        if (b.isEmpty()) {
+            return a;
+        }
+        return Optional.of(a.get().isBefore(b.get()) ? a.get() : b.get());
+    }
+
+    private static Optional<Instant> maxInstant(Optional<Instant> a, Optional<Instant> b) {
+        if (a.isEmpty()) {
+            return b;
+        }
+        if (b.isEmpty()) {
+            return a;
+        }
+        return Optional.of(a.get().isAfter(b.get()) ? a.get() : b.get());
     }
 
     private Optional<Instant> findFirstAvailablePriceDate(Instrument instrument) {
@@ -386,20 +470,6 @@ public class TradeServiceImpl implements TradeService {
             return utc.plusDays(1).minusNanos(1).toInstant();
         }
         return acquiredAt;
-    }
-
-    private String resolveInstrumentCurrency(Instrument instrument) {
-        if (instrument.getExchange() != null && "BIST".equalsIgnoreCase(instrument.getExchange().name())) {
-            return "TRY";
-        }
-        String symbol = instrument.getSymbol() == null ? "" : instrument.getSymbol().toUpperCase(Locale.ROOT);
-        if (symbol.endsWith("TRY")) {
-            return "TRY";
-        }
-        if (symbol.endsWith("EUR")) {
-            return "EUR";
-        }
-        return "USD";
     }
 
     private ExternalPortfolio resolvePortfolio(User user, Long portfolioId) {

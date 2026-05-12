@@ -1,0 +1,2 @@
+ALTER TABLE external_portfolios
+    ADD COLUMN IF NOT EXISTS amounts_hidden BOOLEAN NOT NULL DEFAULT FALSE;
