@@ -39,6 +39,7 @@ public class MarketDataProxyController {
             value = {
                     "/api/market/prices",
                     "/api/market/prices/**",
+                    "/api/market/segments/**",
                     "/api/market/fx",
                     "/api/market/fx/**",
                     "/api/market/funds",

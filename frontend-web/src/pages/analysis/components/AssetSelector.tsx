@@ -5,56 +5,251 @@ import type { AssetDefinition, AssetType } from '../types'
 type AssetSelectorProps = {
   assets: AssetDefinition[]
   selectedAssetId: string
-  selectedAssetType: AssetType | 'all'
+  /** Filters the comparison chip list only; primary instrument list stays full-catalog (search applies). */
+  comparisonListCategory: AssetType | 'all'
   onAssetChange: (assetId: string) => void
-  onAssetTypeChange: (type: AssetType | 'all') => void
+  onComparisonListCategoryChange: (type: AssetType | 'all') => void
+  /** Deck layout: numbered header and copy tuned for the analysis control strip. */
+  /** Popover: same fields as deck without the numbered step header (for ticker flyout). */
+  variant?: 'default' | 'deck' | 'popover'
 }
 
 export function AssetSelector({
   assets,
   selectedAssetId,
-  selectedAssetType,
+  comparisonListCategory,
   onAssetChange,
-  onAssetTypeChange,
+  onComparisonListCategoryChange,
+  variant = 'default',
 }: AssetSelectorProps) {
   const { t } = useTranslation('analysis')
   const [query, setQuery] = useState('')
 
-  const filteredAssets = useMemo(() => {
+  const instrumentOptions = useMemo(() => {
     const lowered = query.trim().toLowerCase()
-    return assets.filter((asset) => {
-      const matchesType = selectedAssetType === 'all' || asset.type === selectedAssetType
-      const matchesQuery =
-        lowered.length === 0 ||
-        asset.symbol.toLowerCase().includes(lowered) ||
-        asset.name.toLowerCase().includes(lowered)
-      return matchesType && matchesQuery
-    })
-  }, [assets, query, selectedAssetType])
+    let base = [...assets].sort((a, b) => a.symbol.localeCompare(b.symbol))
+    if (lowered.length > 0) {
+      base = base.filter(
+        (asset) =>
+          asset.symbol.toLowerCase().includes(lowered) || asset.name.toLowerCase().includes(lowered),
+      )
+    }
+    if (selectedAssetId && !base.some((a) => a.id === selectedAssetId)) {
+      const current = assets.find((a) => a.id === selectedAssetId)
+      if (current) {
+        base = [current, ...base]
+      }
+    }
+    return base
+  }, [assets, query, selectedAssetId])
+
+  const isDeck = variant === 'deck'
+  const isPopover = variant === 'popover'
+
+  if (isPopover) {
+    return (
+      <section className="fi-asset-selector fi-asset-selector--popover fi-asset-selector--popover-bar">
+        <div className="fi-asset-selector-popover-toolbar" role="group" aria-label={t('assetSelector.popoverToolbarAria')}>
+          <div className="fi-asset-selector-popover-field fi-asset-selector-popover-field--search">
+            <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-search-pop">
+              {t('assetSelector.deckSymbolLabel')}
+            </label>
+            <div className="fi-asset-search-wrap">
+              <span className="fi-asset-search-ico" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
+              <input
+                id="fi-analysis-instrument-search-pop"
+                type="search"
+                className="fi-asset-search-input fi-asset-search-input--popover-bar"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t('assetSelector.deckSearchPlaceholder')}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <div className="fi-asset-selector-popover-field fi-asset-selector-popover-field--category">
+            <label className="fi-asset-selector-label" htmlFor="fi-analysis-comparison-category-pop">
+              {t('assetSelector.deckCategoryLabel')}
+            </label>
+            <select
+              id="fi-analysis-comparison-category-pop"
+              className="fi-asset-selector-popover-select"
+              value={comparisonListCategory}
+              onChange={(event) => onComparisonListCategoryChange(event.target.value as AssetType | 'all')}
+            >
+              <option value="all">{t('assetSelector.types.all')}</option>
+              <option value="stock">{t('assetSelector.types.stock')}</option>
+              <option value="crypto">{t('assetSelector.types.crypto')}</option>
+              <option value="fx">{t('assetSelector.types.fx')}</option>
+              <option value="commodity">{t('assetSelector.types.commodity')}</option>
+              <option value="fund">{t('assetSelector.types.fund')}</option>
+              <option value="index">{t('assetSelector.types.index')}</option>
+            </select>
+          </div>
+          <div className="fi-asset-selector-popover-field fi-asset-selector-popover-field--symbol">
+            <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-select-pop">
+              {t('assetSelector.deckChartSymbol')}
+            </label>
+            <select
+              id="fi-analysis-instrument-select-pop"
+              className="fi-asset-selector-popover-select"
+              value={selectedAssetId}
+              onChange={(event) => onAssetChange(event.target.value)}
+            >
+              {instrumentOptions.length === 0 ? (
+                <option value="">{t('assetSelector.noMatches')}</option>
+              ) : (
+                instrumentOptions.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.symbol} — {asset.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+        </div>
+        <p className="fi-asset-selector-popover-meta" aria-live="polite">
+          {t('assetSelector.deckTotalCount', { count: assets.length })}
+        </p>
+      </section>
+    )
+  }
+
+  if (!isDeck) {
+    return (
+      <section className="fi-asset-selector fi-toolbar-panel">
+        <div className="fi-asset-selector-row">
+          <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-search">
+            {t('assetSelector.instrumentLabel')}
+          </label>
+          <input
+            id="fi-analysis-instrument-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('assetSelector.searchPlaceholder')}
+            autoComplete="off"
+          />
+          <span className="fi-asset-selector-count" aria-live="polite">
+            {t('assetSelector.instrumentCount', { count: assets.length })}
+          </span>
+        </div>
+        <div className="fi-asset-selector-row">
+          <label className="fi-asset-selector-label" htmlFor="fi-analysis-comparison-category">
+            {t('assetSelector.comparisonFilterLabel')}
+          </label>
+          <select
+            id="fi-analysis-comparison-category"
+            value={comparisonListCategory}
+            onChange={(event) => onComparisonListCategoryChange(event.target.value as AssetType | 'all')}
+          >
+            <option value="all">{t('assetSelector.types.all')}</option>
+            <option value="stock">{t('assetSelector.types.stock')}</option>
+            <option value="crypto">{t('assetSelector.types.crypto')}</option>
+            <option value="fx">{t('assetSelector.types.fx')}</option>
+            <option value="commodity">{t('assetSelector.types.commodity')}</option>
+            <option value="fund">{t('assetSelector.types.fund')}</option>
+            <option value="index">{t('assetSelector.types.index')}</option>
+          </select>
+        </div>
+        <div className="fi-asset-selector-row">
+          <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-select">
+            {t('assetSelector.activeInstrument')}
+          </label>
+          <select
+            id="fi-analysis-instrument-select"
+            value={selectedAssetId}
+            onChange={(event) => onAssetChange(event.target.value)}
+          >
+            {instrumentOptions.length === 0 ? (
+              <option value="">{t('assetSelector.noMatches')}</option>
+            ) : (
+              instrumentOptions.map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.symbol} — {asset.name}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+      </section>
+    )
+  }
 
   return (
-    <section className="fi-asset-selector card">
-      <input
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={t('assetSelector.searchPlaceholder')}
-      />
-      <select value={selectedAssetType} onChange={(event) => onAssetTypeChange(event.target.value as AssetType | 'all')}>
-        <option value="all">{t('assetSelector.types.all')}</option>
-        <option value="stock">{t('assetSelector.types.stock')}</option>
-        <option value="crypto">{t('assetSelector.types.crypto')}</option>
-        <option value="fx">{t('assetSelector.types.fx')}</option>
-        <option value="commodity">{t('assetSelector.types.commodity')}</option>
-        <option value="index">{t('assetSelector.types.index')}</option>
-      </select>
-      <select value={selectedAssetId} onChange={(event) => onAssetChange(event.target.value)}>
-        {filteredAssets.map((asset) => (
-          <option key={asset.id} value={asset.id}>
-            {asset.symbol} - {asset.name}
-          </option>
-        ))}
-      </select>
+    <section className="fi-asset-selector fi-asset-selector--deck fi-toolbar-panel">
+      <div className="fi-analysis-step-head">
+        <span className="fi-analysis-step-num">1</span>
+        <h3 className="fi-analysis-step-title">{t('deck.instrumentTitle')}</h3>
+      </div>
+      <div className="fi-asset-selector-row fi-asset-selector-row--search">
+        <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-search-deck">
+          {t('assetSelector.deckSymbolLabel')}
+        </label>
+        <div className="fi-asset-search-wrap">
+          <span className="fi-asset-search-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            id="fi-analysis-instrument-search-deck"
+            type="search"
+            className="fi-asset-search-input"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('assetSelector.deckSearchPlaceholder')}
+            autoComplete="off"
+          />
+        </div>
+        <span className="fi-asset-selector-count fi-asset-selector-count--inline" aria-live="polite">
+          {t('assetSelector.deckTotalCount', { count: assets.length })}
+        </span>
+      </div>
+      <div className="fi-asset-selector-row">
+        <label className="fi-asset-selector-label" htmlFor="fi-analysis-comparison-category-deck">
+          {t('assetSelector.deckCategoryLabel')}
+        </label>
+        <select
+          id="fi-analysis-comparison-category-deck"
+          value={comparisonListCategory}
+          onChange={(event) => onComparisonListCategoryChange(event.target.value as AssetType | 'all')}
+        >
+          <option value="all">{t('assetSelector.types.all')}</option>
+          <option value="stock">{t('assetSelector.types.stock')}</option>
+          <option value="crypto">{t('assetSelector.types.crypto')}</option>
+          <option value="fx">{t('assetSelector.types.fx')}</option>
+          <option value="commodity">{t('assetSelector.types.commodity')}</option>
+          <option value="fund">{t('assetSelector.types.fund')}</option>
+          <option value="index">{t('assetSelector.types.index')}</option>
+        </select>
+      </div>
+      <div className="fi-asset-selector-row">
+        <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-select-deck">
+          {t('assetSelector.deckChartSymbol')}
+        </label>
+        <select
+          id="fi-analysis-instrument-select-deck"
+          value={selectedAssetId}
+          onChange={(event) => onAssetChange(event.target.value)}
+        >
+          {instrumentOptions.length === 0 ? (
+            <option value="">{t('assetSelector.noMatches')}</option>
+          ) : (
+            instrumentOptions.map((asset) => (
+              <option key={asset.id} value={asset.id}>
+                {asset.symbol} — {asset.name}
+              </option>
+            ))
+          )}
+        </select>
+      </div>
     </section>
   )
 }

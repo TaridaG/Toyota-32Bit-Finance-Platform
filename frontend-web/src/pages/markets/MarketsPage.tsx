@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useMarkets } from '../../features/markets/hooks/useMarkets'
+import { useMarketsCategoryPulse } from '../../features/markets/hooks/useMarketsCategoryPulse'
 import { useMarketInsights } from '../../features/markets/hooks/useMarketInsights'
 import { fetchInstrumentFundamentals } from '../../features/markets/api/marketService'
 import type { InstrumentFundamentals, MarketCategory, MarketOverviewItem } from '../../shared/types/market'
@@ -164,6 +165,7 @@ export function MarketsPage() {
     error: insightsError,
     refetch: refetchInsights,
   } = useMarketInsights()
+  const pulse = useMarketsCategoryPulse()
 
   /** Header-selected currency (converted line). */
   const selectedCurrencyFormat = useMemo(
@@ -258,12 +260,7 @@ export function MarketsPage() {
   const clampedPage = Math.min(Math.max(page, 0), Math.max(totalPages - 1, 0))
 
   const showFavoriteLoginNotice = () => {
-    const message =
-      i18n.language?.toLowerCase().startsWith('tr')
-        ? 'Please sign in to use favorites.'
-        : i18n.language?.toLowerCase().startsWith('de')
-          ? 'Please sign in to use favorites.'
-          : 'Please sign in to use favorites.'
+    const message = t('favoritesLoginRequired')
     setFavoriteNotice(message)
     window.setTimeout(() => {
       setFavoriteNotice((current) => (current === message ? null : current))
@@ -526,14 +523,96 @@ export function MarketsPage() {
 
   return (
     <section className="markets-page">
-      <div className="markets-hero">
-        <p className="markets-kicker">{t('kicker')}</p>
-        <h2>{t('title')}</h2>
-        <p>{t('lead')}</p>
-      </div>
       <div className={`markets-status markets-status-${globalMarketStatus.toLowerCase()}`}>
         <span className="markets-status-dot" />
         <span>{marketStatusLabel}</span>
+      </div>
+
+      <div className="markets-pulse-wrap">
+        <div className="markets-pulse-strip" role="region" aria-label={t('categoryPulse.aria')}>
+          {(() => {
+            const o = pulse.overall
+            const overallMean = o?.meanChange1D
+            const overallHasData =
+              o != null && o.count > 0 && overallMean != null && Number.isFinite(overallMean)
+            const overallActive = selectedCategory === 'all' && !showFavoritesOnly
+            const overallValueClass =
+              pulse.loading && !pulse.items
+                ? 'markets-pulse-value markets-pulse-value-muted'
+                : !overallHasData
+                  ? 'markets-pulse-value markets-pulse-value-muted'
+                  : overallMean > 0
+                    ? 'markets-pulse-value markets-positive'
+                    : overallMean < 0
+                      ? 'markets-pulse-value markets-negative'
+                      : 'markets-pulse-value markets-pulse-value-muted'
+            return (
+              <button
+                key="pulse-overall"
+                type="button"
+                className={`markets-pulse-card${overallActive ? ' markets-pulse-card-active' : ''}${
+                  pulse.loading && !pulse.items ? ' markets-pulse-card-loading' : ''
+                }`}
+                onClick={() => {
+                  setShowFavoritesOnly(false)
+                  updateParams((next) => {
+                    next.set('category', 'ALL')
+                    next.set('page', '0')
+                  })
+                }}
+              >
+                <span className="markets-pulse-label">{t('title')}</span>
+                <span className={overallValueClass}>
+                  {pulse.loading && !pulse.items
+                    ? '…'
+                    : overallHasData
+                      ? percentFormat.format(overallMean)
+                      : '—'}
+                </span>
+              </button>
+            )
+          })()}
+          {pulse.categories.map((cat, idx) => {
+            const stat = pulse.items?.[idx]
+            const mean = stat?.meanChange1D
+            const hasData = stat != null && stat.count > 0 && mean != null && Number.isFinite(mean)
+            const active = selectedCategory === cat && !showFavoritesOnly
+            const valueClass =
+              pulse.loading && !pulse.items
+                ? 'markets-pulse-value markets-pulse-value-muted'
+                : !hasData
+                  ? 'markets-pulse-value markets-pulse-value-muted'
+                  : mean > 0
+                    ? 'markets-pulse-value markets-positive'
+                    : mean < 0
+                      ? 'markets-pulse-value markets-negative'
+                      : 'markets-pulse-value markets-pulse-value-muted'
+            return (
+              <button
+                key={cat}
+                type="button"
+                className={`markets-pulse-card${active ? ' markets-pulse-card-active' : ''}${
+                  pulse.loading && !pulse.items ? ' markets-pulse-card-loading' : ''
+                }`}
+                onClick={() => {
+                  setShowFavoritesOnly(false)
+                  updateParams((next) => {
+                    next.set('category', cat.toUpperCase())
+                    next.set('page', '0')
+                  })
+                }}
+              >
+                <span className="markets-pulse-label">{t(`categories.${cat}`)}</span>
+                <span className={valueClass}>
+                  {pulse.loading && !pulse.items ? '…' : hasData ? percentFormat.format(mean) : '—'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        {pulse.error && !pulse.items && !pulse.loading ? (
+          <p className="markets-pulse-error">{t('categoryPulse.loadError')}</p>
+        ) : null}
       </div>
 
       <div className="markets-layout">
@@ -575,7 +654,17 @@ export function MarketsPage() {
             <button
               type="button"
               className={`markets-filter${showFavoritesOnly ? ' markets-filter-active' : ''}`}
-              onClick={() => setShowFavoritesOnly((prev) => !prev)}
+              onClick={() => {
+                if (!authenticated) {
+                  if (!showFavoritesOnly) {
+                    showFavoriteLoginNotice()
+                  } else {
+                    setShowFavoritesOnly(false)
+                  }
+                  return
+                }
+                setShowFavoritesOnly((prev) => !prev)
+              }}
             >
               {t('favoritesOnly')}
             </button>

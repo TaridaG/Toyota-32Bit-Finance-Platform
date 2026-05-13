@@ -1,17 +1,14 @@
 import type { UTCTimestamp } from 'lightweight-charts'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useTranslation } from 'react-i18next'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import type { AssetDefinition, AssetNewsItem, AssetType, CandlePoint, DrawTool, DrawingItem, TimeRange } from './types'
 import { AssetSelector } from './components/AssetSelector'
-import { ComparisonSelector } from './components/ComparisonSelector'
 import { AnalysisChart } from './components/AnalysisChart'
-import type { OhlcTooltipState } from './chart/hooks/useCrosshairTooltip'
-import { candleToReadout } from './chart/readout'
-import { AssetStatsPanel } from './components/AssetStatsPanel'
-import { NewsPanel } from './components/NewsPanel'
+import { AnalysisChartFrame } from './components/AnalysisChartFrame'
+import { AnalysisTickerBar } from './components/AnalysisTickerBar'
 import { PerformanceTable } from './components/PerformanceTable'
 import { fetchCandles } from '../../features/analysis/api/analysisService'
 import { useCandles } from '../../features/analysis/hooks/useCandles'
@@ -21,20 +18,26 @@ import { useNews } from '../../features/news/hooks/useNews'
 import type { MarketOverviewItem } from '../../shared/types/market'
 
 const comparePalette = ['#f59e0b', '#8b5cf6', '#14b8a6', '#f97316', '#22c55e']
-const rangeButtons: TimeRange[] = ['1h', '6h', '24h', '7d', '30d', '90d', '1y', '5y']
+
+type CompareSlotTuple = [string | null, string | null, string | null]
+const EMPTY_COMPARE_SLOTS: CompareSlotTuple = [null, null, null]
 
 function normalizeSymbol(symbol: string): string {
   return symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
 }
 
 function mapCategoryToAssetType(category: string | null | undefined): AssetType {
-  switch ((category ?? '').toUpperCase()) {
+  const c = (category ?? 'STOCK').toUpperCase()
+  switch (c) {
     case 'CRYPTO':
       return 'crypto'
     case 'FX':
       return 'fx'
     case 'FUND':
+      return 'fund'
+    case 'METAL':
       return 'commodity'
+    case 'STOCK':
     default:
       return 'stock'
   }
@@ -42,11 +45,13 @@ function mapCategoryToAssetType(category: string | null | undefined): AssetType 
 
 function mapMarketRowToAsset(row: MarketOverviewItem): AssetDefinition {
   const symbol = row.symbol.toUpperCase()
+  const wire = (row.category ?? 'STOCK').toUpperCase()
   return {
     id: symbol.toLowerCase(),
     symbol,
     name: row.name || symbol,
     type: mapCategoryToAssetType(row.category),
+    wireCategory: wire,
   }
 }
 
@@ -56,25 +61,25 @@ export function AnalysisPage() {
   useDocumentTitle(t('titleDoc'))
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [selectedAssetType, setSelectedAssetType] = useState<'all' | 'stock' | 'crypto' | 'fx' | 'commodity' | 'index'>('all')
+  const [comparisonListCategory, setComparisonListCategory] = useState<AssetType | 'all'>('all')
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
   const [showNewsOnChart, setShowNewsOnChart] = useState(true)
   const [showMA20, setShowMA20] = useState(true)
   const [showMA50, setShowMA50] = useState(true)
   const [showRsi, setShowRsi] = useState(true)
-  const [showCompareOnChart, setShowCompareOnChart] = useState(true)
-  const [comparisonAssets, setComparisonAssets] = useState<string[]>([])
+  const [compareSlotIds, setCompareSlotIds] = useState<CompareSlotTuple>(EMPTY_COMPARE_SLOTS)
   const [drawTool, setDrawTool] = useState<DrawTool>('none')
   const [drawings, setDrawings] = useState<DrawingItem[]>([])
+  const [showVolume, setShowVolume] = useState(true)
+  const tickerShellRef = useRef<HTMLDivElement>(null)
+  const [instrumentPickerOpen, setInstrumentPickerOpen] = useState(false)
   const [selectedNews, setSelectedNews] = useState<AssetNewsItem | null>(null)
-  const [newsSort, setNewsSort] = useState<'time' | 'impact'>('time')
-  const [liveHoverOhlc, setLiveHoverOhlc] = useState<OhlcTooltipState>(null)
   const [selectedBarTime, setSelectedBarTime] = useState<UTCTimestamp | null>(null)
   const [comparisonSeriesByAsset, setComparisonSeriesByAsset] = useState<Record<string, CandlePoint[]>>({})
 
   const { rows: marketRows } = useMarkets({
     page: 0,
-    size: 200,
+    size: 800,
     category: 'all',
     searchTerm: '',
     sort: 'change1D,desc',
@@ -91,6 +96,12 @@ export function AnalysisPage() {
     [marketRows],
   )
 
+  const comparisonCandidates = useMemo(() => {
+    return assets
+      .filter((a) => comparisonListCategory === 'all' || a.type === comparisonListCategory)
+      .sort((a, b) => a.symbol.localeCompare(b.symbol))
+  }, [assets, comparisonListCategory])
+
   const selectedSymbol = searchParams.get('symbol')?.toUpperCase()
   const selectedAsset = useMemo(() => {
     if (assets.length === 0) return null
@@ -103,11 +114,34 @@ export function AnalysisPage() {
     return assets[0]
   }, [assets, selectedSymbol])
 
+  const overview = useMemo(
+    () => (selectedAsset ? (marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null) : null),
+    [marketBySymbol, selectedAsset],
+  )
+
+  const comparisonAssetIds = useMemo(() => compareSlotIds.filter((id): id is string => id != null), [compareSlotIds])
+
+  const compareSlotAssets = useMemo(
+    () => compareSlotIds.map((id) => (id ? (assetsById.get(id) ?? null) : null)),
+    [compareSlotIds, assetsById],
+  )
+
+  const scopeTag = useMemo(() => {
+    const c = (overview?.category ?? '').toLowerCase()
+    if (c.includes('bist')) return t('ticker.scopeBist')
+    const w = (selectedAsset?.wireCategory ?? '').toUpperCase()
+    if (w.includes('NASDAQ') || w.includes('NYSE') || w.includes('US')) return t('ticker.scopeUs')
+    return t('ticker.scopeGlobal')
+  }, [overview, selectedAsset, t])
+
+  const categoryTag = selectedAsset ? t(`assetSelector.types.${selectedAsset.type}`) : ''
+
   const { candles: selectedWindowSeries, loading: candlesLoading, error: candlesError, refetch: refetchCandles } = useCandles(
     selectedAsset?.symbol ?? '',
     timeRange,
-    currency,
+    { currencyKey: currency, wireCategory: selectedAsset?.wireCategory ?? null },
   )
+
   const {
     indicators,
     loading: indicatorsLoading,
@@ -116,22 +150,19 @@ export function AnalysisPage() {
   const { data: newsFeed } = useNews(0, 50)
 
   useEffect(() => {
-    if (assets.length === 0) {
-      return
-    }
-    setComparisonAssets((prev) => {
-      if (prev.length > 0) {
-        return prev
-      }
-      return assets.slice(0, 3).map((asset) => asset.id)
+    if (!selectedAsset?.id) return
+    setCompareSlotIds((prev) => {
+      const next = prev.map((id) => (id === selectedAsset.id ? null : id)) as CompareSlotTuple
+      if (next[0] === prev[0] && next[1] === prev[1] && next[2] === prev[2]) return prev
+      return next
     })
-  }, [assets])
+  }, [selectedAsset?.id])
 
   useEffect(() => {
     let cancelled = false
-    const targets = comparisonAssets
+    const targets = comparisonAssetIds
       .filter((assetId) => selectedAsset != null && assetId !== selectedAsset.id)
-      .slice(0, 4)
+      .slice(0, 3)
       .map((assetId) => assetsById.get(assetId))
       .filter((asset): asset is AssetDefinition => asset != null)
 
@@ -143,7 +174,7 @@ export function AnalysisPage() {
     Promise.all(
       targets.map(async (asset) => ({
         id: asset.id,
-        candles: await fetchCandles(asset.symbol, timeRange),
+        candles: await fetchCandles(asset.symbol, timeRange, { wireCategory: asset.wireCategory }),
       })),
     )
       .then((rows) => {
@@ -163,22 +194,7 @@ export function AnalysisPage() {
     return () => {
       cancelled = true
     }
-  }, [assetsById, comparisonAssets, selectedAsset, timeRange])
-
-  const pinnedBar = useMemo(() => {
-    if (selectedBarTime == null) return null
-    return selectedWindowSeries.find((c) => c.time === selectedBarTime) ?? null
-  }, [selectedBarTime, selectedWindowSeries])
-
-  const chartReadout = useMemo(() => {
-    if (liveHoverOhlc) {
-      return { source: 'hover' as const, ...liveHoverOhlc }
-    }
-    if (pinnedBar) {
-      return candleToReadout(pinnedBar, 'pin')
-    }
-    return null
-  }, [liveHoverOhlc, pinnedBar])
+  }, [assetsById, comparisonAssetIds, selectedAsset, timeRange])
 
   const windowedTradeEvents = useMemo(() => [], [])
 
@@ -191,11 +207,31 @@ export function AnalysisPage() {
     const yearly = getPerformancePercent(sliceLast(selectedWindowSeries, 365 * 24))
     return {
       currentPrice: current?.close ?? overview?.price ?? 0,
-      volume: current?.volume ?? 0,
       daily: overview?.change1D ?? daily,
       weekly,
       monthly: overview?.change1M ?? monthly,
       yearly: overview?.change1Y ?? yearly,
+    }
+  }, [marketBySymbol, selectedAsset, selectedWindowSeries])
+
+  const horizonReturns = useMemo(() => {
+    const ov = selectedAsset ? (marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null) : null
+    const s = selectedWindowSeries
+    const pct = (points: typeof s) => {
+      if (points.length < 2) return null
+      const v = getPerformancePercent(points)
+      return Number.isFinite(v) ? v : null
+    }
+    const pick = (apiVal: number | null | undefined, candlePoints: typeof s) => {
+      if (apiVal != null && Number.isFinite(apiVal)) return apiVal
+      return pct(candlePoints)
+    }
+    return {
+      weekly: pct(sliceLast(s, 7 * 24)),
+      monthly: pick(ov?.change1M, sliceLast(s, 30 * 24)),
+      threeMonth: pick(ov?.change3M, sliceLast(s, 90 * 24)),
+      sixMonth: pick(ov?.change6M, sliceLast(s, 180 * 24)),
+      yearly: pick(ov?.change1Y, sliceLast(s, 365 * 24)),
     }
   }, [marketBySymbol, selectedAsset, selectedWindowSeries])
 
@@ -215,18 +251,15 @@ export function AnalysisPage() {
         relatedAssets: item.relatedSymbols ?? [],
       }))
       .filter((item) => Number.isFinite(item.createdAt))
-    if (newsSort === 'impact') {
-      return [...mapped].sort((a, b) => Math.abs(b.reactionPercent1h) - Math.abs(a.reactionPercent1h))
-    }
     return [...mapped].sort((a, b) => b.createdAt - a.createdAt)
-  }, [newsFeed, newsSort, selectedAsset])
+  }, [newsFeed, selectedAsset])
 
   const comparisonLines = useMemo(() => {
-    if (!showCompareOnChart || selectedAsset == null) return []
+    if (selectedAsset == null) return []
     const compareTail = getComparisonTailCount(timeRange)
-    return comparisonAssets
+    return comparisonAssetIds
       .filter((assetId) => assetId !== selectedAsset.id)
-      .slice(0, 4)
+      .slice(0, 3)
       .map((assetId, index) => {
         const windowed = sliceLast(comparisonSeriesByAsset[assetId] ?? [], compareTail)
         const base = windowed[0]?.close || 1
@@ -240,7 +273,7 @@ export function AnalysisPage() {
         }
       })
       .filter((line) => line.data.length > 0)
-  }, [comparisonAssets, comparisonSeriesByAsset, selectedAsset, showCompareOnChart, timeRange])
+  }, [comparisonAssetIds, comparisonSeriesByAsset, selectedAsset, timeRange])
 
   const tableRows = useMemo(
     () =>
@@ -257,8 +290,21 @@ export function AnalysisPage() {
     [assets, marketBySymbol],
   )
 
-  const toggleComparison = (assetId: string) => {
-    setComparisonAssets((prev) => (prev.includes(assetId) ? prev.filter((id) => id !== assetId) : [...prev, assetId]))
+  const handleCompareSlotSet = (slotIndex: number, assetId: string | null) => {
+    if (slotIndex < 0 || slotIndex > 2) return
+    if (assetId != null && selectedAsset?.id === assetId) return
+    setCompareSlotIds((prev) => {
+      const next: CompareSlotTuple = [...prev] as CompareSlotTuple
+      if (assetId != null) {
+        for (let i = 0; i < 3; i++) {
+          if (i !== slotIndex && next[i] === assetId) {
+            next[i] = null
+          }
+        }
+      }
+      next[slotIndex] = assetId
+      return next
+    })
   }
 
   const handleAssetChange = (id: string) => {
@@ -272,151 +318,195 @@ export function AnalysisPage() {
     }
   }
 
+  const handlePickAssetFromPopover = (id: string) => {
+    handleAssetChange(id)
+    setInstrumentPickerOpen(false)
+  }
+
+  useEffect(() => {
+    setInstrumentPickerOpen(false)
+  }, [selectedAsset?.id])
+
+  useEffect(() => {
+    if (!instrumentPickerOpen) {
+      return undefined
+    }
+    const onPointerDown = (ev: PointerEvent) => {
+      const root = tickerShellRef.current
+      if (root && !root.contains(ev.target as Node)) {
+        setInstrumentPickerOpen(false)
+      }
+    }
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        setInstrumentPickerOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [instrumentPickerOpen])
+
   const handleRangeChange = (range: TimeRange) => {
     setSelectedBarTime(null)
     setSelectedNews(null)
+    setInstrumentPickerOpen(false)
     setTimeRange(range)
   }
 
   return (
     <section className="fi-analysis-page">
-      <header className="fi-analysis-top-grid">
-        <AssetSelector
-          assets={assets}
-          selectedAssetId={selectedAsset?.id ?? ''}
-          selectedAssetType={selectedAssetType}
-          onAssetChange={handleAssetChange}
-          onAssetTypeChange={setSelectedAssetType}
-        />
-        <ComparisonSelector assets={assets} selected={comparisonAssets} onToggle={toggleComparison} />
-        <section className="card fi-analysis-controls">
-          <div>
-            {rangeButtons.map((range) => (
-              <button
-                key={range}
-                type="button"
-                className={`fi-range-chip${timeRange === range ? ' fi-range-chip-active' : ''}`}
-                onClick={() => handleRangeChange(range)}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
-          <div>
-            <button
-              type="button"
-              className={`fi-toggle-chip${showNewsOnChart ? ' fi-toggle-chip-active' : ''}`}
-              onClick={() => setShowNewsOnChart((prev) => !prev)}
-            >
-              {t('controls.showNews')}
-            </button>
-            <button
-              type="button"
-              className={`fi-toggle-chip${showMA20 ? ' fi-toggle-chip-active' : ''}`}
-              onClick={() => setShowMA20((prev) => !prev)}
-            >
-              {t('controls.showMA20')}
-            </button>
-            <button
-              type="button"
-              className={`fi-toggle-chip${showMA50 ? ' fi-toggle-chip-active' : ''}`}
-              onClick={() => setShowMA50((prev) => !prev)}
-            >
-              {t('controls.showMA50')}
-            </button>
-            <button
-              type="button"
-              className={`fi-toggle-chip${showRsi ? ' fi-toggle-chip-active' : ''}`}
-              onClick={() => setShowRsi((prev) => !prev)}
-            >
-              {t('controls.showRSI')}
-            </button>
-            <button
-              type="button"
-              className={`fi-toggle-chip${showCompareOnChart ? ' fi-toggle-chip-active' : ''}`}
-              onClick={() => setShowCompareOnChart((prev) => !prev)}
-            >
-              {t('controls.showCompare')}
-            </button>
-            <select value={drawTool} onChange={(event) => setDrawTool(event.target.value as DrawTool)}>
-              <option value="none">{t('controls.drawNone')}</option>
-              <option value="trendline">{t('controls.drawTrend')}</option>
-              <option value="point">{t('controls.drawMarker')}</option>
-              <option value="hline">{t('controls.drawHLevel')}</option>
-            </select>
-          </div>
-        </section>
-      </header>
-
       <div className="fi-analysis-main-grid">
-        <AnalysisChart
-          candles={selectedWindowSeries}
-          fitContentKey={`${selectedAsset?.id ?? 'none'}-${timeRange}`}
-          comparisonLines={comparisonLines}
-          showCompare={showCompareOnChart}
-          showMA20={showMA20 && !indicatorsError}
-          showMA50={showMA50 && !indicatorsError}
-          showRSI={showRsi && !indicatorsError}
-          movingAverageData={{ ma20: indicators.ma20, ma50: indicators.ma50 }}
-          rsiData={indicators.rsi}
-          showEventMarkers={showNewsOnChart}
-          newsItems={relatedNews}
-          tradeEvents={windowedTradeEvents}
-          selectedNewsId={selectedNews?.id ?? null}
-          onSelectNews={setSelectedNews}
-          selectedBarTime={selectedBarTime}
-          onBarSelect={setSelectedBarTime}
-          onLiveOhlcForPanel={setLiveHoverOhlc}
-          drawTool={drawTool}
-          drawings={drawings}
-          onAddDrawing={(item) => setDrawings((prev) => [...prev, item])}
-          locale={language}
-          currency={currency}
-          assetType={selectedAsset?.type ?? 'stock'}
-        />
-        {candlesLoading && selectedWindowSeries.length === 0 ? (
-          <div className="markets-skeleton-row" aria-label={t('common:loading')} />
-        ) : null}
-        {candlesError ? (
-          <div className="markets-error-wrap">
-            <span>{t(candlesError)}</span>
-            <button
-              type="button"
-              className="markets-filter"
-              onClick={() => {
-                void refetchCandles()
-              }}
-            >
-              {t('common:retry')}
-            </button>
+        <div className="fi-analysis-chart-column">
+          <div className="fi-analysis-deck-grid">
+            <div className="fi-analysis-deck-col fi-analysis-deck-col--ticker">
+              <div className="fi-analysis-ticker-shell" ref={tickerShellRef}>
+                {selectedAsset ? (
+                  <AnalysisTickerBar
+                    layout="terminal"
+                    asset={selectedAsset}
+                    price={stats.currentPrice}
+                    dailyPct={stats.daily}
+                    dailyHigh={overview?.high24h ?? null}
+                    dailyLow={overview?.low24h ?? null}
+                    weeklyPct={stats.weekly}
+                    yearlyPct={stats.yearly}
+                    trendScore={overview?.trendScore ?? null}
+                    trendLabel={overview?.trendLabel ?? null}
+                    categoryTag={categoryTag}
+                    currencyCode={currency}
+                    scopeTag={scopeTag}
+                    locale={language}
+                    currency={currency}
+                    assetType={selectedAsset.type}
+                    instrumentPickerOpen={instrumentPickerOpen}
+                    onInstrumentTriggerClick={() => setInstrumentPickerOpen((open) => !open)}
+                    horizonReturns={horizonReturns}
+                  />
+                ) : null}
+                {instrumentPickerOpen && selectedAsset ? (
+                  <div
+                    id="fi-analysis-instrument-popover"
+                    className="fi-analysis-instrument-popover fi-analysis-instrument-popover--bar"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="fi-analysis-instrument-popover-title"
+                  >
+                    <div className="fi-analysis-instrument-popover-bar">
+                      <span id="fi-analysis-instrument-popover-title" className="fi-analysis-instrument-popover-bar-title">
+                        {t('ticker.instrumentPickerTitle')}
+                      </span>
+                      <button
+                        type="button"
+                        className="fi-analysis-instrument-popover-close"
+                        onClick={() => setInstrumentPickerOpen(false)}
+                        aria-label={t('ticker.closeInstrumentPicker')}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <AssetSelector
+                      variant="popover"
+                      assets={assets}
+                      selectedAssetId={selectedAsset.id}
+                      comparisonListCategory={comparisonListCategory}
+                      onAssetChange={handlePickAssetFromPopover}
+                      onComparisonListCategoryChange={setComparisonListCategory}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
-        ) : null}
-        {!candlesLoading && !candlesError && indicatorsLoading ? <p className="fi-empty">{t('analysis:indicatorsLoading')}</p> : null}
-        {!candlesLoading && !candlesError && indicatorsError ? <p className="fi-empty">{t('analysis:indicatorsDisabled')}</p> : null}
-        {!candlesLoading && !candlesError && selectedWindowSeries.length === 0 ? <p className="fi-empty">{t('common:noData')}</p> : null}
-        {assets.length === 0 ? <p className="fi-empty">{t('common:noData')}</p> : null}
 
-        <div className="fi-analysis-right-col">
-          <AssetStatsPanel
-            currentPrice={stats.currentPrice}
-            daily={stats.daily}
-            weekly={stats.weekly}
-            monthly={stats.monthly}
-            yearly={stats.yearly}
-            volume={stats.volume}
-            marketCap={selectedAsset?.marketCap}
-            chartReadout={chartReadout}
-          />
-          <section className="card fi-news-sorter">
-            <label>
-              {t('sortNews')}
-              <select value={newsSort} onChange={(event) => setNewsSort(event.target.value as 'time' | 'impact')}>
-                <option value="time">{t('sort.byTime')}</option>
-                <option value="impact">{t('sort.byImpact')}</option>
-              </select>
-            </label>
-          </section>
-          <NewsPanel items={relatedNews} selectedId={selectedNews?.id ?? null} onSelect={setSelectedNews} />
+          <div className="fi-analysis-chart-hero">
+            <div className="fi-analysis-chart-body">
+              <div className="fi-analysis-chart-stack">
+                <AnalysisChartFrame
+                  timeRange={timeRange}
+                  onRangeChange={handleRangeChange}
+                  showNewsOnChart={showNewsOnChart}
+                  showMA20={showMA20}
+                  showMA50={showMA50}
+                  showRsi={showRsi}
+                  showVolume={showVolume}
+                  onToggleNews={() => setShowNewsOnChart((v) => !v)}
+                  onToggleMA20={() => setShowMA20((v) => !v)}
+                  onToggleMA50={() => setShowMA50((v) => !v)}
+                  onToggleRsi={() => setShowRsi((v) => !v)}
+                  onToggleVolume={() => setShowVolume((v) => !v)}
+                  drawTool={drawTool}
+                  onDrawToolChange={setDrawTool}
+                  compareSlots={compareSlotAssets}
+                  compareCandidates={comparisonCandidates}
+                  mainAssetId={selectedAsset?.id ?? null}
+                  onCompareSlotSet={handleCompareSlotSet}
+                >
+                  <AnalysisChart
+                    embedded
+                    candles={selectedWindowSeries}
+                    fitContentKey={`${selectedAsset?.id ?? 'none'}-${timeRange}`}
+                    comparisonLines={comparisonLines}
+                    showCompare={comparisonLines.length > 0}
+                    showMA20={showMA20 && !indicatorsError}
+                    showMA50={showMA50 && !indicatorsError}
+                    showRSI={showRsi && !indicatorsError}
+                    movingAverageData={{ ma20: indicators.ma20, ma50: indicators.ma50 }}
+                    rsiData={indicators.rsi}
+                    showEventMarkers={showNewsOnChart}
+                    showVolume={showVolume}
+                    newsItems={relatedNews}
+                    tradeEvents={windowedTradeEvents}
+                    selectedNewsId={selectedNews?.id ?? null}
+                    onSelectNews={setSelectedNews}
+                    selectedBarTime={selectedBarTime}
+                    onBarSelect={setSelectedBarTime}
+                    drawTool={drawTool}
+                    drawings={drawings}
+                    onAddDrawing={(item) => setDrawings((prev) => [...prev, item])}
+                    locale={language}
+                    currency={currency}
+                    assetType={selectedAsset?.type ?? 'stock'}
+                  />
+                </AnalysisChartFrame>
+                {candlesLoading && selectedWindowSeries.length === 0 ? (
+                  <div className="markets-skeleton-row" aria-label={t('common:loading')} />
+                ) : null}
+                {candlesError ? (
+                  <div className="markets-error-wrap">
+                    <span>{t(candlesError)}</span>
+                    <button
+                      type="button"
+                      className="markets-filter"
+                      onClick={() => {
+                        void refetchCandles()
+                      }}
+                    >
+                      {t('common:retry')}
+                    </button>
+                  </div>
+                ) : null}
+                {!candlesLoading && !candlesError && indicatorsLoading ? (
+                  <p className="fi-empty">{t('analysis:indicatorsLoading')}</p>
+                ) : null}
+                {!candlesLoading && !candlesError && indicatorsError ? (
+                  <p className="fi-empty">{t('analysis:indicatorsDisabled')}</p>
+                ) : null}
+                {!candlesLoading && !candlesError && selectedWindowSeries.length === 0 ? (
+                  <div className="fi-empty-stack">
+                    <p className="fi-empty">{t('seriesEmpty')}</p>
+                    {selectedAsset?.type === 'fund' || selectedAsset?.type === 'commodity' ? (
+                      <p className="fi-empty fi-empty-subtle">{t('seriesEmptyCatalogHint')}</p>
+                    ) : null}
+                  </div>
+                ) : null}
+                {assets.length === 0 ? <p className="fi-empty">{t('common:noData')}</p> : null}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
