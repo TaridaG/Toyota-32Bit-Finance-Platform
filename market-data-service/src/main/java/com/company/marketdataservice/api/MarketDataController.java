@@ -3,7 +3,9 @@ package com.company.marketdataservice.api;
 import com.company.marketdataservice.dto.FundDto;
 import com.company.marketdataservice.dto.FxRateDto;
 import com.company.marketdataservice.dto.MarketPriceDto;
+import com.company.marketdataservice.dto.MarketSegmentPulseResponse;
 import com.company.marketdataservice.service.MarketDataReadService;
+import com.company.marketdataservice.service.MarketSegmentPulseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,10 +19,16 @@ import java.util.List;
 public class MarketDataController {
 
     private final MarketDataReadService marketDataReadService;
+    private final MarketSegmentPulseService marketSegmentPulseService;
 
     @GetMapping("/prices")
     public List<MarketPriceDto> prices() {
         return marketDataReadService.getLatestPrices();
+    }
+
+    @GetMapping("/segments/pulse")
+    public MarketSegmentPulseResponse segmentPulse() {
+        return marketSegmentPulseService.getPulse();
     }
 
     @GetMapping("/fx")
