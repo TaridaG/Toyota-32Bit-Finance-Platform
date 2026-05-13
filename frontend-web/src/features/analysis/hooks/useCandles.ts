@@ -2,6 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { fetchCandles, normalizeAnalysisInstrumentSymbol, type AnalysisRange } from '../api/analysisService'
 import type { CandlePoint } from '../../../pages/analysis/types'
 
+type UseCandlesOpts = {
+  currencyKey?: string
+  wireCategory?: string | null
+}
+
 type UseCandlesResult = {
   candles: CandlePoint[]
   loading: boolean
@@ -9,10 +14,12 @@ type UseCandlesResult = {
   refetch: () => Promise<void>
 }
 
-export function useCandles(symbol: string, interval: AnalysisRange, currencyKey?: string): UseCandlesResult {
+export function useCandles(symbol: string, interval: AnalysisRange, opts?: UseCandlesOpts): UseCandlesResult {
   const [candles, setCandles] = useState<CandlePoint[]>([])
   const [loading, setLoading] = useState(() => normalizeAnalysisInstrumentSymbol(symbol).length > 0)
   const [error, setError] = useState<string | null>(null)
+  const wireCategory = opts?.wireCategory ?? null
+  const currencyKey = opts?.currencyKey
 
   const refetch = useCallback(async () => {
     if (!normalizeAnalysisInstrumentSymbol(symbol)) {
@@ -24,14 +31,14 @@ export function useCandles(symbol: string, interval: AnalysisRange, currencyKey?
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchCandles(symbol, interval)
+      const data = await fetchCandles(symbol, interval, { wireCategory })
       setCandles(data)
     } catch {
-      setError('common:noData')
+      setError('analysis:chartLoadError')
     } finally {
       setLoading(false)
     }
-  }, [interval, symbol])
+  }, [interval, symbol, wireCategory])
 
   useEffect(() => {
     void refetch()

@@ -1,6 +1,7 @@
 import type { LineData, Time, UTCTimestamp } from 'lightweight-charts'
 import { apiClient } from '../../../shared/api/client'
 import type { CandlePoint } from '../../../pages/analysis/types'
+import { symbolUsesFundMarketHistory, symbolUsesFxMarketHistory, US_LISTED_ETF_TICKERS_AS_FUNDS } from '../../markets/api/marketService'
 
 type ApiResponse<T> = {
   success: boolean
@@ -19,6 +20,13 @@ type AnalyticsCandleDto = {
 
 export type AnalysisRange = '1h' | '6h' | '24h' | '7d' | '30d' | '90d' | '1y' | '5y'
 type HistoryPointDto = { time?: string; value?: number }
+
+export type AnalysisHistoryKind = 'price' | 'fx' | 'fund'
+
+export type FetchCandlesContext = {
+  /** Catalog wire category (STOCK, FX, CRYPTO, FUND, METAL, …) — drives which history endpoint is used. */
+  wireCategory?: string | null
+}
 
 const RANGE_TO_INTERVAL: Record<AnalysisRange, string> = {
   '1h': 'ONE_MINUTE',
@@ -66,8 +74,24 @@ export function normalizeAnalysisInstrumentSymbol(symbol: string): string {
   return symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
 }
 
-function toSymbol(symbol: string): string {
-  return normalizeAnalysisInstrumentSymbol(symbol)
+/**
+ * Symbol as stored in market-data history tables / catalog (keeps Yahoo-style "=" and "." e.g. GC=F, BRK.B).
+ * Using this for `/api/market/prices/history` is required — stripping "=" breaks futures lookups.
+ */
+function wireCatalogSymbol(symbol: string): string {
+  return symbol.trim().toUpperCase()
+}
+
+function analyticsSymbolCandidates(raw: string): string[] {
+  const wired = wireCatalogSymbol(raw)
+  const stripped = normalizeAnalysisInstrumentSymbol(raw)
+  if (!wired && !stripped) {
+    return []
+  }
+  if (stripped === wired) {
+    return [stripped]
+  }
+  return [stripped, wired]
 }
 
 function toDateParamUTC(ts: number): string {
@@ -77,6 +101,136 @@ function toDateParamUTC(ts: number): string {
 function dayBucketUtc(tsMs: number): number {
   const date = new Date(tsMs)
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+}
+
+function hourBucketUtc(tsMs: number): number {
+  const d = new Date(tsMs)
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours())
+}
+
+function resolveHistoryKind(catalogSymbol: string, wireCategory: string | null | undefined): AnalysisHistoryKind {
+  const sym = catalogSymbol.trim().toUpperCase()
+  if (symbolUsesFundMarketHistory(wireCategory) && !US_LISTED_ETF_TICKERS_AS_FUNDS.has(sym)) {
+    return 'fund'
+  }
+  if (symbolUsesFxMarketHistory(catalogSymbol, wireCategory)) {
+    return 'fx'
+  }
+  const norm = catalogSymbol.trim().toUpperCase()
+  const cat = (wireCategory ?? '').trim().toUpperCase()
+  if (!cat && (norm.endsWith('TRY') || norm.includes('/'))) {
+    return 'fx'
+  }
+  return 'price'
+}
+
+function historyUrl(kind: AnalysisHistoryKind): string {
+  if (kind === 'fx') {
+    return '/api/market/fx/history'
+  }
+  if (kind === 'fund') {
+    return '/api/market/funds/history'
+  }
+  return '/api/market/prices/history'
+}
+
+function historyParams(symbol: string, from: string, to: string, kind: AnalysisHistoryKind): Record<string, string> {
+  if (kind === 'fund') {
+    return { fundCode: symbol, from, to }
+  }
+  return { symbol, from, to }
+}
+
+function sortHistoryPointsAsc(points: HistoryPointDto[]): HistoryPointDto[] {
+  return [...points]
+    .map((p) => ({ p, ts: p.time ? Date.parse(p.time) : NaN }))
+    .filter((x) => Number.isFinite(x.ts))
+    .sort((a, b) => a.ts - b.ts)
+    .map((x) => x.p)
+}
+
+async function collectHistoryPoints(symbol: string, fromTs: number, toTs: number, kind: AnalysisHistoryKind): Promise<HistoryPointDto[]> {
+  /** MDS history API rejects spans > 365 inclusive calendar days; keep chunks under that (DST-safe). */
+  const chunkMs = 330 * DAY_MS
+  let cursorFrom = fromTs
+  const allPoints: HistoryPointDto[] = []
+  while (cursorFrom <= toTs) {
+    const cursorTo = Math.min(cursorFrom + chunkMs - 1, toTs)
+    const from = toDateParamUTC(cursorFrom)
+    const to = toDateParamUTC(cursorTo)
+    const response = await apiClient.get<HistoryPointDto[]>(historyUrl(kind), {
+      params: historyParams(symbol, from, to, kind),
+    })
+    const chunk = Array.isArray(response.data) ? response.data : []
+    allPoints.push(...chunk)
+    cursorFrom = cursorTo + 1
+  }
+  const sorted = sortHistoryPointsAsc(allPoints)
+  if (kind === 'fund' && sorted.length === 0) {
+    return collectHistoryPoints(symbol, fromTs, toTs, 'price')
+  }
+  return sorted
+}
+
+function bucketGranularity(range: AnalysisRange): 'hour' | 'day' {
+  return range === '1h' || range === '6h' || range === '24h' ? 'hour' : 'day'
+}
+
+function historyPointsToCandles(points: HistoryPointDto[], granularity: 'hour' | 'day', maxBars: number): CandlePoint[] {
+  const bucket = granularity === 'day' ? dayBucketUtc : hourBucketUtc
+  const byKey = new Map<number, CandlePoint>()
+  for (const item of points) {
+    if (!item?.time) {
+      continue
+    }
+    const ts = Date.parse(item.time)
+    const price = Number(item.value)
+    if (!Number.isFinite(ts) || !Number.isFinite(price)) {
+      continue
+    }
+    const key = bucket(ts)
+    const candleTime = Math.floor(key / 1000) as UTCTimestamp
+    const existing = byKey.get(key)
+    if (!existing) {
+      byKey.set(key, {
+        time: candleTime,
+        open: price,
+        high: price,
+        low: price,
+        close: price,
+        volume: 0,
+      })
+      continue
+    }
+    existing.high = Math.max(existing.high, price)
+    existing.low = Math.min(existing.low, price)
+    existing.close = price
+  }
+  return [...byKey.values()].sort((a, b) => a.time - b.time).slice(-maxBars)
+}
+
+/** Minimum calendar span to pull when analytics has no rows (FX/funds rarely have intraday buckets). */
+function backfillCalendarDays(range: AnalysisRange): number {
+  switch (range) {
+    case '1h':
+      return 7
+    case '6h':
+      return 14
+    case '24h':
+      return 21
+    case '7d':
+      return 21
+    case '30d':
+      return 45
+    case '90d':
+      return 120
+    case '1y':
+      return 400
+    case '5y':
+      return 365 * 5 + 30
+    default:
+      return 60
+  }
 }
 
 function mapCandle(dto: AnalyticsCandleDto): CandlePoint | null {
@@ -98,11 +252,46 @@ function mapCandle(dto: AnalyticsCandleDto): CandlePoint | null {
   }
 }
 
-export async function fetchCandles(symbol: string, range: AnalysisRange): Promise<CandlePoint[]> {
-  const normalized = toSymbol(symbol)
-  if (!normalized) {
+async function fetchAnalyticsCandlesForRange(
+  analyticsCandidates: string[],
+  interval: string,
+  fromTs: number,
+): Promise<CandlePoint[]> {
+  for (const sym of analyticsCandidates) {
+    if (!sym) {
+      continue
+    }
+    const pathSeg = encodeURIComponent(sym)
+    try {
+      const response = await apiClient.get<ApiResponse<AnalyticsCandleDto[]>>(`/api/analytics/instruments/${pathSeg}/candles`, {
+        params: { interval },
+      })
+      const points = (response.data.data ?? [])
+        .map(mapCandle)
+        .filter((item): item is CandlePoint => item != null)
+        .sort((a, b) => a.time - b.time)
+      const windowed = points.filter((point) => point.time * 1000 >= fromTs)
+      if (windowed.length > 0) {
+        return windowed
+      }
+      if (points.length > 0) {
+        return points
+      }
+    } catch {
+      /* try next candidate symbol */
+    }
+  }
+  return []
+}
+
+export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: FetchCandlesContext): Promise<CandlePoint[]> {
+  const historySym = wireCatalogSymbol(symbol)
+  if (!historySym) {
     return []
   }
+  const analyticsCandidates = analyticsSymbolCandidates(symbol)
+  const wire = ctx?.wireCategory ?? null
+  const kind = resolveHistoryKind(historySym, wire)
   const interval = RANGE_TO_INTERVAL[range]
   const fromTs = Date.now() - RANGE_TO_MS[range]
   const historyDays = RANGE_TO_HISTORY_DAYS[range]
@@ -110,31 +299,36 @@ export async function fetchCandles(symbol: string, range: AnalysisRange): Promis
   if (historyDays) {
     const historyToTs = Date.now() - DAY_MS
     const historyFromTs = historyToTs - (historyDays - 1) * DAY_MS
-    const historyPoints = await fetchHistoryCandles(normalized, range, historyFromTs, historyToTs)
+    const historyPoints = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyPoints.length > 0) {
       return historyPoints
     }
   }
 
-  const response = await apiClient.get<ApiResponse<AnalyticsCandleDto[]>>(`/api/analytics/instruments/${normalized}/candles`, {
-    params: { interval },
-  })
-  const points = (response.data.data ?? [])
-    .map(mapCandle)
-    .filter((item): item is CandlePoint => item != null)
-    .sort((a, b) => a.time - b.time)
+  const points = await fetchAnalyticsCandlesForRange(analyticsCandidates, interval, fromTs)
   const windowed = points.filter((point) => point.time * 1000 >= fromTs)
   if (windowed.length > 0) {
     return windowed
   }
+  if (points.length > 0) {
+    return points
+  }
+
   if (interval === 'ONE_DAY' && shouldUseHistoryFallback(points, range)) {
     const historyToTs = Date.now() - DAY_MS
     const historyFromTs = historyDays ? historyToTs - (historyDays - 1) * DAY_MS : fromTs
-    const historyFallback = await fetchHistoryCandles(normalized, range, historyFromTs, historyToTs)
+    const historyFallback = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyFallback.length > 0) {
       return historyFallback
     }
   }
+
+  const fromMarket = await candlesFromMarketHistory(historySym, range, fromTs, Date.now(), kind)
+  if (fromMarket.length > 0) {
+    const w = fromMarket.filter((point) => point.time * 1000 >= fromTs)
+    return w.length > 0 ? w : fromMarket
+  }
+
   const fallbackPoints = RANGE_TO_FALLBACK_POINTS[range]
   return points.slice(Math.max(0, points.length - fallbackPoints))
 }
@@ -144,61 +338,41 @@ function shouldUseHistoryFallback(points: CandlePoint[], range: AnalysisRange): 
   return points.length < minPoints
 }
 
-async function fetchHistoryCandles(symbol: string, range: AnalysisRange, fromTs: number, toTs: number): Promise<CandlePoint[]> {
+async function candlesFromMarketHistory(
+  symbol: string,
+  range: AnalysisRange,
+  windowFromTs: number,
+  windowToTs: number,
+  kind: AnalysisHistoryKind,
+): Promise<CandlePoint[]> {
+  const spanDays = backfillCalendarDays(range)
+  const historyFromTs = windowToTs - spanDays * DAY_MS
+  const raw = await collectHistoryPoints(symbol, historyFromTs, windowToTs, kind)
+  if (raw.length === 0) {
+    return []
+  }
+  const granularity = bucketGranularity(range)
+  const maxBars = Math.min(5000, Math.max(120, spanDays * (granularity === 'hour' ? 24 : 1) + 50))
+  return historyPointsToCandles(raw, granularity, maxBars)
+}
+
+async function fetchHistoryCandles(
+  symbol: string,
+  range: AnalysisRange,
+  fromTs: number,
+  toTs: number,
+  kind: AnalysisHistoryKind,
+): Promise<CandlePoint[]> {
   const targetDays = RANGE_TO_HISTORY_DAYS[range]
   if (!targetDays) {
     return []
   }
-  // Backend caps each request span via market.history.query.max-range-days (default ~5y).
-  // Chunk requests to stay within that cap and avoid huge single payloads.
-  const chunkMs = 364 * DAY_MS
-  let cursorFrom = fromTs
-  const allPoints: HistoryPointDto[] = []
-  while (cursorFrom <= toTs) {
-    const cursorTo = Math.min(cursorFrom + chunkMs - 1, toTs)
-    const response = await apiClient.get<HistoryPointDto[]>('/api/market/prices/history', {
-      params: {
-        symbol,
-        from: toDateParamUTC(cursorFrom),
-        to: toDateParamUTC(cursorTo),
-      },
-    })
-    const chunk = Array.isArray(response.data) ? response.data : []
-    allPoints.push(...chunk)
-    cursorFrom = cursorTo + 1
-  }
-  if (allPoints.length === 0) {
+  const raw = await collectHistoryPoints(symbol, fromTs, toTs, kind)
+  if (raw.length === 0) {
     return []
   }
-
-  const byDay = new Map<number, CandlePoint>()
-  for (const item of allPoints) {
-    if (!item?.time) continue
-    const ts = Date.parse(item.time)
-    const price = Number(item.value)
-    if (!Number.isFinite(ts) || !Number.isFinite(price)) continue
-    const day = dayBucketUtc(ts)
-    const candleTime = Math.floor(day / 1000) as UTCTimestamp
-    const existing = byDay.get(day)
-    if (!existing) {
-      byDay.set(day, {
-        time: candleTime,
-        open: price,
-        high: price,
-        low: price,
-        close: price,
-        volume: 0,
-      })
-      continue
-    }
-    existing.high = Math.max(existing.high, price)
-    existing.low = Math.min(existing.low, price)
-    existing.close = price
-  }
-
-  return [...byDay.values()]
-    .sort((a, b) => a.time - b.time)
-    .slice(-Math.max(targetDays + 10, 120))
+  const candles = historyPointsToCandles(raw, 'day', Math.max(targetDays + 10, 120))
+  return candles.sort((a, b) => a.time - b.time).slice(-Math.max(targetDays + 10, 120))
 }
 
 function calculateMovingAverage(candles: CandlePoint[], period: number): LineData<Time>[] {

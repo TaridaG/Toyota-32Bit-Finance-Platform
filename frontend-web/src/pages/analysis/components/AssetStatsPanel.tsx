@@ -7,7 +7,6 @@ type AssetStatsPanelProps = {
   weekly: number
   monthly: number
   yearly: number
-  volume: number
   marketCap?: number
   chartReadout?: ChartReadout | null
 }
@@ -22,7 +21,6 @@ export function AssetStatsPanel({
   weekly,
   monthly,
   yearly,
-  volume,
   marketCap,
   chartReadout,
 }: AssetStatsPanelProps) {
@@ -75,10 +73,13 @@ export function AssetStatsPanel({
           <strong className={yearly >= 0 ? 'fi-up' : 'fi-down'}>{yearly.toFixed(2)}%</strong>
         </li>
       </ul>
-      <div className="fi-asset-meta">
-        <small>{t('volumeLabel')}: {volume.toLocaleString()}</small>
-        {marketCap ? <small>{t('marketCapLabel')}: {marketCap.toLocaleString()}</small> : null}
-      </div>
+      {marketCap ? (
+        <div className="fi-asset-meta">
+          <small>
+            {t('marketCapLabel')}: {marketCap.toLocaleString()}
+          </small>
+        </div>
+      ) : null}
     </article>
   )
 }

@@ -25,6 +25,7 @@ type AnalysisChartProps = {
   movingAverageData: { ma20: LineData<Time>[]; ma50: LineData<Time>[] }
   rsiData: LineData<Time>[]
   showEventMarkers: boolean
+  showVolume?: boolean
   newsItems: AssetNewsItem[]
   tradeEvents: ChartTradeEvent[]
   selectedNewsId: string | null
@@ -38,6 +39,8 @@ type AnalysisChartProps = {
   locale: string
   currency: string
   assetType: AssetType
+  /** Inside chart workbench: fills plot cell, no outer card chrome. */
+  embedded?: boolean
 }
 
 export function AnalysisChart({
@@ -51,6 +54,7 @@ export function AnalysisChart({
   movingAverageData,
   rsiData,
   showEventMarkers,
+  showVolume = true,
   newsItems,
   tradeEvents,
   selectedNewsId,
@@ -64,6 +68,7 @@ export function AnalysisChart({
   locale,
   currency,
   assetType,
+  embedded = false,
 }: AnalysisChartProps) {
   const newsMarkers = useNewsMarkers(newsItems, showEventMarkers)
 
@@ -86,6 +91,16 @@ export function AnalysisChart({
   }, [candles, newsItems, onSelectNews, onBarSelect, selectedBarTime])
 
   useCandleVolumeData(chart, seriesBundle, candles, fitContentKey)
+
+  useEffect(() => {
+    if (!seriesBundle?.volume) return
+    try {
+      seriesBundle.volume.applyOptions({ visible: showVolume })
+    } catch {
+      /* chart teardown */
+    }
+  }, [seriesBundle, showVolume])
+
   useMovingAverageIndicators(chart, seriesBundle, movingAverageData, {
     ma20Visible: showMA20,
     ma50Visible: showMA50,
@@ -158,12 +173,16 @@ export function AnalysisChart({
     }
   }, [chart])
 
-  return (
-    <article className="card fi-analysis-chart-card">
+  const chartInner = (
+    <>
       <div
         ref={containerRef}
         className="fi-chart-container"
-        style={{ minHeight: 460, height: 'clamp(320px, 52vh, 720px)' }}
+        style={
+          embedded
+            ? { minHeight: 280, height: '100%', flex: 1, minWidth: 0 }
+            : { minHeight: 460, height: 'clamp(320px, 52vh, 720px)' }
+        }
       >
         <div ref={chartMountRef} className="fi-chart-mount" />
         {candles.length === 0 ? (
@@ -209,6 +228,14 @@ export function AnalysisChart({
           </div>
         </div>
       ) : null}
-    </article>
+    </>
   )
+
+  if (embedded) {
+    return (
+      <article className="fi-analysis-chart-card fi-analysis-chart-card--embedded">{chartInner}</article>
+    )
+  }
+
+  return <article className="card fi-analysis-chart-card">{chartInner}</article>
 }

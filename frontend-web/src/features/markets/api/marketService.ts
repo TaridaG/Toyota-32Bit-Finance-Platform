@@ -93,7 +93,11 @@ type ParsedHistoryPoint = {
   value: number
 }
 
-const FUND_SYMBOLS = new Set(['VOO', 'VTI', 'QQQ', 'IVV', 'SPY'])
+/**
+ * US-listed ETF tickers shown under the "funds" strip; their time series is ingested as **equity** prices
+ * (`mds_market_price_history`), not TEFAS NAV (`mds_fund_nav_history`). Analysis must read price history for these.
+ */
+export const US_LISTED_ETF_TICKERS_AS_FUNDS = new Set(['VOO', 'VTI', 'QQQ', 'IVV', 'SPY'])
 const SPOT_METAL_SYMBOLS = new Set(['XAUTRY', 'XAGTRY', 'XPTTRY', 'XPDTRY', 'XCUTRY'])
 const METAL_FUTURES_SYMBOLS = new Set(['GC=F', 'SI=F', 'HG=F', 'PA=F', 'PL=F'])
 const METAL_SYMBOLS = new Set([...SPOT_METAL_SYMBOLS, ...METAL_FUTURES_SYMBOLS])
@@ -115,7 +119,7 @@ function toCategory(symbol: string, item?: MarketPriceApiItem): string {
     return hinted
   }
   if (METAL_SYMBOLS.has(symbol)) return 'METAL'
-  if (FUND_SYMBOLS.has(symbol)) return 'FUND'
+  if (US_LISTED_ETF_TICKERS_AS_FUNDS.has(symbol)) return 'FUND'
   if (symbol.endsWith('USDT') || symbol.endsWith('USD')) return 'CRYPTO'
   if (symbol.endsWith('TRY') || symbol.includes('/')) return 'FX'
   return 'STOCK'
@@ -354,11 +358,23 @@ function enrichContextualTrendScores<T extends CatalogRow & Partial<CatalogRowWi
 }
 
 /**
- * Loads 1D–1Y metrics for every visible catalog row (one summary batch + parallel FX history).
- * Required before sorting by any period column so ordering matches displayed values.
+ * FX pairs and spot metals in TRY use `/api/market/fx/history` (not price history).
+ * Futures/metals priced as equities still use price history.
  */
+export function symbolUsesFxMarketHistory(symbol: string, wireCategory: string | null | undefined): boolean {
+  const sym = symbol.trim().toUpperCase()
+  if (SPOT_METAL_SYMBOLS.has(sym)) {
+    return true
+  }
+  return (wireCategory ?? '').trim().toUpperCase() === 'FX'
+}
+
 function rowUsesFxHistory(row: CatalogRow): boolean {
-  return row.category === 'FX' || SPOT_METAL_SYMBOLS.has(row.symbol)
+  return symbolUsesFxMarketHistory(row.symbol, row.category)
+}
+
+export function symbolUsesFundMarketHistory(wireCategory: string | null | undefined): boolean {
+  return (wireCategory ?? '').trim().toUpperCase() === 'FUND'
 }
 
 async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
@@ -728,6 +744,91 @@ export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
     topGainers: gainersPage.content,
     topLosers: losersPage.content,
   }
+}
+
+/** Segment strip on Markets — same order as category filter chips (excludes "all"). */
+export const MARKETS_PULSE_CATEGORIES: Exclude<MarketCategory, 'all'>[] = [
+  'crypto',
+  'bist',
+  'nasdaq',
+  'forex',
+  'metals',
+  'globalFutures',
+  'funds',
+]
+
+export type MarketCategoryPulseItem = {
+  category: Exclude<MarketCategory, 'all'>
+  /**
+   * Equal-weight arithmetic mean of each instrument's 1D % move (aligned with Markets table 1D column).
+   * Served by market-data-service {@code /api/market/segments/pulse} (short TTL cache server-side).
+   */
+  meanChange1D: number | null
+  count: number
+  advancingCount: number
+}
+
+export type MarketCategoryPulseOverall = {
+  meanChange1D: number | null
+  count: number
+  advancingCount: number
+}
+
+export type MarketCategoryPulsePayload = {
+  overall: MarketCategoryPulseOverall
+  segments: MarketCategoryPulseItem[]
+}
+
+type SegmentPulseApiRow = {
+  segment: string
+  meanChange1D: number | null
+  count: number
+  advancingCount: number
+}
+
+type SegmentPulseApiOverall = {
+  meanChange1D: number | null
+  count: number
+  advancingCount: number
+}
+
+type SegmentPulseApiResponse = {
+  overall?: SegmentPulseApiOverall | null
+  segments: SegmentPulseApiRow[]
+  generatedAt: string
+}
+
+function mapOverall(raw: SegmentPulseApiOverall | null | undefined): MarketCategoryPulseOverall {
+  if (!raw) {
+    return { meanChange1D: null, count: 0, advancingCount: 0 }
+  }
+  const mean = raw.meanChange1D
+  return {
+    meanChange1D: mean != null && Number.isFinite(mean) ? mean : null,
+    count: Number(raw.count) || 0,
+    advancingCount: Number(raw.advancingCount) || 0,
+  }
+}
+
+/** Delegates to market-data-service; do not poll more aggressively than the UI hook (~45s). */
+export async function fetchMarketsCategoryPulse(): Promise<MarketCategoryPulsePayload> {
+  const { data } = await apiClient.get<SegmentPulseApiResponse>('/api/market/segments/pulse')
+  const rows = Array.isArray(data?.segments) ? data.segments : []
+  const bySeg = new Map(rows.map((r) => [r.segment, r]))
+  const segments = MARKETS_PULSE_CATEGORIES.map((category) => {
+    const row = bySeg.get(category)
+    if (!row) {
+      return { category, meanChange1D: null, count: 0, advancingCount: 0 }
+    }
+    const mean = row.meanChange1D
+    return {
+      category,
+      meanChange1D: mean != null && Number.isFinite(mean) ? mean : null,
+      count: Number(row.count) || 0,
+      advancingCount: Number(row.advancingCount) || 0,
+    }
+  })
+  return { overall: mapOverall(data?.overall), segments }
 }
 
 /** Spot FX vs TRY: no equity fundamentals; avoid /fundamentals 404 when BFF/MDS catalog lags prices. */

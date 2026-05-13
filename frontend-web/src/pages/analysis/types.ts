@@ -1,6 +1,6 @@
 import type { UTCTimestamp } from 'lightweight-charts'
 
-export type AssetType = 'stock' | 'crypto' | 'fx' | 'commodity' | 'index'
+export type AssetType = 'stock' | 'crypto' | 'fx' | 'commodity' | 'index' | 'fund'
 export type TimeRange = '1h' | '6h' | '24h' | '7d' | '30d' | '90d' | '1y' | '5y'
 export type DrawTool = 'none' | 'trendline' | 'point' | 'hline'
 
@@ -9,6 +9,8 @@ export type AssetDefinition = {
   symbol: string
   name: string
   type: AssetType
+  /** Raw catalog category from market-data (STOCK, FX, CRYPTO, FUND, METAL, …). */
+  wireCategory: string
   marketCap?: number
 }
 
