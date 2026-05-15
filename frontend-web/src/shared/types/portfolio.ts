@@ -1,6 +1,10 @@
 export type Portfolio = {
   id: number
   name: string
+  /**
+   * `MIXED` = unified portfolio account (not locked to one quote currency).
+   * Older rows may still be `TRY` or `USD`.
+   */
   baseCurrency: string
   /** ISO local date-time from API when present */
   createdAt?: string | null
@@ -35,6 +39,7 @@ export type PortfolioAllocation = {
 
 export type CreatePortfolioPayload = {
   name: string
+  /** Omit for a unified account (`MIXED` on the server). `TRY` / `USD` remain supported. */
   baseCurrency?: string
 }
 
@@ -46,17 +51,32 @@ export type ApiResponse<T> = {
 export type TradeInputMode = 'LOTS' | 'AMOUNT'
 export type PurchaseMode = 'NOW' | 'PAST'
 
+/** Backend {@code CurrencyConversionService} TRY-hub seti ile uyumlu odeme para birimleri. */
+export type TradePaymentCurrency = 'TRY' | 'USD' | 'EUR' | 'GBP' | 'JPY' | 'AED'
+
 export type TradePreviewPayload = {
   portfolioId?: number
   instrumentId: number
   inputMode: TradeInputMode
   lots?: number
   amount?: number
-  /** Ödeme para birimi: TRY-kotasyonlu varlıklar TRY, aksi USD (UI kilitler). */
-  inputCurrency: 'TRY' | 'USD'
+  /** Ödeme para birimi (portfoy kotasyonlari + gecmis islemlerden onerilen liste). */
+  inputCurrency: TradePaymentCurrency
   purchaseMode: PurchaseMode
   acquiredAt?: string
   unitPrice?: number
+}
+
+export type AcquisitionFxRatesSnapshot = {
+  fxAsOfIso: string
+  usdTry?: number | null
+  eurTry?: number | null
+  gbpTry?: number | null
+  jpyTry?: number | null
+  aedTry?: number | null
+  eurUsd?: number | null
+  gbpUsd?: number | null
+  jpyUsd?: number | null
 }
 
 export type TradePreview = {
@@ -70,6 +90,11 @@ export type TradePreview = {
   fxRateUsed: number
   manualUnitPriceRequired: boolean
   unitPriceSource: string
+  /** ISO-8601; set for PAST to the acquisition instant used (may differ after earliest-data rollback). */
+  effectiveAcquiredAt?: string | null
+  pastDateRolledToEarliestData?: boolean
+  /** TRY hub (+ USD legs) at conversion time: MDS snapshot for PAST, live for NOW. */
+  acquisitionFxRates?: AcquisitionFxRatesSnapshot | null
 }
 
 export type TradeExecution = {
@@ -99,8 +124,9 @@ export type TransactionHistoryItem = {
   quantity: number
   price: number
   totalAmount: number
-  /** Listing currency for price/totalAmount (TRY for XAUTRY, USD for AMZN, …). */
+  /** Listing-currency notional (unit price × qty); same as DB `totalAmount`. */
   quoteCurrency?: string | null
+  /** Payment / wallet currency amount at execution (DB `input_amount`); use for "Maliyet" when set. */
   inputCurrency: string | null
   inputAmount: number | null
   fxRateUsed: number | null

@@ -1,9 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  buildMarketOverviewFromCatalog,
-  fetchMarketCatalogSnapshot,
-  type MarketCatalogSnapshot,
-} from '../api/marketService'
+import { useCallback, useEffect, useState } from 'react'
+import { fetchMarketOverviewPage } from '../api/marketService'
 import type { MarketCategory, MarketOverviewItem } from '../../../shared/types/market'
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
 
@@ -29,8 +25,6 @@ type UseMarketsResult = {
 
 type RefetchOptions = {
   silent?: boolean
-  /** When true, always refetch `/api/market/prices` + `/api/market/fx` (e.g. manual retry). */
-  forceCatalog?: boolean
 }
 
 const POLL_INTERVAL_VISIBLE_MS = 10_000
@@ -57,10 +51,12 @@ function rowsEqual(prev: MarketOverviewItem[], next: MarketOverviewItem[]): bool
       a.low24h !== b.low24h ||
       a.category !== b.category ||
       a.instrumentId !== b.instrumentId ||
-      a.timestamp !== b.timestamp ||
-      a.freshness !== b.freshness ||
       (a.nativeQuote ?? null) !== (b.nativeQuote ?? null) ||
-      (a.displayAmount ?? null) !== (b.displayAmount ?? null)
+      (a.displayAmount ?? null) !== (b.displayAmount ?? null) ||
+      (a.trendScore ?? null) !== (b.trendScore ?? null) ||
+      (a.trendLabel ?? null) !== (b.trendLabel ?? null) ||
+      (a.timestamp ?? null) !== (b.timestamp ?? null) ||
+      a.freshness !== b.freshness
     ) {
       return false
     }
@@ -86,54 +82,44 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 350)
-  const catalogCacheRef = useRef<{ key: string; snapshot: MarketCatalogSnapshot } | null>(null)
 
-  const refetchInternal = useCallback(async (options?: RefetchOptions) => {
-    const silent = options?.silent === true
-    const forceCatalog = options?.forceCatalog === true
-    const catalogKey = `${category}|${debouncedSearch}`
-    const needNetworkCatalog =
-      silent || forceCatalog || !catalogCacheRef.current || catalogCacheRef.current.key !== catalogKey
-
-    if (!silent && needNetworkCatalog) {
-      setLoading(true)
-    }
-    try {
-      if (needNetworkCatalog) {
-        const snapshot = await fetchMarketCatalogSnapshot({
+  const refetchInternal = useCallback(
+    async (options?: RefetchOptions) => {
+      const silent = options?.silent === true
+      if (!silent) {
+        setLoading(true)
+      }
+      try {
+        const response = await fetchMarketOverviewPage({
+          page: Math.max(page, 0),
+          size,
           category,
           query: debouncedSearch,
+          sort,
+          displayCurrency,
         })
-        catalogCacheRef.current = { key: catalogKey, snapshot }
+        const nextRows = Array.isArray(response.content) ? response.content : []
+        setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
+        const nextTotalElements = response.totalElements ?? 0
+        const nextTotalPages = response.totalPages ?? 0
+        setTotalElements((prev) => (prev === nextTotalElements ? prev : nextTotalElements))
+        setTotalPages((prev) => (prev === nextTotalPages ? prev : nextTotalPages))
+        setError(null)
+      } catch (err) {
+        console.error('market overview request failed', err)
+        if (!silent) {
+          setError('Market data could not be loaded. Please try again.')
+        }
+      } finally {
+        if (!silent) {
+          setLoading(false)
+        }
       }
-      const response = await buildMarketOverviewFromCatalog(catalogCacheRef.current!.snapshot, {
-        page: Math.max(page, 0),
-        size,
-        category,
-        query: debouncedSearch,
-        sort,
-        displayCurrency,
-      })
-      const nextRows = Array.isArray(response.content) ? response.content : []
-      setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
-      const nextTotalElements = response.totalElements ?? 0
-      const nextTotalPages = response.totalPages ?? 0
-      setTotalElements((prev) => (prev === nextTotalElements ? prev : nextTotalElements))
-      setTotalPages((prev) => (prev === nextTotalPages ? prev : nextTotalPages))
-      setError(null)
-    } catch (err) {
-      console.error('market overview request failed', err)
-      if (!silent) {
-        setError('Market data could not be loaded. Please try again.')
-      }
-    } finally {
-      if (!silent && needNetworkCatalog) {
-        setLoading(false)
-      }
-    }
-  }, [category, debouncedSearch, displayCurrency, page, size, sort])
+    },
+    [category, debouncedSearch, displayCurrency, page, size, sort],
+  )
 
-  const refetch = useCallback(async () => refetchInternal({ forceCatalog: true }), [refetchInternal])
+  const refetch = useCallback(async () => refetchInternal(), [refetchInternal])
 
   useEffect(() => {
     void refetchInternal()

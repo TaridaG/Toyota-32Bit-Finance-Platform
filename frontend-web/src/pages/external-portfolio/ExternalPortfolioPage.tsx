@@ -81,7 +81,11 @@ export function ExternalPortfolioPage() {
                   onClick={() => void handleSelectPortfolio(portfolio.id)}
                 >
                   <span>{portfolio.name}</span>
-                  <small>{portfolio.baseCurrency}</small>
+                  <small>
+                    {portfolio.baseCurrency?.trim().toUpperCase() === 'MIXED'
+                      ? t('settingsPage.baseCurrencyNeutral')
+                      : portfolio.baseCurrency}
+                  </small>
                 </button>
               </li>
             ))}

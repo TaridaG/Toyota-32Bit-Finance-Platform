@@ -1180,6 +1180,821 @@ body,
   padding: 1.25rem;
 }
 
+.fi-faiz-vadeli-lead {
+  margin: 0.35rem 0 0;
+  max-width: 52rem;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.fi-faiz-vadeli-link {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fi-faiz-vadeli-link:hover {
+  text-decoration: underline;
+}
+
+:root[data-theme='dark'] .fi-faiz-vadeli-link {
+  color: #a5b4fc;
+}
+
+/* —— Faiz / Vadeli dashboard (UI shell) —— */
+.fi-faiz-page-head {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.fi-faiz-vadeli-page-sub {
+  margin: 0.35rem 0 0;
+  max-width: 48rem;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.fi-faiz-dash {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.fi-faiz-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 1320px) {
+  .fi-faiz-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .fi-faiz-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 440px) {
+  .fi-faiz-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fi-faiz-stat-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 0.85rem 1rem 1rem;
+  min-height: 8.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fi-faiz-stat-card-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fi-faiz-stat-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fi-faiz-stat-icon-svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.fi-faiz-stat-icon--bank {
+  background: rgba(99, 102, 241, 0.22);
+  color: #6366f1;
+}
+
+.fi-faiz-stat-icon--coins {
+  background: rgba(245, 158, 11, 0.2);
+  color: #d97706;
+}
+
+.fi-faiz-stat-icon--doc {
+  background: rgba(14, 165, 233, 0.18);
+  color: #0284c7;
+}
+
+.fi-faiz-stat-icon--spread {
+  background: rgba(34, 197, 94, 0.16);
+  color: #16a34a;
+}
+
+.fi-faiz-stat-icon--bell {
+  background: rgba(239, 68, 68, 0.16);
+  color: #dc2626;
+}
+
+:root[data-theme='dark'] .fi-faiz-stat-icon--bank {
+  background: rgba(99, 102, 241, 0.28);
+  color: #a5b4fc;
+}
+
+:root[data-theme='dark'] .fi-faiz-stat-icon--coins {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+}
+
+:root[data-theme='dark'] .fi-faiz-stat-icon--doc {
+  background: rgba(14, 165, 233, 0.22);
+  color: #38bdf8;
+}
+
+:root[data-theme='dark'] .fi-faiz-stat-icon--spread {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+:root[data-theme='dark'] .fi-faiz-stat-icon--bell {
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
+}
+
+.fi-faiz-stat-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  line-height: 1.25;
+  text-align: center;
+}
+
+.fi-faiz-stat-head-text {
+  min-width: 0;
+}
+
+.fi-faiz-stat-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.fi-faiz-stat-title-row .fi-faiz-stat-title {
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+.fi-faiz-tl-dep-maturity-wrap {
+  flex: 0 0 auto;
+}
+
+.fi-faiz-tl-dep-maturity-select {
+  max-width: 9.2rem;
+  padding: 0.12rem 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text);
+  background: var(--color-surface-elevated, var(--color-bg));
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+:root[data-theme='dark'] .fi-faiz-tl-dep-maturity-select {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.fi-faiz-stat-value {
+  margin: 0.15rem 0 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.fi-faiz-stat-value-skel {
+  margin: 0.15rem auto 0;
+  height: 1.55rem;
+  width: 5.5rem;
+  border-radius: 8px;
+}
+
+.fi-faiz-stat-meta {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--color-text-soft);
+}
+
+.fi-faiz-stat-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.fi-faiz-stat-sub {
+  text-align: center;
+}
+
+.fi-faiz-stat-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.fi-faiz-delta {
+  display: block;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.fi-faiz-delta--pos {
+  color: #16a34a;
+}
+
+.fi-faiz-delta--neg {
+  color: #dc2626;
+}
+
+.fi-faiz-delta--muted {
+  color: var(--color-text-muted);
+}
+
+.fi-faiz-mid-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+.fi-faiz-mid-grid--solo > .fi-faiz-panel--policy-chart:not(.fi-faiz-eurobond-detail) {
+  min-height: min(52vh, 520px);
+}
+
+.fi-faiz-mid-grid--solo > .fi-faiz-panel--policy-chart:not(.fi-faiz-eurobond-detail) .fi-faiz-chart-wrap.fi-faiz-policy-panel-chart-wrap,
+.fi-faiz-mid-grid--solo > .fi-faiz-panel--policy-chart:not(.fi-faiz-eurobond-detail) .fi-faiz-policy-panel-chart-outer {
+  min-height: min(42vh, 400px);
+}
+
+.fi-faiz-eurobond-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fi-faiz-eurobond-edu ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-text-soft);
+}
+
+.fi-faiz-eurobond-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.fi-faiz-eurobond-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.fi-faiz-eurobond-table th,
+.fi-faiz-eurobond-table td {
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fi-faiz-eurobond-table tbody tr {
+  cursor: pointer;
+}
+
+.fi-faiz-eurobond-table tbody tr:hover {
+  background: var(--color-surface-muted);
+}
+
+.fi-faiz-eurobond-row--active {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.fi-faiz-eurobond-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+}
+
+.fi-faiz-eurobond-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.fi-faiz-eurobond-controls-label {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-right: 0.15rem;
+}
+
+.fi-faiz-eurobond-pill {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.fi-faiz-eurobond-pill--on {
+  border-color: #6366f1;
+  color: var(--color-text);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.fi-faiz-eurobond-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .fi-faiz-eurobond-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fi-faiz-eurobond-chart-block {
+  margin-bottom: 0.75rem;
+}
+
+.fi-faiz-eurobond-subtitle {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fi-faiz-eurobond-hint {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  color: var(--color-text-soft);
+}
+
+.fi-faiz-eurobond-chart-h {
+  min-height: 200px;
+}
+
+.fi-faiz-eurobond-sim {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  background: var(--color-surface-muted);
+}
+
+.fi-faiz-eurobond-sim-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.fi-faiz-eurobond-sim-input {
+  font: inherit;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.fi-faiz-eurobond-sim-dl {
+  margin: 0.55rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fi-faiz-eurobond-sim-dl dt {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.fi-faiz-eurobond-sim-dl dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.fi-faiz-eurobond-sim-foot {
+  margin: 0.55rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  color: var(--color-text-soft);
+}
+
+.fi-faiz-eurobond-sim--combined .fi-faiz-eurobond-subtitle {
+  margin-bottom: 0.45rem;
+}
+
+.fi-faiz-eurobond-sim-nominal-hint {
+  margin: -0.1rem 0 0.45rem;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  color: var(--color-text-soft);
+}
+
+.fi-faiz-eurobond-sim-divider {
+  margin: 0.55rem 0 0.5rem;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.fi-faiz-eurobond-sim-sec-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fi-faiz-eurobond-sim-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.fi-faiz-eurobond-past-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.fi-faiz-eurobond-past-row .fi-faiz-eurobond-sim-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.fi-faiz-eurobond-pick-btn {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 0.65rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fi-faiz-eurobond-pick-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong, var(--color-border));
+}
+
+.fi-faiz-eurobond-pick-btn[data-active='true'] {
+  border-color: var(--color-accent, #3b82f6);
+  color: var(--color-accent, #3b82f6);
+}
+
+.fi-faiz-eurobond-pick-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.fi-faiz-eurobond-pick-cancel {
+  font: inherit;
+  font-size: 0.65rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.fi-faiz-eurobond-past-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.fi-faiz-eurobond-past-check input {
+  width: auto;
+}
+
+.fi-faiz-eurobond-sim-section--past .fi-faiz-eurobond-sim-label + .fi-faiz-eurobond-sim-label {
+  margin-top: 0.35rem;
+}
+
+.fi-faiz-eurobond-meta {
+  margin: 0.5rem 0 0;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.markets-eurobond-wrap {
+  margin-top: 0.5rem;
+}
+
+.markets-eurobond-lead {
+  font-size: 0.85rem;
+  color: var(--color-text-soft);
+  margin: 0 0 0.5rem;
+}
+
+.markets-eurobond-cta {
+  margin: 0 0 0.75rem;
+}
+
+.markets-eurobond-link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.fi-faiz-panel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fi-faiz-panel-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fi-faiz-chart-wrap {
+  flex: 1;
+  min-height: 200px;
+}
+
+.fi-faiz-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.fi-faiz-chart-grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.85;
+}
+
+.fi-faiz-chart-axis-y {
+  fill: var(--color-text-soft);
+  font-size: 11px;
+}
+
+.fi-faiz-chart-tick {
+  fill: var(--color-text-soft);
+  font-size: 11px;
+}
+
+.fi-faiz-chart-line {
+  stroke: #6366f1;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fi-faiz-chart-dot {
+  fill: #6366f1;
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.fi-faiz-chart-xlabel {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.fi-faiz-chart-foot {
+  margin: 0.65rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--color-text-soft);
+}
+
+button.fi-faiz-stat-card.fi-faiz-stat-card--clickable {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+article.fi-faiz-stat-card.fi-faiz-stat-card--clickable {
+  width: 100%;
+  cursor: pointer;
+}
+
+article.fi-faiz-stat-card.fi-faiz-stat-card--clickable:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+button.fi-faiz-stat-card--clickable:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.fi-faiz-panel--policy-chart {
+  min-height: 0;
+}
+
+.fi-faiz-panel-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.fi-faiz-panel-head-row .fi-faiz-panel-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.fi-faiz-panel-back {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fi-faiz-panel-back:hover {
+  color: var(--color-text);
+}
+
+.fi-faiz-policy-chart-y-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.fi-faiz-policy-chart-y-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  align-self: center;
+  flex-shrink: 0;
+  padding: 0.25rem 0;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.fi-faiz-chart-wrap.fi-faiz-policy-panel-chart-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 240px;
+}
+
+.fi-faiz-policy-panel-chart-outer {
+  position: relative;
+  width: 100%;
+  min-height: 240px;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.fi-faiz-policy-panel-chart-mount {
+  position: absolute;
+  inset: 0;
+}
+
+.fi-faiz-policy-panel-state {
+  margin: 0.35rem 0 0.25rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.fi-faiz-policy-panel-state .profile-settings-btn-secondary {
+  margin-top: 0.65rem;
+}
+
+.fi-faiz-policy-panel-foot-secondary {
+  margin-top: 0.35rem;
+}
+
+.fi-faiz-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.fi-faiz-tab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.86rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.fi-faiz-tab:hover {
+  background: var(--color-header-hover);
+  color: var(--color-text);
+}
+
+.fi-faiz-tab--active {
+  background: #6366f1;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+.fi-faiz-tab--active:hover {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.fi-faiz-tab-placeholder {
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  background: var(--color-surface-muted);
+}
+
+.fi-faiz-tab-placeholder p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-text);
+}
+
+.fi-faiz-tab-placeholder-muted {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -1190,6 +2005,27 @@ body,
 
 .section-header h2 {
   margin: 0;
+}
+
+.bank-rates-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.bank-rates-page .section-header {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.bank-rates-page-lead {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-soft);
+  line-height: 1.45;
+}
+
+.bank-rates-page-placeholder {
+  margin-top: 1rem;
 }
 
 button {
@@ -1558,13 +2394,13 @@ button:disabled {
 
 .markets-pulse-strip {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 0.45rem;
 }
 
 @media (max-width: 1100px) {
   .markets-pulse-strip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -1606,6 +2442,10 @@ button:disabled {
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .markets-pulse-value {
@@ -2852,6 +3692,64 @@ button:disabled {
   box-shadow: 0 18px 32px rgba(99, 102, 241, 0.24);
 }
 
+.my-portfolio-acquisition-fx {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  font-size: 0.78rem;
+}
+
+.my-portfolio-acquisition-fx h5 {
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.my-portfolio-acquisition-fx-asof {
+  margin: 0 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.my-portfolio-acquisition-fx-asof code {
+  font-size: 0.68rem;
+  word-break: break-all;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.my-portfolio-acquisition-fx-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.my-portfolio-acquisition-fx-table th,
+.my-portfolio-acquisition-fx-table td {
+  padding: 0.28rem 0.35rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.my-portfolio-acquisition-fx-table th:first-child,
+.my-portfolio-acquisition-fx-table td:first-child {
+  text-align: left;
+}
+
+.my-portfolio-acquisition-fx-table th {
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 0.72rem;
+}
+
+.my-portfolio-acquisition-fx-note {
+  margin: 0.45rem 0 0;
+  font-size: 0.7rem;
+  color: rgba(148, 163, 184, 0.8);
+  line-height: 1.35;
+}
+
 .my-portfolio-trade-steps {
   list-style: none;
   display: grid;
@@ -2904,6 +3802,27 @@ button:disabled {
   background: rgba(15, 23, 42, 0.75);
   color: #f8fafc;
   font: inherit;
+}
+
+.my-portfolio-trade-money-input {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.my-portfolio-trade-money-input__sym {
+  flex: 0 0 auto;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(226, 232, 240, 0.95);
+  line-height: 1.2;
+  user-select: none;
+}
+
+.my-portfolio-trade-money-input input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .my-portfolio-trade-toggle-grid {
@@ -2988,9 +3907,16 @@ button:disabled {
 
 .my-portfolio-history-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.my-portfolio-history-count {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--color-text-soft);
+  white-space: nowrap;
 }
 
 .my-portfolio-history-head p {
@@ -3135,6 +4061,16 @@ button:disabled {
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   font-size: 0.8rem;
   white-space: nowrap;
+}
+
+.my-portfolio-history-wrap td.my-portfolio-history-fx {
+  white-space: normal;
+  max-width: 12.5rem;
+  line-height: 1.3;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--color-text-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .my-portfolio-trade-preview-panel h4 {
@@ -3325,6 +4261,10 @@ button:disabled {
   color: #0f172a;
 }
 
+:root:not([data-theme='dark']) .my-portfolio-trade-money-input__sym {
+  color: #0f172a;
+}
+
 :root:not([data-theme='dark']) .my-portfolio-trade-toggle-group button {
   border-color: rgba(148, 163, 184, 0.45);
   background: #ffffff;
@@ -3394,6 +4334,10 @@ button:disabled {
 .my-portfolio-trade-card.is-light .my-portfolio-trade-toggle-group button {
   border-color: rgba(148, 163, 184, 0.45);
   background: #ffffff;
+  color: #0f172a;
+}
+
+.my-portfolio-trade-card.is-light .my-portfolio-trade-money-input__sym {
   color: #0f172a;
 }
 
@@ -4260,6 +5204,26 @@ col.my-portfolio-alloc-col-pnl {
   flex-shrink: 0;
   max-width: 58%;
   text-align: right;
+}
+
+.my-portfolio-recent-tx-amt-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.my-portfolio-recent-tx-fx {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--color-text-soft);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .my-portfolio-recent-tx-amt {

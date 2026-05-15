@@ -2,11 +2,12 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { fetchMarketOverview } from '../../features/markets/api/marketService'
+import { inferNativeQuote } from '../../features/markets/lib/marketDisplayConversion'
 import {
   buyTrade,
   createPortfolio,
   deletePortfolio,
-  getInstrumentPriceCoverage,
+  getInstrumentsCatalogForTradePicker,
   getMyPortfolioOverview,
   getPortfolioSnapshots,
   getPortfolios,
@@ -16,6 +17,7 @@ import {
   previewTrade,
 } from '../../features/portfolio/api/portfolioApi'
 import type {
+  AcquisitionFxRatesSnapshot,
   Portfolio,
   PortfolioOverview,
   PortfolioOverviewItem,
@@ -23,9 +25,12 @@ import type {
   PortfolioValueSnapshot,
   PurchaseMode,
   TradeInputMode,
+  TradePaymentCurrency,
+  TradePreview,
   TransactionHistoryFilters,
   TransactionHistoryItem,
 } from '../../shared/types/portfolio'
+import type { MarketOverviewPageResponse } from '../../shared/types/market'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
 import { PnlSplitDonut } from './components/PnlSplitDonut'
 import { PortfolioValueHistoryChart } from './components/PortfolioValueHistoryChart'
@@ -40,7 +45,53 @@ const MyPortfolioWatchlistSection = lazy(async () => {
 
 const MAX_USER_PORTFOLIOS = 5
 const CREATE_PORTFOLIO_SELECT_VALUE = '__create_portfolio__'
+/** Aggregate "Genel Bakış" in portfolio picker; not a real DB id. */
+const ALL_PORTFOLIOS_ID = -1
 const MASKED_MONEY_LABEL = '••••'
+
+const EMPTY_MARKET_OVERVIEW: MarketOverviewPageResponse = {
+  content: [],
+  page: 0,
+  size: 0,
+  totalElements: 0,
+  totalPages: 0,
+}
+
+function mergePortfolioValueSnapshots(seriesList: PortfolioValueSnapshot[][]): PortfolioValueSnapshot[] {
+  type Agg = { totalCost: number; totalValue: number; unrealizedPnl: number; createdAt: string }
+  const map = new Map<string, Agg>()
+  let userId = ''
+  for (const series of seriesList) {
+    for (const s of series) {
+      if (!userId && s.userId) userId = s.userId
+      const day = s.createdAt.slice(0, 10)
+      const cur = map.get(day)
+      if (!cur) {
+        map.set(day, {
+          totalCost: Number(s.totalCost),
+          totalValue: Number(s.totalValue),
+          unrealizedPnl: Number(s.unrealizedPnl),
+          createdAt: s.createdAt,
+        })
+      } else {
+        cur.totalCost += Number(s.totalCost)
+        cur.totalValue += Number(s.totalValue)
+        cur.unrealizedPnl += Number(s.unrealizedPnl)
+      }
+    }
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([_day, v], i) => ({
+      id: -(i + 1),
+      userId,
+      totalCost: v.totalCost,
+      totalValue: v.totalValue,
+      unrealizedPnl: v.unrealizedPnl,
+      createdAt: v.createdAt,
+      externalPortfolioId: null,
+    }))
+}
 
 function maskedNumberFormatShim(): Intl.NumberFormat {
   return { format: () => MASKED_MONEY_LABEL } as unknown as Intl.NumberFormat
@@ -67,14 +118,6 @@ function inferInstrumentQuoteCurrency(symbol: string): 'TRY' | 'USD' | 'EUR' {
   if (s.endsWith('TRY')) return 'TRY'
   if (s.endsWith('EUR')) return 'EUR'
   return 'USD'
-}
-
-/** Listing quote bucket for filtering instruments to a portfolio base (TRY vs USD). */
-function marketOptionListingQuote(opt: MarketOption): 'TRY' | 'USD' {
-  const n = (opt.nativeQuote ?? '').trim().toUpperCase()
-  if (n === 'TRY') return 'TRY'
-  if (n === 'USD' || n === 'EUR') return 'USD'
-  return inferInstrumentQuoteCurrency(opt.symbol) === 'TRY' ? 'TRY' : 'USD'
 }
 
 const RECENT_TX_PREVIEW_SIZE = 4
@@ -346,6 +389,91 @@ type MarketOption = {
   nativeQuote: string | null
 }
 
+const TRADE_PAYMENT_CURRENCIES: readonly TradePaymentCurrency[] = ['TRY', 'USD', 'EUR', 'GBP', 'JPY', 'AED']
+
+function normalizeToTradePaymentCurrency(raw: string | null | undefined): TradePaymentCurrency | null {
+  const u = (raw ?? '').trim().toUpperCase()
+  if (u === 'USDT') return 'USD'
+  if ((TRADE_PAYMENT_CURRENCIES as readonly string[]).includes(u)) {
+    return u as TradePaymentCurrency
+  }
+  return null
+}
+
+function tradePaymentCurrencyLabel(c: TradePaymentCurrency): string {
+  return c === 'TRY' ? 'TRY (TL)' : c
+}
+
+function currencySymbolPrefix(iso: TradePaymentCurrency): string {
+  switch (iso) {
+    case 'TRY':
+      return '₺'
+    case 'USD':
+      return '$'
+    case 'EUR':
+      return '€'
+    case 'GBP':
+      return '£'
+    case 'JPY':
+      return '¥'
+    case 'AED':
+      return 'د.إ\u00A0'
+    default:
+      return ''
+  }
+}
+
+function formatDecimalForLocale(value: number, language: string, maxFractionDigits: number): string {
+  return new Intl.NumberFormat(language, {
+    maximumFractionDigits: maxFractionDigits,
+    minimumFractionDigits: 0,
+  }).format(value)
+}
+
+const HISTORY_QUOTE_ISO = new Set(['TRY', 'USD', 'EUR', 'GBP', 'JPY', 'AED'])
+
+/** Listing / quote currency for history row (API `quoteCurrency` when present). */
+function resolveHistoryQuoteCurrency(row: TransactionHistoryItem): string {
+  const q = row.quoteCurrency?.trim().toUpperCase()
+  if (q && HISTORY_QUOTE_ISO.has(q)) return q
+  return inferInstrumentQuoteCurrency(row.instrumentSymbol)
+}
+
+/**
+ * Effective acquisition FX: DB `fx_rate_used` = units of listing currency per 1 unit of payment currency.
+ * Shown as "1 USD = 45,37 TRY" when cross; "—" when missing or same currency.
+ */
+function formatTxFxLegLabel(row: TransactionHistoryItem, language: string): string {
+  const rate = parseApiDecimal(row.fxRateUsed, Number.NaN)
+  if (!Number.isFinite(rate) || rate <= 0) return '—'
+  const pay = normalizeToTradePaymentCurrency(row.inputCurrency)
+  const quote = resolveHistoryQuoteCurrency(row)
+  if (pay == null) return '—'
+  if (pay === quote) return '—'
+  const rateStr = formatDecimalForLocale(rate, language, 8)
+  return `1 ${pay} = ${rateStr} ${quote}`
+}
+
+function formatMoneyPrefixed(
+  value: number | null | undefined,
+  iso: TradePaymentCurrency,
+  language: string,
+  maxFractionDigits: number,
+): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return `${currencySymbolPrefix(iso)}${formatDecimalForLocale(value, language, maxFractionDigits)}`
+}
+
+function buildTradePaymentCurrencyOptions(instrumentDefault: TradePaymentCurrency): TradePaymentCurrency[] {
+  const arr = [...TRADE_PAYMENT_CURRENCIES]
+  arr.sort((a, b) => {
+    if (a === instrumentDefault) return -1
+    if (b === instrumentDefault) return 1
+    return a.localeCompare(b)
+  })
+  return arr
+}
+
 type InstrumentPerformance = {
   change1D: number | null
   change1M: number | null
@@ -368,6 +496,32 @@ function toUtcStartOfDay(input: string): string | undefined {
     }
   }
   return undefined
+}
+
+/** ISO instant (UTC) → GG.AA.YYYY for short notices. */
+function formatIsoDateUtcToTrLabel(iso: string): string {
+  const day = iso.trim().slice(0, 10)
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day)
+  if (!m) return day
+  return `${m[3]}.${m[2]}.${m[1]}`
+}
+
+function applyPastPreviewUi(
+  preview: TradePreview,
+  purchaseMode: PurchaseMode,
+  setAcquiredAt: (v: string) => void,
+  setPastDateRollNotice: (v: string | null) => void,
+) {
+  if (purchaseMode !== 'PAST') return
+  const eff = preview.effectiveAcquiredAt
+  if (typeof eff === 'string' && eff.length >= 10) {
+    setAcquiredAt(eff.slice(0, 10))
+  }
+  if (preview.pastDateRolledToEarliestData === true && typeof eff === 'string' && eff.length >= 10) {
+    setPastDateRollNotice(formatIsoDateUtcToTrLabel(eff))
+  } else {
+    setPastDateRollNotice(null)
+  }
 }
 
 function extractApiErrorMessage(error: unknown): string {
@@ -496,6 +650,60 @@ function SidebarItemIcon({ item }: { item: string }) {
   }
 }
 
+function formatAcquisitionFxCell(n: number | null | undefined, fmt: Intl.NumberFormat): string {
+  if (n == null || !Number.isFinite(n)) return '—'
+  return fmt.format(n)
+}
+
+function AcquisitionFxPanel({
+  snap,
+  purchaseMode,
+}: {
+  snap: AcquisitionFxRatesSnapshot
+  purchaseMode: PurchaseMode
+}) {
+  const fmt = useMemo(() => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 6 }), [])
+  const rows: [string, number | null | undefined][] = [
+    ['USDTRY', snap.usdTry],
+    ['EURTRY', snap.eurTry],
+    ['GBPTRY', snap.gbpTry],
+    ['JPYTRY', snap.jpyTry],
+    ['AEDTRY', snap.aedTry],
+    ['EURUSD', snap.eurUsd],
+    ['GBPUSD', snap.gbpUsd],
+    ['JPYUSD', snap.jpyUsd],
+  ]
+  return (
+    <div className="my-portfolio-acquisition-fx">
+      <h5>Alimda kullanilan kur paneli</h5>
+      <div className="my-portfolio-acquisition-fx-asof">
+        <span>{purchaseMode === 'PAST' ? 'MDS (alim gunu)' : 'Canli kaynak'}</span>
+        <code>{snap.fxAsOfIso}</code>
+      </div>
+      <table className="my-portfolio-acquisition-fx-table">
+        <thead>
+          <tr>
+            <th>Cift</th>
+            <th>Mid</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([k, v]) => (
+            <tr key={k}>
+              <td>{k}</td>
+              <td>{formatAcquisitionFxCell(v, fmt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="my-portfolio-acquisition-fx-note">
+        Gecmis alimda kurlar alim gunune gore MDS&apos;ten; bugunku alimda guncel fiyat tablosundan. Ozet ve dagilim
+        gosterimi header para biriminde canli kurla devam eder.
+      </p>
+    </div>
+  )
+}
+
 export function MyPortfolioPage() {
   const { t, i18n } = useTranslation('portfolio')
   const [isDarkTheme, setIsDarkTheme] = useState(() =>
@@ -503,9 +711,9 @@ export function MyPortfolioPage() {
   )
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null)
+  const [tradeTargetPortfolioId, setTradeTargetPortfolioId] = useState<number | null>(null)
   const [showCreatePortfolioModal, setShowCreatePortfolioModal] = useState(false)
   const [newPortfolioName, setNewPortfolioName] = useState('')
-  const [newPortfolioBaseCurrency, setNewPortfolioBaseCurrency] = useState<'TRY' | 'USD'>('TRY')
   const [portfolioActionLoading, setPortfolioActionLoading] = useState(false)
   const [portfolioActionError, setPortfolioActionError] = useState<string | null>(null)
   const [portfolioSettingsError, setPortfolioSettingsError] = useState<string | null>(null)
@@ -516,8 +724,13 @@ export function MyPortfolioPage() {
   const [activeSection, setActiveSection] = useState<string>('dashboard')
   const [marketOptions, setMarketOptions] = useState<MarketOption[]>([])
   const [marketLoading, setMarketLoading] = useState(false)
+  const [marketCatalogError, setMarketCatalogError] = useState<string | null>(null)
   const [tradeSaving, setTradeSaving] = useState(false)
   const [tradeError, setTradeError] = useState<string | null>(null)
+  /** Alim onizlemesi (/api/trades/preview) hatalari — NOW modunda da gorunur (onceki: catch sessizdi). */
+  const [tradePreviewError, setTradePreviewError] = useState<string | null>(null)
+  /** Son basarili /api/trades/preview yaniti (onizleme panelinde kur tablosu icin). */
+  const [lastTradePreview, setLastTradePreview] = useState<TradePreview | null>(null)
   const [tradeSuccess, setTradeSuccess] = useState<string | null>(null)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState<string | null>(null)
@@ -557,11 +770,12 @@ export function MyPortfolioPage() {
   const [inputMode, setInputMode] = useState<TradeInputMode>('LOTS')
   const [lots, setLots] = useState('1')
   const [amount, setAmount] = useState('')
+  const [tradePaymentCurrency, setTradePaymentCurrency] = useState<TradePaymentCurrency>('USD')
   const [acquiredAt, setAcquiredAt] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
   const [unitPriceUsed, setUnitPriceUsed] = useState<number | null>(null)
   const [manualUnitPriceRequired, setManualUnitPriceRequired] = useState(false)
-  const [firstAvailableDate, setFirstAvailableDate] = useState<string | null>(null)
+  const [pastDateRollNotice, setPastDateRollNotice] = useState<string | null>(null)
   const [lastEditedField, setLastEditedField] = useState<'lots' | 'amount'>('lots')
   const [isPreviewStep, setIsPreviewStep] = useState(false)
   const [instrumentPerformance, setInstrumentPerformance] = useState<InstrumentPerformance>({
@@ -571,8 +785,20 @@ export function MyPortfolioPage() {
     change6M: null,
     change1Y: null,
   })
+  useEffect(() => {
+    if (purchaseMode === 'NOW') {
+      setPastDateRollNotice(null)
+    }
+  }, [purchaseMode])
+
+  useEffect(() => {
+    setLastTradePreview(null)
+  }, [selectedInstrumentId])
+
   useDocumentTitle(t('titleDoc'))
   const { currency: displayCurrency } = useAppPreferences()
+  /** Portfolio overview, dağılım, trade-flow ve ilgili market istekleri için `X-Currency` (üstteki para seçimi). */
+  const valuationCurrency = displayCurrency
 
   const currencyFormat = useMemo(
     () =>
@@ -634,20 +860,29 @@ export function MyPortfolioPage() {
     [i18n.language],
   )
 
+  const isAggregatePortfolioView = selectedPortfolioId === ALL_PORTFOLIOS_ID
+
+  const effectiveTradePortfolioId = useMemo(() => {
+    if (isAggregatePortfolioView) return tradeTargetPortfolioId
+    return selectedPortfolioId != null && selectedPortfolioId > 0 ? selectedPortfolioId : null
+  }, [isAggregatePortfolioView, tradeTargetPortfolioId, selectedPortfolioId])
+
+  const overviewApiPortfolioId = useMemo(() => {
+    if (isAggregatePortfolioView) return null
+    return selectedPortfolioId != null && selectedPortfolioId > 0 ? selectedPortfolioId : null
+  }, [isAggregatePortfolioView, selectedPortfolioId])
+
   const selectedPortfolio = useMemo(
     () =>
-      selectedPortfolioId != null ? portfolios.find((p) => p.id === selectedPortfolioId) ?? null : null,
+      selectedPortfolioId != null && selectedPortfolioId > 0
+        ? portfolios.find((p) => p.id === selectedPortfolioId) ?? null
+        : null,
     [portfolios, selectedPortfolioId],
   )
-  const hideMoney = selectedPortfolio?.amountsHidden === true
-
-  /** Valuation and instrument catalog for the selected portfolio (fallback: app preference). */
-  const valuationCurrency = useMemo((): 'TRY' | 'USD' => {
-    const bc = selectedPortfolio?.baseCurrency?.trim().toUpperCase()
-    if (bc === 'TRY') return 'TRY'
-    if (bc === 'USD') return 'USD'
-    return displayCurrency === 'TRY' ? 'TRY' : 'USD'
-  }, [selectedPortfolio, displayCurrency])
+  const hideMoney =
+    isAggregatePortfolioView
+      ? portfolios.some((p) => p.amountsHidden === true)
+      : selectedPortfolio?.amountsHidden === true
 
   const displayDashboardCurrencyFormat = useMemo(
     () => (hideMoney ? maskedNumberFormatShim() : dashboardCurrencyFormat),
@@ -662,6 +897,15 @@ export function MyPortfolioPage() {
   const formatTxMoney = useCallback(
     (row: TransactionHistoryItem) => {
       if (hideMoney) return MASKED_MONEY_LABEL
+      // Alımlarda API hem kotasyon tutarını (totalAmount + quoteCurrency) hem ödeme cinsini
+      // (inputAmount + inputCurrency) saklar; işlem geçmişinde "Maliyet" ödenen tutar olmalı.
+      if (row.type === 'BUY') {
+        const payment = normalizeToTradePaymentCurrency(row.inputCurrency)
+        const inputAmt = parseApiDecimal(row.inputAmount, Number.NaN)
+        if (payment != null && Number.isFinite(inputAmt) && inputAmt > 0) {
+          return formatMoneyPrefixed(inputAmt, payment, i18n.language, 2)
+        }
+      }
       const qc = row.quoteCurrency?.trim().toUpperCase()
       const rawCur =
         qc === 'TRY' || qc === 'USD' || qc === 'EUR' ? qc : inferInstrumentQuoteCurrency(row.instrumentSymbol)
@@ -761,8 +1005,25 @@ export function MyPortfolioPage() {
       setShowCreatePortfolioModal(true)
       return
     }
-    setSelectedPortfolioId((prev) => (prev && rows.some((p) => p.id === prev) ? prev : rows[0].id))
+    setSelectedPortfolioId((prev) => {
+      if (prev != null && prev > 0 && rows.some((p) => p.id === prev)) {
+        return prev
+      }
+      if (prev === ALL_PORTFOLIOS_ID) {
+        return ALL_PORTFOLIOS_ID
+      }
+      return ALL_PORTFOLIOS_ID
+    })
   }, [])
+
+  useEffect(() => {
+    if (!isAggregatePortfolioView) {
+      return
+    }
+    setTradeTargetPortfolioId((prev) =>
+      prev != null && portfolios.some((p) => p.id === prev) ? prev : portfolios[0]?.id ?? null,
+    )
+  }, [isAggregatePortfolioView, portfolios])
 
   useEffect(() => {
     void refreshPortfolios()
@@ -770,28 +1031,113 @@ export function MyPortfolioPage() {
 
   useEffect(() => {
     if (activeSection !== 'markets') {
+      setMarketLoading(false)
       return
     }
+    let cancelled = false
     setMarketLoading(true)
-    void fetchMarketOverview({
-      page: 0,
-      size: 200,
-      category: 'all',
-      sort: 'symbol,asc',
-      displayCurrency: valuationCurrency,
-    })
-      .then((res) => {
-        const options: MarketOption[] = res.content
-          .filter((row) => row.instrumentId != null)
-          .map((row) => ({
+    setMarketCatalogError(null)
+    void (async () => {
+      try {
+        const [ovRes, catRes] = await Promise.allSettled([
+          fetchMarketOverview({
+            page: 0,
+            size: 1000,
+            category: 'all',
+            sort: 'symbol,asc',
+            displayCurrency: valuationCurrency,
+          }),
+          getInstrumentsCatalogForTradePicker(),
+        ])
+        if (cancelled) return
+        const overview = ovRes.status === 'fulfilled' ? ovRes.value : EMPTY_MARKET_OVERVIEW
+        const catalog = catRes.status === 'fulfilled' ? catRes.value : []
+        const catalogFail =
+          catRes.status === 'rejected' ? extractApiErrorMessage(catRes.reason) : ''
+        const overviewFail =
+          ovRes.status === 'rejected' ? extractApiErrorMessage(ovRes.reason) : ''
+
+        const quoteBySymbol = new Map<string, 'TRY' | 'USD'>()
+        for (const row of overview.content) {
+          const sym = row.symbol?.trim().toUpperCase()
+          if (!sym) continue
+          const raw = (row.nativeQuote ?? '').trim().toUpperCase()
+          if (raw === 'TRY' || raw === 'USD') {
+            quoteBySymbol.set(sym, raw)
+            if (sym.endsWith('.IS')) {
+              quoteBySymbol.set(sym.slice(0, -3), raw)
+            }
+          }
+        }
+
+        let options: MarketOption[]
+        if (catalog.length > 0) {
+          options = catalog.map((inst) => {
+            const fromWire =
+              quoteBySymbol.get(inst.symbol) ?? quoteBySymbol.get(`${inst.symbol}.IS`) ?? null
+            const nativeQuote: string =
+              fromWire ?? inferNativeQuote(inst.symbol, inst.type, null, inst.exchange || null)
+            return {
+              instrumentId: inst.id,
+              symbol: inst.symbol,
+              name: inst.name,
+              nativeQuote,
+            }
+          })
+        } else {
+          options = overview.content
+            .filter((row) => row.instrumentId != null)
+            .map((row) => ({
+              instrumentId: row.instrumentId as number,
+              symbol: row.symbol,
+              name: row.name,
+              nativeQuote:
+                (row.nativeQuote != null && String(row.nativeQuote).trim() !== ''
+                  ? String(row.nativeQuote).trim().toUpperCase()
+                  : null) ??
+                inferNativeQuote(row.symbol, row.category, null, row.exchange ?? null),
+            }))
+        }
+
+        const bySymbol = new Map<string, MarketOption>(options.map((o) => [o.symbol, o]))
+        for (const row of overview.content) {
+          if (row.instrumentId == null) continue
+          const sym = row.symbol?.trim().toUpperCase()
+          if (!sym || bySymbol.has(sym)) continue
+          const nativeQuote: string =
+            (row.nativeQuote != null && String(row.nativeQuote).trim() !== ''
+              ? String(row.nativeQuote).trim().toUpperCase()
+              : null) ?? inferNativeQuote(row.symbol, row.category, null, row.exchange ?? null)
+          bySymbol.set(sym, {
             instrumentId: row.instrumentId as number,
-            symbol: row.symbol,
+            symbol: sym,
             name: row.name,
-            nativeQuote: row.nativeQuote ?? null,
-          }))
+            nativeQuote,
+          })
+        }
+        options = Array.from(bySymbol.values())
+
+        if (cancelled) return
+        options.sort((a, b) => a.symbol.localeCompare(b.symbol, undefined, { sensitivity: 'base', numeric: true }))
         setMarketOptions(options)
-      })
-      .finally(() => setMarketLoading(false))
+        if (options.length === 0) {
+          const hint = [catalogFail, overviewFail].filter(Boolean).join(' · ')
+          setMarketCatalogError(
+            hint ||
+              'Enstruman listesi yuklenemedi. API ( /api/instruments, /api/market ) ve gateway erisimini kontrol edin.',
+          )
+        } else {
+          setMarketCatalogError(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setMarketLoading(false)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [activeSection, valuationCurrency])
 
   const selectedInstrument = useMemo(
@@ -799,29 +1145,43 @@ export function MyPortfolioPage() {
     [marketOptions, selectedInstrumentId],
   )
 
-  /** BIST / TRY-kotasyonlu FX (nativeQuote TRY) → ödeme TRY; ABD hisse, kripto, USD-FX → USD (backend fiyat ekseni). */
-  const tradePaymentCurrency = useMemo((): 'TRY' | 'USD' => {
-    return selectedInstrument?.nativeQuote === 'TRY' ? 'TRY' : 'USD'
-  }, [selectedInstrument])
+  /** Enstrüman birim fiyatının kotasyon para birimi; önizleme sonrası API `instrumentQuoteCurrency` öncelikli. */
+  const instrumentQuoteCurrencyCode = useMemo((): TradePaymentCurrency => {
+    const fromPreview = normalizeToTradePaymentCurrency(lastTradePreview?.instrumentQuoteCurrency)
+    if (fromPreview) return fromPreview
+    return normalizeToTradePaymentCurrency(selectedInstrument?.nativeQuote) ?? 'USD'
+  }, [lastTradePreview?.instrumentQuoteCurrency, selectedInstrument])
 
-  /** Alım önizlemesi: birim fiyat ve tutar enstrüman kotasyonunda (BIST → TRY). */
-  const tradeQuoteCurrencyFormat = useMemo(
-    () =>
-      new Intl.NumberFormat(i18n.language, {
-        style: 'currency',
-        currency: tradePaymentCurrency,
-        maximumFractionDigits: 2,
-      }),
-    [i18n.language, tradePaymentCurrency],
+  const instrumentDefaultPaymentCurrency = useMemo((): TradePaymentCurrency => {
+    const nq = selectedInstrument?.nativeQuote?.trim().toUpperCase()
+    if (nq === 'TRY') return 'TRY'
+    const mapped = normalizeToTradePaymentCurrency(nq)
+    if (mapped) return mapped
+    return normalizeToTradePaymentCurrency(displayCurrency) ?? 'USD'
+  }, [selectedInstrument, displayCurrency])
+
+  const tradePaymentCurrencyOptions = useMemo(
+    () => buildTradePaymentCurrencyOptions(instrumentDefaultPaymentCurrency),
+    [instrumentDefaultPaymentCurrency],
   )
 
+  useEffect(() => {
+    setTradePaymentCurrency(instrumentDefaultPaymentCurrency)
+  }, [selectedInstrumentId, instrumentDefaultPaymentCurrency])
+
+  useEffect(() => {
+    if (!tradePaymentCurrencyOptions.includes(tradePaymentCurrency)) {
+      setTradePaymentCurrency(instrumentDefaultPaymentCurrency)
+    }
+  }, [tradePaymentCurrencyOptions, tradePaymentCurrency, instrumentDefaultPaymentCurrency])
+
   const loadHistoryPage = useCallback(
-    async (page: number, filters: TransactionHistoryFilters) => {
+    async (page: number, filters: TransactionHistoryFilters, portfolioId: number | null) => {
       setHistoryLoading(true)
       setHistoryError(null)
       try {
         if (historyPagedEndpointAvailable) {
-          const response = await getTransactionHistoryPage(page, historySize, filters, selectedPortfolioId)
+          const response = await getTransactionHistoryPage(page, historySize, filters, portfolioId)
           setHistory(response.content)
           setHistoryPage(response.page)
           setHistoryTotalPages(response.totalPages)
@@ -831,7 +1191,7 @@ export function MyPortfolioPage() {
         throw new Error('paged-endpoint-disabled')
       } catch (error) {
         // Fallback for temporary backend 400 issues on paged endpoint.
-        const allRows = await getTransactionHistory(selectedPortfolioId)
+        const allRows = await getTransactionHistory(portfolioId)
         const filtered = allRows.filter((row) => {
           const symbolOk = !filters.symbol || row.instrumentSymbol.toLowerCase().includes(filters.symbol.toLowerCase())
           const typeOk = !filters.type || row.type === filters.type
@@ -862,7 +1222,7 @@ export function MyPortfolioPage() {
         setHistoryLoading(false)
       }
     },
-    [historySize, historyPagedEndpointAvailable, selectedPortfolioId],
+    [historySize, historyPagedEndpointAvailable],
   )
 
   useEffect(() => {
@@ -875,7 +1235,8 @@ export function MyPortfolioPage() {
       setHistoryTotalPages(0)
       return
     }
-    void loadHistoryPage(historyPage, appliedHistoryFilters)
+    const portfolioId = selectedPortfolioId === ALL_PORTFOLIOS_ID ? null : selectedPortfolioId
+    void loadHistoryPage(historyPage, appliedHistoryFilters, portfolioId)
   }, [activeSection, historyPage, appliedHistoryFilters, loadHistoryPage, selectedPortfolioId])
 
   useEffect(() => {
@@ -883,17 +1244,18 @@ export function MyPortfolioPage() {
       setRecentTxPreview([])
       return
     }
+    const historyPid = selectedPortfolioId === ALL_PORTFOLIOS_ID ? null : selectedPortfolioId
     let cancelled = false
     setRecentTxLoading(true)
     void (async () => {
       try {
-        const response = await getTransactionHistoryPage(0, RECENT_TX_PREVIEW_SIZE, EMPTY_TX_FILTERS, selectedPortfolioId)
+        const response = await getTransactionHistoryPage(0, RECENT_TX_PREVIEW_SIZE, EMPTY_TX_FILTERS, historyPid)
         if (!cancelled) {
           setRecentTxPreview(sortTransactionsNewestFirst(response.content).slice(0, RECENT_TX_PREVIEW_SIZE))
         }
       } catch {
         try {
-          const allRows = await getTransactionHistory(selectedPortfolioId)
+          const allRows = await getTransactionHistory(historyPid)
           if (!cancelled) {
             setRecentTxPreview(sortTransactionsNewestFirst(allRows).slice(0, RECENT_TX_PREVIEW_SIZE))
           }
@@ -911,7 +1273,7 @@ export function MyPortfolioPage() {
 
   useEffect(() => {
     setHistoryPage(0)
-  }, [selectedPortfolioId])
+  }, [selectedPortfolioId, activeSection])
 
   useEffect(() => {
     setAllocationSortKey('value')
@@ -926,8 +1288,8 @@ export function MyPortfolioPage() {
     if (activeSection !== 'dashboard' && activeSection !== 'markets' && activeSection !== 'allocation') {
       return
     }
-    void getMyPortfolioOverview(selectedPortfolioId, valuationCurrency).then((data) => setOverview(data)).catch(() => setOverview(null))
-  }, [activeSection, selectedPortfolioId, valuationCurrency])
+    void getMyPortfolioOverview(overviewApiPortfolioId, valuationCurrency).then((data) => setOverview(data)).catch(() => setOverview(null))
+  }, [activeSection, overviewApiPortfolioId, valuationCurrency, selectedPortfolioId])
 
   useEffect(() => {
     if (selectedPortfolioId == null) {
@@ -943,7 +1305,7 @@ export function MyPortfolioPage() {
     let cancelled = false
     setTradeFlowHydrated(false)
     setTradeFlow(null)
-    void loadTradeFlowForPortfolio(selectedPortfolioId, valuationCurrency).then((flow) => {
+    void loadTradeFlowForPortfolio(overviewApiPortfolioId, valuationCurrency).then((flow) => {
       if (!cancelled) {
         setTradeFlow(flow)
         setTradeFlowHydrated(true)
@@ -952,7 +1314,7 @@ export function MyPortfolioPage() {
     return () => {
       cancelled = true
     }
-  }, [activeSection, selectedPortfolioId, valuationCurrency])
+  }, [activeSection, overviewApiPortfolioId, valuationCurrency, selectedPortfolioId])
 
   useEffect(() => {
     if (selectedPortfolioId == null || activeSection !== 'dashboard') {
@@ -960,6 +1322,22 @@ export function MyPortfolioPage() {
       return
     }
     let cancelled = false
+    if (selectedPortfolioId === ALL_PORTFOLIOS_ID) {
+      if (portfolios.length === 0) {
+        setValueSnapshots([])
+        return
+      }
+      void Promise.all(portfolios.map((p) => getPortfolioSnapshots(p.id)))
+        .then((rows) => {
+          if (!cancelled) setValueSnapshots(mergePortfolioValueSnapshots(rows))
+        })
+        .catch(() => {
+          if (!cancelled) setValueSnapshots([])
+        })
+      return () => {
+        cancelled = true
+      }
+    }
     void getPortfolioSnapshots(selectedPortfolioId)
       .then((rows) => {
         if (!cancelled) setValueSnapshots(rows)
@@ -970,7 +1348,7 @@ export function MyPortfolioPage() {
     return () => {
       cancelled = true
     }
-  }, [activeSection, selectedPortfolioId])
+  }, [activeSection, selectedPortfolioId, portfolios])
 
   useEffect(() => {
     if (activeSection !== 'markets' || selectedInstrumentId == null) {
@@ -1016,30 +1394,18 @@ export function MyPortfolioPage() {
   }, [activeSection, selectedInstrumentId, marketOptions, valuationCurrency])
 
   useEffect(() => {
-    if (activeSection !== 'markets' || selectedInstrumentId == null) return
-    void getInstrumentPriceCoverage(selectedInstrumentId)
-      .then((coverage) => {
-        if (coverage.firstAvailableAt) {
-          setFirstAvailableDate(coverage.firstAvailableAt.slice(0, 10))
-        } else {
-          setFirstAvailableDate(null)
-        }
-      })
-      .catch(() => setFirstAvailableDate(null))
-  }, [activeSection, selectedInstrumentId])
-
-  useEffect(() => {
     if (activeSection !== 'markets' || selectedInstrumentId == null) {
       return
     }
     const lotsNumber = Number(lots)
     const amountNumber = Number(amount)
     const normalizedAcquiredAt = purchaseMode === 'PAST' ? toUtcStartOfDay(acquiredAt) : undefined
+    const tradePid = effectiveTradePortfolioId ?? undefined
     const payload =
       inputMode === 'LOTS'
         ? {
             instrumentId: selectedInstrumentId,
-            portfolioId: selectedPortfolioId ?? undefined,
+            portfolioId: tradePid,
             inputMode,
             lots: Number.isFinite(lotsNumber) && lotsNumber > 0 ? lotsNumber : undefined,
             inputCurrency: tradePaymentCurrency,
@@ -1049,7 +1415,7 @@ export function MyPortfolioPage() {
           }
         : {
             instrumentId: selectedInstrumentId,
-            portfolioId: selectedPortfolioId ?? undefined,
+            portfolioId: tradePid,
             inputMode,
             amount: Number.isFinite(amountNumber) && amountNumber > 0 ? amountNumber : undefined,
             inputCurrency: tradePaymentCurrency,
@@ -1064,7 +1430,7 @@ export function MyPortfolioPage() {
       const timer = window.setTimeout(() => {
         void previewTrade({
           instrumentId: selectedInstrumentId,
-          portfolioId: selectedPortfolioId ?? undefined,
+          portfolioId: tradePid,
           purchaseMode,
           inputMode: 'LOTS',
           lots: 1,
@@ -1073,38 +1439,42 @@ export function MyPortfolioPage() {
           unitPrice: unitPrice ? Number(unitPrice) : undefined,
         })
           .then((preview) => {
+            setTradePreviewError(null)
+            setLastTradePreview(preview)
             setUnitPriceUsed(preview.unitPriceUsed)
             if (!unitPrice) {
               setUnitPrice(String(preview.unitPriceUsed))
             }
             setManualUnitPriceRequired(preview.manualUnitPriceRequired)
+            applyPastPreviewUi(preview, purchaseMode, setAcquiredAt, setPastDateRollNotice)
           })
           .catch((error) => {
-            const message = extractApiErrorMessage(error).toLowerCase()
-            if (
-              message.includes('historical price unavailable') ||
-              message.includes('unitprice is required') ||
-              message.includes('selected date')
-            ) {
-              setManualUnitPriceRequired(true)
-              setUnitPriceUsed(null)
-            }
+            const raw = extractApiErrorMessage(error)
+            setPastDateRollNotice(null)
+            setManualUnitPriceRequired(false)
+            setUnitPriceUsed(null)
+            setLastTradePreview(null)
+            setTradePreviewError(raw || 'Onizleme basarisiz.')
           })
       }, 150)
       return () => window.clearTimeout(timer)
     }
 
     if (missingPrimaryInput) {
+      setTradePreviewError(null)
       return
     }
     const timer = window.setTimeout(() => {
       void previewTrade(payload)
         .then((preview) => {
+          setTradePreviewError(null)
+          setLastTradePreview(preview)
           setUnitPriceUsed(preview.unitPriceUsed)
           if (purchaseMode === 'PAST' && !unitPrice) {
             setUnitPrice(String(preview.unitPriceUsed))
           }
           setManualUnitPriceRequired(preview.manualUnitPriceRequired)
+          applyPastPreviewUi(preview, purchaseMode, setAcquiredAt, setPastDateRollNotice)
           if (inputMode === 'LOTS' || lastEditedField === 'lots') {
             setAmount(String(preview.computedInputAmount))
           } else {
@@ -1112,24 +1482,24 @@ export function MyPortfolioPage() {
           }
         })
         .catch((error) => {
-          const message = extractApiErrorMessage(error).toLowerCase()
-          if (
-            purchaseMode === 'PAST' &&
-            (message.includes('historical price unavailable') ||
-              message.includes('unitprice is required') ||
-              message.includes('selected date') ||
-              message.includes('date'))
-          ) {
-            setManualUnitPriceRequired(true)
-            setUnitPriceUsed(null)
-          }
+          const raw = extractApiErrorMessage(error)
+          setPastDateRollNotice(null)
+          setManualUnitPriceRequired(false)
+          setUnitPriceUsed(null)
+          setLastTradePreview(null)
+          setTradePreviewError(
+            raw ||
+              (purchaseMode === 'NOW'
+                ? 'Guncel fiyat alinamadi (sunucu veya kur verisi).'
+                : 'Gecmis fiyat onizlemesi basarisiz; baska tarih veya enstruman deneyin.'),
+          )
         })
     }, 250)
     return () => window.clearTimeout(timer)
   }, [
     activeSection,
     selectedInstrumentId,
-    selectedPortfolioId,
+    effectiveTradePortfolioId,
     inputMode,
     lots,
     amount,
@@ -1141,12 +1511,10 @@ export function MyPortfolioPage() {
   ])
 
   const filteredMarketOptions = useMemo(() => {
-    const quoteTarget = valuationCurrency
-    const byQuote = marketOptions.filter((item) => marketOptionListingQuote(item) === quoteTarget)
     const q = instrumentQuery.trim().toLowerCase()
-    if (!q) return byQuote
-    return byQuote.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
-  }, [instrumentQuery, marketOptions, valuationCurrency])
+    if (!q) return marketOptions
+    return marketOptions.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
+  }, [instrumentQuery, marketOptions])
 
   useEffect(() => {
     if (activeSection !== 'markets') return
@@ -1189,33 +1557,39 @@ export function MyPortfolioPage() {
   }, [overview, selectedInstrument, previewTotal, previewLots, tradePaymentCurrency, unitPriceUsed])
 
   const submitTrade = async () => {
-    if (selectedInstrumentId == null || selectedPortfolioId == null) {
+    if (selectedInstrumentId == null || effectiveTradePortfolioId == null || effectiveTradePortfolioId <= 0) {
       return
     }
     setTradeError(null)
+    setTradePreviewError(null)
     setTradeSuccess(null)
     const normalizedAcquiredAt = purchaseMode === 'PAST' ? toUtcStartOfDay(acquiredAt) : undefined
+    const tradePid = effectiveTradePortfolioId
+    const pastUnitPayload =
+      purchaseMode === 'PAST' && manualUnitPriceRequired && unitPrice.trim() !== ''
+        ? Number(unitPrice)
+        : undefined
     const payload =
       inputMode === 'LOTS'
         ? {
             instrumentId: selectedInstrumentId,
-            portfolioId: selectedPortfolioId ?? undefined,
+            portfolioId: tradePid,
             inputMode,
             lots: Number(lots),
             inputCurrency: tradePaymentCurrency,
             purchaseMode,
             acquiredAt: normalizedAcquiredAt,
-            unitPrice: purchaseMode === 'PAST' ? Number(unitPrice) : undefined,
+            unitPrice: pastUnitPayload,
           }
         : {
             instrumentId: selectedInstrumentId,
-            portfolioId: selectedPortfolioId ?? undefined,
+            portfolioId: tradePid,
             inputMode,
             amount: Number(amount),
             inputCurrency: tradePaymentCurrency,
             purchaseMode,
             acquiredAt: normalizedAcquiredAt,
-            unitPrice: purchaseMode === 'PAST' ? Number(unitPrice) : undefined,
+            unitPrice: pastUnitPayload,
           }
     if (purchaseMode === 'PAST' && !normalizedAcquiredAt) {
       setTradeError('Onceden alimda tarih zorunludur.')
@@ -1229,11 +1603,12 @@ export function MyPortfolioPage() {
     try {
       await buyTrade(payload)
       setTradeSuccess('Islem basariyla kaydedildi.')
+      setLastTradePreview(null)
       setIsPreviewStep(false)
-      await loadHistoryPage(0, appliedHistoryFilters)
-      const updatedOverview = await getMyPortfolioOverview(selectedPortfolioId, valuationCurrency)
+      await loadHistoryPage(0, appliedHistoryFilters, isAggregatePortfolioView ? null : selectedPortfolioId)
+      const updatedOverview = await getMyPortfolioOverview(overviewApiPortfolioId, valuationCurrency)
       setOverview(updatedOverview)
-      setTradeFlow(await loadTradeFlowForPortfolio(selectedPortfolioId, valuationCurrency))
+      setTradeFlow(await loadTradeFlowForPortfolio(overviewApiPortfolioId, valuationCurrency))
     } catch (error) {
       const message = extractApiErrorMessage(error)
       setTradeError(message || 'Islem kaydedilemedi.')
@@ -1249,7 +1624,6 @@ export function MyPortfolioPage() {
     }
     setPortfolioActionError(null)
     setNewPortfolioName('')
-    setNewPortfolioBaseCurrency('TRY')
     setShowCreatePortfolioModal(true)
   }
 
@@ -1266,7 +1640,7 @@ export function MyPortfolioPage() {
     setPortfolioActionLoading(true)
     setPortfolioActionError(null)
     try {
-      const created = await createPortfolio({ name, baseCurrency: newPortfolioBaseCurrency })
+      const created = await createPortfolio({ name })
       await refreshPortfolios()
       setSelectedPortfolioId(created.id)
       setShowCreatePortfolioModal(false)
@@ -1296,7 +1670,7 @@ export function MyPortfolioPage() {
   }, [activeSection])
 
   useEffect(() => {
-    if (deleteConfirm && selectedPortfolioId != null && deleteConfirm.id !== selectedPortfolioId) {
+    if (deleteConfirm && selectedPortfolioId != null && selectedPortfolioId > 0 && deleteConfirm.id !== selectedPortfolioId) {
       setDeleteConfirm(null)
     }
   }, [deleteConfirm, selectedPortfolioId])
@@ -1354,11 +1728,13 @@ export function MyPortfolioPage() {
                   <select
                     aria-label={t('sidebar.portfolios')}
                     value={
-                      selectedPortfolioId != null
-                        ? String(selectedPortfolioId)
-                        : portfolios.length === 0
-                          ? CREATE_PORTFOLIO_SELECT_VALUE
-                          : ''
+                      selectedPortfolioId === ALL_PORTFOLIOS_ID
+                        ? String(ALL_PORTFOLIOS_ID)
+                        : selectedPortfolioId != null && selectedPortfolioId > 0
+                          ? String(selectedPortfolioId)
+                          : portfolios.length === 0
+                            ? CREATE_PORTFOLIO_SELECT_VALUE
+                            : String(ALL_PORTFOLIOS_ID)
                     }
                     onChange={(event) => {
                       const value = event.target.value
@@ -1369,6 +1745,9 @@ export function MyPortfolioPage() {
                       setSelectedPortfolioId(Number(value))
                     }}
                   >
+                    {portfolios.length > 0 ? (
+                      <option value={String(ALL_PORTFOLIOS_ID)}>{t('sidebar.overviewOption')}</option>
+                    ) : null}
                     {portfolios.map((portfolio) => (
                       <option key={portfolio.id} value={portfolio.id}>
                         {portfolio.name}
@@ -1441,9 +1820,25 @@ export function MyPortfolioPage() {
             <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
               <h2 className="my-portfolio-trade-title">Portfoye Yeni Enstruman Ekle</h2>
               <p className="my-portfolio-trade-subtitle">Enstruman sec, lot veya tutar gir, aninda maliyet/lot hesapla.</p>
-              {selectedPortfolioId != null && selectedPortfolio ? (
+              {isAggregatePortfolioView && portfolios.length > 0 ? (
+                <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
+                  <span>{t('sidebar.tradePickPortfolio')}</span>
+                  <select
+                    aria-label={t('sidebar.tradePickPortfolio')}
+                    value={tradeTargetPortfolioId ?? ''}
+                    onChange={(event) => setTradeTargetPortfolioId(Number(event.target.value))}
+                  >
+                    {portfolios.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {(isAggregatePortfolioView || selectedPortfolio != null) && portfolios.length > 0 ? (
                 <p className="my-portfolio-trade-listing-hint" role="note">
-                  {valuationCurrency === 'TRY' ? t('marketsAdd.listingHintTry') : t('marketsAdd.listingHintUsd')}
+                  {t('marketsAdd.listingHintAll')}
                 </p>
               ) : null}
 
@@ -1470,16 +1865,24 @@ export function MyPortfolioPage() {
                   <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
                     <span>Enstruman</span>
                     <select
-                      value={selectedInstrumentId ?? ''}
-                      onChange={(event) => setSelectedInstrumentId(Number(event.target.value))}
+                      value={selectedInstrumentId != null ? String(selectedInstrumentId) : ''}
+                      onChange={(event) => {
+                        const v = event.target.value
+                        setSelectedInstrumentId(v === '' ? null : Number(v))
+                      }}
                       disabled={isPreviewStep || marketLoading || filteredMarketOptions.length === 0}
                     >
                       {filteredMarketOptions.map((item) => (
-                        <option key={item.instrumentId} value={item.instrumentId}>
+                        <option key={item.instrumentId} value={String(item.instrumentId)}>
                           {item.symbol} - {item.name}
                         </option>
                       ))}
                     </select>
+                    {marketCatalogError ? (
+                      <small className="auth-error" role="alert">
+                        {marketCatalogError}
+                      </small>
+                    ) : null}
                   </label>
                   ) : null}
 
@@ -1498,7 +1901,10 @@ export function MyPortfolioPage() {
                         <button
                           type="button"
                           className={purchaseMode === 'PAST' ? 'is-active' : ''}
-                          onClick={() => setPurchaseMode('PAST')}
+                          onClick={() => {
+                            setPurchaseMode('PAST')
+                            setPastDateRollNotice(null)
+                          }}
                           disabled={isPreviewStep}
                         >
                           Gecmis alim ekle
@@ -1547,48 +1953,75 @@ export function MyPortfolioPage() {
 
                     <label className="my-portfolio-trade-field">
                       <span>Alim Fiyati</span>
-                      <input
-                        value={
-                          purchaseMode === 'NOW'
-                            ? (unitPriceUsed ?? '').toString()
-                            : manualUnitPriceRequired
-                              ? unitPrice
-                              : (unitPriceUsed ?? unitPrice ?? '').toString()
-                        }
-                        readOnly={isPreviewStep || purchaseMode === 'NOW' || (purchaseMode === 'PAST' && !manualUnitPriceRequired)}
-                        onChange={(event) => setUnitPrice(event.target.value)}
-                        inputMode="decimal"
-                        placeholder={manualUnitPriceRequired ? 'Aldigin fiyati gir' : ''}
-                      />
+                      <div className="my-portfolio-trade-money-input">
+                        <span className="my-portfolio-trade-money-input__sym" aria-hidden>
+                          {currencySymbolPrefix(instrumentQuoteCurrencyCode)}
+                        </span>
+                        <input
+                          value={
+                            purchaseMode === 'NOW'
+                              ? (unitPriceUsed ?? '').toString()
+                              : manualUnitPriceRequired
+                                ? unitPrice
+                                : (unitPriceUsed ?? unitPrice ?? '').toString()
+                          }
+                          readOnly={isPreviewStep || purchaseMode === 'NOW' || (purchaseMode === 'PAST' && !manualUnitPriceRequired)}
+                          onChange={(event) => setUnitPrice(event.target.value)}
+                          inputMode="decimal"
+                          placeholder={manualUnitPriceRequired ? 'Aldigin fiyati gir' : ''}
+                        />
+                      </div>
+                      {purchaseMode === 'PAST' && pastDateRollNotice ? (
+                        <small className="my-portfolio-trade-note" role="status">
+                          En eski fiyat bilgisi {pastDateRollNotice} tarihindedir; alim bu tarihle kaydedilir.
+                        </small>
+                      ) : null}
                       {purchaseMode === 'PAST' && manualUnitPriceRequired ? (
-                        <small className="my-portfolio-trade-note">
-                          O gunun verisi yok. Alim fiyatini manuel girin; toplulukta portfoyunde gozukmez notu ile islenir.
-                          {firstAvailableDate ? ` Ilk mevcut tarih: ${firstAvailableDate}.` : ''}
+                        <small className="my-portfolio-trade-note" role="alert">
+                          Bu enstruman icin sistemde fiyat verisi bulunamadi. Farkli bir tarih veya enstruman deneyin.
                         </small>
                       ) : null}
                     </label>
 
                     <label className="my-portfolio-trade-field">
                       <span>Para Birimi</span>
-                      <input
-                        readOnly
-                        value={tradePaymentCurrency === 'TRY' ? 'TRY (TL)' : 'USD'}
-                        title="BIST ve TRY kotasyonlu varliklarda TL; digerlerinde USD — sistem fiyat eksenine uyar."
-                      />
+                      <select
+                        value={tradePaymentCurrency}
+                        onChange={(event) =>
+                          setTradePaymentCurrency(event.target.value as TradePaymentCurrency)
+                        }
+                        disabled={isPreviewStep}
+                        title="TRY, USD, EUR, GBP, JPY, AED — backend TRY hub uzerinden donusur; gecmis alimda MDS tarihsel kur."
+                      >
+                        {tradePaymentCurrencyOptions.map((c) => (
+                          <option key={c} value={c}>
+                            {tradePaymentCurrencyLabel(c)}
+                          </option>
+                        ))}
+                      </select>
+                      <small className="my-portfolio-trade-note" role="note">
+                        Onerilen: {tradePaymentCurrencyLabel(instrumentDefaultPaymentCurrency)} — tum secenekler sunucu
+                        ile uyumlu; gecmis alimda kur, secilen para biriminden enstruman kotasyonuna MDS ile alinir.
+                      </small>
                     </label>
 
                     <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
                       <span>Toplam Tutar</span>
-                      <input
-                        value={amount}
-                        onChange={(event) => {
-                          setLastEditedField('amount')
-                          setInputMode('AMOUNT')
-                          setAmount(event.target.value)
-                        }}
-                        readOnly={isPreviewStep}
-                        inputMode="decimal"
-                      />
+                      <div className="my-portfolio-trade-money-input">
+                        <span className="my-portfolio-trade-money-input__sym" aria-hidden>
+                          {currencySymbolPrefix(tradePaymentCurrency)}
+                        </span>
+                        <input
+                          value={amount}
+                          onChange={(event) => {
+                            setLastEditedField('amount')
+                            setInputMode('AMOUNT')
+                            setAmount(event.target.value)
+                          }}
+                          readOnly={isPreviewStep}
+                          inputMode="decimal"
+                        />
+                      </div>
                     </label>
                     {purchaseMode === 'PAST' ? (
                       <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
@@ -1601,12 +2034,19 @@ export function MyPortfolioPage() {
                             setUnitPrice('')
                             setManualUnitPriceRequired(false)
                             setUnitPriceUsed(null)
+                            setPastDateRollNotice(null)
                           }}
                           disabled={isPreviewStep}
                         />
                       </label>
                     ) : null}
                   </div>
+                  ) : null}
+
+                  {tradePreviewError ? (
+                    <p className="auth-error" role="alert">
+                      {tradePreviewError}
+                    </p>
                   ) : null}
 
                   {isPreviewStep ? (
@@ -1616,11 +2056,32 @@ export function MyPortfolioPage() {
                       <p><span>Islem Tipi</span><strong>{purchaseMode === 'PAST' ? 'Gecmis alim ekle' : 'Piyasadan ekle'}</strong></p>
                       <p><span>Giris Sekli</span><strong>{inputMode === 'LOTS' ? 'Lot ile gir' : 'Tutar ile gir'}</strong></p>
                       <p><span>Lot</span><strong>{lots || '-'}</strong></p>
-                      <p><span>Toplam Tutar</span><strong>{amount || '-'}</strong></p>
-                      <p><span>Alim Fiyati</span><strong>{unitPriceUsed ?? unitPrice ?? '-'}</strong></p>
+                      <p><span>Toplam Tutar</span><strong>
+                        {(() => {
+                          const n = Number(amount)
+                          return amount.trim() === '' || !Number.isFinite(n)
+                            ? '—'
+                            : formatMoneyPrefixed(n, tradePaymentCurrency, i18n.language, 2)
+                        })()}
+                      </strong></p>
+                      <p><span>Alim Fiyati</span><strong>
+                        {(() => {
+                          const n =
+                            unitPriceUsed != null && Number.isFinite(unitPriceUsed)
+                              ? unitPriceUsed
+                              : unitPrice.trim() !== ''
+                                ? Number(unitPrice)
+                                : NaN
+                          return Number.isFinite(n)
+                            ? formatMoneyPrefixed(n, instrumentQuoteCurrencyCode, i18n.language, 6)
+                            : unitPrice.trim() !== ''
+                              ? unitPrice
+                              : '—'
+                        })()}
+                      </strong></p>
                       <p>
                         <span>Para Birimi</span>
-                        <strong>{tradePaymentCurrency === 'TRY' ? 'TRY (TL)' : 'USD'}</strong>
+                        <strong>{tradePaymentCurrencyLabel(tradePaymentCurrency)}</strong>
                       </p>
                       {purchaseMode === 'PAST' ? <p><span>Alim Tarihi</span><strong>{acquiredAt || '-'}</strong></p> : null}
                     </div>
@@ -1634,7 +2095,10 @@ export function MyPortfolioPage() {
                       <button
                         type="button"
                         className="auth-submit auth-submit-secondary my-portfolio-trade-back"
-                        onClick={() => setIsPreviewStep(false)}
+                        onClick={() => {
+                          setLastTradePreview(null)
+                          setIsPreviewStep(false)
+                        }}
                         disabled={tradeSaving}
                       >
                         Geri
@@ -1660,11 +2124,17 @@ export function MyPortfolioPage() {
                   <h4>Portfoy Dagilimi</h4>
                   <div className="my-portfolio-preview-ring" />
                   <div className="my-portfolio-preview-stats">
-                    <div><span>Toplam Tutar</span><strong>{tradeQuoteCurrencyFormat.format(previewTotal || 0)}</strong></div>
-                    <div><span>Maliyet / Lot</span><strong>{unitPriceUsed == null ? '—' : tradeQuoteCurrencyFormat.format(unitPriceUsed)}</strong></div>
+                    <div><span>Toplam Tutar</span><strong>{formatMoneyPrefixed(previewTotal || 0, tradePaymentCurrency, i18n.language, 2)}</strong></div>
+                    <div><span>Maliyet / Lot</span><strong>{unitPriceUsed == null ? '—' : formatMoneyPrefixed(unitPriceUsed, instrumentQuoteCurrencyCode, i18n.language, 6)}</strong></div>
                     <div><span>Toplam Lot</span><strong>{previewLots.toFixed(4)}</strong></div>
                     <div><span>Enstruman PB</span><strong>{selectedInstrument?.nativeQuote ?? '—'}</strong></div>
                   </div>
+                  {isPreviewStep && lastTradePreview?.acquisitionFxRates ? (
+                    <AcquisitionFxPanel
+                      snap={lastTradePreview.acquisitionFxRates}
+                      purchaseMode={purchaseMode}
+                    />
+                  ) : null}
                   <ul className="my-portfolio-preview-distribution">
                     {projectedDistribution.map((item) => (
                       <li key={item.symbol}>
@@ -1718,8 +2188,10 @@ export function MyPortfolioPage() {
           {activeSection === 'portfolio' ? (
             <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
               <div className="my-portfolio-history-head">
-                <h4>Islem Gecmisi</h4>
-                <p>{historyTotalElements} kayit</p>
+                <div>
+                  <h4>Islem Gecmisi</h4>
+                </div>
+                <p className="my-portfolio-history-count">{historyTotalElements} kayit</p>
               </div>
               <div className="my-portfolio-history-filters">
                 <input
@@ -1792,18 +2264,23 @@ export function MyPortfolioPage() {
                   <table>
                     <thead>
                       <tr>
+                        {isAggregatePortfolioView ? <th>{t('sidebar.historyPortfolioColumn')}</th> : null}
                         <th>Enstruman</th>
                         <th>Islem</th>
                         <th>Alim Tipi</th>
                         <th>Lot</th>
                         <th>Maliyet</th>
                         <th>Liste PB</th>
+                        <th>Alim kuru</th>
                         <th>Tarih</th>
                       </tr>
                     </thead>
                     <tbody>
                       {history.map((row) => (
                         <tr key={row.transactionId}>
+                          {isAggregatePortfolioView ? (
+                            <td>{row.portfolioName?.trim() || (row.portfolioId != null ? `#${row.portfolioId}` : '—')}</td>
+                          ) : null}
                           <td>{row.instrumentSymbol}</td>
                           <td>{row.type}</td>
                           <td>
@@ -1818,6 +2295,7 @@ export function MyPortfolioPage() {
                               ? row.quoteCurrency.trim().toUpperCase()
                               : inferInstrumentQuoteCurrency(row.instrumentSymbol)}
                           </td>
+                          <td className="my-portfolio-history-fx">{formatTxFxLegLabel(row, i18n.language)}</td>
                           <td>{new Date(row.acquiredAt ?? row.createdAt).toLocaleString(i18n.language)}</td>
                         </tr>
                       ))}
@@ -1857,7 +2335,7 @@ export function MyPortfolioPage() {
                 </button>
                 <h2 className="my-portfolio-allocation-detail-title">{t('allocation.detailTitle')}</h2>
               </header>
-              {selectedPortfolioId == null ? (
+              {portfolios.length === 0 ? (
                 <p className="my-portfolio-trade-note">{t('allocation.empty')}</p>
               ) : distribution.fullList.length === 0 ? (
                 <p className="my-portfolio-trade-note">{t('allocation.empty')}</p>
@@ -2016,8 +2494,10 @@ export function MyPortfolioPage() {
               <h2 className="my-portfolio-trade-title">{t('settingsPage.title')}</h2>
               <p className="my-portfolio-trade-subtitle">{t('settingsPage.scopeHint')}</p>
               {portfolioSettingsError ? <p className="auth-error">{portfolioSettingsError}</p> : null}
-              {selectedPortfolioId == null || !selectedPortfolio ? (
-                <p className="my-portfolio-trade-subtitle">{t('settingsPage.pickPortfolio')}</p>
+              {selectedPortfolio == null ? (
+                <p className="my-portfolio-trade-subtitle">
+                  {isAggregatePortfolioView ? t('sidebar.settingsOverviewHint') : t('settingsPage.pickPortfolio')}
+                </p>
               ) : (
                 <>
                   <div
@@ -2038,7 +2518,11 @@ export function MyPortfolioPage() {
                       </div>
                       <div>
                         <dt>{t('settingsPage.baseCurrencyLabel')}</dt>
-                        <dd>{selectedPortfolio.baseCurrency}</dd>
+                        <dd>
+                          {selectedPortfolio.baseCurrency?.trim().toUpperCase() === 'MIXED'
+                            ? t('settingsPage.baseCurrencyNeutral')
+                            : selectedPortfolio.baseCurrency}
+                        </dd>
                       </div>
                       <div>
                         <dt>{t('settingsPage.quotaLabel')}</dt>
@@ -2364,6 +2848,7 @@ export function MyPortfolioPage() {
                           ? String(Math.round(qty))
                           : new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 }).format(qty)
                         : '—'
+                      const fxLabel = formatTxFxLegLabel(row, i18n.language)
                       return (
                         <li key={row.transactionId} className="my-portfolio-recent-tx-row">
                           <div className="my-portfolio-recent-tx-left">
@@ -2374,7 +2859,12 @@ export function MyPortfolioPage() {
                             </span>
                           </div>
                           <div className="my-portfolio-recent-tx-right">
-                            <span className="my-portfolio-recent-tx-amt">{formatTxMoney(row)}</span>
+                            <div className="my-portfolio-recent-tx-amt-stack">
+                              <span className="my-portfolio-recent-tx-amt">{formatTxMoney(row)}</span>
+                              {fxLabel !== '—' ? (
+                                <span className="my-portfolio-recent-tx-fx">{fxLabel}</span>
+                              ) : null}
+                            </div>
                             <span
                               className={`my-portfolio-recent-tx-badge${isBuy ? ' is-buy' : ' is-sell'}`}
                             >
@@ -2463,27 +2953,6 @@ export function MyPortfolioPage() {
                 maxLength={120}
               />
             </label>
-            <div className="my-portfolio-modal-field">
-              <span className="my-portfolio-modal-field-label">{t('createPortfolioModal.currencyLabel')}</span>
-              <div className="my-portfolio-currency-grid" role="group" aria-label={t('createPortfolioModal.currencyLabel')}>
-                <button
-                  type="button"
-                  className={`my-portfolio-currency-chip${newPortfolioBaseCurrency === 'TRY' ? ' is-active' : ''}`}
-                  onClick={() => setNewPortfolioBaseCurrency('TRY')}
-                  disabled={portfolioActionLoading}
-                >
-                  {t('createPortfolioModal.tryChip')}
-                </button>
-                <button
-                  type="button"
-                  className={`my-portfolio-currency-chip${newPortfolioBaseCurrency === 'USD' ? ' is-active' : ''}`}
-                  onClick={() => setNewPortfolioBaseCurrency('USD')}
-                  disabled={portfolioActionLoading}
-                >
-                  {t('createPortfolioModal.usdChip')}
-                </button>
-              </div>
-            </div>
             {portfolioActionError ? <p className="auth-error">{portfolioActionError}</p> : null}
             <div className="my-portfolio-modal-actions">
               {portfolios.length > 0 ? (

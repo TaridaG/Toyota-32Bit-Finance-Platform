@@ -1,4 +1,14 @@
-export type MarketCategory = 'all' | 'crypto' | 'bist' | 'nasdaq' | 'forex' | 'metals' | 'globalFutures' | 'funds'
+export type MarketCategory =
+  | 'all'
+  | 'crypto'
+  | 'bist'
+  | 'nasdaq'
+  | 'forex'
+  | 'metals'
+  | 'globalFutures'
+  | 'funds'
+  | 'bonds'
+  | 'eurobond'
 
 export type MarketNativeQuote = 'TRY' | 'USD'
 
@@ -25,6 +35,8 @@ export type MarketOverviewItem = {
   high24h: number | null
   low24h: number | null
   category: string | null
+  /** Listing exchange when API provides it (e.g. BIST, NASDAQ); optional. */
+  exchange?: string | null
   instrumentId: number | null
 }
 
