@@ -45,6 +45,9 @@ public class GatewayRoutesConfig {
                 .route("finance-market-overview-insights", r -> r.order(-12)
                         .path("/api/market/overview", "/api/market/overview/", "/api/market/insights", "/api/market/insights/")
                         .uri(financeBaseUri))
+                .route("finance-market-eurobonds-tr", r -> r.order(-13)
+                        .path("/api/market/eurobonds/tr", "/api/market/eurobonds/tr/**")
+                        .uri(financeBaseUri))
                 .route("market-data-service-api", r -> r.path("/api/market/**")
                 .filters(f -> f
                 .circuitBreaker(cb -> cb
@@ -52,6 +55,14 @@ public class GatewayRoutesConfig {
                 .setFallbackUri("forward:/fallback/market"))
                 )
                 .uri(marketBaseUri))
+                .route("market-data-service-rates", r -> r.order(-11)
+                        .path("/api/rates/**")
+                        .filters(f -> f
+                                .circuitBreaker(cb -> cb
+                                        .setName("marketCircuitBreaker")
+                                        .setFallbackUri("forward:/fallback/market"))
+                        )
+                        .uri(marketBaseUri))
                 .route("market-data-service-legacy", r -> r.path("/market/**")
                 .filters(f -> f
                 .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}")
