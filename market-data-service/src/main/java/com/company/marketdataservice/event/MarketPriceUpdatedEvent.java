@@ -34,13 +34,28 @@ public record MarketPriceUpdatedEvent(
             String source,
             Long instrumentId
     ) {
+        return ofAt(symbol, price, priceType, source, instrumentId, Instant.now());
+    }
+
+    /**
+     * Historical or replayed points: {@code occurredAt} becomes {@code mds_market_price_history.observed_at}.
+     */
+    public static MarketPriceUpdatedEvent ofAt(
+            String symbol,
+            BigDecimal price,
+            String priceType,
+            String source,
+            Long instrumentId,
+            Instant occurredAt
+    ) {
+        Instant when = occurredAt != null ? occurredAt : Instant.now();
         return new MarketPriceUpdatedEvent(
                 UUID.randomUUID().toString(),
                 symbol,
                 price,
                 priceType,
                 source,
-                Instant.now(),
+                when,
                 instrumentId
         );
     }

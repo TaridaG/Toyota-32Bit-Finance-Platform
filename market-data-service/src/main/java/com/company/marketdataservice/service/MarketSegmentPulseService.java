@@ -29,7 +29,7 @@ public class MarketSegmentPulseService {
     private static final Logger log = LoggerFactory.getLogger(MarketSegmentPulseService.class);
 
     private static final List<String> SEGMENT_ORDER =
-            List.of("crypto", "bist", "nasdaq", "forex", "metals", "globalFutures", "funds");
+            List.of("crypto", "bist", "nasdaq", "forex", "metals", "globalFutures", "funds", "bonds");
 
     private static final int SUMMARY_CHUNK = 40;
     private static final long CACHE_TTL_MS = 30_000L;

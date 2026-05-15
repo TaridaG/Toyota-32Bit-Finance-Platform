@@ -26,13 +26,19 @@ public final class MarketCatalogSegmentRules {
     private MarketCatalogSegmentRules() {}
 
     /**
-     * Coarse wire category (CRYPTO, STOCK, FX, FUND, METAL) aligned with the SPA catalog merge.
+     * Coarse wire category (CRYPTO, STOCK, FX, FUND, METAL, BOND) aligned with the SPA catalog merge.
      */
     public static String inferWireCategory(String symbol) {
         if (symbol == null || symbol.isBlank()) {
             return "STOCK";
         }
         String s = symbol.trim().toUpperCase(Locale.ROOT);
+        if (s.startsWith("TRBOND") || s.startsWith("TRGOVUSD")) {
+            return "BOND";
+        }
+        if (s.startsWith("FUND_")) {
+            return "FUND";
+        }
         if (METAL_SYMBOLS.contains(s)) {
             return "METAL";
         }
@@ -64,6 +70,9 @@ public final class MarketCatalogSegmentRules {
         }
         if ("FUND".equals(cat)) {
             return "funds";
+        }
+        if ("BOND".equals(cat)) {
+            return "bonds";
         }
         if ("METAL".equals(cat)) {
             if (SPOT_METAL_SYMBOLS.contains(s)) {

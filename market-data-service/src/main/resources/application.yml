@@ -88,8 +88,34 @@ management:
 
 market:
   evds:
-    base-url: ${MARKET_EVDS_BASE_URL:https://evds2.tcmb.gov.tr/service/evds}
+    # TCMB yeni uç (evds2 → 302 / SPA); veri: https://github.com/fatihmete/evds — /igmevdsms-dis/series=...&type=json
+    base-url: ${MARKET_EVDS_BASE_URL:https://evds3.tcmb.gov.tr/igmevdsms-dis}
     api-key: ${MARKET_EVDS_API_KEY:${TCMB_API_KEY:}}
+    # Politika kartı: EVDS TP_BISPOLFAIZ_TUR (JSON sütunu; istek URL’sinde otomatik TP.BISPOLFAIZ.TUR). Aylık frequency=5.
+    policy-rate-series: ${MARKET_EVDS_POLICY_RATE_SERIES:TP_BISPOLFAIZ_TUR}
+    # EVDS frequency: 5=aylık. Günlük seri için boş: MARKET_EVDS_POLICY_RATE_FREQUENCY=
+    policy-rate-evds-frequency: ${MARKET_EVDS_POLICY_RATE_FREQUENCY:5}
+    # Ağırlıklı ortalama TL mevduat faizleri (stok), vade dilimleri — EVDS TP.MT210AGS.TRY.MT01…MT06
+    tl-deposit-evds-series:
+      - TP.MT210AGS.TRY.MT01
+      - TP.MT210AGS.TRY.MT02
+      - TP.MT210AGS.TRY.MT03
+      - TP.MT210AGS.TRY.MT04
+      - TP.MT210AGS.TRY.MT05
+      - TP.MT210AGS.TRY.MT06
+    tl-deposit-evds-frequency: ${MARKET_EVDS_TL_DEPOSIT_FREQUENCY:5}
+    # Kartta gösterilen dilim (MT04 = 1 yıla kadar vadeli)
+    tl-deposit-card-maturity: ${MARKET_EVDS_TL_DEPOSIT_CARD_MATURITY:MT04}
+  policy-rate:
+    weekly-sync:
+      enabled: ${MARKET_POLICY_RATE_WEEKLY_SYNC_ENABLED:true}
+      startup-delay-ms: ${MARKET_POLICY_RATE_WEEKLY_SYNC_STARTUP_DELAY_MS:45000}
+      weekly-cron: ${MARKET_POLICY_RATE_WEEKLY_SYNC_CRON:0 20 7 * * MON}
+  tl-deposit:
+    weekly-sync:
+      enabled: ${MARKET_TL_DEPOSIT_WEEKLY_SYNC_ENABLED:true}
+      startup-delay-ms: ${MARKET_TL_DEPOSIT_WEEKLY_SYNC_STARTUP_DELAY_MS:60000}
+      weekly-cron: ${MARKET_TL_DEPOSIT_WEEKLY_SYNC_CRON:0 25 7 * * MON}
   ingestion:
     env: ${MARKET_INGESTION_ENV:dev}
   history:
@@ -112,9 +138,13 @@ market:
       min-recent30-day-coverage-days: 15
       sleep-ms: 200
   tracked-funds: &mds-tracked-funds
+    # TI2/AFT/… + TP2 (Metro Portföy vb. — TEFAS kodu TP2). YAT dışı tip gerekiyorsa market.fund.tefas-fontip ile EMK/BYF denenebilir.
+    - TI2
+    - TP2
     - AFT
     - AFA
-    - TI2
+    - AFO
+    - GTA
   tracked-symbols:
     - BTCUSDT
     - ETHUSDT
@@ -171,12 +201,36 @@ market:
     delay-ms: 3600000
     tracked-fund-codes: *mds-tracked-funds
     http-url-template: ""
+    # Legacy form POST (often 404 after TEFAS site migration); prefer tefas-fon-gnl-blg-url.
     tefas-bind-history-url: https://www.tefas.gov.tr/api/DB/BindHistoryInfo
+    tefas-fon-gnl-blg-url: https://www.tefas.gov.tr/api/funds/fonGnlBlgSiraliGetir
+    tefas-fon-gnl-chunk-days: 28
+    tefas-fon-gnl-request-spacing-ms: 10000
     tefas-fontip: YAT
     tefas-history-lookback-days: 370
     tefas-history-chunk-inclusive-days: 89
+    # FUND ingestion backfill initial depth (years), separate from market.history.backfill.years
+    historical-nav-backfill-years: 1
+    nav-history-bootstrap:
+      enabled: false
+      delay-ms: 45000
+      lookback-days: 365
   bond:
     scheduler-enabled: true
+    history-bootstrap:
+      enabled: ${MARKET_BOND_HISTORY_BOOTSTRAP_ENABLED:true}
+      delay-ms: ${MARKET_BOND_HISTORY_BOOTSTRAP_DELAY_MS:120000}
+      lookback-years: 5
+      chunk-days: 400
+      chunk-spacing-ms: 400
+      # EVDS: 1 = günlük (boş bırakılırsa frequency parametresi gönderilmez)
+      evds-frequency: ${MARKET_BOND_HISTORY_EVDS_FREQUENCY:1}
+      forward-fill-calendar-days: ${MARKET_BOND_HISTORY_FORWARD_FILL:true}
+    history-refresh:
+      enabled: ${MARKET_BOND_HISTORY_REFRESH_ENABLED:true}
+      lookback-days: ${MARKET_BOND_HISTORY_REFRESH_LOOKBACK_DAYS:60}
+      chunk-spacing-ms: ${MARKET_BOND_HISTORY_REFRESH_CHUNK_SPACING_MS:400}
+      cron: ${MARKET_BOND_HISTORY_REFRESH_CRON:0 15 8 * * *}
     tracked:
       - symbol: TRBOND1Y
         evds-series: TP.KTF10
@@ -188,6 +242,37 @@ market:
         evds-series: TP.KTF13
       - symbol: TRBOND10Y
         evds-series: TP.KTF14
+  # Türkiye USD Hazine benchmark (BloombergHT / Yahoo: GTUSDTR{n}Y:GOV) → canonical TRGOVUSD*
+  tr-gov-usd-eurobond:
+    history-bootstrap:
+      enabled: ${MARKET_TRGOVUSD_HISTORY_BOOTSTRAP_ENABLED:false}
+      delay-ms: ${MARKET_TRGOVUSD_HISTORY_BOOTSTRAP_DELAY_MS:150000}
+      chart-range: ${MARKET_TRGOVUSD_CHART_RANGE:10y}
+      chart-interval: ${MARKET_TRGOVUSD_CHART_INTERVAL:1d}
+      chunk-spacing-ms: ${MARKET_TRGOVUSD_CHUNK_SPACING_MS:400}
+    history-refresh:
+      enabled: ${MARKET_TRGOVUSD_HISTORY_REFRESH_ENABLED:false}
+      cron: ${MARKET_TRGOVUSD_HISTORY_REFRESH_CRON:0 28 8 * * *}
+      chart-range: ${MARKET_TRGOVUSD_REFRESH_CHART_RANGE:5y}
+      chart-interval: ${MARKET_TRGOVUSD_REFRESH_CHART_INTERVAL:1d}
+      chunk-spacing-ms: ${MARKET_TRGOVUSD_REFRESH_CHUNK_SPACING_MS:400}
+    tracked:
+      - canonical: TRGOVUSD1Y
+        yahoo-chart-symbol: GTUSDTR1Y:GOV
+      - canonical: TRGOVUSD2Y
+        yahoo-chart-symbol: GTUSDTR2Y:GOV
+      - canonical: TRGOVUSD3Y
+        yahoo-chart-symbol: GTUSDTR3Y:GOV
+      - canonical: TRGOVUSD4Y
+        yahoo-chart-symbol: GTUSDTR4Y:GOV
+      - canonical: TRGOVUSD5Y
+        yahoo-chart-symbol: GTUSDTR5Y:GOV
+      - canonical: TRGOVUSD6Y
+        yahoo-chart-symbol: GTUSDTR6Y:GOV
+      - canonical: TRGOVUSD8Y
+        yahoo-chart-symbol: GTUSDTR8Y:GOV
+      - canonical: TRGOVUSD15Y
+        yahoo-chart-symbol: GTUSDTR15Y:GOV
   stock:
     shares-verification:
       enabled: ${MARKET_STOCK_SHARES_VERIFICATION_ENABLED:true}

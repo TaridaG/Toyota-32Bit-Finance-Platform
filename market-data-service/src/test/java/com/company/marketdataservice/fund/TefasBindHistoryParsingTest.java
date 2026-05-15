@@ -42,4 +42,23 @@ class TefasBindHistoryParsingTest {
         String json = "{}";
         assertTrue(TefasBindHistoryParsing.latestNav(mapper.readTree(json), "AFT").isEmpty());
     }
+
+    @Test
+    void allNavPointsSorted_returnsSortedDeduped() throws Exception {
+        String json =
+                """
+                {
+                  "data": [
+                    {"FONKODU": "AFT", "FIYAT": "1.0", "TARIH": 1000},
+                    {"FONKODU": "AFT", "FIYAT": "2.0", "TARIH": 2000},
+                    {"FONKODU": "AFT", "FIYAT": "2.5", "TARIH": 2000},
+                    {"FONKODU": "OTHER", "FIYAT": "9", "TARIH": 3000}
+                  ]
+                }
+                """;
+        var points = TefasBindHistoryParsing.allNavPointsSorted(mapper.readTree(json), "AFT");
+        assertEquals(2, points.size());
+        assertEquals(new BigDecimal("1.0"), points.get(0).nav());
+        assertEquals(new BigDecimal("2.5"), points.get(1).nav());
+    }
 }

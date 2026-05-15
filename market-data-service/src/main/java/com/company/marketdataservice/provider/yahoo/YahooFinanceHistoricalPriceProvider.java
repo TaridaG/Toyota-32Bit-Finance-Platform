@@ -32,6 +32,9 @@ public class YahooFinanceHistoricalPriceProvider implements HistoricalPriceProvi
         if (isLikelyCrypto(normalized) || normalized.endsWith("TRY")) {
             return List.of();
         }
+        if (normalized.startsWith("TRGOVUSD")) {
+            return List.of();
+        }
         List<String> candidates = normalized.contains(".")
                 ? List.of(normalized)
                 : List.of(normalized, normalized + ".IS");

@@ -4,7 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 final class TefasBindHistoryParsing {
@@ -73,6 +78,48 @@ final class TefasBindHistoryParsing {
         return Optional.of(new ParsedLatest(code, nav.get(), ts));
     }
 
+    /**
+     * All daily NAV points for the requested fund code. De-duplicates by {@code observedAt} (keeps last row per instant).
+     */
+    static List<ParsedLatest> allNavPointsSorted(JsonNode root, String normalizedFundCodeFallback) {
+        if (root == null || root.isNull()) {
+            return List.of();
+        }
+        JsonNode data = root.get("data");
+        if (data == null || !data.isArray() || data.isEmpty()) {
+            return List.of();
+        }
+        String want = normalizedFundCodeFallback == null ? "" : normalizedFundCodeFallback.trim().toUpperCase(Locale.ROOT);
+        Map<Long, ParsedLatest> byMillis = new LinkedHashMap<>();
+        for (JsonNode row : data) {
+            if (row == null || !row.isObject()) {
+                continue;
+            }
+            JsonNode fk = row.get("FONKODU");
+            String code = want;
+            if (fk != null && !fk.isNull()) {
+                String fromJson = fk.asText("").trim().toUpperCase(Locale.ROOT);
+                if (!fromJson.isEmpty()) {
+                    code = fromJson;
+                }
+            }
+            if (!want.isEmpty() && !want.equals(code)) {
+                continue;
+            }
+            Optional<BigDecimal> nav = decimalField(row.get("FIYAT"));
+            if (nav.isEmpty()) {
+                continue;
+            }
+            long rowMillis = tarihEpochMillis(row);
+            Instant ts = rowMillis != Long.MIN_VALUE ? Instant.ofEpochMilli(rowMillis) : Instant.now();
+            long key = rowMillis != Long.MIN_VALUE ? rowMillis : ts.toEpochMilli();
+            byMillis.put(key, new ParsedLatest(code, nav.get(), ts));
+        }
+        List<ParsedLatest> out = new ArrayList<>(byMillis.values());
+        out.sort(Comparator.comparing(ParsedLatest::timestamp));
+        return out;
+    }
+
     private static long tarihEpochMillis(JsonNode row) {
         JsonNode t = row.get("TARIH");
         if (t == null || t.isNull()) {
@@ -106,5 +153,5 @@ final class TefasBindHistoryParsing {
         }
     }
 
-    record ParsedLatest(String fundCode, BigDecimal nav, Instant timestamp) {}
+    public record ParsedLatest(String fundCode, BigDecimal nav, Instant timestamp) {}
 }

@@ -53,6 +53,23 @@ public interface MarketPriceHistoryRepository extends JpaRepository<MarketPriceH
             Pageable pageable
     );
 
+    @Query("""
+            select e.price
+            from MarketPriceHistoryEntry e
+            where e.instrumentSymbol = :instrumentSymbol
+              and e.provider = :provider
+              and e.priceType = :priceType
+              and e.observedAt < :beforeExclusive
+            order by e.observedAt desc
+            """)
+    List<BigDecimal> findLatestPricesBefore(
+            @Param("instrumentSymbol") String instrumentSymbol,
+            @Param("provider") String provider,
+            @Param("priceType") String priceType,
+            @Param("beforeExclusive") Instant beforeExclusive,
+            Pageable pageable
+    );
+
     @Query(value = """
             SELECT price
             FROM mds_market_price_history
@@ -72,6 +89,19 @@ public interface MarketPriceHistoryRepository extends JpaRepository<MarketPriceH
             ORDER BY instrument_symbol, observed_at DESC, id DESC
             """, nativeQuery = true)
     List<LatestMarketPriceView> findLatestPricesPerSymbol();
+
+    /** Latest row per TCMB Hazine yield symbol (TRBOND*), for catalog merge when snapshot bus has no bond ticks yet. */
+    @Query(value = """
+            SELECT DISTINCT ON (instrument_symbol)
+                instrument_symbol AS symbol,
+                price AS price,
+                provider AS source,
+                observed_at AS timestamp
+            FROM mds_market_price_history
+            WHERE instrument_symbol LIKE 'TRBOND%'
+            ORDER BY instrument_symbol, observed_at DESC, id DESC
+            """, nativeQuery = true)
+    List<LatestMarketPriceView> findLatestTrbondPricesPerSymbol();
 
     @Query(value = """
             SELECT instrument_symbol AS symbol, observed_at AS observedAt, price AS price
