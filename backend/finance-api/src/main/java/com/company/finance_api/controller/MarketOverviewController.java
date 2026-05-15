@@ -26,10 +26,11 @@ public class MarketOverviewController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false, name = "q") String search,
+            @RequestParam(required = false) String sort,
             @RequestHeader(value = "X-Currency", required = false) String currency
     ) {
         return ApiResponse.success(
-                marketOverviewService.getOverview(page, size, category, search, currency)
+                marketOverviewService.getOverview(page, size, category, search, currency, sort)
         );
     }
 

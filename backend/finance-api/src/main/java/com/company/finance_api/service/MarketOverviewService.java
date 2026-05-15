@@ -5,7 +5,7 @@ import com.company.finance_api.dto.MarketInsightsResponse;
 
 public interface MarketOverviewService {
 
-    MarketOverviewPageResponse getOverview(int page, int size, String category, String search, String targetCurrency);
+    MarketOverviewPageResponse getOverview(int page, int size, String category, String search, String targetCurrency, String sort);
 
     MarketInsightsResponse getInsights(String targetCurrency);
 }

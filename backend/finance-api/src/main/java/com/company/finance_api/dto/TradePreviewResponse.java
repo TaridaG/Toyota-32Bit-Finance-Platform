@@ -1,6 +1,7 @@
 package com.company.finance_api.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public record TradePreviewResponse(
         Long instrumentId,
@@ -12,7 +13,13 @@ public record TradePreviewResponse(
         BigDecimal unitPriceUsed,
         BigDecimal fxRateUsed,
         boolean manualUnitPriceRequired,
-        String unitPriceSource
+        String unitPriceSource,
+        /** For {@code PAST}: acquisition instant used after any rollback to earliest available price day. */
+        Instant effectiveAcquiredAt,
+        /** True when the requested past date had no price and the system used the earliest available day instead. */
+        boolean pastDateRolledToEarliestData,
+        /** TRY-hub (+ USD legs) FX panel at conversion time (MDS for {@code PAST}, live for {@code NOW}). */
+        AcquisitionFxRatesSnapshot acquisitionFxRates
 ) {
 }
 

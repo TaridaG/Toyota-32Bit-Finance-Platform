@@ -64,7 +64,7 @@ public class PortfolioController {
     @GetMapping("/trade-flow")
     public ApiResponse<PortfolioTradeFlowResponse> tradeFlow(
             @RequestHeader(value = "X-Currency", required = false) String targetCurrency,
-            @RequestParam(value = "portfolioId") Long portfolioId
+            @RequestParam(value = "portfolioId", required = false) Long portfolioId
     ) {
         return ApiResponse.success(portfolioTradeFlowService.getMyTradeFlow(targetCurrency, portfolioId));
     }

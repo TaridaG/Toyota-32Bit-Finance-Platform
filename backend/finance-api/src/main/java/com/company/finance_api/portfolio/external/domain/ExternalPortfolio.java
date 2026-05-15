@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -26,8 +27,8 @@ public class ExternalPortfolio {
     @Column(name = "name", nullable = false, length = 120)
     private String name;
 
-    @Column(name = "base_currency", nullable = false, length = 3)
-    private String baseCurrency = "TRY";
+    @Column(name = "base_currency", nullable = false, length = 16)
+    private String baseCurrency = "MIXED";
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,7 +43,11 @@ public class ExternalPortfolio {
     public ExternalPortfolio(User user, String name, String baseCurrency) {
         this.user = user;
         this.name = name;
-        this.baseCurrency = baseCurrency == null || baseCurrency.isBlank() ? "TRY" : baseCurrency;
+        if (baseCurrency == null || baseCurrency.isBlank()) {
+            this.baseCurrency = "MIXED";
+        } else {
+            this.baseCurrency = baseCurrency.trim().toUpperCase(Locale.ROOT);
+        }
     }
 
     @PrePersist

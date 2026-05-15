@@ -7,6 +7,7 @@ import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.domain.enums.PurchaseMode;
 import com.company.finance_api.domain.enums.TradeInputMode;
+import com.company.finance_api.dto.AcquisitionFxRatesSnapshot;
 import com.company.finance_api.dto.TradeExecutionRequest;
 import com.company.finance_api.dto.TradePreviewResponse;
 import com.company.finance_api.event.publisher.TransactionEventPublisher;
@@ -81,6 +82,9 @@ class TradeServicePreviewTest {
                 .thenReturn(Optional.of(market));
         when(currencyConversionService.normalizeCurrency("TRY")).thenReturn("TRY");
         when(currencyConversionService.convert(eq(BigDecimal.ONE), eq("TRY"), eq("TRY"))).thenReturn(BigDecimal.ONE);
+        when(currencyConversionService.acquisitionFxHubSnapshot(any(), eq(false)))
+                .thenReturn(new AcquisitionFxRatesSnapshot(Instant.parse("2020-01-01T00:00:00Z").toString(),
+                        null, null, null, null, null, null, null, null));
 
         TradePreviewResponse preview = tradeService.preview(request);
 

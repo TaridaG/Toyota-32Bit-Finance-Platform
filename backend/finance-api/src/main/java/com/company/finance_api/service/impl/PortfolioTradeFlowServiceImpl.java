@@ -52,17 +52,19 @@ public class PortfolioTradeFlowServiceImpl implements PortfolioTradeFlowService 
     public PortfolioTradeFlowResponse getMyTradeFlow(String targetCurrency, Long portfolioId) {
         UUID userId = currentUserResolver.getCurrentUserId();
         String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
-        if (portfolioId == null) {
-            return new PortfolioTradeFlowResponse(normalizedCurrency, List.of());
-        }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
-        ExternalPortfolio portfolio = externalPortfolioRepository.findByIdAndUserId(portfolioId, userId)
-                .orElse(null);
-        if (portfolio == null) {
-            return new PortfolioTradeFlowResponse(normalizedCurrency, List.of());
+        List<Transaction> txs;
+        if (portfolioId == null) {
+            txs = transactionRepository.findByUserOrderByCreatedAtAsc(user);
+        } else {
+            ExternalPortfolio portfolio = externalPortfolioRepository.findByIdAndUserId(portfolioId, userId)
+                    .orElse(null);
+            if (portfolio == null) {
+                return new PortfolioTradeFlowResponse(normalizedCurrency, List.of());
+            }
+            txs = transactionRepository.findByUserAndExternalPortfolioOrderByCreatedAtAsc(user, portfolio);
         }
-        List<Transaction> txs = transactionRepository.findByUserAndExternalPortfolioOrderByCreatedAtAsc(user, portfolio);
         List<PortfolioTradeFlowPointResponse> points = new ArrayList<>(txs.size());
         for (Transaction tx : txs) {
             Instrument ins = tx.getInstrument();

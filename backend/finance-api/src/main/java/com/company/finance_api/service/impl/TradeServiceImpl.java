@@ -4,11 +4,13 @@ import com.company.finance_api.domain.*;
 import com.company.finance_api.domain.enums.PurchaseMode;
 import com.company.finance_api.domain.enums.TradeInputMode;
 import com.company.finance_api.domain.enums.TransactionType;
+import com.company.finance_api.dto.AcquisitionFxRatesSnapshot;
 import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
 import com.company.finance_api.dto.TradeExecutionRequest;
 import com.company.finance_api.dto.TradePreviewResponse;
 import com.company.finance_api.event.TransactionExecutedEvent;
 import com.company.finance_api.event.publisher.TransactionEventPublisher;
+import com.company.finance_api.portfolio.FxHistoricalAnchor;
 import com.company.finance_api.portfolio.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
@@ -40,6 +42,7 @@ public class TradeServiceImpl implements TradeService {
 
     private final InstrumentRepository instrumentRepository;
     private final TransactionRepository transactionRepository;
+    private final TransactionAcquisitionFxRepository transactionAcquisitionFxRepository;
     private final InstrumentPriceRepository instrumentPriceRepository;
     private final JdbcTemplate jdbcTemplate;
     private final CurrencyConversionService currencyConversionService;
@@ -69,17 +72,22 @@ public class TradeServiceImpl implements TradeService {
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
                 .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
         Computation computation = compute(request, instrument);
+        Instant effectiveAcquiredAt =
+                request.getPurchaseMode() == PurchaseMode.PAST ? computation.acquiredAt() : null;
         return new TradePreviewResponse(
                 instrument.getId(),
                 instrument.getSymbol(),
-                computation.instrumentCurrency,
-                computation.lots,
-                computation.inputAmount,
-                computation.inputCurrency,
-                computation.unitPriceUsed,
-                computation.fxRateUsed,
-                computation.manualUnitPriceRequired,
-                computation.unitPriceSource
+                computation.instrumentCurrency(),
+                computation.lots(),
+                computation.inputAmount(),
+                computation.inputCurrency(),
+                computation.unitPriceUsed(),
+                computation.fxRateUsed(),
+                computation.manualUnitPriceRequired(),
+                computation.unitPriceSource(),
+                effectiveAcquiredAt,
+                computation.pastDateRolledToEarliestData(),
+                computation.acquisitionFxRates()
         );
     }
 
@@ -98,25 +106,41 @@ public class TradeServiceImpl implements TradeService {
 
         Computation computation = compute(request, instrument);
 
-        BigDecimal totalCost = computation.totalCost;
+        BigDecimal totalCost = computation.totalCost();
 
         Transaction transaction = Transaction.buy(
                 user,
                 instrument,
                 portfolio,
-                computation.unitPriceUsed,
-                computation.lots,
+                computation.unitPriceUsed(),
+                computation.lots(),
                 request.getPurchaseMode(),
-                computation.acquiredAt,
-                computation.unitPriceUsed,
+                computation.acquiredAt(),
+                computation.unitPriceUsed(),
                 request.getInputMode(),
-                computation.inputCurrency,
-                computation.inputAmount,
-                computation.fxRateUsed,
+                computation.inputCurrency(),
+                computation.inputAmount(),
+                computation.fxRateUsed(),
                 request.getPurchaseMode() == PurchaseMode.PAST ? "PAST_BOUGHT" : "NOW_BOUGHT"
         );
 
         Transaction saved = transactionRepository.save(transaction);
+
+        AcquisitionFxRatesSnapshot snap = computation.acquisitionFxRates();
+        transactionAcquisitionFxRepository.save(
+                new TransactionAcquisitionFx(
+                        saved.getId(),
+                        computation.fxAsOfUsed(),
+                        snap.usdTry(),
+                        snap.eurTry(),
+                        snap.gbpTry(),
+                        snap.jpyTry(),
+                        snap.aedTry(),
+                        snap.eurUsd(),
+                        snap.gbpUsd(),
+                        snap.jpyUsd()
+                )
+        );
 
 //  EVENT
         transactionEventPublisher.publish(
@@ -157,7 +181,7 @@ public class TradeServiceImpl implements TradeService {
                 .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
 
         Computation computation = compute(request, instrument);
-        BigDecimal quantity = computation.lots;
+        BigDecimal quantity = computation.lots();
 
         // 🔥 POSITION CHECK
         BigDecimal netQuantity = transactionRepository
@@ -172,13 +196,13 @@ public class TradeServiceImpl implements TradeService {
             throw new IllegalStateException("Insufficient position for sell");
         }
 
-        BigDecimal totalGain = computation.totalCost;
+        BigDecimal totalGain = computation.totalCost();
 
         Transaction transaction = Transaction.sell(
                 user,
                 instrument,
                 portfolio,
-                computation.unitPriceUsed,
+                computation.unitPriceUsed(),
                 quantity
         );
 
@@ -233,10 +257,24 @@ public class TradeServiceImpl implements TradeService {
         String inputCurrency = currencyConversionService.normalizeCurrency(request.getInputCurrency());
         UnitPriceResolution unitPriceResolution = resolveUnitPrice(request, instrument, instrumentCurrency);
         BigDecimal unitPrice = unitPriceResolution.unitPrice();
-        BigDecimal fxRate = currencyConversionService.convert(BigDecimal.ONE, inputCurrency, instrumentCurrency);
+        Instant acquiredAt = request.getPurchaseMode() == PurchaseMode.PAST
+                ? unitPriceResolution.pastAcquisitionOverride().orElse(request.getAcquiredAt())
+                : Instant.now();
+        if (request.getPurchaseMode() == PurchaseMode.PAST && acquiredAt == null) {
+            throw new IllegalArgumentException("acquiredAt is required for past purchases");
+        }
+        boolean historicalFx = request.getPurchaseMode() == PurchaseMode.PAST;
+        Instant fxAsOfUsed = historicalFx
+                ? FxHistoricalAnchor.normalizeEndOfAcquisitionDay(acquiredAt)
+                : Instant.now();
+        BigDecimal fxRate = historicalFx
+                ? currencyConversionService.convertAt(fxAsOfUsed, BigDecimal.ONE, inputCurrency, instrumentCurrency)
+                : currencyConversionService.convert(BigDecimal.ONE, inputCurrency, instrumentCurrency);
         if (fxRate == null || fxRate.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("FX rate unavailable for " + inputCurrency + " -> " + instrumentCurrency);
         }
+        AcquisitionFxRatesSnapshot acquisitionFxRates =
+                currencyConversionService.acquisitionFxHubSnapshot(fxAsOfUsed, historicalFx);
         BigDecimal lots;
         BigDecimal inputAmount;
         if (request.getInputMode() == TradeInputMode.LOTS) {
@@ -254,12 +292,6 @@ public class TradeServiceImpl implements TradeService {
             BigDecimal totalInInstrumentCurrency = inputAmount.multiply(fxRate);
             lots = totalInInstrumentCurrency.divide(unitPrice, 6, RoundingMode.HALF_UP);
         }
-        Instant acquiredAt = request.getPurchaseMode() == PurchaseMode.PAST
-                ? request.getAcquiredAt()
-                : Instant.now();
-        if (request.getPurchaseMode() == PurchaseMode.PAST && acquiredAt == null) {
-            throw new IllegalArgumentException("acquiredAt is required for past purchases");
-        }
         BigDecimal totalCost = unitPrice.multiply(lots).setScale(6, RoundingMode.HALF_UP);
         return new Computation(
                 instrumentCurrency,
@@ -271,7 +303,10 @@ public class TradeServiceImpl implements TradeService {
                 totalCost,
                 acquiredAt,
                 unitPriceResolution.manualUnitPriceRequired(),
-                unitPriceResolution.sourceLabel()
+                unitPriceResolution.sourceLabel(),
+                unitPriceResolution.pastDateRolledToEarliestData(),
+                fxAsOfUsed,
+                acquisitionFxRates
         );
     }
 
@@ -285,34 +320,56 @@ public class TradeServiceImpl implements TradeService {
                 return new UnitPriceResolution(
                         request.getUnitPrice().setScale(6, RoundingMode.HALF_UP),
                         false,
-                        "MANUAL_INPUT"
+                        "MANUAL_INPUT",
+                        Optional.empty(),
+                        false
                 );
             }
-            Optional<BigDecimal> historicalPrice = fetchValuationPriceAtOrBefore(instrument, normalizeHistoricalTarget(acquiredAt));
+            Optional<BigDecimal> historicalPrice = fetchValuationPriceAtOrBefore(instrument, FxHistoricalAnchor.normalizeEndOfAcquisitionDay(acquiredAt));
             if (historicalPrice.isEmpty()) {
-                historicalPrice = fetchHistoricalPriceFromMds(instrument.getSymbol(), normalizeHistoricalTarget(acquiredAt));
+                historicalPrice = fetchHistoricalPriceFromMds(instrument.getSymbol(), FxHistoricalAnchor.normalizeEndOfAcquisitionDay(acquiredAt));
             }
             if (historicalPrice.isPresent()) {
                 return new UnitPriceResolution(
                         historicalPrice.get().setScale(6, RoundingMode.HALF_UP),
                         false,
-                        "HISTORICAL_MARKET_DATA"
+                        "HISTORICAL_MARKET_DATA",
+                        Optional.empty(),
+                        false
                 );
             }
-            String firstAvailable = earliestKnownPriceInstant(instrument)
-                    .map(value -> DateTimeFormatter.ISO_LOCAL_DATE.format(value.atZone(ZoneOffset.UTC)))
-                    .orElse("unknown");
+            Optional<Instant> earliestOpt = earliestKnownPriceInstant(instrument);
+            if (earliestOpt.isEmpty()) {
+                throw new IllegalArgumentException("unitPrice is required: no historical price data for this instrument");
+            }
+            Instant earliestInstant = earliestOpt.get();
+            Instant normalizedEarliest = FxHistoricalAnchor.normalizeEndOfAcquisitionDay(earliestInstant);
+            Optional<BigDecimal> rolledPrice = fetchValuationPriceAtOrBefore(instrument, normalizedEarliest);
+            if (rolledPrice.isEmpty()) {
+                rolledPrice = fetchHistoricalPriceFromMds(instrument.getSymbol(), normalizedEarliest);
+            }
+            if (rolledPrice.isPresent()) {
+                Instant dayStartUtc = earliestInstant.atZone(ZoneOffset.UTC).toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant();
+                return new UnitPriceResolution(
+                        rolledPrice.get().setScale(6, RoundingMode.HALF_UP),
+                        false,
+                        "HISTORICAL_MARKET_DATA_EARLIEST_AVAILABLE",
+                        Optional.of(dayStartUtc),
+                        true
+                );
+            }
+            String firstAvailable = DateTimeFormatter.ISO_LOCAL_DATE.format(earliestInstant.atZone(ZoneOffset.UTC));
             throw new IllegalArgumentException(
-                    "unitPrice is required: historical price unavailable for selected date, first available date=" + firstAvailable
+                    "unitPrice is required: historical price unavailable, first available date=" + firstAvailable
             );
         }
         BigDecimal valuationPrice = fetchLatestValuationPriceDirect(instrument);
         if ("TRY".equals(instrumentCurrency) && valuationPrice != null) {
             // MARKET rows for BIST / TRY-native symbols are stored in TRY (MDS publishes Yahoo .IS spot as-is).
             // Do not treat them as USD and multiply by USDTRY — that inflates unit prices (~30–40×).
-            return new UnitPriceResolution(valuationPrice.setScale(6, RoundingMode.HALF_UP), false, "LIVE_MARKET_DATA");
+            return new UnitPriceResolution(valuationPrice.setScale(6, RoundingMode.HALF_UP), false, "LIVE_MARKET_DATA", Optional.empty(), false);
         }
-        return new UnitPriceResolution(valuationPrice.setScale(6, RoundingMode.HALF_UP), false, "LIVE_MARKET_DATA");
+        return new UnitPriceResolution(valuationPrice.setScale(6, RoundingMode.HALF_UP), false, "LIVE_MARKET_DATA", Optional.empty(), false);
     }
 
     private BigDecimal fetchLatestValuationPriceDirect(Instrument instrument) {
@@ -324,7 +381,28 @@ public class TradeServiceImpl implements TradeService {
                 return found.get();
             }
         }
+        Optional<BigDecimal> fromMds = queryLatestMdsMarketPrice(instrument.getSymbol());
+        if (fromMds.isPresent() && fromMds.get().compareTo(BigDecimal.ZERO) > 0) {
+            return fromMds.get();
+        }
         throw new IllegalStateException("Price not available");
+    }
+
+    private Optional<BigDecimal> queryLatestMdsMarketPrice(String symbol) {
+        String sym = symbol.trim().toUpperCase(Locale.ROOT);
+        String sql = """
+                SELECT price
+                FROM public.mds_market_price_history
+                WHERE instrument_symbol = ?
+                  AND price_type IN ('MARKET', 'FX_MID', 'FUND_NAV')
+                ORDER BY observed_at DESC, id DESC
+                LIMIT 1
+                """;
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next() ? Optional.of(rs.getBigDecimal(1)) : Optional.empty(),
+                sym
+        );
     }
 
     private Optional<BigDecimal> fetchValuationPriceAtOrBefore(Instrument instrument, Instant target) {
@@ -460,18 +538,6 @@ public class TradeServiceImpl implements TradeService {
         return Optional.empty();
     }
 
-    /**
-     * Date picker requests commonly arrive as midnight UTC for a day.
-     * In that case search until end-of-day so we can use any price from that day.
-     */
-    private Instant normalizeHistoricalTarget(Instant acquiredAt) {
-        ZonedDateTime utc = acquiredAt.atZone(ZoneOffset.UTC);
-        if (utc.getHour() == 0 && utc.getMinute() == 0 && utc.getSecond() == 0 && utc.getNano() == 0) {
-            return utc.plusDays(1).minusNanos(1).toInstant();
-        }
-        return acquiredAt;
-    }
-
     private ExternalPortfolio resolvePortfolio(User user, Long portfolioId) {
         if (portfolioId == null) {
             return null;
@@ -490,13 +556,18 @@ public class TradeServiceImpl implements TradeService {
             BigDecimal totalCost,
             Instant acquiredAt,
             boolean manualUnitPriceRequired,
-            String unitPriceSource
+            String unitPriceSource,
+            boolean pastDateRolledToEarliestData,
+            Instant fxAsOfUsed,
+            AcquisitionFxRatesSnapshot acquisitionFxRates
     ) {}
 
     private record UnitPriceResolution(
             BigDecimal unitPrice,
             boolean manualUnitPriceRequired,
-            String sourceLabel
+            String sourceLabel,
+            Optional<Instant> pastAcquisitionOverride,
+            boolean pastDateRolledToEarliestData
     ) {}
 
 }

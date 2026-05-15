@@ -60,9 +60,16 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        // TCMB policy rate (proxied to market-data-service); same guest access as public market reads.
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/rates")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // Public market catalog pages (gateway forwards here; must not require X-USERNAME).
         if ("GET".equalsIgnoreCase(request.getMethod())
-                && (path.startsWith("/api/market/overview") || path.startsWith("/api/market/insights"))) {
+                && (path.startsWith("/api/market/overview")
+                || path.startsWith("/api/market/insights")
+                || path.startsWith("/api/market/eurobonds/"))) {
             filterChain.doFilter(request, response);
             return;
         }
