@@ -47,6 +47,19 @@ export function parseMarketSortQuery(sort: string | undefined): { field: MarketS
 /** Populated server-side when sorting by the header-currency column. */
 export const SORT_DISPLAY_AMOUNT_KEY = '__sortDisplayAmount' as const
 
+/** TEFAS canonical rows use {@code FUND_TI2}-style symbols; US-listed ETFs in the same tab are plain tickers (QQQ, …). */
+function canonicalFundSymbolRank(symbol: string): number {
+  return symbol.trim().toUpperCase().startsWith('FUND_') ? 0 : 1
+}
+
+export type MarketOverviewSortOptions = {
+  /**
+   * Under the Markets "Fon" tab, keep TEFAS ({@code FUND_*}) ahead of US ETF tickers so NAV-flat funds
+   * are not pushed past page 1 when sorting by daily % move (US names often have larger 1D deltas).
+   */
+  groupCanonicalFundsFirst?: boolean
+}
+
 export type MarketSortableRow = {
   symbol: string
   price: number
@@ -102,10 +115,21 @@ function compareNullableNumber(
   return diff < 0 ? 1 : -1
 }
 
-export function sortMarketOverviewRows<T extends MarketSortableRow>(rows: T[], sort: string | undefined): T[] {
+export function sortMarketOverviewRows<T extends MarketSortableRow>(
+  rows: T[],
+  sort: string | undefined,
+  options?: MarketOverviewSortOptions,
+): T[] {
   const { field, direction } = parseMarketSortQuery(sort)
   const next = [...rows]
   next.sort((a, b) => {
+    if (options?.groupCanonicalFundsFirst) {
+      const ra = canonicalFundSymbolRank(a.symbol)
+      const rb = canonicalFundSymbolRank(b.symbol)
+      if (ra !== rb) {
+        return ra - rb
+      }
+    }
     if (field === 'symbol') {
       const diff = a.symbol.localeCompare(b.symbol)
       if (diff !== 0) {

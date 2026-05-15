@@ -152,6 +152,9 @@ export function PnlSplitDonut({
     })
   }, [segments])
 
+  /** One logical slice at 100%: SVG arc path degenerates; draw a stroke ring instead (no 12/6 seam). */
+  const isSingleFullRing = segments.length === 1
+
   const handleMove = useCallback((e: MouseEvent) => {
     setTooltipPos({ x: e.clientX, y: e.clientY })
   }, [])
@@ -194,30 +197,52 @@ export function PnlSplitDonut({
           aria-label={t('pnlDonut.aria')}
         >
           <title>{t('pnlDonut.aria')}</title>
-          {angles.map(({ start, end, seg, i }) => {
-            const { ox, oy } = midAnchor(CX, CY, R_OUT, R_IN, start, end)
-            const scale = hovered === i ? 1.075 : 1
-            return (
-              <g
-                key={seg.key}
-                className="my-portfolio-allocation-donut-seg"
-                transform={`translate(${ox},${oy}) scale(${scale}) translate(${-ox},${-oy})`}
-              >
-                <path
-                  d={slicePath(CX, CY, R_OUT, R_IN, start, end)}
-                  fill={seg.fill}
-                  stroke="rgba(15, 23, 42, 0.35)"
-                  strokeWidth={0.28}
-                  className="my-portfolio-allocation-donut-path"
-                  onMouseEnter={(e) => {
-                    setHovered(i)
-                    handleMove(e)
-                  }}
-                  onMouseMove={handleMove}
-                />
-              </g>
-            )
-          })}
+          {isSingleFullRing ? (
+            <g
+              transform={`translate(${CX},${CY}) scale(${hovered === 0 ? 1.075 : 1}) translate(${-CX},${-CY})`}
+              className="my-portfolio-allocation-donut-seg"
+            >
+              <circle
+                cx={CX}
+                cy={CY}
+                r={(R_OUT + R_IN) / 2}
+                fill="none"
+                stroke={segments[0].fill}
+                strokeWidth={R_OUT - R_IN}
+                className="my-portfolio-allocation-donut-path"
+                onMouseEnter={(e) => {
+                  setHovered(0)
+                  handleMove(e)
+                }}
+                onMouseMove={handleMove}
+              />
+            </g>
+          ) : (
+            angles.map(({ start, end, seg, i }) => {
+              const { ox, oy } = midAnchor(CX, CY, R_OUT, R_IN, start, end)
+              const scale = hovered === i ? 1.075 : 1
+              return (
+                <g
+                  key={`${seg.key}-${i}`}
+                  className="my-portfolio-allocation-donut-seg"
+                  transform={`translate(${ox},${oy}) scale(${scale}) translate(${-ox},${-oy})`}
+                >
+                  <path
+                    d={slicePath(CX, CY, R_OUT, R_IN, start, end)}
+                    fill={seg.fill}
+                    stroke="rgba(15, 23, 42, 0.35)"
+                    strokeWidth={0.28}
+                    className="my-portfolio-allocation-donut-path"
+                    onMouseEnter={(e) => {
+                      setHovered(i)
+                      handleMove(e)
+                    }}
+                    onMouseMove={handleMove}
+                  />
+                </g>
+              )
+            })
+          )}
         </svg>
         <div className="my-portfolio-pnl-donut-center">
           {hideAmounts ? (

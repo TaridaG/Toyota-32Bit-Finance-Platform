@@ -2,11 +2,11 @@ import type { UTCTimestamp } from 'lightweight-charts'
 import type { AssetDefinition, AssetNewsItem, CandlePoint, ChartTradeEvent, TimeRange } from './types'
 
 export const assets: AssetDefinition[] = [
-  { id: 'thy', symbol: 'THYAO', name: 'Turkish Airlines', type: 'stock', marketCap: 13_200_000_000 },
-  { id: 'btc', symbol: 'BTC/USDT', name: 'Bitcoin', type: 'crypto', marketCap: 2_130_000_000_000 },
-  { id: 'usdtry', symbol: 'USDTRY', name: 'US Dollar / Turkish Lira', type: 'fx' },
-  { id: 'gold', symbol: 'XAUUSD', name: 'Gold Spot', type: 'commodity', marketCap: 18_000_000_000_000 },
-  { id: 'bist', symbol: 'BIST100', name: 'Borsa Istanbul 100', type: 'index' },
+  { id: 'thy', symbol: 'THYAO', name: 'Turkish Airlines', type: 'stock', wireCategory: 'STOCK', marketCap: 13_200_000_000 },
+  { id: 'btc', symbol: 'BTC/USDT', name: 'Bitcoin', type: 'crypto', wireCategory: 'CRYPTO', marketCap: 2_130_000_000_000 },
+  { id: 'usdtry', symbol: 'USDTRY', name: 'US Dollar / Turkish Lira', type: 'fx', wireCategory: 'FX' },
+  { id: 'gold', symbol: 'XAUUSD', name: 'Gold Spot', type: 'commodity', wireCategory: 'METAL', marketCap: 18_000_000_000_000 },
+  { id: 'bist', symbol: 'BIST100', name: 'Borsa Istanbul 100', type: 'index', wireCategory: 'INDEX' },
 ]
 
 const DAY = 86400

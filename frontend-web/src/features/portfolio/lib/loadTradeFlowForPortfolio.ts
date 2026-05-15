@@ -50,7 +50,7 @@ export function buildTradeFlowFromHistory(
  * Preferred: GET /api/portfolio/trade-flow (currency-aware).
  * Fallback: transaction list when the endpoint is missing or errors (older backend / gateway).
  */
-export async function loadTradeFlowForPortfolio(portfolioId: number, currency: string): Promise<PortfolioTradeFlow> {
+export async function loadTradeFlowForPortfolio(portfolioId: number | null, currency: string): Promise<PortfolioTradeFlow> {
   try {
     const data = await getPortfolioTradeFlow(portfolioId, currency)
     return normalizeTradeFlowApi(data, currency)

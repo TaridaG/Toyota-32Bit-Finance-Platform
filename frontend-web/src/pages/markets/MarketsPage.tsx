@@ -43,10 +43,28 @@ function normalizeMarketCategory(raw: string | null): MarketCategory {
       return 'globalFutures'
     case 'funds':
       return 'funds'
+    case 'bond':
+    case 'bonds':
+    case 'eurobond':
+      return 'all'
     case 'all':
     default:
       return 'all'
   }
+}
+
+function isBondOverviewRow(row: MarketOverviewItem): boolean {
+  const s = row.symbol.trim().toUpperCase()
+  return (row.category ?? '').trim().toUpperCase() === 'BOND' || s.startsWith('TRBOND')
+}
+
+/** TRBOND1Y → 1; unknown pattern → null */
+function trbondTenorYears(symbol: string): number | null {
+  const up = symbol.trim().toUpperCase()
+  const m = up.match(/^TRBOND(\d+)Y$/)
+  if (!m) return null
+  const y = Number(m[1])
+  return Number.isFinite(y) ? y : null
 }
 
 function toSparklinePoints(row: MarketOverviewItem): number[] {
@@ -150,6 +168,16 @@ export function MarketsPage() {
     setSearchParams(next, { replace: true })
   }, [searchParams, setSearchParams])
 
+  useEffect(() => {
+    const raw = (searchParams.get('category') ?? '').trim().toUpperCase()
+    if (raw === 'BOND' || raw === 'BONDS' || raw === 'EUROBOND') {
+      const next = new URLSearchParams(searchParams)
+      next.set('category', 'ALL')
+      next.set('page', '0')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   const { rows: backendRows, loading, error, refetch, totalElements, totalPages } = useMarkets({
     page,
     size,
@@ -196,6 +224,15 @@ export function MarketsPage() {
       new Intl.NumberFormat(i18n.language, {
         style: 'currency',
         currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    [i18n.language],
+  )
+
+  const bondYieldNumberFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }),
@@ -255,6 +292,13 @@ export function MarketsPage() {
           )
         : backendRows,
     [backendRows, favoriteIds, favoriteSymbols, showFavoritesOnly],
+  )
+
+  const showBondMaturityHeader = useMemo(
+    () =>
+      selectedCategory === 'bonds' ||
+      (visibleRows.length > 0 && visibleRows.every((row) => isBondOverviewRow(row))),
+    [selectedCategory, visibleRows],
   )
 
   const clampedPage = Math.min(Math.max(page, 0), Math.max(totalPages - 1, 0))
@@ -530,63 +574,27 @@ export function MarketsPage() {
 
       <div className="markets-pulse-wrap">
         <div className="markets-pulse-strip" role="region" aria-label={t('categoryPulse.aria')}>
-          {(() => {
-            const o = pulse.overall
-            const overallMean = o?.meanChange1D
-            const overallHasData =
-              o != null && o.count > 0 && overallMean != null && Number.isFinite(overallMean)
-            const overallActive = selectedCategory === 'all' && !showFavoritesOnly
-            const overallValueClass =
-              pulse.loading && !pulse.items
-                ? 'markets-pulse-value markets-pulse-value-muted'
-                : !overallHasData
-                  ? 'markets-pulse-value markets-pulse-value-muted'
-                  : overallMean > 0
-                    ? 'markets-pulse-value markets-positive'
-                    : overallMean < 0
-                      ? 'markets-pulse-value markets-negative'
-                      : 'markets-pulse-value markets-pulse-value-muted'
-            return (
-              <button
-                key="pulse-overall"
-                type="button"
-                className={`markets-pulse-card${overallActive ? ' markets-pulse-card-active' : ''}${
-                  pulse.loading && !pulse.items ? ' markets-pulse-card-loading' : ''
-                }`}
-                onClick={() => {
-                  setShowFavoritesOnly(false)
-                  updateParams((next) => {
-                    next.set('category', 'ALL')
-                    next.set('page', '0')
-                  })
-                }}
-              >
-                <span className="markets-pulse-label">{t('title')}</span>
-                <span className={overallValueClass}>
-                  {pulse.loading && !pulse.items
-                    ? '…'
-                    : overallHasData
-                      ? percentFormat.format(overallMean)
-                      : '—'}
-                </span>
-              </button>
-            )
-          })()}
-          {pulse.categories.map((cat, idx) => {
-            const stat = pulse.items?.[idx]
-            const mean = stat?.meanChange1D
-            const hasData = stat != null && stat.count > 0 && mean != null && Number.isFinite(mean)
+          <button
+            key="pulse-overall"
+            type="button"
+            className={`markets-pulse-card${selectedCategory === 'all' && !showFavoritesOnly ? ' markets-pulse-card-active' : ''}${
+              pulse.loading && !pulse.items ? ' markets-pulse-card-loading' : ''
+            }`}
+            onClick={() => {
+              setShowFavoritesOnly(false)
+              updateParams((next) => {
+                next.set('category', 'ALL')
+                next.set('page', '0')
+              })
+            }}
+          >
+            <span className="markets-pulse-label">{t('title')}</span>
+            {pulse.loading && !pulse.items ? (
+              <span className="markets-pulse-value markets-pulse-value-muted">…</span>
+            ) : null}
+          </button>
+          {pulse.categories.map((cat) => {
             const active = selectedCategory === cat && !showFavoritesOnly
-            const valueClass =
-              pulse.loading && !pulse.items
-                ? 'markets-pulse-value markets-pulse-value-muted'
-                : !hasData
-                  ? 'markets-pulse-value markets-pulse-value-muted'
-                  : mean > 0
-                    ? 'markets-pulse-value markets-positive'
-                    : mean < 0
-                      ? 'markets-pulse-value markets-negative'
-                      : 'markets-pulse-value markets-pulse-value-muted'
             return (
               <button
                 key={cat}
@@ -603,9 +611,9 @@ export function MarketsPage() {
                 }}
               >
                 <span className="markets-pulse-label">{t(`categories.${cat}`)}</span>
-                <span className={valueClass}>
-                  {pulse.loading && !pulse.items ? '…' : hasData ? percentFormat.format(mean) : '—'}
-                </span>
+                {pulse.loading && !pulse.items ? (
+                  <span className="markets-pulse-value markets-pulse-value-muted">…</span>
+                ) : null}
               </button>
             )
           })}
@@ -634,7 +642,18 @@ export function MarketsPage() {
 
           <div className="markets-toolbar">
             <div className="markets-filter-group" role="tablist" aria-label={t('categories.aria')}>
-              {(['all', 'crypto', 'bist', 'nasdaq', 'forex', 'metals', 'globalFutures', 'funds'] as const).map((category) => (
+              {(
+                [
+                  'all',
+                  'crypto',
+                  'bist',
+                  'nasdaq',
+                  'forex',
+                  'metals',
+                  'globalFutures',
+                  'funds',
+                ] as const
+              ).map((category) => (
                 <button
                   key={category}
                   type="button"
@@ -725,10 +744,12 @@ export function MarketsPage() {
                       type="button"
                       className="markets-sort-button markets-th-currency-button"
                       onClick={() => handleSort('displayAmount')}
-                      title={t('table.priceConvertedSort')}
-                      aria-label={t('table.priceConvertedSort')}
+                      title={showBondMaturityHeader ? t('table.bondMaturitySort') : t('table.priceConvertedSort')}
+                      aria-label={showBondMaturityHeader ? t('table.bondMaturitySort') : t('table.priceConvertedSort')}
                     >
-                      <span className="markets-th-currency-symbol">{headerCurrencySymbol}</span>
+                      <span className="markets-th-currency-symbol">
+                        {showBondMaturityHeader ? t('table.bondMaturityColumn') : headerCurrencySymbol}
+                      </span>
                       {sortIndicator('displayAmount')}
                     </button>
                   </th>
@@ -792,18 +813,21 @@ export function MarketsPage() {
                   </tr>
                 ) : visibleRows.length > 0 ? (
                   visibleRows.map((row: MarketOverviewItem) => {
+                    const isBond = isBondOverviewRow(row)
                     const isPositive = (row.change24h ?? 0) >= 0
                     const percentDisplay = row.category === 'FX' ? percentFormatFx : percentFormat
                     const animatedNat = animatedPriceBySymbol[row.symbol] ?? row.price
                     const nativeQ = row.nativeQuote ?? 'USD'
                     const nativeFmt = nativeQ === 'TRY' ? tryNativeFormat : usdNativeFormat
                     const redundantCol =
-                      (nativeQ === 'TRY' && currency === 'TRY') || (nativeQ === 'USD' && currency === 'USD')
+                      !isBond &&
+                      ((nativeQ === 'TRY' && currency === 'TRY') || (nativeQ === 'USD' && currency === 'USD'))
                     const ratio =
                       row.displayAmount != null && row.price > 0 ? row.displayAmount / row.price : null
                     const animatedDisplay =
                       ratio != null && Number.isFinite(ratio) ? ratio * animatedNat : row.displayAmount
                     const showConverted =
+                      !isBond &&
                       !redundantCol &&
                       animatedDisplay != null &&
                       Number.isFinite(animatedDisplay) &&
@@ -856,10 +880,21 @@ export function MarketsPage() {
                           )}
                         </td>
                         <td className={`markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
-                          {nativeFmt.format(animatedNat)}
+                          {isBond
+                            ? `%${bondYieldNumberFormat.format(animatedNat)}`
+                            : nativeFmt.format(animatedNat)}
                         </td>
                         <td className="markets-price-converted-cell">
-                          {redundantCol ? (
+                          {isBond ? (
+                            (() => {
+                              const y = trbondTenorYears(row.symbol)
+                              return y == null ? (
+                                <span className="markets-price-converted-missing">—</span>
+                              ) : (
+                                <span className="markets-bond-tenor">{t('table.bondTenorYears', { years: y })}</span>
+                              )
+                            })()
+                          ) : redundantCol ? (
                             selectedCurrencyFormat.format(animatedNat)
                           ) : showConverted ? (
                             selectedCurrencyFormat.format(animatedDisplay)

@@ -15,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -33,7 +34,19 @@ public class FundScheduler {
     private final MeterRegistry meterRegistry;
     private final FundBatchTelemetry fundBatchTelemetry;
 
-    @Scheduled(fixedDelayString = "${market.fund.delay-ms:3600000}")
+    @PostConstruct
+    void logSchedulerBeanActive() {
+        log.info(
+                "FUND_SCHEDULER_BEAN_ACTIVE trackedFundCodes={} delayMs={}",
+                fundMarketProperties.getTrackedFundCodes(),
+                fundMarketProperties.getDelayMs()
+        );
+    }
+
+    @Scheduled(
+            initialDelayString = "${market.fund.scheduler-initial-delay-ms:120000}",
+            fixedDelayString = "${market.fund.delay-ms:3600000}"
+    )
     public void pullFundNavs() {
         List<String> codes = fundMarketProperties.getTrackedFundCodes();
         if (codes == null || codes.isEmpty()) {

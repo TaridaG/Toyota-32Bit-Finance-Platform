@@ -70,3 +70,24 @@ app:
     portal:
       client-id: ${KEYCLOAK_PORTAL_CLIENT_ID:finance-portal}
       client-secret: ${KEYCLOAK_PORTAL_CLIENT_SECRET:}
+
+# Turkey USD Eurobond ISIN module: Yahoo chart (free) → eurobond_* tables. Configure yahoo-chart-symbol per ISIN (Yahoo ticker, not always equal to ISIN).
+market:
+  tr-usd-eurobond-yahoo:
+    enabled: ${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:false}
+    user-agent: ${MARKET_TR_USD_EUROBOND_YAHOO_USER_AGENT:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36}
+    base-url: ${MARKET_TR_USD_EUROBOND_YAHOO_BASE_URL:https://query1.finance.yahoo.com}
+    chart-path-template: ${MARKET_TR_USD_EUROBOND_YAHOO_CHART_PATH:/v8/finance/chart/{symbol}}
+    source-provider-id: YAHOO
+    trading-timezone: ${MARKET_TR_USD_EUROBOND_YAHOO_TZ:Europe/Istanbul}
+    backfill-on-startup: ${MARKET_TR_USD_EUROBOND_YAHOO_BACKFILL_ON_STARTUP:true}
+    refresh-cron: ${MARKET_TR_USD_EUROBOND_YAHOO_REFRESH_CRON:0 30 18 * * MON-FRI}
+    backfill-range: ${MARKET_TR_USD_EUROBOND_YAHOO_BACKFILL_RANGE:1y}
+    catch-up-range: ${MARKET_TR_USD_EUROBOND_YAHOO_CATCHUP_RANGE:1mo}
+    interval: ${MARKET_TR_USD_EUROBOND_YAHOO_INTERVAL:1d}
+    request-spacing-ms: ${MARKET_TR_USD_EUROBOND_YAHOO_REQUEST_SPACING_MS:400}
+    instruments: []
+    # Örnek (yahoo-chart-symbol'ü Yahoo Finance grafik URL'sinde doğrulayın; boş ISIN atlanır):
+    # instruments:
+    #   - isin: US900123AL40
+    #     yahoo-chart-symbol: "YOUR_YAHOO_TICKER"

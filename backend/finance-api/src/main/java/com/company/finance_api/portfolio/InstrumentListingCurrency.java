@@ -24,8 +24,11 @@ public final class InstrumentListingCurrency {
     }
 
     public static String resolve(Instrument instrument) {
-        if (instrument.getExchange() != null && "BIST".equalsIgnoreCase(instrument.getExchange().name())) {
-            return "TRY";
+        if (instrument.getExchange() != null) {
+            String ex = instrument.getExchange().name();
+            if ("BIST".equalsIgnoreCase(ex) || "YAHOO".equalsIgnoreCase(ex) || "TEFAS".equalsIgnoreCase(ex)) {
+                return "TRY";
+            }
         }
         String symbol = instrument.getSymbol() == null ? "" : instrument.getSymbol().toUpperCase(Locale.ROOT);
         if (symbol.endsWith("TRY")) {

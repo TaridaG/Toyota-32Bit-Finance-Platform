@@ -34,13 +34,14 @@ class TefasFundPriceProviderTest {
             server.start();
 
             FundMarketProperties props = new FundMarketProperties();
+            props.setTefasFonGnlBlgUrl("");
             props.setTefasBindHistoryUrl(server.url("/api/DB/BindHistoryInfo").toString());
             props.setTefasHistoryLookbackDays(0);
             props.setTefasHistoryChunkInclusiveDays(30);
 
             WebClient wc = WebClient.builder().build();
-            TefasFundPriceProvider p =
-                    new TefasFundPriceProvider(props, new ObjectMapper(), wc);
+            TefasBindHistoryClient client = new TefasBindHistoryClient(props, new ObjectMapper(), wc);
+            TefasFundPriceProvider p = new TefasFundPriceProvider(props, client);
 
             List<FundSnapshot> snaps = p.fetchLatestNavs(List.of("AFT"));
 
@@ -61,12 +62,13 @@ class TefasFundPriceProviderTest {
             server.start();
 
             FundMarketProperties props = new FundMarketProperties();
+            props.setTefasFonGnlBlgUrl("");
             props.setTefasBindHistoryUrl(server.url("/api/DB/BindHistoryInfo").toString());
             props.setTefasHistoryLookbackDays(0);
             props.setTefasHistoryChunkInclusiveDays(7);
 
-            TefasFundPriceProvider p =
-                    new TefasFundPriceProvider(props, new ObjectMapper(), WebClient.builder().build());
+            TefasBindHistoryClient client = new TefasBindHistoryClient(props, new ObjectMapper(), WebClient.builder().build());
+            TefasFundPriceProvider p = new TefasFundPriceProvider(props, client);
 
             assertTrue(p.fetchLatestNavs(List.of("AFT")).isEmpty());
             server.takeRequest();

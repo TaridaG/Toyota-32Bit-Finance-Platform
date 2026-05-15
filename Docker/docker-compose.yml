@@ -181,6 +181,7 @@ services:
       - SPRING_MAIL_PASSWORD=mpxnlgmbyehkiqwm
       - APP_REGISTRATION_VERIFICATION_FROM=32bitdemofinanceplatformmm@gmail.com
       - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
+      - MARKET_TR_USD_EUROBOND_YAHOO_ENABLED=${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:-true}
     networks:
       - finance-net
 
@@ -207,10 +208,21 @@ services:
       - TCMB_API_KEY=${TCMB_API_KEY:-NvIg6r0WZV}
       - TCMB_API_KEY_QUERY_PARAM=${TCMB_API_KEY_QUERY_PARAM:-key}
       - TCMB_API_KEY_HEADER=${TCMB_API_KEY_HEADER:-X-API-Key}
+      # EVDS: ayrı anahtar istenirse host .env'de MARKET_EVDS_API_KEY tanımlayın. Boş string geçirmeyin —
+      # aksi halde Spring ilk property'yi boş görür ve TCMB_API_KEY yedeğine düşmez. Tanımsız bırakınca yalnızca TCMB_API_KEY kullanılır.
+      - MARKET_EVDS_BASE_URL=${MARKET_EVDS_BASE_URL:-https://evds3.tcmb.gov.tr/igmevdsms-dis}
       - PROVIDERS_FINNHUB_ENABLED=true
       - FINNHUB_API_KEY=d7r26q9r01qtpsm0phfgd7r26q9r01qtpsm0phg0
       - MARKET_HISTORY_BACKFILL_ENABLED=true
       - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=false
+      - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_ENABLED=true
+      - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_DELAY_MS=90000
+      - MARKET_FUND_NAV_HISTORY_LOOKBACK_DAYS=365
+      # TEFAS NAV: bootstrap loads history once; without this, latest NAV goes stale → short-horizon % near 0 and UI shows "Delayed data".
+      - MARKET_FUND_SCHEDULER_ENABLED=true
+      # TCMB Hazine getiri (TRBOND*): EVDS günlük geçmiş → mds_market_price_history (varsayılan açık; kapatmak için false).
+      - MARKET_BOND_HISTORY_BOOTSTRAP_ENABLED=${MARKET_BOND_HISTORY_BOOTSTRAP_ENABLED:-true}
+      - MARKET_BOND_HISTORY_BOOTSTRAP_DELAY_MS=${MARKET_BOND_HISTORY_BOOTSTRAP_DELAY_MS:-120000}
     networks:
       - finance-net
 

@@ -3,12 +3,16 @@ package com.company.gateway.config;
 import com.company.gateway.security.KeycloakJwtGrantedAuthoritiesExtractor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.server.authentication.ServerBearerTokenAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.header.XFrameOptionsServerHttpHeadersWriter;
+import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -41,6 +45,7 @@ public class WebSecurityConfig {
             p = p.substring(0, p.length() - 1);
         }
         return p.equals("/api/market") || p.startsWith("/api/market/")
+                || p.equals("/api/rates") || p.startsWith("/api/rates/")
                 || p.equals("/market") || p.startsWith("/market/")
                 || p.equals("/api/news") || p.startsWith("/api/news/")
                 || p.equals("/api/instruments") || p.startsWith("/api/instruments/")
@@ -100,8 +105,23 @@ public class WebSecurityConfig {
                 || "/api/public/refresh".equals(p);
     }
 
+    /**
+     * TCMB rates are public catalog reads (routed to market-data-service). This chain has no OAuth2/JWT filters so
+     * guests never see {@code 401} + {@code WWW-Authenticate: Bearer} (stale tokens or ordering quirks on the main chain).
+     */
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public SecurityWebFilterChain publicRatesSecurityWebFilterChain(ServerHttpSecurity http) {
+        return http
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/api/rates", "/api/rates/**"))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(ex -> ex.anyExchange().permitAll())
+                .build();
+    }
+
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
+    @Order(100)
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         ReactiveJwtAuthenticationConverter jwtConverter = new ReactiveJwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(jwt ->
@@ -110,6 +130,8 @@ public class WebSecurityConfig {
         ServerBearerTokenAuthenticationConverter defaultBearer = new ServerBearerTokenAuthenticationConverter();
 
         return http
+                .securityMatcher(new NegatedServerWebExchangeMatcher(
+                        ServerWebExchangeMatchers.pathMatchers("/api/rates", "/api/rates/**")))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .headers(h -> h
                         .contentTypeOptions(c -> {})
@@ -132,10 +154,11 @@ public class WebSecurityConfig {
                                 "/api/public/refresh",
                                 "/api/public/refresh/")
                                 .permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/market/**", "/market/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/market/**", "/api/rates/**", "/market/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/public/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/news/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/instruments/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/instruments", "/api/instruments/", "/api/instruments/**")
+                                .permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
                         .pathMatchers("/api/news/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/admin/**").hasRole("ADMIN")

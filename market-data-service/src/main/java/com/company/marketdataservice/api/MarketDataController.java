@@ -9,6 +9,7 @@ import com.company.marketdataservice.service.MarketSegmentPulseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -22,8 +23,8 @@ public class MarketDataController {
     private final MarketSegmentPulseService marketSegmentPulseService;
 
     @GetMapping("/prices")
-    public List<MarketPriceDto> prices() {
-        return marketDataReadService.getLatestPrices();
+    public List<MarketPriceDto> prices(@RequestParam(name = "segment", required = false) String segment) {
+        return marketDataReadService.getLatestPrices(segment);
     }
 
     @GetMapping("/segments/pulse")

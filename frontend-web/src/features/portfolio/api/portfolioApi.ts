@@ -38,6 +38,73 @@ export async function createPortfolio(payload: CreatePortfolioPayload) {
   return response.data.data
 }
 
+/** Row from `GET /api/instruments` (finance-api catalog) for trade pickers. */
+export type InstrumentCatalogPickRow = {
+  id: number
+  symbol: string
+  name: string
+  type: string
+  exchange: string
+}
+
+/** Same envelope rules as `marketService` `toInstrumentMapPayload` (array vs `{ data: [] }`). */
+function extractInstrumentListArray(body: unknown): unknown[] {
+  if (Array.isArray(body)) {
+    return body
+  }
+  if (body && typeof body === 'object' && Array.isArray((body as { data?: unknown }).data)) {
+    return (body as { data: unknown[] }).data
+  }
+  return []
+}
+
+function parseNumericId(raw: unknown): number {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return raw
+  }
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    const n = Number(raw.trim())
+    return Number.isFinite(n) ? n : Number.NaN
+  }
+  return Number.NaN
+}
+
+function parseInstrumentListPayload(body: unknown): InstrumentCatalogPickRow[] {
+  const arr = extractInstrumentListArray(body)
+  const out: InstrumentCatalogPickRow[] = []
+  for (const row of arr) {
+    if (!row || typeof row !== 'object') continue
+    const r = row as Record<string, unknown>
+    const rawId = r.id ?? r.instrumentId
+    const id = parseNumericId(rawId)
+    const symbol = typeof r.symbol === 'string' ? r.symbol.trim().toUpperCase() : ''
+    if (!symbol || !Number.isFinite(id)) continue
+    const exchangeRaw = r.exchange
+    const exchange =
+      typeof exchangeRaw === 'string'
+        ? exchangeRaw.trim().toUpperCase()
+        : exchangeRaw != null && typeof exchangeRaw === 'object' && 'name' in (exchangeRaw as object)
+          ? String((exchangeRaw as { name?: unknown }).name ?? '')
+              .trim()
+              .toUpperCase()
+          : ''
+    out.push({
+      id,
+      symbol,
+      name: typeof r.name === 'string' && r.name.trim().length > 0 ? r.name.trim() : symbol,
+      type: typeof r.type === 'string' ? r.type.trim().toUpperCase() : 'STOCK',
+      exchange,
+    })
+  }
+  return out
+}
+
+/** Full instrument catalog for UI pickers (ids always present; not tied to live wire symbol merge). */
+export async function getInstrumentsCatalogForTradePicker(): Promise<InstrumentCatalogPickRow[]> {
+  const response = await apiClient.get<unknown>('/api/instruments')
+  return parseInstrumentListPayload(response.data)
+}
+
 export async function getPortfolioSummary(id: number) {
   const response = await apiClient.get<ApiResponse<PortfolioSummary>>(
     `/api/external/portfolios/${id}/summary`,
@@ -100,15 +167,13 @@ export async function getPortfolioSnapshots(portfolioId: number) {
   return response.data.data
 }
 
-export async function getPortfolioTradeFlow(portfolioId: number, displayCurrency?: string | null) {
+export async function getPortfolioTradeFlow(portfolioId: number | null, displayCurrency?: string | null) {
   const headers =
     displayCurrency != null && displayCurrency.trim().length > 0
       ? { 'X-Currency': displayCurrency.trim().toUpperCase() }
       : undefined
-  const response = await apiClient.get<ApiResponse<PortfolioTradeFlow>>(
-    `/api/portfolio/trade-flow?portfolioId=${portfolioId}`,
-    { headers },
-  )
+  const qs = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
+  const response = await apiClient.get<ApiResponse<PortfolioTradeFlow>>(`/api/portfolio/trade-flow${qs}`, { headers })
   return response.data.data
 }
 

@@ -63,11 +63,11 @@ public class ExternalPortfolioServiceImpl implements ExternalPortfolioService {
         String rawBc = request.getBaseCurrency();
         String normalizedBc;
         if (rawBc == null || rawBc.isBlank()) {
-            normalizedBc = "TRY";
+            normalizedBc = "MIXED";
         } else {
             normalizedBc = rawBc.trim().toUpperCase(Locale.ROOT);
-            if (!"TRY".equals(normalizedBc) && !"USD".equals(normalizedBc)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "baseCurrency must be TRY or USD");
+            if (!"TRY".equals(normalizedBc) && !"USD".equals(normalizedBc) && !"MIXED".equals(normalizedBc)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "baseCurrency must be TRY, USD, or MIXED");
             }
         }
 

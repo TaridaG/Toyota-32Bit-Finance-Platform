@@ -5,10 +5,12 @@ import com.company.marketdataservice.history.FundNavHistoryEntry;
 import com.company.marketdataservice.history.FundNavHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,14 +34,13 @@ public class FundHistoryWriteService {
         try {
             repository.save(entry);
         } catch (DataIntegrityViolationException ex) {
-            log.debug(
-                    "fund_history_duplicate_ignored eventId={} fundCode={} provider={} observedAt={} reason={}",
-                    event.eventId(),
-                    event.fundCode(),
-                    event.source(),
-                    event.occurredAt(),
-                    ex.getClass().getSimpleName()
-            );
+            logDuplicateIgnored(event, ex);
+        } catch (DataAccessException ex) {
+            if (isDuplicateKey(ex)) {
+                logDuplicateIgnored(event, ex);
+            } else {
+                throw ex;
+            }
         }
     }
 
@@ -65,11 +66,50 @@ public class FundHistoryWriteService {
             try {
                 repository.saveAll(entries.subList(i, end));
             } catch (DataIntegrityViolationException ex) {
-                for (FundSnapshotUpdatedEvent event : validEvents.subList(i, end)) {
-                    save(event);
+                saveEventsOneByOne(validEvents.subList(i, end));
+            } catch (DataAccessException ex) {
+                if (isDuplicateKey(ex)) {
+                    log.debug(
+                            "fund_history_batch_save_duplicate_fallback batchStart={} batchEnd={} reason={}",
+                            i,
+                            end,
+                            ex.getClass().getSimpleName()
+                    );
+                    saveEventsOneByOne(validEvents.subList(i, end));
+                } else {
+                    throw ex;
                 }
             }
         }
+    }
+
+    private void saveEventsOneByOne(List<FundSnapshotUpdatedEvent> slice) {
+        for (FundSnapshotUpdatedEvent event : slice) {
+            save(event);
+        }
+    }
+
+    private void logDuplicateIgnored(FundSnapshotUpdatedEvent event, Throwable ex) {
+        log.debug(
+                "fund_history_duplicate_ignored eventId={} fundCode={} provider={} observedAt={} reason={}",
+                event.eventId(),
+                event.fundCode(),
+                event.source(),
+                event.occurredAt(),
+                ex.getClass().getSimpleName()
+        );
+    }
+
+    private static boolean isDuplicateKey(DataAccessException ex) {
+        if (ex instanceof DataIntegrityViolationException) {
+            return true;
+        }
+        for (Throwable cur = ex; cur != null; cur = cur.getCause()) {
+            if (cur instanceof SQLException sql && "23505".equals(sql.getSQLState())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static FundNavHistoryEntry toEntry(FundSnapshotUpdatedEvent event) {

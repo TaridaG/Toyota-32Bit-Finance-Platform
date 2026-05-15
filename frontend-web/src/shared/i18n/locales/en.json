@@ -10,12 +10,37 @@
     "filters": "Filters",
     "support247": "24/7 Support",
     "header": {
-      "navPublic": { "markets": "Markets", "myPortfolio": "My Portfolio", "analysis": "Analysis", "news": "News" },
-      "navApp": { "markets": "Markets", "myPortfolio": "My Portfolio", "analysis": "Analysis", "portfolio": "Portfolio", "simulation": "Simulation", "admin": "Admin" },
-      "actions": { "login": "Log In", "register": "Sign Up", "logout": "Log Out" },
+      "navPublic": {
+        "markets": "Markets",
+        "myPortfolio": "My Portfolio",
+        "analysis": "Analysis",
+        "news": "News"
+      },
+      "navApp": {
+        "bankRates": "Bank FX rates",
+        "markets": "Markets",
+        "faizVadeli": "Interest / term",
+        "myPortfolio": "My Portfolio",
+        "analysis": "Analysis",
+        "portfolio": "Portfolio",
+        "simulation": "Simulation",
+        "admin": "Admin"
+      },
+      "actions": {
+        "login": "Log In",
+        "register": "Sign Up",
+        "logout": "Log Out"
+      },
       "searchAria": "Search",
-      "download": { "aria": "Download app", "title": "Download the app", "subtitle": "iOS & Android", "moreOptions": "More download options" },
-      "locale": { "aria": "Language and currency" },
+      "download": {
+        "aria": "Download app",
+        "title": "Download the app",
+        "subtitle": "iOS & Android",
+        "moreOptions": "More download options"
+      },
+      "locale": {
+        "aria": "Language and currency"
+      },
       "notifications": {
         "aria": "Notifications",
         "title": "Notifications",
@@ -23,8 +48,18 @@
         "empty": "You have no notifications yet.",
         "loadError": "Notifications could not be loaded."
       },
-      "theme": { "label": "Theme", "light": "Light", "dark": "Dark", "switchToLight": "Switch to light theme", "switchToDark": "Switch to dark theme" },
-      "mobile": { "close": "Close", "openMenu": "Open menu", "closeMenu": "Close menu" },
+      "theme": {
+        "label": "Theme",
+        "light": "Light",
+        "dark": "Dark",
+        "switchToLight": "Switch to light theme",
+        "switchToDark": "Switch to dark theme"
+      },
+      "mobile": {
+        "close": "Close",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu"
+      },
       "profileMenu": {
         "openAria": "Account menu",
         "settings": "Profile settings",
@@ -102,8 +137,167 @@
       "errorFile": "Please choose a PNG or JPEG image.",
       "errorSize": "Image is too large after processing. Try a smaller file."
     },
-    "dashboard": { "titleDoc": "Home | Finance Platform", "title": "Home", "lead": "General overview components will be placed here." },
-    "simulation": { "titleDoc": "Simulation | Finance Platform", "title": "Simulation", "lead": "Simulation module will be added soon." }
+    "dashboard": {
+      "titleDoc": "Home | Finance Platform",
+      "title": "Home",
+      "lead": "General overview components will be placed here."
+    },
+    "simulation": {
+      "titleDoc": "Simulation | Finance Platform",
+      "title": "Simulation",
+      "lead": "Simulation module will be added soon."
+    },
+    "bankRatesPage": {
+      "titleDoc": "Bank FX rates | Finance Platform",
+      "title": "Bank FX rates",
+      "lead": "Corporate FX buy and sell quotes will be listed here. Tables and filters will appear once a data source is connected.",
+      "placeholder": "Data wiring for this page is not connected yet."
+    },
+    "faizVadeliPage": {
+      "titleDoc": "Interest & term deposits | Finance Platform",
+      "title": "Interest & term deposits",
+      "lead": "Summary dashboard; figures in the panels below are illustrative placeholders.",
+      "cardBondsCta": "Open Markets",
+      "policyRate": {
+        "liveDecision": "Last decision",
+        "liveBadgeUnchanged": "Unchanged",
+        "liveBadgeUp": "Increase",
+        "liveBadgeDown": "Decrease",
+        "liveNoData": "No policy rate to display yet.",
+        "liveNoDataHint": "Shows here after the weekly TCMB sync completes (may take a few minutes).",
+        "liveLoadError": "Could not load the policy rate. Check your connection.",
+        "liveSkeletonAria": "Loading current policy rate",
+        "chartOpenHint": "Show five years of weekly policy rate in the main chart area",
+        "chartTitle": "CBRT policy rate (5 years, weekly)",
+        "chartBackToYield": "Back to policy rate chart",
+        "chartAxisY": "Rate (%)",
+        "chartLoading": "Loading chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "chartEmpty": "No weekly records found.",
+        "chartFoot": "The line reflects the weekly TCMB series stored in the database; announcement timing and week boundaries may shift the shape slightly.",
+        "chartInflationHint": "An inflation series can be added as a second line on this chart when the data API is wired."
+      },
+      "tlDeposit": {
+        "maturitySelectAria": "Choose maturity bucket",
+        "maturityLong": {
+          "MT01": "Up to 1 month",
+          "MT02": "Up to 3 months",
+          "MT03": "Up to 6 months",
+          "MT04": "Up to 1 year",
+          "MT05": "1 year and longer",
+          "MT06": "Total (excl. demand deposits)"
+        },
+        "chartTitleWithMaturity": "{{maturity}} — last 5 years (weekly, stock)",
+        "liveNoData": "No TRY deposit rate to display yet.",
+        "liveNoDataHint": "Shows here after the weekly EVDS sync completes (may take a few minutes).",
+        "liveLoadError": "Could not load the TRY deposit rate. Check your connection.",
+        "liveSkeletonAria": "Loading current TRY deposit rate",
+        "chartOpenHint": "Show five years of weekly TRY deposit for the selected maturity",
+        "chartBackToYield": "Back to policy rate chart",
+        "chartAxisY": "Rate (%)",
+        "chartLoading": "Loading chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "chartEmpty": "No weekly records found.",
+        "chartFoot": "The line is a weekly summary of the TCMB EVDS weighted-average TRY deposit (stock) series; observation dates may shift the shape slightly."
+      },
+      "tahvil": {
+        "tenorSelectAria": "Choose benchmark tenor",
+        "symbolLabel": {
+          "TRBOND1Y": "1-year",
+          "TRBOND2Y": "2-year",
+          "TRBOND3Y": "3-year"
+        },
+        "chartTitleWithTenor": "{{tenor}} benchmark yield — last 5 years",
+        "change1dSub": "Since last print (relative): {{pct}}%",
+        "liveNoData": "No yield data for this tenor yet.",
+        "liveNoDataHint": "Shows here after TCMB bond history is loaded.",
+        "liveLoadError": "Could not load the yield. Check your connection.",
+        "liveSkeletonAria": "Loading current benchmark yield",
+        "chartOpenHint": "Show five years of yield history for the selected tenor",
+        "chartBackToYield": "Back to policy rate chart",
+        "chartAxisY": "Yield (%)",
+        "chartLoading": "Loading chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "chartEmpty": "No data in this range.",
+        "chartFoot": "The line shows the TCMB Treasury benchmark yield in MDS; EVDS is requested at daily frequency and calendar gaps are forward-filled from the last print."
+      },
+      "eurobond": {
+        "cardTitle": "Turkey eurobonds",
+        "cardSubtitle": "ISIN-based USD eurobond samples",
+        "cardNoData": "No data",
+        "cardYtm": "Yield",
+        "cardMat": "Maturity",
+        "cardSrc": "Source",
+        "isinSelectAria": "Select eurobond",
+        "detailTitle": "Turkey USD eurobonds",
+        "detailFoot": "Prices are per 100 nominal. Yield is yield-to-maturity (approx.).",
+        "edu1": "Eurobond: Turkey’s sovereign debt security issued in USD (or EUR).",
+        "edu2": "Coupon: fixed interest paid on a set schedule.",
+        "edu3": "Price: clean market value per 100 nominal.",
+        "edu4": "Yield: annualised yield-to-maturity implied by today’s price (YTM).",
+        "colBond": "Eurobond",
+        "colIsin": "ISIN",
+        "colMat": "Maturity",
+        "colRem": "Remaining",
+        "colCpn": "Coupon %",
+        "colPx": "Price",
+        "colYtm": "Yield %",
+        "colChg": "1D change",
+        "colSrc": "Source",
+        "yearsSuffix": "y",
+        "range": "Range",
+        "frequency": "Frequency",
+        "range1Y": "1Y",
+        "range5Y": "5Y",
+        "rangeAll": "All",
+        "freqDaily": "Daily",
+        "freqWeekly": "Weekly",
+        "freqMonthly": "Monthly",
+        "priceChartTitle": "Price chart",
+        "priceChartHint": "Clean market price per 100 nominal",
+        "priceChartEmpty": "No price history.",
+        "yieldChartTitle": "Yield chart",
+        "yieldChartHint": "Annualised yield-to-maturity",
+        "yieldChartEmpty": "No yield history.",
+        "axisPrice": "Price",
+        "axisYield": "Yield %",
+        "simTitle": "Coupon simulator",
+        "simNominal": "Nominal (USD)",
+        "simNominalSharedHint": "The same nominal powers both the live coupon box above and the past purchase scenario below.",
+        "simAnnual": "Annual coupon",
+        "simSemi": "Semi-annual coupon",
+        "simPurchase": "Approx. purchase amount",
+        "simPrincipal": "Principal at maturity",
+        "simDisclaimer": "Approximation on clean price only; accrued interest, tax and fees excluded.",
+        "lastUpdated": "Last update",
+        "liveSkeletonAria": "Loading eurobond data",
+        "chartOpenHint": "Open eurobond detail and charts",
+        "chartBackToYield": "Back to policy rate chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "pastTitle": "Past purchase",
+        "pastBuyPrice": "Clean buy price (per 100)",
+        "pastBuyDate": "Buy date",
+        "pastSaleUseLast": "Sell on latest chart day",
+        "pastSaleDate": "Sell date",
+        "pastSalePrice": "Clean sell price (defaults to close on date)",
+        "pastSalePricePlaceholder": "Auto or manual",
+        "pastMaturityRef": "Coupon cap (maturity / reference date)",
+        "pastCost": "Approx. buy amount",
+        "pastProceeds": "Approx. sell amount",
+        "pastCoupons": "Est. coupon cash",
+        "pastPnl": "Net P&L (USD)",
+        "pastPnlPct": "Return on buy (%)",
+        "pastDisclaimer": "Approximation: clean prices, ~semi-annual coupons; excludes accrued, tax and fees.",
+        "pastPickFromChart": "Pick from chart",
+        "pastPickHintDate": "Click a day on the price or yield chart.",
+        "pastPickHintPrice": "Click a day on the chart; that day’s close price and date are filled.",
+        "pastPickCancel": "Cancel"
+      }
+    }
   },
   "landing": {
     "titleDoc": "Finance Portal | Enterprise Platform",
@@ -115,15 +309,33 @@
       "notAvailable": "Not available"
     },
     "sections": {
-      "hero": { "dotLabel": "Hero" },
-      "markets": { "dotLabel": "Live markets" },
-      "analysis": { "dotLabel": "Technical analysis" },
-      "ai-insights": { "dotLabel": "AI insights" },
-      "news": { "dotLabel": "Enriched news" },
-      "portfolio": { "dotLabel": "Portfolio PnL" },
-      "reporting": { "dotLabel": "Reporting" },
-      "security": { "dotLabel": "Security" },
-      "final-cta": { "dotLabel": "Final call to action" }
+      "hero": {
+        "dotLabel": "Hero"
+      },
+      "markets": {
+        "dotLabel": "Live markets"
+      },
+      "analysis": {
+        "dotLabel": "Technical analysis"
+      },
+      "ai-insights": {
+        "dotLabel": "AI insights"
+      },
+      "news": {
+        "dotLabel": "Enriched news"
+      },
+      "portfolio": {
+        "dotLabel": "Portfolio PnL"
+      },
+      "reporting": {
+        "dotLabel": "Reporting"
+      },
+      "security": {
+        "dotLabel": "Security"
+      },
+      "final-cta": {
+        "dotLabel": "Final call to action"
+      }
     },
     "hero": {
       "kicker": "Enterprise Fintech Workspace",
@@ -272,8 +484,45 @@
     "kicker": "Live Desk",
     "title": "Markets",
     "lead": "Track crypto, BIST, NASDAQ, FX, spot metals, global commodity futures, and funds from one dashboard.",
-    "categories": { "aria": "Market category filters", "all": "All", "crypto": "Crypto", "bist": "BIST", "nasdaq": "NASDAQ", "stocks": "Stocks", "forex": "Forex", "metals": "Spot Metals", "globalFutures": "Global Futures", "funds": "Funds" },
-    "table": { "symbol": "Symbol", "price": "Price", "priceHint": "Left: native quote (TRY or USD). Right: same spot in your header currency.", "priceConvertedSort": "Sort by value in selected currency", "change24h": "24h", "high24h": "24h High", "low24h": "24h Low", "exchange": "Exchange" },
+    "categories": {
+      "aria": "Market category filters",
+      "all": "All",
+      "crypto": "Crypto",
+      "bist": "BIST",
+      "nasdaq": "NASDAQ",
+      "stocks": "Stocks",
+      "forex": "Forex",
+      "metals": "Spot Metals",
+      "globalFutures": "Global Futures",
+      "funds": "Funds",
+      "bonds": "Treasury bonds / bills",
+      "eurobond": "Eurobonds"
+    },
+    "eurobondTab": {
+      "loading": "Loading eurobond list…",
+      "error": "Could not load eurobond data.",
+      "lead": "Turkey Treasury USD eurobonds (ISIN-based samples). Open Interest / Term for charts and simulator.",
+      "openFaiz": "Open in Interest / Term",
+      "colBond": "Eurobond",
+      "colIsin": "ISIN",
+      "colMat": "Maturity",
+      "colPx": "Price",
+      "colYtm": "Yield %",
+      "colSrc": "Source"
+    },
+    "table": {
+      "bondMaturityColumn": "Maturity",
+      "bondMaturitySort": "Sort by tenor",
+      "bondTenorYears": "{{years}}Y",
+      "symbol": "Symbol",
+      "price": "Price",
+      "priceHint": "Left: native quote (TRY or USD). Right: same spot in your header currency.",
+      "priceConvertedSort": "Sort by value in selected currency",
+      "change24h": "24h",
+      "high24h": "24h High",
+      "low24h": "24h Low",
+      "exchange": "Exchange"
+    },
     "searchLabel": "Search",
     "searchPlaceholder": "Symbol or asset name",
     "favoritesOnly": "Favorites",
@@ -282,8 +531,22 @@
     "unfavorite": "Remove from favorites",
     "noMatches": "No instruments found for this filter.",
     "lastUpdated": "Last update: just now",
-    "insights": { "topGainers": "Top Gainers", "topLosers": "Top Losers", "noGainers": "No gainers available.", "noLosers": "No losers available.", "loadError": "Market insights could not be loaded." },
-    "pagination": { "prev": "Prev", "next": "Next", "pageSizeAria": "Page size", "size10": "10 / page", "size20": "20 / page", "size50": "50 / page", "summary": "Page {{page}} / {{totalPages}} - {{totalElements}} rows" },
+    "insights": {
+      "topGainers": "Top Gainers",
+      "topLosers": "Top Losers",
+      "noGainers": "No gainers available.",
+      "noLosers": "No losers available.",
+      "loadError": "Market insights could not be loaded."
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "pageSizeAria": "Page size",
+      "size10": "10 / page",
+      "size20": "20 / page",
+      "size50": "50 / page",
+      "summary": "Page {{page}} / {{totalPages}} - {{totalElements}} rows"
+    },
     "categoryPulse": {
       "aria": "Segment overview: equal-weight average 1-day percent move per category",
       "metricAbbr": "1D avg · equal weight",
@@ -318,9 +581,25 @@
     "aiInsightPositive": "Accumulation behavior strengthens in high-volume assets.",
     "aiInsightNegative": "Defensive positioning stands out in the short term.",
     "aiInsightNeutral": "News flow remains balanced.",
-    "time": { "minutesAgo": "{{count}} min ago", "hoursAgo": "{{count}} hour ago", "hoursAgo_plural": "{{count}} hours ago" },
-    "sentiment": { "all": "All", "positive": "Positive", "negative": "Negative", "neutral": "Neutral" },
-    "categories": { "all": "All", "bist": "BIST", "viop": "VIOP", "fx": "FX", "crypto": "Crypto", "macro": "Macro" }
+    "time": {
+      "minutesAgo": "{{count}} min ago",
+      "hoursAgo": "{{count}} hour ago",
+      "hoursAgo_plural": "{{count}} hours ago"
+    },
+    "sentiment": {
+      "all": "All",
+      "positive": "Positive",
+      "negative": "Negative",
+      "neutral": "Neutral"
+    },
+    "categories": {
+      "all": "All",
+      "bist": "BIST",
+      "viop": "VIOP",
+      "fx": "FX",
+      "crypto": "Crypto",
+      "macro": "Macro"
+    }
   },
   "analysis": {
     "titleDoc": "Analysis | Finance Platform",
@@ -330,7 +609,10 @@
     "performanceTableTitle": "Performance Table",
     "syncedWithRange": "Synced with {{range}}",
     "sortNews": "Sort news:",
-    "sort": { "byTime": "By Time", "byImpact": "By Impact" },
+    "sort": {
+      "byTime": "By Time",
+      "byImpact": "By Impact"
+    },
     "controls": {
       "showNews": "Show news",
       "showMA20": "Show MA20",
@@ -449,11 +731,27 @@
       "overlays": "Overlays & studies",
       "draw": "Drawing"
     },
-    "readout": { "crosshair": "Crosshair (live)", "pinnedBar": "Pinned bar" },
-    "periods": { "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly", "threeMonth": "3-month", "sixMonth": "6-month", "yearly": "Yearly" },
+    "readout": {
+      "crosshair": "Crosshair (live)",
+      "pinnedBar": "Pinned bar"
+    },
+    "periods": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "threeMonth": "3-month",
+      "sixMonth": "6-month",
+      "yearly": "Yearly"
+    },
     "volumeLabel": "Volume",
     "marketCapLabel": "Market Cap",
-    "columns": { "asset": "Asset", "daily": "Daily %", "weekly": "Weekly %", "monthly": "Monthly %", "yearly": "Yearly %" }
+    "columns": {
+      "asset": "Asset",
+      "daily": "Daily %",
+      "weekly": "Weekly %",
+      "monthly": "Monthly %",
+      "yearly": "Yearly %"
+    }
   },
   "portfolio": {
     "titleDoc": "My Portfolio | Finance Platform",
@@ -535,8 +833,16 @@
       "inPortfolio": "in portfolio",
       "moreCategories": "Also includes: {{labels}}"
     },
-    "actions": { "yearly": "Yearly", "viewAll": "View All" },
-    "legend": { "stocks": "Stocks", "funds": "Funds", "bonds": "Bonds", "reits": "REITs" },
+    "actions": {
+      "yearly": "Yearly",
+      "viewAll": "View All"
+    },
+    "legend": {
+      "stocks": "Stocks",
+      "funds": "Funds",
+      "bonds": "Bonds",
+      "reits": "REITs"
+    },
     "sidebar": {
       "expand": "Open Panel",
       "collapse": "Close Panel",
@@ -546,13 +852,27 @@
       "logout": "Logout",
       "addPortfolioOptionFirst": "Create your first portfolio",
       "addPortfolioOptionMore": "+ Add new portfolio",
-      "items": { "dashboard": "Dashboard", "markets": "Add to Portfolio", "portfolio": "Transaction History", "allocation": "Portfolio distribution", "news": "My News", "analysis": "My Analysis", "targets": "My Targets", "watchlist": "Watchlist", "settings": "Settings" }
+      "items": {
+        "dashboard": "Dashboard",
+        "markets": "Add to Portfolio",
+        "portfolio": "Transaction History",
+        "allocation": "Portfolio distribution",
+        "news": "My News",
+        "analysis": "My Analysis",
+        "targets": "My Targets",
+        "watchlist": "Watchlist",
+        "settings": "Settings"
+      },
+      "historyPortfolioColumn": "Portfolio",
+      "overviewOption": "Overview",
+      "tradePickPortfolio": "Portfolio to add this trade to",
+      "settingsOverviewHint": "To change portfolio settings, pick one portfolio from the list above."
     },
     "createPortfolioModal": {
       "titleFirst": "Create your first portfolio",
       "titleMore": "New portfolio",
-      "leadFirst": "Enter a name and choose a base currency to get started (up to 5 portfolios per account).",
-      "leadMore": "Choose a name and base currency. The “Add to portfolio” list shows only instruments quoted in that currency.",
+      "leadFirst": "Enter a portfolio account name to get started (up to 5 portfolios per account).",
+      "leadMore": "Only a name is required; the portfolio is not locked to a single currency. Overview and the add-instrument list follow your header display currency (scope filter comes next).",
       "nameLabel": "Portfolio name",
       "namePlaceholder": "e.g. Core portfolio",
       "currencyLabel": "Base currency",
@@ -564,7 +884,9 @@
     },
     "marketsAdd": {
       "listingHintTry": "This portfolio is TRY-based. Only TRY-quoted instruments are listed (e.g. BIST, FX in lira).",
-      "listingHintUsd": "This portfolio is USD-based. Only USD-quoted instruments are listed (e.g. US equities, USD crypto)."
+      "listingHintUsd": "This portfolio is USD-based. Only USD-quoted instruments are listed (e.g. US equities, USD crypto).",
+      "listingHintNeutral": "This portfolio is not currency-locked. Summary and list use your header display currency ({{currency}}) for quote filtering.",
+      "listingHintAll": "All quoted instruments are listed; payment currency follows the instrument you select."
     },
     "watchlist": {
       "title": "My Watchlist",
@@ -573,7 +895,11 @@
       "loadError": "Watchlist could not be loaded.",
       "chartEmpty": "No chart data found for this instrument.",
       "chartLoadError": "Chart data could not be loaded.",
-      "columns": { "symbol": "Symbol", "name": "Name", "price": "Price" },
+      "columns": {
+        "symbol": "Symbol",
+        "name": "Name",
+        "price": "Price"
+      },
       "addPanel": {
         "title": "Add To Favorites",
         "searchPlaceholder": "Search symbol or instrument name",
@@ -582,7 +908,15 @@
         "added": "Instrument has been added to favorites.",
         "addError": "Could not add to favorites. Please try again.",
         "noResults": "No instruments match your search.",
-        "categories": { "all": "All", "bist": "BIST", "nasdaq": "NASDAQ", "crypto": "Crypto", "forex": "Forex", "metals": "Metals/Futures", "funds": "Funds" }
+        "categories": {
+          "all": "All",
+          "bist": "BIST",
+          "nasdaq": "NASDAQ",
+          "crypto": "Crypto",
+          "forex": "Forex",
+          "metals": "Metals/Futures",
+          "funds": "Funds"
+        }
       }
     },
     "settingsPage": {
@@ -592,7 +926,7 @@
       "portfolioNameLabel": "Portfolio name",
       "createdAtLabel": "Created at",
       "createdUnknown": "Not available",
-      "baseCurrencyLabel": "Base currency",
+      "baseCurrencyLabel": "Account type",
       "quotaLabel": "Account portfolio limit",
       "quotaSummary": "{{used}} of {{max}} portfolios in use (maximum {{max}} per account).",
       "privacySection": "Privacy",
@@ -608,14 +942,27 @@
       "confirmDelete": "Yes, delete",
       "deleting": "Deleting…",
       "saveAmountsHiddenError": "Could not save the hide-amounts setting.",
-      "deletePortfolioError": "Could not delete the portfolio."
+      "deletePortfolioError": "Could not delete the portfolio.",
+      "baseCurrencyNeutral": "Not currency-locked (unified account)"
     },
     "insights": {
       "items": {
-        "tesla": { "title": "Tesla rises after deliveries beat estimates", "detail": "TSLA closes higher as delivery growth offsets margin pressure concerns." },
-        "apple": { "title": "Apple extends buyback program", "detail": "AAPL announces additional buyback authorization for long-term holders." },
-        "nvidia": { "title": "NVIDIA opens AI accelerator roadmap", "detail": "Chip roadmap points to higher enterprise AI demand into next year." },
-        "banking": { "title": "Banking stocks stabilize after policy update", "detail": "Large-cap banks recover as policy path appears more predictable." }
+        "tesla": {
+          "title": "Tesla rises after deliveries beat estimates",
+          "detail": "TSLA closes higher as delivery growth offsets margin pressure concerns."
+        },
+        "apple": {
+          "title": "Apple extends buyback program",
+          "detail": "AAPL announces additional buyback authorization for long-term holders."
+        },
+        "nvidia": {
+          "title": "NVIDIA opens AI accelerator roadmap",
+          "detail": "Chip roadmap points to higher enterprise AI demand into next year."
+        },
+        "banking": {
+          "title": "Banking stocks stabilize after policy update",
+          "detail": "Large-cap banks recover as policy path appears more predictable."
+        }
       }
     },
     "external": {
@@ -841,7 +1188,11 @@
         "tipDelta": "Change vs previous day in window",
         "segTitle": "User demographics",
         "segLead": "Distribution by country, device, and browser when telemetry is available.",
-        "segTab": { "country": "Country", "device": "Device", "browser": "Browser" },
+        "segTab": {
+          "country": "Country",
+          "device": "Device",
+          "browser": "Browser"
+        },
         "segEmpty": "No segmentation data yet — country/device/browser are not stored on the user record today.",
         "heatTitle": "Most active hours (UTC)",
         "heatLead": "When users are most often online — requires session or event telemetry.",
@@ -1009,5 +1360,3 @@
     }
   }
 }
-
-

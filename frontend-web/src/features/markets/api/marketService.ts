@@ -3,6 +3,7 @@ import type {
   InstrumentFundamentals,
   MarketCategory,
   MarketInsightsResponse,
+  MarketOverviewItem,
   MarketOverviewPageResponse,
 } from '../../../shared/types/market'
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
@@ -17,6 +18,7 @@ import {
   sortMarketOverviewRows,
   sortRequiresPageSummaryFetch,
   sortRequiresPeriodPrefetch,
+  type MarketOverviewSortOptions,
 } from '../lib/marketSort'
 
 type FetchMarketsParams = {
@@ -37,6 +39,8 @@ const categoryToQueryParam: Record<Exclude<MarketCategory, 'all'>, string> = {
   metals: 'FX',
   globalFutures: 'STOCK',
   funds: 'FUND',
+  bonds: 'BOND',
+  eurobond: 'BOND',
 }
 
 type MarketPriceApiItem = {
@@ -46,7 +50,8 @@ type MarketPriceApiItem = {
   source?: string
   category?: string | null
   instrumentType?: string | null
-  timestamp?: string | null
+  /** Wire may send ISO-8601 string or epoch seconds/ms as number (Jackson / proxies). */
+  timestamp?: string | number | null
   change24h?: number | string | null
   high24h?: number | string | null
   low24h?: number | string | null
@@ -57,13 +62,14 @@ type FxRateApiItem = {
   bid?: number | string
   ask?: number | string
   mid?: number | string
-  timestamp?: string | null
+  timestamp?: string | number | null
 }
 
 type InstrumentCatalogItem = {
   id?: number | string
   symbol?: string
   name?: string
+  exchange?: string | null
 }
 
 type HistoryPoint = {
@@ -104,12 +110,35 @@ const METAL_SYMBOLS = new Set([...SPOT_METAL_SYMBOLS, ...METAL_FUTURES_SYMBOLS])
 type InstrumentMetadata = {
   id: number
   name: string | null
+  /** From finance-api instrument catalog (e.g. BIST, NASDAQ). */
+  exchange: string | null
 }
 
 let instrumentMetadataBySymbolCache: Record<string, InstrumentMetadata> | null = null
 let instrumentMetadataBySymbolPromise: Promise<Record<string, InstrumentMetadata>> | null = null
 
+/** Wire symbols (e.g. Yahoo BIST `GARAN.IS`) vs catalog keys (`GARAN`). */
+function resolveInstrumentMeta(
+  symbol: string,
+  bySymbol: Record<string, InstrumentMetadata>,
+): InstrumentMetadata | null {
+  const up = symbol.trim().toUpperCase()
+  const direct = bySymbol[up]
+  if (direct) return direct
+  if (up.endsWith('.IS')) {
+    return bySymbol[up.slice(0, -3)] ?? null
+  }
+  return null
+}
+
 function toCategory(symbol: string, item?: MarketPriceApiItem): string {
+  const symUp = symbol.trim().toUpperCase()
+  if (symUp.startsWith('FUND_')) {
+    return 'FUND'
+  }
+  if (symUp.startsWith('TRBOND')) {
+    return 'BOND'
+  }
   const hinted =
     (item?.instrumentType ?? item?.category ?? '')
       .toString()
@@ -130,15 +159,44 @@ function toNumber(value: unknown, fallback: number): number {
   return Number.isFinite(numeric) ? numeric : fallback
 }
 
-function toFreshness(timestamp: string | null | undefined): 'LIVE' | 'STALE' {
-  if (!timestamp) {
+/** Parse backend {@link Instant} or epoch values to epoch milliseconds, or null if unusable. */
+function parseWireInstantMs(value: string | number | null | undefined): number | null {
+  if (value == null) {
+    return null
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const n = value
+    return n < 1e12 ? Math.round(n * 1000) : Math.round(n)
+  }
+  const s = String(value).trim()
+  if (!s) {
+    return null
+  }
+  const parsed = Date.parse(s)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+/**
+ * "Delayed" badge: exchange-quoted assets often carry last-trade time (15m delayed tape, overnight close, etc.).
+ * A 5-minute wall-clock rule falsely marks almost everything delayed. TEFAS NAV is daily — use a multi-day window.
+ */
+function maxFreshAgeMsForSymbol(symbol: string): number {
+  const sym = symbol.trim().toUpperCase()
+  if (sym.startsWith('FUND_') || sym.startsWith('TRBOND')) {
+    return 5 * 24 * 60 * 60 * 1000
+  }
+  if (sym.endsWith('USDT') || sym.endsWith('USD') || sym.endsWith('TRY') || sym.includes('/')) {
+    return 30 * 60 * 1000
+  }
+  return 45 * 60 * 1000
+}
+
+function toFreshness(timestamp: string | number | null | undefined, symbol: string): 'LIVE' | 'STALE' {
+  const ts = parseWireInstantMs(timestamp)
+  if (ts == null) {
     return 'STALE'
   }
-  const ts = Date.parse(timestamp)
-  if (!Number.isFinite(ts)) {
-    return 'STALE'
-  }
-  return Date.now() - ts > 5 * 60 * 1000 ? 'STALE' : 'LIVE'
+  return Date.now() - ts > maxFreshAgeMsForSymbol(symbol) ? 'STALE' : 'LIVE'
 }
 
 function normalizeMarketRows(items: MarketPriceApiItem[]) {
@@ -152,13 +210,14 @@ function normalizeMarketRows(items: MarketPriceApiItem[]) {
         name: symbol,
         price,
         source: item.source ? String(item.source).trim().toUpperCase() : null,
-        timestamp: item.timestamp ?? null,
-        freshness: toFreshness(item.timestamp),
+        timestamp: item.timestamp != null ? String(item.timestamp) : null,
+        freshness: toFreshness(item.timestamp, symbol),
         change24h: toNumber(item.change24h ?? 0, 0),
         high24h: toNumber(item.high24h ?? item.price ?? item.value ?? 0, price),
         low24h: toNumber(item.low24h ?? item.price ?? item.value ?? 0, price),
         category: toCategory(symbol, item),
         instrumentId: null,
+        listedExchange: null,
       }
     })
 }
@@ -174,13 +233,14 @@ function normalizeFxRows(items: FxRateApiItem[]) {
         name: symbol,
         price,
         source: 'TCMB',
-        timestamp: item.timestamp ?? null,
-        freshness: toFreshness(item.timestamp),
+        timestamp: item.timestamp != null ? String(item.timestamp) : null,
+        freshness: toFreshness(item.timestamp, symbol),
         change24h: 0,
         high24h: price,
         low24h: price,
         category: 'FX',
         instrumentId: null,
+        listedExchange: null,
       }
     })
 }
@@ -217,8 +277,13 @@ async function fetchInstrumentMetadataBySymbolMap(): Promise<Record<string, Inst
         const symbol = typeof item?.symbol === 'string' ? item.symbol.trim().toUpperCase() : ''
         const id = Number(item?.id)
         const name = typeof item?.name === 'string' && item.name.trim().length > 0 ? item.name.trim() : null
+        const exchangeRaw = item?.exchange
+        const exchange =
+          typeof exchangeRaw === 'string' && exchangeRaw.trim().length > 0
+            ? exchangeRaw.trim().toUpperCase()
+            : null
         if (symbol && Number.isFinite(id)) {
-          map[symbol] = { id, name }
+          map[symbol] = { id, name, exchange }
         }
       })
       instrumentMetadataBySymbolCache = map
@@ -243,6 +308,8 @@ export type CatalogRow = {
   low24h: number
   category: string
   instrumentId: number | null
+  /** Resolved from instrument catalog when wire symbol matches (incl. `*.IS` → base). */
+  listedExchange: string | null
 }
 
 function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): CatalogRow[] {
@@ -250,10 +317,24 @@ function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): Ca
     return rows
   }
   if (category === 'bist') {
-    return rows.filter((row) => row.category === 'STOCK' && row.source === 'YAHOO')
+    return rows.filter((row) => {
+      if (row.category !== 'STOCK') return false
+      const sym = row.symbol.trim().toUpperCase()
+      return (
+        row.source === 'YAHOO' ||
+        row.listedExchange === 'BIST' ||
+        sym.endsWith('.IS')
+      )
+    })
   }
   if (category === 'nasdaq') {
-    return rows.filter((row) => row.category === 'STOCK' && row.source === 'FINNHUB')
+    return rows.filter(
+      (row) =>
+        row.category === 'STOCK' &&
+        (row.source === 'FINNHUB' ||
+          row.listedExchange === 'NASDAQ' ||
+          row.listedExchange === 'FINNHUB'),
+    )
   }
   if (category === 'forex') {
     return rows.filter((row) => row.category === 'FX' && !METAL_SYMBOLS.has(row.symbol))
@@ -263,6 +344,12 @@ function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): Ca
   }
   if (category === 'globalFutures') {
     return rows.filter((row) => METAL_FUTURES_SYMBOLS.has(row.symbol))
+  }
+  if (category === 'bonds') {
+    return rows.filter((row) => {
+      const sym = row.symbol.trim().toUpperCase()
+      return row.category === 'BOND' || sym.startsWith('TRBOND')
+    })
   }
   return rows.filter((row) => row.category === categoryToQueryParam[category])
 }
@@ -552,6 +639,126 @@ async function fetchPricesSummary(symbols: string[]): Promise<Record<string, Per
   return out
 }
 
+type MarketOverviewWirePage = {
+  content?: OverviewWireRow[]
+  page?: number
+  size?: number
+  totalElements?: number
+  totalPages?: number
+}
+
+type OverviewWireRow = {
+  symbol: string
+  name?: string
+  nativePrice?: number | string | null
+  price?: number | string | null
+  change24h?: number | string | null
+  change1D?: number | string | null
+  change1M?: number | string | null
+  change3M?: number | string | null
+  change6M?: number | string | null
+  change1Y?: number | string | null
+  trendScore?: number | string | null
+  trendLabel?: string | null
+  high24h?: number | string | null
+  low24h?: number | string | null
+  category?: string | null
+  instrumentId?: number | string | null
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value == null || value === '') {
+    return null
+  }
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function mapTrendLabel(raw: string | null | undefined): MarketOverviewItem['trendLabel'] {
+  const u = (raw ?? '').trim().toUpperCase()
+  if (u === 'WEAK') return 'WEAK'
+  if (u === 'STRONG') return 'STRONG'
+  if (u === 'VERY_STRONG') return 'VERY_STRONG'
+  if (u === 'NEUTRAL') return 'NEUTRAL'
+  return null
+}
+
+function mapOverviewWireItem(row: OverviewWireRow): MarketOverviewItem {
+  const hasNative = row.nativePrice != null && row.nativePrice !== ''
+  const nativeNum = hasNative ? toNumber(row.nativePrice, 0) : toNumber(row.price ?? 0, 0)
+  const displayNum =
+    hasNative && row.price != null && row.price !== '' ? toNumber(row.price, 0) : null
+  const cat = (row.category ?? '').trim().toUpperCase() || null
+  const idRaw = row.instrumentId
+  let instrumentId: number | null = null
+  if (idRaw != null && idRaw !== '') {
+    const n = Number(idRaw)
+    instrumentId = Number.isFinite(n) ? n : null
+  }
+  return {
+    symbol: row.symbol,
+    name: row.name ?? row.symbol,
+    price: nativeNum,
+    nativeQuote: inferNativeQuote(row.symbol, cat, undefined, null),
+    displayAmount: displayNum,
+    timestamp: null,
+    freshness: 'LIVE',
+    change24h: toNullableNumber(row.change24h),
+    change1D: toNullableNumber(row.change1D),
+    change1M: toNullableNumber(row.change1M),
+    change3M: toNullableNumber(row.change3M),
+    change6M: toNullableNumber(row.change6M),
+    change1Y: toNullableNumber(row.change1Y),
+    trendScore: toNullableNumber(row.trendScore),
+    trendLabel: mapTrendLabel(row.trendLabel),
+    trendPercentile: null,
+    trendRelativeWeekly: null,
+    high24h: toNullableNumber(row.high24h),
+    low24h: toNullableNumber(row.low24h),
+    category: row.category ?? null,
+    exchange: null,
+    instrumentId,
+  }
+}
+
+/** Paginated markets table backed by finance-api {@code GET /api/market/overview} (server-side segment + sort + pagination). */
+export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promise<MarketOverviewPageResponse> {
+  const page = Math.max(params.page ?? 0, 0)
+  const size = Math.max(params.size ?? 10, 1)
+  const category = params.category ?? 'all'
+  const requestParams: Record<string, string | number> = {
+    page,
+    size,
+    category: category === 'all' ? 'ALL' : category.toUpperCase(),
+  }
+  const q = params.query?.trim()
+  if (q) {
+    requestParams.q = q
+  }
+  const sort = params.sort?.trim()
+  if (sort) {
+    requestParams.sort = sort
+  }
+  const { data: root } = await apiClient.get<{ success?: boolean; data?: MarketOverviewWirePage }>(
+    '/api/market/overview',
+    {
+      params: requestParams,
+      headers: params.displayCurrency ? { 'X-Currency': params.displayCurrency } : undefined,
+    },
+  )
+  const body = root?.data
+  if (!body || !Array.isArray(body.content)) {
+    return { content: [], page, size, totalElements: 0, totalPages: 0 }
+  }
+  return {
+    content: body.content.map(mapOverviewWireItem),
+    page: body.page ?? page,
+    size: body.size ?? size,
+    totalElements: body.totalElements ?? 0,
+    totalPages: body.totalPages ?? 0,
+  }
+}
+
 /** Fetches `/api/market/prices` + `/api/market/fx` and applies the same filters as the overview table. */
 export async function fetchMarketCatalogSnapshot(params: {
   category?: MarketCategory
@@ -591,11 +798,15 @@ export async function fetchMarketCatalogSnapshot(params: {
     ...normalizeFxRows(fxResponseItems),
     ]),
   ])
-  const normalizedRowsWithInstrumentId: CatalogRow[] = normalizedRows.map((row) => ({
-    ...row,
-    name: instrumentMetadataBySymbol[row.symbol]?.name ?? row.name,
-    instrumentId: instrumentMetadataBySymbol[row.symbol]?.id ?? null,
-  }))
+  const normalizedRowsWithInstrumentId: CatalogRow[] = normalizedRows.map((row) => {
+    const meta = resolveInstrumentMeta(row.symbol, instrumentMetadataBySymbol)
+    return {
+      ...row,
+      name: meta?.name ?? row.name,
+      instrumentId: meta?.id ?? null,
+      listedExchange: meta?.exchange ?? null,
+    }
+  })
   const filteredByCategory = filterRowsByCategory(normalizedRowsWithInstrumentId, category)
   const filteredBySearch = query
     ? filteredByCategory.filter((row) => row.symbol.includes(query.toUpperCase()))
@@ -628,7 +839,7 @@ export async function buildMarketOverviewFromCatalog(
   if (sortMetricField === 'displayAmount') {
     const hub = buildFxTryHub(fxResponseItems)
     rowsForSort = rowsForSort.map((r) => {
-      const nq = inferNativeQuote(r.symbol, r.category ?? null)
+      const nq = inferNativeQuote(r.symbol, r.category ?? null, r.source, r.listedExchange)
       const amt =
         hub != null ? convertToDisplayCurrency(r.price ?? 0, nq, displayCurrency, hub) : null
       return { ...r, [SORT_DISPLAY_AMOUNT_KEY]: amt }
@@ -637,7 +848,9 @@ export async function buildMarketOverviewFromCatalog(
 
   rowsForSort = enrichContextualTrendScores(rowsForSort)
 
-  const sorted = sortMarketOverviewRows(rowsForSort, sort)
+  const sortOptions: MarketOverviewSortOptions | undefined =
+    params.category === 'funds' ? { groupCanonicalFundsFirst: true } : undefined
+  const sorted = sortMarketOverviewRows(rowsForSort, sort, sortOptions)
 
   const safePage = Math.max(params.page, 0)
   const safeSize = Math.max(params.size, 1)
@@ -674,7 +887,7 @@ export async function buildMarketOverviewFromCatalog(
     const summary = rowUsesFxHistory(row as CatalogRow)
       ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
       : summaryBySymbol[row.symbol] ?? {}
-    const nativeQuote = inferNativeQuote(row.symbol, row.category ?? null)
+    const nativeQuote = inferNativeQuote(row.symbol, row.category ?? null, row.source, row.listedExchange)
     const displayAmount =
       fxHub != null ? convertToDisplayCurrency(row.price ?? 0, nativeQuote, displayCurrency, fxHub) : null
     return {
@@ -684,7 +897,7 @@ export async function buildMarketOverviewFromCatalog(
       nativeQuote,
       displayAmount,
       timestamp: row.timestamp ?? null,
-      freshness: row.freshness ?? 'STALE',
+      freshness: row.freshness ?? 'LIVE',
       change24h: summary.change1D ?? 0,
       change1D: summary.change1D ?? 0,
       change1M: summary.change1M ?? 0,
@@ -710,20 +923,12 @@ export async function buildMarketOverviewFromCatalog(
 }
 
 export async function fetchMarketOverview(params: FetchMarketsParams): Promise<MarketOverviewPageResponse> {
-  const snapshot = await fetchMarketCatalogSnapshot({
-    category: params.category,
-    query: params.query,
-  })
-  return buildMarketOverviewFromCatalog(snapshot, params)
+  return fetchMarketOverviewPage(params)
 }
 
 export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
-  const snapshot = await fetchMarketCatalogSnapshot({
-    category: 'all',
-    query: '',
-  })
   const [gainersPage, losersPage] = await Promise.all([
-    buildMarketOverviewFromCatalog(snapshot, {
+    fetchMarketOverviewPage({
       page: 0,
       size: 5,
       category: 'all',
@@ -731,7 +936,7 @@ export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
       sort: 'change1D,desc',
       displayCurrency: 'USD',
     }),
-    buildMarketOverviewFromCatalog(snapshot, {
+    fetchMarketOverviewPage({
       page: 0,
       size: 5,
       category: 'all',
@@ -864,10 +1069,44 @@ function syntheticTryFxFundamentals(symbol: string): InstrumentFundamentals {
   }
 }
 
+/** TEFAS instruments are NAV-based; equity fundamentals APIs return 404 — use a stable placeholder instead of calling MDS. */
+function isCanonicalTefasFundSymbol(symbol: string): boolean {
+  const s = symbol.trim().toUpperCase()
+  return s.startsWith('FUND_') && s.length > 'FUND_'.length
+}
+
+function syntheticTefasFundFundamentals(symbol: string): InstrumentFundamentals {
+  const s = symbol.trim().toUpperCase()
+  const code = s.startsWith('FUND_') ? s.slice('FUND_'.length) : s
+  return {
+    symbol: s,
+    provider: 'INTERNAL_META',
+    providerSymbol: s,
+    companyName: `${code} (TEFAS)`,
+    country: 'TR',
+    currency: 'TRY',
+    exchange: 'TEFAS',
+    ipoDate: null,
+    industry: 'Investment Fund',
+    website: null,
+    marketCapitalization: null,
+    sharesOutstanding: null,
+    peTtm: null,
+    epsTtm: null,
+    fetchedAt: new Date().toISOString(),
+    cacheHit: false,
+    annualStatements: [],
+  }
+}
+
 export async function fetchInstrumentFundamentals(symbol: string, forceRefresh = false): Promise<InstrumentFundamentals> {
   if (isTryFxFundamentalsLocal(symbol)) {
     void forceRefresh
     return syntheticTryFxFundamentals(symbol)
+  }
+  if (isCanonicalTefasFundSymbol(symbol)) {
+    void forceRefresh
+    return syntheticTefasFundFundamentals(symbol)
   }
   const response = await apiClient.get<InstrumentFundamentals>(`/api/market/instruments/${encodeURIComponent(symbol.trim())}/fundamentals`, {
     params: { forceRefresh },

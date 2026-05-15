@@ -3,6 +3,7 @@ package com.company.marketdataservice.service.historical;
 import com.company.marketdataservice.event.FundSnapshotUpdatedEvent;
 import com.company.marketdataservice.event.FxSnapshotUpdatedEvent;
 import com.company.marketdataservice.event.MarketPriceUpdatedEvent;
+import com.company.marketdataservice.config.FundMarketProperties;
 import com.company.marketdataservice.config.MarketHistoryBackfillProperties;
 import com.company.marketdataservice.historical.HistoricalFundPoint;
 import com.company.marketdataservice.historical.HistoricalFundProvider;
@@ -47,6 +48,7 @@ public class HistoricalBackfillService {
     private final FxHistoryWriteService fxHistoryWriteService;
     private final FundHistoryWriteService fundHistoryWriteService;
     private final MarketHistoryBackfillProperties backfillProperties;
+    private final FundMarketProperties fundMarketProperties;
     private final List<HistoricalPriceProvider> historicalPriceProviders;
     private final List<HistoricalFxProvider> historicalFxProviders;
     private final List<HistoricalFundProvider> historicalFundProviders;
@@ -61,6 +63,7 @@ public class HistoricalBackfillService {
             FxHistoryWriteService fxHistoryWriteService,
             FundHistoryWriteService fundHistoryWriteService,
             MarketHistoryBackfillProperties backfillProperties,
+            FundMarketProperties fundMarketProperties,
             List<HistoricalPriceProvider> historicalPriceProviders,
             List<HistoricalFxProvider> historicalFxProviders,
             List<HistoricalFundProvider> historicalFundProviders
@@ -71,6 +74,7 @@ public class HistoricalBackfillService {
         this.fxHistoryWriteService = fxHistoryWriteService;
         this.fundHistoryWriteService = fundHistoryWriteService;
         this.backfillProperties = backfillProperties;
+        this.fundMarketProperties = fundMarketProperties;
         this.historicalPriceProviders = historicalPriceProviders;
         this.historicalFxProviders = historicalFxProviders;
         this.historicalFundProviders = historicalFundProviders;
@@ -259,7 +263,9 @@ public class HistoricalBackfillService {
                 .map(chunk -> chunk.getWindowEnd() == null ? null : chunk.getWindowEnd().plus(1, ChronoUnit.MILLIS))
                 .orElse(state.getLastFetchedAt());
         if (checkpoint == null) {
-            return today.minusYears(effectiveBackfillYears());
+            int years =
+                    "FUND".equalsIgnoreCase(assetType) ? effectiveFundBackfillYears() : effectiveBackfillYears();
+            return today.minusYears(years);
         }
         return checkpoint.atZone(ZoneOffset.UTC).toLocalDate();
     }
@@ -286,6 +292,14 @@ public class HistoricalBackfillService {
             return 10;
         }
         return years;
+    }
+
+    private int effectiveFundBackfillYears() {
+        int years = fundMarketProperties.getHistoricalNavBackfillYears();
+        if (years <= 0) {
+            return 1;
+        }
+        return Math.min(years, 10);
     }
 
     private int effectiveChunkDays() {
@@ -410,8 +424,13 @@ public class HistoricalBackfillService {
     }
 
     private void executeFundChunk(String fundCode, String chunkExecutionKey, LocalDate chunkStart, LocalDate chunkEnd) {
+        boolean anyData = false;
         for (HistoricalFundProvider provider : historicalFundProviders) {
             List<HistoricalFundPoint> points = provider.fetchRange(fundCode, chunkStart, chunkEnd);
+            if (points == null || points.isEmpty()) {
+                continue;
+            }
+            anyData = true;
             List<FundSnapshotUpdatedEvent> events = new ArrayList<>();
             for (HistoricalFundPoint p : points) {
                 events.add(new FundSnapshotUpdatedEvent(
@@ -424,6 +443,11 @@ public class HistoricalBackfillService {
                 ));
             }
             fundHistoryWriteService.saveBatch(events);
+        }
+        if (!anyData) {
+            throw new IllegalStateException(
+                    "No historical data returned for symbol=" + fundCode + " window=" + chunkStart + ".." + chunkEnd
+            );
         }
     }
 

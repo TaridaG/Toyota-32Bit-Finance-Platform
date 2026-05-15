@@ -2,17 +2,21 @@ package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.dto.AcquisitionFxRatesSnapshot;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.service.CurrencyConversionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -31,6 +35,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * <b>Fallback:</b> If the TRY bridge is incomplete, the legacy USD triangle ({@code EURUSD}, {@code GBPUSD},
  * {@code JPYUSD}, {@code USDTRY}) is used. If both fail, {@link #convert} returns {@code null} (callers must
  * not treat foreign-currency magnitudes as already converted).
+ * <p>
+ * <b>JPY conventions:</b> TCMB often publishes {@code JPYTRY} as <strong>TRY per 100 JPY</strong>; we normalize to
+ * TRY per 1 JPY (any raw {@code > 1} is treated as the per-100 scale). {@code JPYUSD} may appear as
+ * <strong>JPY per 1 USD</strong> (large number); the hub expects <strong>USD per 1 JPY</strong> and inverts when
+ * {@code > 10}. Some feeds also store <strong>USD per 100 JPY</strong> (~0.66); values between {@code 0.03} and
+ * {@code 1} are re-scaled by {@code ÷100}.
  */
 @Service
 public class CurrencyConversionServiceImpl implements CurrencyConversionService {
@@ -52,22 +62,79 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
     private static final Duration RATE_CACHE_TTL = Duration.ofSeconds(5);
     private static final List<PriceType> RATE_PRICE_TYPES = List.of(PriceType.FX_MID, PriceType.MARKET, PriceType.FUND_NAV);
 
+    /**
+     * TCMB / EVDS often ship {@code JPYTRY} as TRY per 100 JPY; the TRY hub expects TRY per 1 JPY.
+     * {@code JPYUSD} may be JPY per USD (invert) or USD per 100 JPY (÷100); chain paths expect USD per 1 JPY.
+     */
+    static BigDecimal normalizeFxMidForTryHub(String symbol, BigDecimal raw) {
+        if (raw == null || raw.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+        if ("JPYTRY".equals(symbol)) {
+            // TCMB / EVDS: TRY per 100 JPY is typically ~15–40; TRY per 1 JPY is ~0.15–0.45. Never > 1 for real JPY.
+            if (raw.compareTo(BigDecimal.ONE) > 0) {
+                return raw.divide(BigDecimal.valueOf(100), 12, RoundingMode.HALF_UP);
+            }
+            return raw;
+        }
+        if ("JPYUSD".equals(symbol)) {
+            BigDecimal r = raw;
+            if (r.compareTo(BigDecimal.TEN) > 0) {
+                r = BigDecimal.ONE.divide(r, 12, RoundingMode.HALF_UP);
+            }
+            // USD per 100 JPY mis-stored as USD per 1 JPY (~0.66 vs ~0.0066).
+            if (r.compareTo(new BigDecimal("0.03")) > 0 && r.compareTo(BigDecimal.ONE) < 0) {
+                r = r.divide(BigDecimal.valueOf(100), 12, RoundingMode.HALF_UP);
+            }
+            return r;
+        }
+        return raw;
+    }
+
     private final InstrumentRepository instrumentRepository;
     private final InstrumentPriceRepository instrumentPriceRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     private final Map<String, BigDecimal> cachedRates = new ConcurrentHashMap<>();
     private volatile Instant cacheExpiresAt = Instant.EPOCH;
 
     public CurrencyConversionServiceImpl(
             InstrumentRepository instrumentRepository,
-            InstrumentPriceRepository instrumentPriceRepository
+            InstrumentPriceRepository instrumentPriceRepository,
+            JdbcTemplate jdbcTemplate
     ) {
         this.instrumentRepository = instrumentRepository;
         this.instrumentPriceRepository = instrumentPriceRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public BigDecimal convert(BigDecimal price, String from, String to) {
+        return convertUsingHub(getRatesSnapshot(), price, from, to);
+    }
+
+    @Override
+    public BigDecimal convertAt(Instant fxAsOfEndExclusive, BigDecimal price, String from, String to) {
+        return convertUsingHub(loadMdsFxHubAt(fxAsOfEndExclusive), price, from, to);
+    }
+
+    @Override
+    public AcquisitionFxRatesSnapshot acquisitionFxHubSnapshot(Instant fxAsOfEndExclusive, boolean historical) {
+        Map<String, BigDecimal> rates = historical ? loadMdsFxHubAt(fxAsOfEndExclusive) : getRatesSnapshot();
+        return new AcquisitionFxRatesSnapshot(
+                fxAsOfEndExclusive.toString(),
+                rates.get("USDTRY"),
+                rates.get("EURTRY"),
+                rates.get("GBPTRY"),
+                rates.get("JPYTRY"),
+                rates.get("AEDTRY"),
+                rates.get("EURUSD"),
+                rates.get("GBPUSD"),
+                rates.get("JPYUSD")
+        );
+    }
+
+    private BigDecimal convertUsingHub(Map<String, BigDecimal> rates, BigDecimal price, String from, String to) {
         if (price == null) {
             return null;
         }
@@ -76,8 +143,6 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
         if (source.equals(target)) {
             return price;
         }
-
-        Map<String, BigDecimal> rates = getRatesSnapshot();
 
         BigDecimal viaTry = convertThroughTryHub(price, source, target, rates);
         if (viaTry != null) {
@@ -126,8 +191,9 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
             Map<String, BigDecimal> next = new ConcurrentHashMap<>();
             for (String symbol : RATE_SYMBOL_LOAD_ORDER) {
                 resolveLatestFxRate(symbol).ifPresent(rate -> {
-                    if (rate.compareTo(BigDecimal.ZERO) > 0) {
-                        next.put(symbol, rate);
+                    BigDecimal n = normalizeFxMidForTryHub(symbol, rate);
+                    if (n != null && n.compareTo(BigDecimal.ZERO) > 0) {
+                        next.put(symbol, n);
                     }
                 });
             }
@@ -136,6 +202,36 @@ public class CurrencyConversionServiceImpl implements CurrencyConversionService 
             cacheExpiresAt = Instant.now().plus(RATE_CACHE_TTL);
             return cachedRates;
         }
+    }
+
+    private Map<String, BigDecimal> loadMdsFxHubAt(Instant fxAsOfEndExclusive) {
+        Map<String, BigDecimal> next = new HashMap<>();
+        for (String symbol : RATE_SYMBOL_LOAD_ORDER) {
+            queryMdsFxMidAtOrBefore(symbol, fxAsOfEndExclusive).ifPresent(rate -> {
+                BigDecimal n = normalizeFxMidForTryHub(symbol, rate);
+                if (n != null && n.compareTo(BigDecimal.ZERO) > 0) {
+                    next.put(symbol, n);
+                }
+            });
+        }
+        return next;
+    }
+
+    private Optional<BigDecimal> queryMdsFxMidAtOrBefore(String canonicalSymbol, Instant target) {
+        String sql = """
+                SELECT mid
+                FROM public.mds_fx_rate_history
+                WHERE canonical_symbol = ?
+                  AND observed_at <= CAST(? AS TIMESTAMPTZ)
+                ORDER BY observed_at DESC, id DESC
+                LIMIT 1
+                """;
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next() ? Optional.of(rs.getBigDecimal(1)) : Optional.empty(),
+                canonicalSymbol,
+                Timestamp.from(target)
+        );
     }
 
     private Optional<BigDecimal> resolveLatestFxRate(String symbol) {

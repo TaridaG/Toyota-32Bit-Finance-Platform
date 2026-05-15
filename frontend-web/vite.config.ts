@@ -53,6 +53,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        '/api/rates': {
+          target: marketTarget,
+          changeOrigin: true,
+          secure: false,
+        },
         '/api': {
           target: financeTarget,
           changeOrigin: true,

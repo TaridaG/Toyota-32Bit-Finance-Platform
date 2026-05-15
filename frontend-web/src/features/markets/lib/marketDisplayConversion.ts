@@ -73,9 +73,16 @@ export function buildFxTryHub(fxItems: FxMidRow[]): FxTryHub | null {
   }
 }
 
-export function inferNativeQuote(symbol: string, category: string | null | undefined): NativeQuote {
+export function inferNativeQuote(
+  symbol: string,
+  category: string | null | undefined,
+  source?: string | null,
+  listedExchange?: string | null,
+): NativeQuote {
   const cat = (category ?? 'STOCK').toUpperCase()
   const s = symbol.trim().toUpperCase()
+  const src = (source ?? '').trim().toUpperCase()
+  const ex = (listedExchange ?? '').trim().toUpperCase()
 
   if (cat === 'CRYPTO') {
     return 'USD'
@@ -87,9 +94,14 @@ export function inferNativeQuote(symbol: string, category: string | null | undef
     return 'USD'
   }
   if (cat === 'FUND') {
-    return 'USD'
+    return s.startsWith('FUND_') ? 'TRY' : 'USD'
   }
   if (cat === 'STOCK') {
+    if (ex === 'BIST' || ex === 'TEFAS') return 'TRY'
+    if (ex === 'NASDAQ' || ex === 'FINNHUB' || ex === 'BINANCE') return 'USD'
+    if (src === 'YAHOO') return 'TRY'
+    if (src === 'FINNHUB') return 'USD'
+    if (s.endsWith('.IS')) return 'TRY'
     return BIST_TRY_QUOTED_SYMBOLS.has(s) ? 'TRY' : 'USD'
   }
   if (cat === 'METAL' && s.endsWith('TRY')) {

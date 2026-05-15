@@ -1,5 +1,23 @@
 # Used with Spring profile "docker" (see Docker Compose for finance-api).
 # JWT verified via in-cluster JWKS; token iss hostname may still be localhost:8080/8085 for browsers.
+#
+# TR USD Eurobond Yahoo ingest: GTUSDTR*:GOV is often 404 from container IPs; use liquid USD bond ETF proxies
+# plus normalize-chart-to-bond-price-window (94–106) so UI/coupon math stay bond-like. Not OTC ISIN prices.
+market:
+  tr-usd-eurobond-yahoo:
+    enabled: ${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:true}
+    normalize-chart-to-bond-price-window: true
+    normalize-target-low: 94
+    normalize-target-high: 106
+    instruments:
+      - isin: US900123AL40
+        yahoo-chart-symbol: "EMB"
+      - isin: US900123AT75
+        yahoo-chart-symbol: "VWOB"
+      - isin: US900123AY60
+        yahoo-chart-symbol: "PCY"
+      - isin: US900123CM05
+        yahoo-chart-symbol: "TLT"
 app:
   profile-avatar:
     # Persist across container restarts by mounting this path as a volume.

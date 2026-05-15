@@ -128,6 +128,7 @@ function isPublicDataOrAuthUrl(url: string): boolean {
   return (
     url.includes('/api/public/') ||
     url.includes('/api/market') ||
+    url.includes('/api/rates') ||
     isPublicNewsCatalogUrl(url) ||
     url.includes('/api/instruments') ||
     url.includes('/api/analytics')
@@ -144,15 +145,29 @@ function isPublicAnonymousApiRequest(config: { baseURL?: string; url?: string })
   )
 }
 
+function requestPathForPublicRule(config: { baseURL?: string; url?: string }): string {
+  const raw = `${config.baseURL ?? ''}${config.url ?? ''}`
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      return new URL(raw).pathname
+    }
+  } catch {
+    /* ignore */
+  }
+  return raw
+}
+
 /** Public catalog GETs: never send Bearer (stale JWT breaks gateway/resource-server before permitAll). */
 function isPublicCatalogGetRequest(config: InternalAxiosRequestConfig): boolean {
   const method = (config.method ?? 'get').toLowerCase()
   if (method !== 'get') {
     return false
   }
-  const path = (config.baseURL ?? '') + (config.url ?? '')
+  const path = requestPathForPublicRule(config)
   return (
     path.includes('/api/market') ||
+    path.includes('/api/rates') ||
+    path.includes('api/rates') ||
     isPublicNewsCatalogUrl(path) ||
     path.includes('/api/instruments') ||
     path.includes('/api/analytics')

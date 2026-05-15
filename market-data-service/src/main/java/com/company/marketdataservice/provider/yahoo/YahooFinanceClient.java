@@ -8,8 +8,10 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.Locale;
 
 @Component
@@ -75,10 +77,8 @@ public class YahooFinanceClient {
 
     private YahooFinanceResponse fetchChart(String symbol, String range, String interval) {
         String normalized = normalizeSymbol(symbol);
-        String path = properties.getChartPathTemplate().replace("{symbol}", normalized);
         String base = properties.getBaseUrl().replaceAll("/+$", "");
-        String fullPath = path.startsWith("/") ? path : "/" + path;
-        String uri = base + fullPath + "?range=" + range + "&interval=" + interval;
+        URI uri = chartUri(base, normalized, range, interval);
 
         try {
             return yahooStockWebClient.get()
@@ -102,6 +102,31 @@ public class YahooFinanceClient {
         } catch (Exception ex) {
             throw new IllegalStateException("Yahoo request failed symbol=" + normalized, ex);
         }
+    }
+
+    /**
+     * Builds a chart URI with each path segment encoded (required for symbols like {@code GTUSDTR5Y:GOV}).
+     */
+    private URI chartUri(String baseUrl, String normalizedSymbol, String range, String interval) {
+        String tpl = properties.getChartPathTemplate().trim();
+        if (tpl.isEmpty()) {
+            tpl = "/v8/finance/chart/{symbol}";
+        }
+        if (!tpl.startsWith("/")) {
+            tpl = "/" + tpl;
+        }
+        UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        for (String segment : tpl.split("/")) {
+            if (segment.isEmpty()) {
+                continue;
+            }
+            if ("{symbol}".equals(segment)) {
+                b.pathSegment(normalizedSymbol);
+            } else {
+                b.pathSegment(segment);
+            }
+        }
+        return b.queryParam("range", range).queryParam("interval", interval).encode().build().toUri();
     }
 
     private static String normalizeSymbol(String symbol) {

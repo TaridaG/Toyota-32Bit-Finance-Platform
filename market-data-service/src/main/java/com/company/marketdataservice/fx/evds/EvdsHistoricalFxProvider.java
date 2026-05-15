@@ -18,6 +18,7 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -111,6 +112,9 @@ public class EvdsHistoricalFxProvider implements HistoricalFxProvider {
                 );
                 if (mid == null) {
                     continue;
+                }
+                if ("JPYTRY".equals(canonical)) {
+                    mid = mid.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
                 }
 
                 BigDecimal spread = mid.multiply(new BigDecimal("0.001"));
@@ -260,6 +264,12 @@ public class EvdsHistoricalFxProvider implements HistoricalFxProvider {
                 }
                 BigDecimal mid = bid.add(ask).divide(new BigDecimal("2"), 6, java.math.RoundingMode.HALF_UP);
                 Instant observedAt = day.atStartOfDay().toInstant(ZoneOffset.UTC);
+                // TCMB lists JPY as TRY per 100 JPY; our canonical hub uses TRY per 1 JPY (same as other crosses).
+                if ("JPYTRY".equals(canonical)) {
+                    bid = bid.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
+                    ask = ask.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
+                    mid = mid.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
+                }
                 return new HistoricalFxPoint(
                         canonical,
                         null,

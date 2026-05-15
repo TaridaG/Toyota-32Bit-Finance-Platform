@@ -36,7 +36,9 @@ type PublicNavItem = {
 }
 
 const appNavItems: AppNavItem[] = [
+  { to: '/app/bank-rates', labelKey: 'header.navApp.bankRates' },
   { to: '/app/markets', labelKey: 'header.navApp.markets' },
+  { to: '/app/faiz-vadeli', labelKey: 'header.navApp.faizVadeli' },
   { to: '/app/my-portfolio', labelKey: 'header.navApp.myPortfolio' },
   { to: '/app/analysis', labelKey: 'header.navApp.analysis' },
   { to: '/app/news', labelKey: 'header.navPublic.news' },

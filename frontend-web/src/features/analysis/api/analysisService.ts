@@ -341,7 +341,7 @@ function shouldUseHistoryFallback(points: CandlePoint[], range: AnalysisRange): 
 async function candlesFromMarketHistory(
   symbol: string,
   range: AnalysisRange,
-  windowFromTs: number,
+  _windowFromTs: number,
   windowToTs: number,
   kind: AnalysisHistoryKind,
 ): Promise<CandlePoint[]> {

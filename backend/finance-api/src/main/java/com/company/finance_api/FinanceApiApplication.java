@@ -1,5 +1,6 @@
 package com.company.finance_api;
 
+import com.company.finance_api.config.MarketTrUsdEurobondYahooProperties;
 import com.company.finance_api.config.ProfileAvatarProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@EnableConfigurationProperties(ProfileAvatarProperties.class)
+@EnableConfigurationProperties({ProfileAvatarProperties.class, MarketTrUsdEurobondYahooProperties.class})
 public class FinanceApiApplication {
 
 	public static void main(String[] args) {

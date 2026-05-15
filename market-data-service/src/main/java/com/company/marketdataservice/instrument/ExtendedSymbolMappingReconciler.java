@@ -15,6 +15,9 @@ public class ExtendedSymbolMappingReconciler {
 
     private static final List<String> FINNHUB_FUNDS = List.of("VOO", "VTI", "QQQ", "IVV", "SPY");
     private static final List<String> TCMB_BONDS = List.of("TRBOND1Y", "TRBOND2Y", "TRBOND3Y", "TRBOND5Y", "TRBOND10Y");
+    /** Turkey USD sovereign benchmark yields (Yahoo chart tickers GTUSDTR*Y:GOV). */
+    private static final List<String> TR_GOV_USD_EUROBONDS =
+            List.of("TRGOVUSD1Y", "TRGOVUSD2Y", "TRGOVUSD3Y", "TRGOVUSD4Y", "TRGOVUSD5Y", "TRGOVUSD6Y", "TRGOVUSD8Y", "TRGOVUSD15Y");
     private static final List<String> TCMB_METALS = List.of("XAUTRY", "XAGTRY", "XPTTRY", "XPDTRY", "XCUTRY");
     private static final List<String> YAHOO_METAL_FUTURES = List.of("GC=F", "SI=F", "HG=F", "PA=F", "PL=F");
 
@@ -35,6 +38,10 @@ public class ExtendedSymbolMappingReconciler {
         for (String symbol : TCMB_BONDS) {
             applied += upsertCatalog(symbol, "TRY");
             applied += upsertProviderMapping(symbol, "TCMB_BOND");
+        }
+        for (String symbol : TR_GOV_USD_EUROBONDS) {
+            applied += upsertCatalog(symbol, "USD");
+            applied += upsertProviderMapping(symbol, "YAHOO");
         }
         for (String symbol : TCMB_METALS) {
             applied += upsertCatalog(symbol, "TRY");

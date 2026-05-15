@@ -15,3 +15,19 @@ spring:
     enabled: true
     table: mds_flyway_schema_history
     locations: classpath:db/migration
+
+market:
+  fund:
+    # Docker stack: keep TEFAS NAVs fresh (default application.yml has this false for bare-metal dev).
+    scheduler-enabled: true
+    scheduler-initial-delay-ms: 120000
+    nav-gap-repair:
+      enabled: true
+      initial-delay-ms: 900000
+      fixed-delay-ms: 86400000
+    historical-nav-backfill-years: 1
+    nav-history-bootstrap:
+      # After stack is up, persist ~1y TEFAS NAV rows for tracked-funds into mds_fund_nav_history (Kafka skipped).
+      enabled: ${MARKET_FUND_NAV_HISTORY_BOOTSTRAP_ENABLED:false}
+      delay-ms: ${MARKET_FUND_NAV_HISTORY_BOOTSTRAP_DELAY_MS:90000}
+      lookback-days: ${MARKET_FUND_NAV_HISTORY_LOOKBACK_DAYS:365}

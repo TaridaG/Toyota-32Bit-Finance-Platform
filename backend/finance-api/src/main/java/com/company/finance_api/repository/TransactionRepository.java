@@ -15,6 +15,9 @@ import java.util.List;
 public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
 
     List<Transaction> findByUserOrderByCreatedAtDesc(User user);
+
+    List<Transaction> findByUserOrderByCreatedAtAsc(User user);
+
     List<Transaction> findByUserAndExternalPortfolioOrderByCreatedAtDesc(User user, ExternalPortfolio externalPortfolio);
     List<Transaction> findByUserAndExternalPortfolioOrderByCreatedAtAsc(User user, ExternalPortfolio externalPortfolio);
     List<Transaction> findByUserAndInstrument(User user, Instrument instrument);
