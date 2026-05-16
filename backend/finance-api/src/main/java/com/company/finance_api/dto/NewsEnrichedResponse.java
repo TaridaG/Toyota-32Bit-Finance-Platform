@@ -17,6 +17,7 @@ public record NewsEnrichedResponse(
         Instant publishedAt,
         String sentiment,
         List<String> relatedSymbols,
+        List<String> topicTags,
         BigDecimal reactionPercent1h
         ) {
 

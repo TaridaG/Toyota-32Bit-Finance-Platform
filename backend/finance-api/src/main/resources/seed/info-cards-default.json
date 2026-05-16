@@ -1,0 +1,1687 @@
+[
+  {
+    "title": "Getiri",
+    "slug": "getiri",
+    "targetTerms": [
+      "Getiri",
+      "getiri",
+      "performans"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "ANALYSIS",
+      "SIMULATION"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Bir yatırımın belirli bir dönemde sağladığı kazanç oranı veya tutarıdır.",
+    "detailedDescription": "Getiri; fiyat artışı, faiz, temettü veya kur farkı gibi kaynaklardan oluşabilir. Portalda performans karşılaştırmalarının temel ölçüsüdür.",
+    "howToInterpret": "Yüzde getiri, başlangıç değerine göre değişimi gösterir. Dönem uzunluğu (günlük, aylık, yıllık) mutlaka birlikte okunmalıdır.",
+    "commonMistake": "Kısa vadede yüksek getiriyi uzun vadeli sürdürülebilir performans sanmak.",
+    "example": "",
+    "relatedTerms": [
+      "Nominal getiri",
+      "Reel getiri",
+      "Risk",
+      "Volatilite"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Risk",
+    "slug": "risk",
+    "targetTerms": [
+      "Risk",
+      "risk"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "MARKETS"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Beklenen getirinin gerçekleşmeme veya kayıpla sonuçlanma olasılığıdır.",
+    "detailedDescription": "Risk; volatilite, likidite ve kredi riski gibi boyutlarda ölçülür. Portföy dağılımı riski yönetmenin temel aracıdır.",
+    "howToInterpret": "Yüksek risk potansiyel olarak daha yüksek getiri sunabilir; ancak dalgalanma ve kayıp olasılığı da artar.",
+    "commonMistake": "Riski yalnızca “kaybetme” olarak görmek; likidite ve kur riskini ihmal etmek.",
+    "example": "",
+    "relatedTerms": [
+      "Volatilite",
+      "Likidite",
+      "Portföy"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Likidite",
+    "slug": "likidite",
+    "targetTerms": [
+      "Likidite",
+      "likidite"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "PORTFOLIO"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Bir varlığın hızlı ve düşük maliyetle nakde çevrilebilme özelliğidir.",
+    "detailedDescription": "Bir varlığın hızlı ve düşük maliyetle nakde çevrilebilme özelliğidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Likidite yüksekse alım-satım farkı (spread) genelde daralır; düşük likiditede fiyat kayması riski artar.",
+    "commonMistake": "Az işlem gören varlıklarda büyük emir vermek.",
+    "example": "",
+    "relatedTerms": [
+      "Spread",
+      "Volatilite"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Faiz",
+    "slug": "faiz",
+    "targetTerms": [
+      "Faiz",
+      "faiz"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "FAIZ_VADELI",
+      "TURKEY_ECONOMY"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Paranın belirli bir süre için kullanımı karşılığında ödenen veya kazanılan orandır.",
+    "detailedDescription": "Paranın belirli bir süre için kullanımı karşılığında ödenen veya kazanılan orandır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Faiz oranı yükseldikçe borçlanma maliyeti artar; mevduat ve tahvil getirileri genelde yükselme eğilimindedir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Politika faizi",
+      "Mevduat faizi",
+      "Reel faiz"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Nominal değer",
+    "slug": "nominal-deger",
+    "targetTerms": [
+      "Nominal değer",
+      "nominal"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "SIMULATION"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Enflasyon düzeltmesi yapılmamış, para birimi cinsinden ifade edilen tutardır.",
+    "detailedDescription": "Enflasyon düzeltmesi yapılmamış, para birimi cinsinden ifade edilen tutardır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Nominal artış, alım gücü artışı anlamına gelmeyebilir; reel değerle birlikte okunmalıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Reel değer",
+      "TÜFE Endeksi",
+      "Enflasyon"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Reel değer",
+    "slug": "reel-deger",
+    "targetTerms": [
+      "Reel değer",
+      "reel"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "SIMULATION",
+      "TURKEY_ECONOMY"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Enflasyon etkisinden arındırılmış, alım gücü cinsinden ifade edilen tutardır.",
+    "detailedDescription": "Enflasyon etkisinden arındırılmış, alım gücü cinsinden ifade edilen tutardır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Reel değer düşüyorsa nominal tutar artsa bile alım gücü zayıflıyor olabilir.",
+    "commonMistake": "Nominal kazancı doğrudan “gerçek kazanç” sanmak.",
+    "example": "",
+    "relatedTerms": [
+      "Reel getiri",
+      "TÜFE Endeksi",
+      "Alım gücü"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Alım gücü",
+    "slug": "alim-gucu",
+    "targetTerms": [
+      "Alım gücü",
+      "alim gucu"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "SIMULATION"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Belirli bir gelir veya birikimle satın alınabilen mal ve hizmet miktarıdır.",
+    "detailedDescription": "Belirli bir gelir veya birikimle satın alınabilen mal ve hizmet miktarıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Enflasyon yükseldikçe aynı nominal tutar daha az mal alır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "Reel getiri",
+      "Enflasyon"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Spread",
+    "slug": "spread",
+    "targetTerms": [
+      "Spread",
+      "spread"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "BANK_RATES"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Alış ve satış fiyatı arasındaki farktır.",
+    "detailedDescription": "Alış ve satış fiyatı arasındaki farktır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Spread genişledikçe işlem maliyeti artar; dar spread daha likit piyasa işaretidir.",
+    "commonMistake": "Yalnızca orta fiyata bakıp spread maliyetini hesaba katmamak.",
+    "example": "",
+    "relatedTerms": [
+      "Likidite",
+      "Döviz",
+      "Efektif kur"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Volatilite",
+    "slug": "volatilite",
+    "targetTerms": [
+      "Volatilite",
+      "volatilite"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "ANALYSIS"
+    ],
+    "category": "BASIC_FINANCE",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Fiyatların zaman içindeki dalgalanma derecesidir.",
+    "detailedDescription": "Fiyatların zaman içindeki dalgalanma derecesidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Yüksek volatilite hem yükseliş hem düşüş fırsatı taşır; risk yönetimi önem kazanır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Risk",
+      "Mum grafik"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Hisse senedi",
+    "slug": "hisse-senedi",
+    "targetTerms": [
+      "Hisse senedi",
+      "hisse",
+      "bist"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "PORTFOLIO"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Bir şirketin ortaklık payını temsil eden menkul kıymettir.",
+    "detailedDescription": "Bir şirketin ortaklık payını temsil eden menkul kıymettir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Hisse fiyatı şirket performansı, sektör ve genel piyasa beklentilerinden etkilenir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "BIST",
+      "P&L",
+      "Volatilite"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "BIST",
+    "slug": "bist",
+    "targetTerms": [
+      "BIST",
+      "bist"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Borsa İstanbul’da işlem gören pay piyasası ve endekslerinin genel adıdır.",
+    "detailedDescription": "Borsa İstanbul’da işlem gören pay piyasası ve endekslerinin genel adıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "BIST endeksleri piyasanın genel yönünü özetler; tek hisse performansından ayrı okunmalıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Hisse senedi",
+      "Isı haritası"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Döviz",
+    "slug": "doviz",
+    "targetTerms": [
+      "Döviz",
+      "doviz",
+      "fx"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "BANK_RATES"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Yabancı para birimlerinin TL veya başka para birimleri karşısındaki değeridir.",
+    "detailedDescription": "Yabancı para birimlerinin TL veya başka para birimleri karşısındaki değeridir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Kur hareketleri ithalat, enflasyon ve portföy çeşitlendirmesini etkileyebilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Efektif kur",
+      "Spread"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Efektif kur",
+    "slug": "efektif-kur",
+    "targetTerms": [
+      "Efektif kur",
+      "efektif"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "BANK_RATES"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Nakit döviz alım-satımında uygulanan işlem kurlarıdır.",
+    "detailedDescription": "Nakit döviz alım-satımında uygulanan işlem kurlarıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Efektif alış ve satış kurları arasındaki fark spread olarak yansır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Döviz",
+      "Spread"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Gram altın",
+    "slug": "gram-altin",
+    "targetTerms": [
+      "Gram altın",
+      "altin"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Türkiye piyasasında gram bazında fiyatlanan altın gösterimidir.",
+    "detailedDescription": "Türkiye piyasasında gram bazında fiyatlanan altın gösterimidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Gram altın fiyatı ons altın ve kur hareketlerinden etkilenir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Ons altın",
+      "Döviz"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Ons altın",
+    "slug": "ons-altin",
+    "targetTerms": [
+      "Ons altın",
+      "altin",
+      "ons"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Uluslararası piyasalarda troy ons cinsinden işlem gören altın referans fiyatıdır.",
+    "detailedDescription": "Uluslararası piyasalarda troy ons cinsinden işlem gören altın referans fiyatıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Ons fiyatı küresel risk iştahı ve dolar endeksiyle ilişkilidir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Gram altın"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Kripto varlık",
+    "slug": "kripto-varlik",
+    "targetTerms": [
+      "Kripto varlık",
+      "kripto"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Blok zinciri tabanlı, dijital olarak saklanan ve işlem gören varlıklardır.",
+    "detailedDescription": "Blok zinciri tabanlı, dijital olarak saklanan ve işlem gören varlıklardır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Kripto varlıklar yüksek volatilite ve düzenleyici belirsizlik taşıyabilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Volatilite",
+      "Risk"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Fon",
+    "slug": "fon",
+    "targetTerms": [
+      "Fon",
+      "fon"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "PORTFOLIO"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Birden fazla varlığa yatırım yapan kolektif yatırım aracıdır.",
+    "detailedDescription": "Birden fazla varlığa yatırım yapan kolektif yatırım aracıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Fon performansı yönetim stratejisi, ücretler ve piyasa koşullarından etkilenir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Hisse senedi",
+      "Risk"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Eurobond",
+    "slug": "eurobond",
+    "targetTerms": [
+      "Eurobond",
+      "eurobond"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "FAIZ_VADELI"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Genellikle yabancı para cinsinden ihraç edilen uzun vadeli borçlanma senedidir.",
+    "detailedDescription": "Genellikle yabancı para cinsinden ihraç edilen uzun vadeli borçlanma senedidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Eurobond getirisi faiz, kredi riski ve kur hareketlerinin birleşimidir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Tahvil",
+      "Faiz",
+      "Spread"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Tahvil",
+    "slug": "tahvil",
+    "targetTerms": [
+      "Tahvil",
+      "tahvil"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "FAIZ_VADELI",
+      "MARKETS"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Devlet veya şirketlerin borçlanmak için ihraç ettiği sabit getirili menkul kıymettir.",
+    "detailedDescription": "Devlet veya şirketlerin borçlanmak için ihraç ettiği sabit getirili menkul kıymettir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Tahvil fiyatı ile getirisi ters yönlü hareket eder; faizler yükselirse fiyat düşebilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Bono",
+      "Faiz",
+      "Eurobond"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "VİOP",
+    "slug": "vi-op",
+    "targetTerms": [
+      "VİOP",
+      "viop",
+      "turev"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "ANALYSIS"
+    ],
+    "category": "MARKET_DATA",
+    "type": "TERM",
+    "difficulty": "ADVANCED",
+    "status": "ACTIVE",
+    "shortDescription": "Vadeli işlem ve opsiyon piyasasında türev ürünlerin işlem gördüğü piyasadır.",
+    "detailedDescription": "Vadeli işlem ve opsiyon piyasasında türev ürünlerin işlem gördüğü piyasadır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Kaldıraç etkisi nedeniyle küçük fiyat hareketleri büyük sonuçlar doğurabilir.",
+    "commonMistake": "VİOP ürünlerini spot hisse gibi düşük riskli araç sanmak.",
+    "example": "",
+    "relatedTerms": [
+      "Risk",
+      "Volatilite"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "TÜFE Endeksi",
+    "slug": "tufe-endeksi",
+    "targetTerms": [
+      "TÜFE Endeksi",
+      "tufe",
+      "enflasyon",
+      "makro"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY",
+      "PORTFOLIO",
+      "SIMULATION"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Tüketici fiyat seviyesindeki değişimi gösteren endekstir.",
+    "detailedDescription": "Fiyat seviyesinin zaman içinde nasıl değiştiğini gösterir. Portföy getirisi yorumlanırken alım gücü etkisini ölçmek için kullanılır.",
+    "howToInterpret": "Endeksin yükselmesi fiyat seviyesinin arttığını gösterir. Endeks seviyesi tek başına enflasyon oranı değildir.",
+    "commonMistake": "TÜFE endeks değerini doğrudan yüzde enflasyon oranı sanmak.",
+    "example": "2022’de 100.000 TL olan bir tutarın bugünkü alım gücü TÜFE değişimiyle hesaplanabilir.",
+    "relatedTerms": [
+      "TÜFE Aylık Oran",
+      "TÜFE Yıllık Oran",
+      "Reel getiri",
+      "Enflasyon"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "TÜFE Aylık Oran",
+    "slug": "tufe-aylik-oran",
+    "targetTerms": [
+      "TÜFE Aylık Oran",
+      "tufe",
+      "aylik"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "TÜFE endeksinin bir önceki aya göre yüzde değişimidir.",
+    "detailedDescription": "TÜFE endeksinin bir önceki aya göre yüzde değişimidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Kısa vadeli fiyat baskısını gösterir; mevsimsellik etkisine dikkat edilmelidir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "TÜFE Yıllık Oran"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "TÜFE Yıllık Oran",
+    "slug": "tufe-yillik-oran",
+    "targetTerms": [
+      "TÜFE Yıllık Oran",
+      "tufe",
+      "yillik"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY",
+      "PORTFOLIO"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "TÜFE endeksinin aynı ay bir önceki yıla göre yüzde değişimidir.",
+    "detailedDescription": "TÜFE endeksinin aynı ay bir önceki yıla göre yüzde değişimidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Yıllık oran, uzun dönem fiyat trendini özetler; politika ve piyasa beklentilerini etkiler.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "Reel faiz",
+      "Reel getiri"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Yİ-ÜFE",
+    "slug": "yi-ufe",
+    "targetTerms": [
+      "Yİ-ÜFE",
+      "yi-ufe",
+      "uretici"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Üretici fiyatları endeksi; üretim aşamasındaki maliyet baskısını ölçer.",
+    "detailedDescription": "Üretici fiyatları endeksi; üretim aşamasındaki maliyet baskısını ölçer. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Yİ-ÜFE artışı gelecekte TÜFE üzerinde baskı oluşturabilir; gecikmeli etki görülebilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "Enflasyon"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Tüketici Güven Endeksi",
+    "slug": "tuketici-guven-endeksi",
+    "targetTerms": [
+      "Tüketici Güven Endeksi",
+      "guven",
+      "tuketici"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Hanehalkının ekonomik görünüme ve harcama eğilimine dair algısını ölçer.",
+    "detailedDescription": "Hanehalkının ekonomik görünüme ve harcama eğilimine dair algısını ölçer. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Endeks yükseldikçe harcama ve talep beklentisi güçleniyor olabilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Ekonomik Güven Endeksi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Ekonomik Güven Endeksi",
+    "slug": "ekonomik-guven-endeksi",
+    "targetTerms": [
+      "Ekonomik Güven Endeksi",
+      "guven",
+      "makro"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Tüketici ve üreticilerin genel ekonomik görünüme dair birleşik güven ölçüsüdür.",
+    "detailedDescription": "Tüketici ve üreticilerin genel ekonomik görünüme dair birleşik güven ölçüsüdür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Düşüş eğilimi talep zayıflığına; yükseliş toparlanma beklentisine işaret edebilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Tüketici Güven Endeksi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Politika faizi",
+    "slug": "politika-faizi",
+    "targetTerms": [
+      "Politika faizi",
+      "tcmb",
+      "politika faizi"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "FAIZ_VADELI",
+      "TURKEY_ECONOMY"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Merkez bankasının para politikasını yönlendirdiği ana faiz oranıdır.",
+    "detailedDescription": "Merkez bankasının para politikasını yönlendirdiği ana faiz oranıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Politika faizi artışı genelde enflasyonla mücadele; düşüş ise büyümeyi destekleme amacı taşır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Mevduat faizi",
+      "Reel faiz",
+      "Faiz"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Mevduat faizi",
+    "slug": "mevduat-faizi",
+    "targetTerms": [
+      "Mevduat faizi",
+      "mevduat"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "FAIZ_VADELI"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Bankalarda vadeli veya vadesiz mevduata ödenen faiz oranıdır.",
+    "detailedDescription": "Bankalarda vadeli veya vadesiz mevduata ödenen faiz oranıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Nominal mevduat getirisi enflasyonun altındaysa reel getiri negatif olabilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Politika faizi",
+      "Reel faiz"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Reel faiz",
+    "slug": "reel-faiz",
+    "targetTerms": [
+      "Reel faiz",
+      "reel faiz"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY",
+      "FAIZ_VADELI"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "MACRO_INDICATOR",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Nominal faiz oranından enflasyon oranının çıkarılmasıyla elde edilen faizdir.",
+    "detailedDescription": "Nominal faiz oranından enflasyon oranının çıkarılmasıyla elde edilen faizdir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Reel faiz negatifse nakit ve mevduat alım gücü kaybediyor olabilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Politika faizi",
+      "TÜFE Yıllık Oran"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Portföy",
+    "slug": "portfoy",
+    "targetTerms": [
+      "Portföy",
+      "portfoy"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Bir yatırımcının sahip olduğu varlıkların bütünüdür.",
+    "detailedDescription": "Bir yatırımcının sahip olduğu varlıkların bütünüdür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Portföy performansı tek varlıktan çok, dağılım ve risk yönetimiyle şekillenir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Pozisyon",
+      "Varlık dağılımı"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Pozisyon",
+    "slug": "pozisyon",
+    "targetTerms": [
+      "Pozisyon",
+      "pozisyon"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Portföyde belirli bir varlıkta tutulan miktar veya değerdir.",
+    "detailedDescription": "Portföyde belirli bir varlıkta tutulan miktar veya değerdir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Pozisyon büyüklüğü portföy riskini doğrudan etkiler.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Maliyet fiyatı",
+      "Güncel değer",
+      "P&L"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Maliyet fiyatı",
+    "slug": "maliyet-fiyati",
+    "targetTerms": [
+      "Maliyet fiyatı",
+      "maliyet"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Varlığın portföye alınırken ödenen ortalama birim fiyatıdır.",
+    "detailedDescription": "Varlığın portföye alınırken ödenen ortalama birim fiyatıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Güncel fiyat maliyetin üzerindeyse gerçekleşmemiş kâr oluşur.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Güncel değer",
+      "P&L"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Güncel değer",
+    "slug": "guncel-deger",
+    "targetTerms": [
+      "Güncel değer",
+      "deger"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Pozisyonun güncel piyasa fiyatlarıyla hesaplanan toplam değeridir.",
+    "detailedDescription": "Pozisyonun güncel piyasa fiyatlarıyla hesaplanan toplam değeridir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Güncel değer anlık piyasa fiyatına bağlıdır; gün içi dalgalanır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Maliyet fiyatı",
+      "Nominal getiri"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Nominal getiri",
+    "slug": "nominal-getiri",
+    "targetTerms": [
+      "Nominal getiri",
+      "nominal getiri"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Enflasyon düzeltmesi yapılmadan hesaplanan getiri oranıdır.",
+    "detailedDescription": "Enflasyon düzeltmesi yapılmadan hesaplanan getiri oranıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Pozitif nominal getiri, reel getiri negatif olabilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Reel getiri",
+      "TÜFE Endeksi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Reel getiri",
+    "slug": "reel-getiri",
+    "targetTerms": [
+      "Reel getiri",
+      "reel getiri"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "SIMULATION"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Nominal getirinin enflasyon etkisinden arındırılmış halidir.",
+    "detailedDescription": "Yatırımın gerçek alım gücü açısından performansını gösterir. Yüksek enflasyon dönemlerinde kritik ölçüdür.",
+    "howToInterpret": "Reel getiri negatifse portföy değeri artmış olsa bile alım gücü düşmüş olabilir.",
+    "commonMistake": "Nominal kazancı doğrudan başarı sanmak.",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "Nominal getiri",
+      "Alım gücü"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "P&L",
+    "slug": "p-l",
+    "targetTerms": [
+      "P&L",
+      "pnl",
+      "kar zarar"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Profit & Loss; kâr ve zarar tutarını ifade eden performans göstergesidir.",
+    "detailedDescription": "Profit & Loss; kâr ve zarar tutarını ifade eden performans göstergesidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Gerçekleşmiş ve gerçekleşmemiş P&L ayrı okunmalıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Gerçekleşmiş kar/zarar",
+      "Gerçekleşmemiş kar/zarar"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Gerçekleşmiş kar/zarar",
+    "slug": "gerceklesmis-kar-zarar",
+    "targetTerms": [
+      "Gerçekleşmiş kar/zarar",
+      "gerceklesmis"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Satış veya kapanış ile kesinleşen kâr veya zarar tutarıdır.",
+    "detailedDescription": "Satış veya kapanış ile kesinleşen kâr veya zarar tutarıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Gerçekleşmiş sonuç nakit akışına yansır; vergi ve maliyet etkileri ayrı değerlendirilmelidir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Gerçekleşmemiş kar/zarar",
+      "P&L"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Gerçekleşmemiş kar/zarar",
+    "slug": "gerceklesmemis-kar-zarar",
+    "targetTerms": [
+      "Gerçekleşmemiş kar/zarar",
+      "gerceklesmemis"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Açık pozisyonlarda piyasa fiyatına göre hesaplanan geçici kâr/zarardır.",
+    "detailedDescription": "Açık pozisyonlarda piyasa fiyatına göre hesaplanan geçici kâr/zarardır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Piyasa fiyatı değiştikçe güncellenir; satış yapılana kadar kesinleşmez.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Gerçekleşmiş kar/zarar",
+      "Güncel değer"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Varlık dağılımı",
+    "slug": "varlik-dagilimi",
+    "targetTerms": [
+      "Varlık dağılımı",
+      "dagilim"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Portföydeki varlık sınıflarının veya enstrümanların ağırlık paylarını gösterir.",
+    "detailedDescription": "Portföydeki varlık sınıflarının veya enstrümanların ağırlık paylarını gösterir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Tek varlığa aşırı yoğunlaşma riski artırır; çeşitlendirme denge sağlar.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Portföy",
+      "Risk",
+      "Pasta grafik"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Çizgi grafik",
+    "slug": "cizgi-grafik",
+    "targetTerms": [
+      "Çizgi grafik",
+      "grafik",
+      "cizgi"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "ANALYSIS"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Zaman içindeki değer değişimini sürekli çizgiyle gösteren grafik türüdür.",
+    "detailedDescription": "Zaman içindeki değer değişimini sürekli çizgiyle gösteren grafik türüdür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Trend yönü ve dönemsel değişim hızlıca okunur; tek noktaya odaklanmaktan kaçının.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Alan grafiği",
+      "Zaman serisi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Alan grafiği",
+    "slug": "alan-grafigi",
+    "targetTerms": [
+      "Alan grafiği",
+      "grafik",
+      "alan"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "ANALYSIS",
+      "PORTFOLIO"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Çizgi grafiğin altındaki alanın doldurulduğu, hacim veya birikim vurgulu grafiktir.",
+    "detailedDescription": "Çizgi grafiğin altındaki alanın doldurulduğu, hacim veya birikim vurgulu grafiktir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Alan büyüklüğü toplam değer veya kümülatif performansı vurgular.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Çizgi grafik"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Mum grafik",
+    "slug": "mum-grafik",
+    "targetTerms": [
+      "Mum grafik",
+      "mum",
+      "candlestick"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "ANALYSIS"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Bir zaman aralığında açılış, kapanış, en yüksek ve en düşük fiyatı gösteren grafik türüdür.",
+    "detailedDescription": "Bir zaman aralığında açılış, kapanış, en yüksek ve en düşük fiyatı gösteren grafik türüdür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Tek mum tek başına karar için yeterli değildir; trend ve zaman dilimiyle birlikte okunmalıdır.",
+    "commonMistake": "Tek günlük mumdan uzun vadeli yön tahmini yapmak.",
+    "example": "",
+    "relatedTerms": [
+      "Volatilite",
+      "Çizgi grafik"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Isı haritası",
+    "slug": "isi-haritasi",
+    "targetTerms": [
+      "Isı haritası",
+      "heatmap",
+      "piyasa"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Varlıkların performansını renk ve alan büyüklüğüyle gösteren görselleştirmedir.",
+    "detailedDescription": "Varlıkların performansını renk ve alan büyüklüğüyle gösteren görselleştirmedir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Renk genelde getiri yönünü; kutu büyüklüğü ağırlık veya piyasa değerini temsil edebilir.",
+    "commonMistake": "Renk ile kutu büyüklüğünü aynı metrik sanmak.",
+    "example": "",
+    "relatedTerms": [
+      "BIST",
+      "Hisse senedi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Pasta grafik",
+    "slug": "pasta-grafik",
+    "targetTerms": [
+      "Pasta grafik",
+      "pasta",
+      "dagilim"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Bütünün parçalara ayrıldığı dairesel dağılım grafiğidir.",
+    "detailedDescription": "Bütünün parçalara ayrıldığı dairesel dağılım grafiğidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Küçük dilimler pasta grafikte zor okunur; birkaç büyük dilim için uygundur.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Varlık dağılımı"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Bar grafik",
+    "slug": "bar-grafik",
+    "targetTerms": [
+      "Bar grafik",
+      "bar"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "ANALYSIS"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Kategoriler arası değerleri dikey veya yatay çubuklarla karşılaştırır.",
+    "detailedDescription": "Kategoriler arası değerleri dikey veya yatay çubuklarla karşılaştırır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Çubuk uzunluğu büyüklük farkını net gösterir; eksen ölçeğine dikkat edin.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Performans karşılaştırması"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Referans çizgisi",
+    "slug": "referans-cizgisi",
+    "targetTerms": [
+      "Referans çizgisi",
+      "referans"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "ANALYSIS"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Grafikte karşılaştırma için eklenen yatay veya eğimli yardımcı çizgidir.",
+    "detailedDescription": "Grafikte karşılaştırma için eklenen yatay veya eğimli yardımcı çizgidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Destek/direnç veya hedef seviye olarak kullanılır; subjektif yorum içerebilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Trend çizgisi",
+      "Mum grafik"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Tooltip",
+    "slug": "tooltip",
+    "targetTerms": [
+      "Tooltip",
+      "tooltip"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "MARKETS",
+      "ANALYSIS"
+    ],
+    "category": "CHARTS",
+    "type": "CHART",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Grafik üzerinde imleçle görünen anlık veri ipucu kutusudur.",
+    "detailedDescription": "Grafik üzerinde imleçle görünen anlık veri ipucu kutusudur. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Tarih, fiyat ve hacim gibi kesin değerleri nokta bazında okumayı sağlar.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Zaman serisi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Enflasyon karşılaştırması",
+    "slug": "enflasyon-karsilastirmasi",
+    "targetTerms": [
+      "Enflasyon karşılaştırması",
+      "enflasyon",
+      "analiz"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO",
+      "SIMULATION"
+    ],
+    "category": "SIMULATION",
+    "type": "ANALYSIS_TOOL",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Yatırım getirisini enflasyon veya TÜFE ile kıyaslayan analiz aracıdır.",
+    "detailedDescription": "Yatırım getirisini enflasyon veya TÜFE ile kıyaslayan analiz aracıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Getiri enflasyonun altındaysa alım gücü korunmamış demektir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Reel getiri",
+      "TÜFE Yıllık Oran"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Alternatif yatırım simülasyonu",
+    "slug": "alternatif-yatirim-simulasyonu",
+    "targetTerms": [
+      "Alternatif yatırım simülasyonu",
+      "simulasyon"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "SIMULATION"
+    ],
+    "category": "SIMULATION",
+    "type": "ANALYSIS_TOOL",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Aynı tutarın farklı varlık sınıflarında nasıl performans göstereceğini modelleyen araçtır.",
+    "detailedDescription": "Aynı tutarın farklı varlık sınıflarında nasıl performans göstereceğini modelleyen araçtır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Geçmiş veriye dayalı simülasyon geleceği garanti etmez; varsayımları kontrol edin.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Getiri",
+      "Risk",
+      "Reel getiri"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Geçmiş harcama simülasyonu",
+    "slug": "gecmis-harcama-simulasyonu",
+    "targetTerms": [
+      "Geçmiş harcama simülasyonu",
+      "harcama",
+      "simulasyon"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "SIMULATION"
+    ],
+    "category": "SIMULATION",
+    "type": "ANALYSIS_TOOL",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Geçmişte yapılan harcamanın bugünkü TÜFE ile güncellenmiş karşılığını hesaplar.",
+    "detailedDescription": "Geçmişte yapılan harcamanın bugünkü TÜFE ile güncellenmiş karşılığını hesaplar. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Sonuç alım gücü kaybını somutlaştırır; eğitim ve planlama amaçlıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "Alım gücü"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Makro durum özeti",
+    "slug": "makro-durum-ozeti",
+    "targetTerms": [
+      "Makro durum özeti",
+      "makro",
+      "ozet"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "TURKEY_ECONOMY",
+      "FAIZ_VADELI"
+    ],
+    "category": "TURKEY_ECONOMY",
+    "type": "ANALYSIS_TOOL",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Temel makro göstergeleri tek ekranda özetleyen karar destek görünümüdür.",
+    "detailedDescription": "Temel makro göstergeleri tek ekranda özetleyen karar destek görünümüdür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Göstergeler birlikte okunmalı; tek bir veri noktasına aşırı anlam yüklemeyin.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Endeksi",
+      "Politika faizi",
+      "Ekonomik Güven Endeksi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Portföy reel getiri analizi",
+    "slug": "portfoy-reel-getiri-analizi",
+    "targetTerms": [
+      "Portföy reel getiri analizi",
+      "portfoy",
+      "reel"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "PORTFOLIO"
+    ],
+    "category": "PORTFOLIO_ANALYSIS",
+    "type": "ANALYSIS_TOOL",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Portföy getirisini enflasyona göre düzelterek alım gücü performansını gösterir.",
+    "detailedDescription": "Portföy getirisini enflasyona göre düzelterek alım gücü performansını gösterir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Nominal pozitif, reel negatif senaryosu yüksek enflasyon dönemlerinde sık görülür.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Reel getiri",
+      "Nominal getiri",
+      "TÜFE Endeksi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Fiyat uyarısı",
+    "slug": "fiyat-uyarisi",
+    "targetTerms": [
+      "Fiyat uyarısı",
+      "uyari",
+      "fiyat"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Belirlenen fiyat koşulu gerçekleştiğinde kullanıcıya bildirim gönderen uyarıdır.",
+    "detailedDescription": "Belirlenen fiyat koşulu gerçekleştiğinde kullanıcıya bildirim gönderen uyarıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Uyarı tetiklenmesi yatırım tavsiyesi değildir; bilgilendirme amaçlıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Bildirim tercihi",
+      "Uygulama içi bildirim"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Portföy uyarısı",
+    "slug": "portfoy-uyarisi",
+    "targetTerms": [
+      "Portföy uyarısı",
+      "portfoy",
+      "uyari"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Portföy değeri veya pozisyon koşullarına bağlı tetiklenen bildirimdir.",
+    "detailedDescription": "Portföy değeri veya pozisyon koşullarına bağlı tetiklenen bildirimdir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Eşik değerleri kişisel risk toleransına göre ayarlanmalıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Fiyat uyarısı",
+      "Risk bildirimi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Makro veri bildirimi",
+    "slug": "makro-veri-bildirimi",
+    "targetTerms": [
+      "Makro veri bildirimi",
+      "makro",
+      "bildirim"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS",
+      "TURKEY_ECONOMY"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Önemli makro veri açıklamalarında kullanıcıyı bilgilendiren bildirim türüdür.",
+    "detailedDescription": "Önemli makro veri açıklamalarında kullanıcıyı bilgilendiren bildirim türüdür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Veri açıklaması piyasa beklentisiyle karşılaştırılarak okunmalıdır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "TÜFE Aylık Oran",
+      "Politika faizi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Risk bildirimi",
+    "slug": "risk-bildirimi",
+    "targetTerms": [
+      "Risk bildirimi",
+      "risk"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "INTERMEDIATE",
+    "status": "ACTIVE",
+    "shortDescription": "Olağandışı volatilite veya risk eşiği aşıldığında gönderilen uyarıdır.",
+    "detailedDescription": "Olağandışı volatilite veya risk eşiği aşıldığında gönderilen uyarıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Bildirim risk yönetimi için hatırlatıcıdır; otomatik işlem yapmaz.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Volatilite",
+      "Risk"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Bildirim tercihi",
+    "slug": "bildirim-tercihi",
+    "targetTerms": [
+      "Bildirim tercihi",
+      "tercih"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Hangi kanallardan ve hangi konularda bildirim alınacağını belirleyen ayarlardır.",
+    "detailedDescription": "Hangi kanallardan ve hangi konularda bildirim alınacağını belirleyen ayarlardır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Gereksiz bildirimleri kapatmak odaklanmayı artırır; kritik uyarıları açık tutun.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "E-posta bildirimi",
+      "Uygulama içi bildirim"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "E-posta bildirimi",
+    "slug": "e-posta-bildirimi",
+    "targetTerms": [
+      "E-posta bildirimi",
+      "eposta"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Uyarıların e-posta kanalı üzerinden iletilmesidir.",
+    "detailedDescription": "Uyarıların e-posta kanalı üzerinden iletilmesidir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Gecikme olabilir; acil piyasa hareketleri için uygulama içi kanal tercih edilebilir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Uygulama içi bildirim",
+      "Bildirim tercihi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Uygulama içi bildirim",
+    "slug": "uygulama-ici-bildirim",
+    "targetTerms": [
+      "Uygulama içi bildirim",
+      "bildirim"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "NOTIFICATIONS"
+    ],
+    "category": "NOTIFICATIONS",
+    "type": "TERM",
+    "difficulty": "BEGINNER",
+    "status": "ACTIVE",
+    "shortDescription": "Portal oturumu veya mobil uygulama üzerinden anlık gösterilen bildirimdir.",
+    "detailedDescription": "Portal oturumu veya mobil uygulama üzerinden anlık gösterilen bildirimdir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Okunmamış bildirimler üst çan simgesinde listelenir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Fiyat uyarısı",
+      "Bildirim tercihi"
+    ],
+    "adminOnly": false
+  },
+  {
+    "title": "Audit log",
+    "slug": "audit-log",
+    "targetTerms": [
+      "Audit log",
+      "audit",
+      "admin"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "ADMIN"
+    ],
+    "category": "SYSTEM_OBSERVABILITY",
+    "type": "SYSTEM_TERM",
+    "difficulty": "ADVANCED",
+    "status": "ACTIVE",
+    "shortDescription": "Sistemde gerçekleşen işlemlerin denetim amaçlı kayıt altına alındığı günlüktür.",
+    "detailedDescription": "Sistemde gerçekleşen işlemlerin denetim amaçlı kayıt altına alındığı günlüktür. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Kim, ne zaman, hangi işlemi yaptı sorularına yanıt verir.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Trace",
+      "Correlation ID"
+    ],
+    "adminOnly": true
+  },
+  {
+    "title": "Trace",
+    "slug": "trace",
+    "targetTerms": [
+      "Trace",
+      "trace",
+      "observability"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "ADMIN"
+    ],
+    "category": "SYSTEM_OBSERVABILITY",
+    "type": "SYSTEM_TERM",
+    "difficulty": "ADVANCED",
+    "status": "ACTIVE",
+    "shortDescription": "Bir isteğin servisler arası yolculuğunu uçtan uca izleyen dağıtık iz kaydıdır.",
+    "detailedDescription": "Bir isteğin servisler arası yolculuğunu uçtan uca izleyen dağıtık iz kaydıdır. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Gecikme ve hata kök neden analizinde kullanılır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Correlation ID",
+      "Tempo"
+    ],
+    "adminOnly": true
+  },
+  {
+    "title": "Correlation ID",
+    "slug": "correlation-id",
+    "targetTerms": [
+      "Correlation ID",
+      "correlation"
+    ],
+    "targetElementIds": [],
+    "pages": [
+      "ADMIN"
+    ],
+    "category": "SYSTEM_OBSERVABILITY",
+    "type": "SYSTEM_TERM",
+    "difficulty": "ADVANCED",
+    "status": "ACTIVE",
+    "shortDescription": "Aynı kullanıcı isteğine ait log ve trace kayıtlarını birleştiren benzersiz kimliktir.",
+    "detailedDescription": "Aynı kullanıcı isteğine ait log ve trace kayıtlarını birleştiren benzersiz kimliktir. Bu kavram, portalda veri okuma ve karar destek ekranlarında yatırım performansını yorumlarken kullanılır.",
+    "howToInterpret": "Destek ve operasyon ekipleri sorun gidermede bu kimliği paylaşır.",
+    "commonMistake": "",
+    "example": "",
+    "relatedTerms": [
+      "Trace",
+      "Audit log"
+    ],
+    "adminOnly": true
+  }
+]
