@@ -4,6 +4,7 @@ import { fetchCandles, type AnalysisRange } from '../../../features/analysis/api
 import { addWatchlistItem, fetchWatchlist } from '../../../features/markets/api/watchlistApi'
 import { useMarkets } from '../../../features/markets/hooks/useMarkets'
 import type { MarketOverviewItem } from '../../../shared/types/market'
+import { instrumentHelpRowProps } from '../../../components/help/instrumentHelpAttrs'
 
 const watchlistRanges: AnalysisRange[] = ['24h', '7d', '30d', '90d', '1y']
 
@@ -178,7 +179,10 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
                     {watchlistRows.map((row) => (
                       <tr
                         key={row.symbol}
-                        className={expandedSymbol === row.symbol ? 'my-portfolio-watchlist-active-row' : undefined}
+                        {...instrumentHelpRowProps(row.symbol, row.name)}
+                        className={`instrument-help-row${
+                          expandedSymbol === row.symbol ? ' my-portfolio-watchlist-active-row' : ''
+                        }`}
                         onClick={() => {
                           setExpandedSymbol((prev) => (prev === row.symbol ? null : row.symbol))
                         }}

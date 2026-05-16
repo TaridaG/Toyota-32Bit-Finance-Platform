@@ -1,5 +1,13 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import type { CandlestickData, IChartApi, ISeriesApi, LineData, MouseEventParams, Time, UTCTimestamp } from 'lightweight-charts'
+import type {
+  CandlestickData,
+  IChartApi,
+  ISeriesApi,
+  LineData,
+  MouseEventParams,
+  Time,
+  UTCTimestamp,
+} from 'lightweight-charts'
 import type { CandlePoint } from '../../types'
 
 export type OhlcTooltipState = {
@@ -8,6 +16,7 @@ export type OhlcTooltipState = {
   high: number
   low: number
   close: number
+  volume?: number
   ma20?: number
   ma50?: number
   rsi?: number
@@ -62,7 +71,7 @@ function nearestCandleByTime(data: CandlePoint[], target: UTCTimestamp): CandleP
 
 type UseCrosshairTooltipArgs = {
   chart: IChartApi | null
-  candleSeries: ISeriesApi<'Candlestick'> | null
+  priceSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | null
   candles: CandlePoint[]
   ma20Data: LineData<Time>[]
   ma50Data: LineData<Time>[]
@@ -73,7 +82,7 @@ type UseCrosshairTooltipArgs = {
 
 export function useCrosshairTooltip({
   chart,
-  candleSeries,
+  priceSeries,
   candles,
   ma20Data,
   ma50Data,
@@ -94,7 +103,7 @@ export function useCrosshairTooltip({
   }, [candles, ma20Data, ma50Data, onChange, onPanelSync, rsiData])
 
   useEffect(() => {
-    if (!chart || !candleSeries) return
+    if (!chart || !priceSeries) return
 
     const flush = () => {
       rafRef.current = 0
@@ -104,7 +113,13 @@ export function useCrosshairTooltip({
     }
 
     const handler = (param: MouseEventParams<Time>) => {
-      const bar = param.seriesData.get(candleSeries) as CandlestickData<Time> | undefined
+      const raw = param.seriesData.get(priceSeries)
+      const bar =
+        raw != null && 'open' in raw ? (raw as CandlestickData<Time>) : undefined
+      const lineClose =
+        raw != null && 'value' in raw && Number.isFinite((raw as LineData<Time>).value)
+          ? (raw as LineData<Time>).value
+          : undefined
       if (param.time === undefined) {
         pendingRef.current = null
       } else {
@@ -115,7 +130,7 @@ export function useCrosshairTooltip({
           asTime,
         )
         const snappedBar = nearestCandleByTime(refs.current.candles, asTime)
-        if (!bar && !snappedBar) {
+        if (!bar && !snappedBar && lineClose == null) {
           pendingRef.current = null
           return
         }
@@ -124,10 +139,11 @@ export function useCrosshairTooltip({
         const rsi = nearestByTime(refs.current.rsiData, asTime)
         pendingRef.current = {
           timeLabel: Number.isFinite(t) ? new Date(t * 1000).toLocaleString() : '',
-          open: bar?.open ?? snappedBar?.open ?? NaN,
-          high: bar?.high ?? snappedBar?.high ?? NaN,
-          low: bar?.low ?? snappedBar?.low ?? NaN,
-          close: bar?.close ?? snapped ?? snappedBar?.close ?? NaN,
+          open: bar?.open ?? snappedBar?.open ?? lineClose ?? NaN,
+          high: bar?.high ?? snappedBar?.high ?? lineClose ?? NaN,
+          low: bar?.low ?? snappedBar?.low ?? lineClose ?? NaN,
+          close: bar?.close ?? snapped ?? snappedBar?.close ?? lineClose ?? NaN,
+          volume: snappedBar?.volume,
           ma20,
           ma50,
           rsi,
@@ -147,5 +163,5 @@ export function useCrosshairTooltip({
       }
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [chart, candleSeries])
+  }, [chart, priceSeries])
 }

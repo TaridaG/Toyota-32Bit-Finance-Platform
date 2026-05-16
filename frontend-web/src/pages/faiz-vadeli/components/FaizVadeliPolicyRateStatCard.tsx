@@ -106,6 +106,9 @@ export function FaizVadeliPolicyRateStatCard({
   return (
     <FaizVadeliStatCard
       stat={stat}
+      helpTerm="Politika faizi"
+      helpPageKey="FAIZ_VADELI"
+      helpElementId="FAIZ_VADELI:policy-rate"
       valueSkeleton={loading}
       valueSkeletonAria={t('faizVadeliPage.policyRate.liveSkeletonAria')}
       interactive={!loading}

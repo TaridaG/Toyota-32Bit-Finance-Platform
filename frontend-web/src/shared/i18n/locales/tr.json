@@ -17,6 +17,8 @@
         "news": "Haberler"
       },
       "navApp": {
+        "turkiyeEkonomisi": "Türkiye Ekonomisi",
+        "finansalOkuryazarlik": "Finansal Okuryazarlık",
         "bankRates": "Banka kurları",
         "markets": "Piyasalar",
         "faizVadeli": "Faiz / Vadeli",
@@ -24,6 +26,7 @@
         "analysis": "Analiz",
         "portfolio": "Portföy",
         "simulation": "Simülasyon",
+        "bilgiKartlari": "Bilgi Kartları",
         "admin": "Yönetim"
       },
       "actions": {
@@ -32,6 +35,18 @@
         "logout": "Çıkış Yap"
       },
       "searchAria": "Ara",
+      "literacyHelp": {
+        "aria": "Finansal okuryazarlık ipucu modu",
+        "banner": "İpucu modu açık — terimlere tıklayın, boş alana tıklayarak çıkın",
+        "exit": "Çık",
+        "closePopover": "İpucunu kapat",
+        "openFull": "Finansal Okuryazarlık sayfasında aç"
+      },
+      "adminPick": {
+        "aria": "Bilgi kartı ekle — öğe veya metin seçin",
+        "banner": "Bilgi kartı ekleme modu — bir butona tıklayın veya metni seçip bırakın",
+        "exit": "Çık"
+      },
       "download": {
         "aria": "Uygulamayı indir",
         "title": "Uygulamayı indir",
@@ -146,6 +161,215 @@
       "titleDoc": "Simülasyon | Finans Platformu",
       "title": "Simülasyon",
       "lead": "Simülasyon modülü yakında eklenecek."
+    },
+    "turkiyeEkonomisiPage": {
+      "titleDoc": "Türkiye Ekonomisi | Finans Platformu",
+      "title": "Türkiye Ekonomisi",
+      "lead": "Makro göstergeler, TCMB verileri ve Türkiye ekonomisine dair özet paneller burada yer alacak.",
+      "placeholder": "Bu sayfa için içerik ve veri bağlantıları yakında eklenecek."
+    },
+    "finansalOkuryazarlikPage": {
+      "titleDoc": "Finansal Okuryazarlık | Finans Platformu",
+      "title": "Finansal Okuryazarlık",
+      "lead": "Portalda kullanılan finansal terimleri, grafik türlerini, makro göstergeleri ve analiz araçlarını sade açıklamalarla öğrenin.",
+      "searchPlaceholder": "TÜFE, reel getiri, mum grafik, likidite, VİOP ara...",
+      "searchAria": "Terim, grafik veya analiz aracı ara",
+      "stats": {
+        "terms": "içerik",
+        "charts": "grafik türü",
+        "analysisTools": "analiz aracı",
+        "macro": "makro gösterge"
+      },
+      "allCategories": "Tüm içerikler",
+      "filtersTitle": "Filtreler",
+      "categoryTitle": "Kategori",
+      "difficultyTitle": "Zorluk seviyesi",
+      "contentTypeTitle": "İçerik tipi",
+      "portalPageTitle": "Portal sayfası",
+      "learningPathTitle": "Önerilen öğrenme sırası",
+      "usedIn": "Kullanıldığı yer",
+      "details": "Detayları gör",
+      "goToPage": "İlgili sayfaya git",
+      "close": "Kapat",
+      "emptyTitle": "Sonuç bulunamadı",
+      "emptyMessage": "Arama veya filtreleri değiştirerek tekrar deneyin.",
+      "categories": {
+        "BASIC_FINANCE": "Temel Finans",
+        "MARKET_DATA": "Piyasa Verileri",
+        "PORTFOLIO_ANALYSIS": "Portföy Analizi",
+        "CHARTS": "Grafikler",
+        "TURKEY_ECONOMY": "Türkiye Ekonomisi",
+        "SIMULATION": "Simülasyon",
+        "NOTIFICATIONS": "Bildirimler",
+        "SYSTEM_OBSERVABILITY": "Sistem Terimleri"
+      },
+      "categoryDescriptions": {
+        "BASIC_FINANCE": "Getiri, risk, likidite, faiz",
+        "MARKET_DATA": "Döviz, hisse, fon, eurobond",
+        "PORTFOLIO_ANALYSIS": "P&L, reel getiri, dağılım",
+        "CHARTS": "Mum, çizgi, ısı haritası",
+        "TURKEY_ECONOMY": "TÜFE, güven, politika faizi",
+        "SIMULATION": "Senaryo ve harcama analizi",
+        "NOTIFICATIONS": "Uyarı ve tercihler",
+        "SYSTEM_OBSERVABILITY": "Audit, trace, gözlemlenebilirlik"
+      },
+      "difficulties": {
+        "BEGINNER": "Başlangıç",
+        "INTERMEDIATE": "Orta",
+        "ADVANCED": "İleri"
+      },
+      "contentTypes": {
+        "TERM": "Terim",
+        "ASSET": "Varlık",
+        "CHART": "Grafik",
+        "ANALYSIS_TOOL": "Analiz aracı",
+        "MACRO_INDICATOR": "Makro gösterge",
+        "SYSTEM_TERM": "Sistem terimi"
+      },
+      "portalPages": {
+        "DASHBOARD": "Özet",
+        "MARKETS": "Piyasalar",
+        "PORTFOLIO": "Portföy",
+        "SIMULATION": "Simülasyon",
+        "TURKEY_ECONOMY": "Türkiye Ekonomisi",
+        "FAIZ_VADELI": "Faiz / Vadeli",
+        "ANALYSIS": "Analiz",
+        "NEWS": "Haberler",
+        "NOTIFICATIONS": "Bildirimler",
+        "ADMIN": "Yönetim",
+        "BANK_RATES": "Banka kurları",
+        "FINANCIAL_LITERACY": "Finansal Okuryazarlık",
+        "INFO_CARDS": "Bilgi Kartları",
+        "AUDIT_LOGS": "Audit Logs"
+      },
+      "sections": {
+        "shortDefinition": "Kısa tanım",
+        "financialMeaning": "Finansal anlamı",
+        "usedInPortal": "Portalda nerede kullanılır?",
+        "howToInterpret": "Nasıl yorumlanır?",
+        "commonMistake": "Sık yapılan yanlış",
+        "example": "Örnek kullanım",
+        "relatedTerms": "İlgili terimler"
+      }
+    },
+    "bilgiKartlariPage": {
+      "titleDoc": "Bilgi Kartları | Finans Platformu",
+      "title": "Bilgi Kartları",
+      "lead": "Portal genelindeki bilgi kartlarını görüntüleyin ve düzenleyin. Yeni kart eklemek için herhangi bir sayfada header’daki ?+ düğmesini kullanın.",
+      "placeholder": "Bu sayfa için içerik yakında eklenecek.",
+      "searchPlaceholder": "Terim, başlık veya açıklama ara...",
+      "selectedPage": "Seçili sayfa: {{page}}",
+      "targetTerms": "Hedef kelimeler",
+      "updated": "Son güncelleme",
+      "empty": "Bu sayfada filtreye uyan bilgi kartı yok.",
+      "paginationAria": "Bilgi kartı listesi sayfalama",
+      "loading": "Kartlar yükleniyor…",
+      "binding": {
+        "pageTarget": "Sayfa hedefi",
+        "instrument": "Varlık",
+        "literacy": "Okuryazarlık"
+      },
+      "confirmDelete": "\"{{title}}\" kartını silmek istediğinize emin misiniz?",
+      "actions": {
+        "new": "+ Yeni Bilgi Kartı",
+        "preview": "Önizle",
+        "edit": "Düzenle",
+        "delete": "Sil",
+        "deactivate": "Pasifleştir",
+        "activate": "Aktifleştir"
+      },
+      "status": {
+        "active": "Aktif",
+        "passive": "Pasif"
+      },
+      "statusFilter": {
+        "aria": "Durum filtresi",
+        "all": "Tümü",
+        "active": "Aktif",
+        "passive": "Pasif"
+      },
+      "dashboard": {
+        "active": "Aktif kartlar",
+        "passive": "Pasif kartlar",
+        "avgWords": "Ort. kelime (kısa açıklama)",
+        "coveredPages": "Kapsanan sayfa",
+        "mostPage": "En çok kart",
+        "beginner": "Başlangıç",
+        "intermediate": "Orta",
+        "advanced": "İleri"
+      },
+      "sidebar": {
+        "pages": "Sayfalar"
+      },
+      "pages": {
+        "TURKEY_ECONOMY": "Türkiye Ekonomisi",
+        "FINANCIAL_LITERACY": "Finansal Okuryazarlık",
+        "BANK_RATES": "Banka kurları",
+        "MARKETS": "Piyasalar",
+        "FAIZ_VADELI": "Faiz / Vadeli",
+        "PORTFOLIO": "Portföyüm",
+        "ANALYSIS": "Analiz",
+        "NEWS": "Haberler",
+        "SIMULATION": "Simülasyon",
+        "PROFILE": "Profil / Ayarlar",
+        "DASHBOARD": "Özet paneli",
+        "ADMIN": "Yönetim özeti",
+        "ADMIN_KPI_USERS": "KPI — Kullanıcılar",
+        "ADMIN_KPI_PORTFOLIOS": "KPI — Portföyler",
+        "ADMIN_KPI_MARKETS": "KPI — Piyasa akışları",
+        "ADMIN_KPI_NEWS": "KPI — Haber kaynakları",
+        "ADMIN_KPI_SYSTEM": "KPI — Sistem durumu",
+        "ADMIN_KPI_LATENCY": "KPI — Ortalama gecikme",
+        "INFO_CARDS": "Bilgi Kartları"
+      },
+      "editor": {
+        "newTitle": "Yeni Bilgi Kartı",
+        "editTitle": "Bilgi Kartını Düzenle",
+        "pickedTarget": "Sayfadan seçilen hedef: {{label}}",
+        "pickTitle": "Bilgi kartı ekle",
+        "bindingTarget": "Hedef",
+        "pickBindingHint": "Sayfa ve hedef, seçtiğiniz öğeden otomatik kaydedildi. Aşağıya kart içeriğini yazın.",
+        "close": "Kapat",
+        "title": "Kart başlığı",
+        "targetTerms": "Hedef kelimeler / başlıklar",
+        "targetTermsHint": "TÜFE, TÜFE Endeksi, Enflasyon",
+        "targetInstruments": "Hedef varlık sembolleri",
+        "targetInstrumentsHint": "MSFT, FUND_TP2, THYAO",
+        "targetInstrumentsLead": "Piyasalar veya portföy listesindeki satıra bağlanır. ?+ ile satır seçildiğinde otomatik dolar.",
+        "targetElements": "Hedef buton / metin",
+        "targetElementsLead": "Seçili sayfalardaki buton veya metinleri arayıp ekleyin. Soru işareti modunda kullanıcı bu öğelere tıklayınca kart açılır.",
+        "targetElementsSearch": "Buton veya metin ara...",
+        "targetElementsResults": "Sayfa öğeleri",
+        "targetElementsEmpty": "Aramanızla eşleşen öğe yok.",
+        "selectPagesFirst": "Önce en az bir sayfa seçin.",
+        "selectedElements": "Seçilen öğeler",
+        "sharedAcrossPages": "{{count}} sayfada ortak",
+        "removeElement": "{{label}} öğesini kaldır",
+        "elementKinds": {
+          "BUTTON": "Buton",
+          "LABEL": "Etiket",
+          "TEXT": "Metin",
+          "TAB": "Sekme",
+          "STAT": "Özet kartı",
+          "COLUMN": "Sütun"
+        },
+        "pages": "Gösterileceği sayfalar",
+        "type": "İçerik tipi",
+        "difficulty": "Zorluk seviyesi",
+        "category": "Kategori",
+        "literacySection": "Finansal okuryazarlık içeriği",
+        "literacySectionLead": "Bu metinler Finansal Okuryazarlık sayfasında ve soru işareti popup'ında görünür.",
+        "shortDescription": "Kısa açıklama (popup)",
+        "detailedDescription": "Detaylı açıklama",
+        "howToInterpret": "Nasıl yorumlanır?",
+        "commonMistake": "Sık yapılan yanlış",
+        "relatedTerms": "İlgili terimler (virgülle)",
+        "active": "Aktif",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "saving": "Kaydediliyor…",
+        "saveError": "Kart kaydedilemedi. Lütfen tekrar deneyin."
+      }
     },
     "bankRatesPage": {
       "titleDoc": "Banka kurları | Finans Platformu",
@@ -565,6 +789,29 @@
     "sentimentTitle": "Duygu Dağılımı",
     "categoryTitle": "Kategori",
     "timeRangeTitle": "Zaman Aralığı",
+    "searchLabel": "Haber ara",
+    "searchPlaceholder": "Başlık veya özet içinde kelime ara…",
+    "searchAction": "Ara",
+    "clearSearch": "Temizle",
+    "matchedKeywords": "İlişkili kelimeler",
+    "relatedAssetsInline": "İlişkili varlıklar",
+    "relatedAssetsTitle": "İlişkili varlıklar",
+    "assetColumn": "Varlık",
+    "change1d": "1 gün",
+    "change1w": "1 hafta",
+    "horizon": {
+      "d": "G",
+      "w": "H",
+      "m": "A",
+      "3m": "3A",
+      "6m": "6A",
+      "1y": "1Y"
+    },
+    "analyzeAsset": "Analiz et",
+    "openSource": "Kaynak haberi aç",
+    "noRelatedAssets": "Bu haber için eşleşen varlık bulunamadı.",
+    "noSearchResults": "Aramanızla eşleşen haber bulunamadı.",
+    "paginationSummary": "Sayfa {{page}} / {{totalPages}} · {{count}} haber",
     "filterToggle": "Filtreler",
     "applyFilters": "Filtrele",
     "clearFilters": "Filtreyi Temizle",
@@ -611,6 +858,11 @@
     "sort": {
       "byTime": "Zamana Göre",
       "byImpact": "Etkiye Göre"
+    },
+    "chartNews": {
+      "nextDayChange": "Ertesi gün: %{{value}}",
+      "matchAsset": "Varlık: {{symbol}}",
+      "matchCategory": "Kategori: {{category}}"
     },
     "controls": {
       "showNews": "Haberi göster",
@@ -677,10 +929,15 @@
       "activeLayersCount": "{{count}} açık",
       "intervalsAria": "Grafik zaman aralığı",
       "drawToolsAria": "Çizim araçları",
-      "drawPointer": "İmleç (çizimsiz)",
-      "drawTrend": "Trend çizgisi",
-      "drawPoint": "İşaret",
+      "drawPointer": "Seçim / imleç",
+      "drawTrend": "Trend çizgisi (2 nokta)",
+      "drawRay": "Işın çizgisi (2 nokta)",
       "drawHline": "Yatay çizgi",
+      "drawVline": "Dikey çizgi",
+      "drawRect": "Alan kutusu (2 nokta)",
+      "drawFib": "Fibonacci geri çekilme (2 nokta)",
+      "drawPoint": "İşaret noktası",
+      "drawDelete": "Seçili çizimi sil",
       "compareRailTitle": "Kıyas",
       "compareRailAria": "Grafik karşılaştırma sembolleri",
       "addCompare": "Sembol ekle",
@@ -697,7 +954,42 @@
       "compareSlotChange": "{{symbol}} değiştir",
       "compareSlotRemove": "{{symbol}} kaldır",
       "comparePickerTitle": "Varlık seç",
-      "comparePickerEmpty": "Bu filtreye uygun varlık yok"
+      "comparePickerEmpty": "Bu filtreye uygun varlık yok",
+      "chartTypeAria": "Grafik türü",
+      "chartTypeCandle": "Mum grafiği",
+      "chartTypeLine": "Çizgi grafiği",
+      "chartTypeCandleShort": "Mum",
+      "chartTypeLineShort": "Çizgi"
+    },
+    "chartDrawings": {
+      "libraryAria": "Çizim kayıtları",
+      "save": "Çizimi kaydet",
+      "history": "Kayıtlı çizimler",
+      "saveTitle": "Çizimi kaydet",
+      "saveClose": "Kapat",
+      "saveLead": "{{symbol}} için {{count}} çizim kaydedilecek.",
+      "saveNameLabel": "Çizim adı",
+      "saveNamePlaceholder": "Örn. Destek-direnç Mayıs",
+      "saveConfirm": "Kaydet",
+      "saving": "Kaydediliyor…",
+      "cancel": "İptal",
+      "saveEmpty": "Kaydetmek için önce grafikte en az bir çizim oluşturun.",
+      "saveError": "Çizim kaydedilemedi. Lütfen tekrar deneyin.",
+      "historyTitle": "{{symbol}} — kayıtlı çizimler",
+      "historyClose": "Kapat",
+      "historyEmpty": "Bu varlık için kayıtlı çizim yok.",
+      "historyLoadError": "Kayıtlar yüklenemedi.",
+      "historyPriceRange": "Fiyat: {{min}} – {{max}}",
+      "historyDelete": "{{name}} kaydını sil",
+      "historyDeleteError": "Kayıt silinemedi. Lütfen tekrar deneyin.",
+      "loginTitle": "Giriş gerekli",
+      "loginClose": "Kapat",
+      "loginLead": "Çizim kaydetmek ve geçmiş çizimleri görmek için giriş yapmalısın.",
+      "loginAction": "Giriş yap",
+      "colorPickerTitle": "Çizim rengi",
+      "colorPickerAria": "{{tool}} aracı için renk seç",
+      "colorPaletteAria": "Renk paleti",
+      "colorSpectrumAria": "Renk geçişi — kaydırarak seç"
     },
     "ticker": {
       "aria": "Enstrüman özeti",
@@ -732,7 +1024,16 @@
     },
     "readout": {
       "crosshair": "Canlı imleç",
-      "pinnedBar": "Sabit çubuk"
+      "pinnedBar": "Sabit çubuk",
+      "latestBar": "Son bar",
+      "panelAria": "Grafik veri paneli",
+      "hoverHint": "Grafik üzerinde gezindiğinizde fiyat ve gösterge değerleri burada görünür.",
+      "sectionPrice": "Fiyat detayı",
+      "sectionIndicators": "Göstergeler",
+      "openLabel": "Açılış",
+      "highLabel": "Yüksek",
+      "lowLabel": "Düşük",
+      "closeLabel": "Kapanış"
     },
     "periods": {
       "daily": "Günlük",

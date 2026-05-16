@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import siteLogo from '../../../assets/site-logo.png'
 import { useTheme } from '../../theme/ThemeProvider'
 import { useTranslation } from 'react-i18next'
@@ -17,6 +17,11 @@ import { fetchPortalProfile } from '../../../features/profile/api/portalProfileA
 import { usePortalAvatarObjectUrl } from '../../../features/profile/hooks/usePortalAvatarObjectUrl'
 import { updatePortalPreferences } from '../../../features/profile/api/portalProfileApi'
 import { fetchMyNotifications, type NotificationItem } from '../../../features/notifications/api/notificationApi'
+import { useLiteracyHelpMode } from '../../../features/literacy-help/LiteracyHelpModeContext'
+import { IconHelp } from '../../../features/literacy-help/IconHelp'
+import { useAdminInfoCardPick } from '../../../features/admin-info-card-pick/AdminInfoCardPickContext'
+import { IconHelpAdd } from '../../../features/admin-info-card-pick/IconHelpAdd'
+import { isAdminPickRouteAllowed } from '../../../features/admin-info-card-pick/pickTargetUtils'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -36,6 +41,8 @@ type PublicNavItem = {
 }
 
 const appNavItems: AppNavItem[] = [
+  { to: '/app/turkiye-ekonomisi', labelKey: 'header.navApp.turkiyeEkonomisi' },
+  { to: '/app/finansal-okuryazarlik', labelKey: 'header.navApp.finansalOkuryazarlik' },
   { to: '/app/bank-rates', labelKey: 'header.navApp.bankRates' },
   { to: '/app/markets', labelKey: 'header.navApp.markets' },
   { to: '/app/faiz-vadeli', labelKey: 'header.navApp.faizVadeli' },
@@ -44,6 +51,10 @@ const appNavItems: AppNavItem[] = [
   { to: '/app/news', labelKey: 'header.navPublic.news' },
 ]
 
+const appNavBilgiKartlariItem: AppNavItem = {
+  to: '/app/bilgi-kartlari',
+  labelKey: 'header.navApp.bilgiKartlari',
+}
 const appNavAdminItem: AppNavItem = { to: '/admin', labelKey: 'header.navApp.admin' }
 
 const publicNavItems: PublicNavItem[] = [
@@ -149,6 +160,17 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const { theme, setTheme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation()
   const { currency, setLanguage, setCurrency } = useAppPreferences()
+  const { pathname } = useLocation()
+  const { active: literacyHelpActive, toggle: toggleLiteracyHelp, deactivate: deactivateLiteracyHelp } =
+    useLiteracyHelpMode()
+  const {
+    pickModeActive,
+    canPickOnRoute,
+    togglePickMode,
+    deactivatePickMode,
+  } = useAdminInfoCardPick()
+  const showAdminPick =
+    isAuthenticated && isAdminUser() && canPickOnRoute && isAdminPickRouteAllowed(pathname)
   const currentLocale = normalizeLocale(i18n.resolvedLanguage ?? i18n.language) ?? 'en'
 
   const claims = useMemo(() => (isAuthenticated ? getAuthClaims() : null), [isAuthenticated])
@@ -259,7 +281,9 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   }
 
   const appNavForSession =
-    isAuthenticated && isAdminUser() ? [...appNavItems, appNavAdminItem] : appNavItems
+    isAuthenticated && isAdminUser()
+      ? [...appNavItems, appNavBilgiKartlariItem, appNavAdminItem]
+      : appNavItems
 
   return (
     <header className="portal-header">
@@ -320,6 +344,47 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
           <button type="button" className="portal-icon-button" aria-label={t('header.searchAria')}>
             <IconSearch />
           </button>
+
+          {isAuthenticated ? (
+            <div className="portal-literacy-help-group">
+              <button
+                type="button"
+                data-literacy-help-control
+                className={`portal-icon-button portal-literacy-help-button${literacyHelpActive ? ' portal-icon-button-active' : ''}`}
+                aria-label={t('header.literacyHelp.aria')}
+                aria-pressed={literacyHelpActive}
+                title={t('header.literacyHelp.aria')}
+                onClick={() => {
+                  closeDesktopPanels()
+                  if (pickModeActive) {
+                    deactivatePickMode()
+                  }
+                  toggleLiteracyHelp()
+                }}
+              >
+                <IconHelp />
+              </button>
+              {showAdminPick ? (
+                <button
+                  type="button"
+                  data-admin-pick-control
+                  className={`portal-icon-button portal-admin-pick-button${pickModeActive ? ' portal-icon-button-active' : ''}`}
+                  aria-label={t('header.adminPick.aria')}
+                  aria-pressed={pickModeActive}
+                  title={t('header.adminPick.aria')}
+                  onClick={() => {
+                    closeDesktopPanels()
+                    if (literacyHelpActive) {
+                      deactivateLiteracyHelp()
+                    }
+                    togglePickMode()
+                  }}
+                >
+                  <IconHelpAdd />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="portal-popover-anchor">
             <button

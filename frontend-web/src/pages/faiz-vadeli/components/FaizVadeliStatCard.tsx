@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import type { StatCardCopy, StatIconId } from '../faizVadeliDashboardCopy'
+import { HelpTerm } from '../../../components/help/HelpTerm'
+import type { PortalPageKey } from '../../../types/infoCards'
 
 function IconBank({ className }: { className?: string }) {
   return (
@@ -82,6 +84,9 @@ export function FaizVadeliStatCard({
   interactiveAriaLabel,
   interactiveTitle,
   headEndSlot,
+  helpTerm,
+  helpPageKey,
+  helpElementId,
 }: {
   stat: StatCardCopy
   valueSkeleton?: boolean
@@ -92,7 +97,18 @@ export function FaizVadeliStatCard({
   interactiveTitle?: string
   /** Extra control(s) beside the title (e.g. maturity select). Uses article+role=button instead of native button. */
   headEndSlot?: ReactNode
+  helpTerm?: string
+  helpPageKey?: PortalPageKey
+  helpElementId?: string
 }) {
+  const titleNode =
+    helpTerm && helpPageKey ? (
+      <HelpTerm term={helpTerm} pageKey={helpPageKey} elementId={helpElementId}>
+        {stat.title}
+      </HelpTerm>
+    ) : (
+      stat.title
+    )
   const deltaClass =
     stat.deltaTone === 'negative'
       ? 'fi-faiz-delta fi-faiz-delta--neg'
@@ -117,12 +133,12 @@ export function FaizVadeliStatCard({
       {headEndSlot ? (
         <div className="fi-faiz-stat-head-text">
           <div className="fi-faiz-stat-title-row">
-            <h3 className="fi-faiz-stat-title">{stat.title}</h3>
+            <h3 className="fi-faiz-stat-title">{titleNode}</h3>
             {headEndSlot}
           </div>
         </div>
       ) : (
-        <h3 className="fi-faiz-stat-title">{stat.title}</h3>
+        <h3 className="fi-faiz-stat-title">{titleNode}</h3>
       )}
     </div>
   )
@@ -192,5 +208,9 @@ export function FaizVadeliStatCard({
     )
   }
 
-  return <article className={cardClass}>{inner}</article>
+  return (
+    <article className={cardClass}>
+      {inner}
+    </article>
+  )
 }

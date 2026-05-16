@@ -4,18 +4,42 @@ import { useSearchParams } from 'react-router-dom'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useTranslation } from 'react-i18next'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
-import type { AssetDefinition, AssetNewsItem, AssetType, CandlePoint, DrawTool, DrawingItem, TimeRange } from './types'
+import type {
+  AssetDefinition,
+  AssetNewsItem,
+  CandlePoint,
+  ChartDisplayType,
+  DrawTool,
+  DrawingItem,
+  TimeRange,
+} from './types'
 import { AssetSelector } from './components/AssetSelector'
+import type { OhlcTooltipState } from './chart/hooks/useCrosshairTooltip'
+import { createDefaultDrawColorsByTool, type DrawableTool } from './chart/drawing/drawColors'
 import { AnalysisChart } from './components/AnalysisChart'
 import { AnalysisChartFrame } from './components/AnalysisChartFrame'
+import { ChartDrawingHistoryModal } from './components/ChartDrawingHistoryModal'
+import { ChartDrawingLoginPrompt } from './components/ChartDrawingLoginPrompt'
+import { ChartDrawingSaveModal } from './components/ChartDrawingSaveModal'
+import { ChartHoverInsightCard } from './components/ChartHoverInsightCard'
 import { AnalysisTickerBar } from './components/AnalysisTickerBar'
 import { PerformanceTable } from './components/PerformanceTable'
+import {
+  createChartDrawingSave,
+  fetchChartDrawingSave,
+  hydrateSavedDrawings,
+  type ChartDrawingSaveSummary,
+} from '../../features/analysis/api/chartDrawingService'
 import { fetchCandles } from '../../features/analysis/api/analysisService'
+import { isAuthenticated } from '../../shared/auth/session'
 import { useCandles } from '../../features/analysis/hooks/useCandles'
 import { useIndicators } from '../../features/analysis/hooks/useIndicators'
-import { useMarkets } from '../../features/markets/hooks/useMarkets'
-import { useNews } from '../../features/news/hooks/useNews'
-import type { MarketOverviewItem } from '../../shared/types/market'
+import { useAnalysisInstrumentCatalog } from './hooks/useAnalysisInstrumentCatalog'
+import { fetchMarketOverviewItemBySymbol } from '../../features/markets/api/marketService'
+import { fetchNewsForChart, type NewsApiItem } from '../../features/news/api/newsService'
+import { catalogRowToOverview, overviewRowToAsset } from './utils/analysisCatalog'
+import { mapNewsToChartItems, resolveChartNewsCategoryUi } from './utils/chartNews'
+import type { MarketCategory, MarketOverviewItem } from '../../shared/types/market'
 
 const comparePalette = ['#f59e0b', '#8b5cf6', '#14b8a6', '#f97316', '#22c55e']
 
@@ -26,93 +50,127 @@ function normalizeSymbol(symbol: string): string {
   return symbol.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
 }
 
-function mapCategoryToAssetType(category: string | null | undefined): AssetType {
-  const c = (category ?? 'STOCK').toUpperCase()
-  switch (c) {
-    case 'CRYPTO':
-      return 'crypto'
-    case 'FX':
-      return 'fx'
-    case 'FUND':
-      return 'fund'
-    case 'METAL':
-      return 'commodity'
-    case 'STOCK':
-    default:
-      return 'stock'
-  }
-}
-
-function mapMarketRowToAsset(row: MarketOverviewItem): AssetDefinition {
-  const symbol = row.symbol.toUpperCase()
-  const wire = (row.category ?? 'STOCK').toUpperCase()
-  return {
-    id: symbol.toLowerCase(),
-    symbol,
-    name: row.name || symbol,
-    type: mapCategoryToAssetType(row.category),
-    wireCategory: wire,
-  }
-}
-
 export function AnalysisPage() {
   const { t } = useTranslation('analysis')
   const { language, currency } = useAppPreferences()
   useDocumentTitle(t('titleDoc'))
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [comparisonListCategory, setComparisonListCategory] = useState<AssetType | 'all'>('all')
+  const [instrumentCategory, setInstrumentCategory] = useState<MarketCategory>('bist')
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
-  const [showNewsOnChart, setShowNewsOnChart] = useState(true)
+  const [showNewsOnChart, setShowNewsOnChart] = useState(false)
+  const [chartNewsFeed, setChartNewsFeed] = useState<NewsApiItem[]>([])
+  const [chartNewsLoading, setChartNewsLoading] = useState(false)
   const [showMA20, setShowMA20] = useState(true)
   const [showMA50, setShowMA50] = useState(true)
   const [showRsi, setShowRsi] = useState(true)
   const [compareSlotIds, setCompareSlotIds] = useState<CompareSlotTuple>(EMPTY_COMPARE_SLOTS)
   const [drawTool, setDrawTool] = useState<DrawTool>('none')
+  const [drawColorsByTool, setDrawColorsByTool] = useState(createDefaultDrawColorsByTool)
   const [drawings, setDrawings] = useState<DrawingItem[]>([])
+  const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [showVolume, setShowVolume] = useState(true)
+  const [chartDisplayType, setChartDisplayType] = useState<ChartDisplayType>('candle')
+  const [chartHoverReadout, setChartHoverReadout] = useState<OhlcTooltipState>(null)
   const tickerShellRef = useRef<HTMLDivElement>(null)
   const [instrumentPickerOpen, setInstrumentPickerOpen] = useState(false)
   const [selectedNews, setSelectedNews] = useState<AssetNewsItem | null>(null)
   const [selectedBarTime, setSelectedBarTime] = useState<UTCTimestamp | null>(null)
   const [comparisonSeriesByAsset, setComparisonSeriesByAsset] = useState<Record<string, CandlePoint[]>>({})
+  const [drawingSaveModalOpen, setDrawingSaveModalOpen] = useState(false)
+  const [drawingHistoryModalOpen, setDrawingHistoryModalOpen] = useState(false)
+  const [drawingLoginPromptOpen, setDrawingLoginPromptOpen] = useState(false)
+  const [drawingSaveLoading, setDrawingSaveLoading] = useState(false)
+  const [drawingSaveError, setDrawingSaveError] = useState<string | null>(null)
+  const [drawingHistoryLoadingId, setDrawingHistoryLoadingId] = useState<number | null>(null)
 
-  const { rows: marketRows } = useMarkets({
-    page: 0,
-    size: 800,
-    category: 'all',
-    searchTerm: '',
-    sort: 'change1D,desc',
-    displayCurrency: currency,
-  })
+  const chartDrawingAuth = isAuthenticated()
 
-  const assets = useMemo<AssetDefinition[]>(
-    () => marketRows.map(mapMarketRowToAsset),
-    [marketRows],
-  )
-  const assetsById = useMemo(() => new Map(assets.map((asset) => [asset.id, asset])), [assets])
-  const marketBySymbol = useMemo(
-    () => new Map(marketRows.map((row) => [row.symbol.toUpperCase(), row])),
-    [marketRows],
-  )
+  const { assets: catalogAssets, rows: catalogRows, loading: catalogLoading } =
+    useAnalysisInstrumentCatalog(instrumentCategory)
 
-  const comparisonCandidates = useMemo(() => {
-    return assets
-      .filter((a) => comparisonListCategory === 'all' || a.type === comparisonListCategory)
-      .sort((a, b) => a.symbol.localeCompare(b.symbol))
-  }, [assets, comparisonListCategory])
+  const [deepLinkedRow, setDeepLinkedRow] = useState<MarketOverviewItem | null>(null)
+  const [deepLinkedAsset, setDeepLinkedAsset] = useState<AssetDefinition | null>(null)
+  const [deepLinkLoading, setDeepLinkLoading] = useState(false)
 
   const selectedSymbol = searchParams.get('symbol')?.toUpperCase()
+
+  useEffect(() => {
+    if (!selectedSymbol) {
+      setDeepLinkedRow(null)
+      setDeepLinkLoading(false)
+      return
+    }
+    const alreadyListed = catalogAssets.some(
+      (asset) => normalizeSymbol(asset.symbol) === normalizeSymbol(selectedSymbol),
+    )
+    if (alreadyListed) {
+      setDeepLinkedRow(null)
+      setDeepLinkedAsset(null)
+      setDeepLinkLoading(false)
+      return
+    }
+    let cancelled = false
+    setDeepLinkLoading(true)
+    void fetchMarketOverviewItemBySymbol(selectedSymbol, currency)
+      .then((row) => {
+        if (!cancelled && row) {
+          setDeepLinkedRow(row)
+          setDeepLinkedAsset(overviewRowToAsset(row))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDeepLinkLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [catalogAssets, currency, instrumentCategory, selectedSymbol])
+
+  const assets = useMemo<AssetDefinition[]>(() => {
+    if (!deepLinkedAsset) {
+      return catalogAssets
+    }
+    if (catalogAssets.some((a) => a.id === deepLinkedAsset.id)) {
+      return catalogAssets
+    }
+    return [deepLinkedAsset, ...catalogAssets]
+  }, [catalogAssets, deepLinkedAsset])
+
+  const assetsById = useMemo(() => new Map(assets.map((asset) => [asset.id, asset])), [assets])
+  const marketBySymbol = useMemo(() => {
+    const map = new Map<string, MarketOverviewItem>()
+    catalogRows.forEach((row) => {
+      map.set(row.symbol.toUpperCase(), catalogRowToOverview(row))
+    })
+    if (deepLinkedRow) {
+      map.set(deepLinkedRow.symbol.toUpperCase(), deepLinkedRow)
+    }
+    return map
+  }, [catalogRows, deepLinkedRow])
+
+  const comparisonCandidates = useMemo(() => {
+    return [...assets].sort((a, b) => a.symbol.localeCompare(b.symbol))
+  }, [assets])
+
   const selectedAsset = useMemo(() => {
-    if (assets.length === 0) return null
+    if (assets.length === 0) {
+      return null
+    }
     if (selectedSymbol) {
       const found = assets.find((asset) => normalizeSymbol(asset.symbol) === normalizeSymbol(selectedSymbol))
       if (found) {
         return found
       }
+      if (deepLinkLoading) {
+        return null
+      }
+      return null
     }
     return assets[0]
-  }, [assets, selectedSymbol])
+  }, [assets, deepLinkLoading, selectedSymbol])
 
   const overview = useMemo(
     () => (selectedAsset ? (marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null) : null),
@@ -147,7 +205,179 @@ export function AnalysisPage() {
     loading: indicatorsLoading,
     error: indicatorsError,
   } = useIndicators(selectedWindowSeries)
-  const { data: newsFeed } = useNews(0, 50)
+
+  useEffect(() => {
+    setChartHoverReadout(null)
+  }, [selectedAsset?.id, timeRange])
+
+  useEffect(() => {
+    setDrawings([])
+    setSelectedDrawingId(null)
+    setDrawTool('none')
+  }, [selectedAsset?.id, timeRange])
+
+  const handleDeleteSelectedDrawing = () => {
+    const targetId = selectedDrawingId ?? drawings[drawings.length - 1]?.id ?? null
+    if (!targetId) return
+    setDrawings((prev) => prev.filter((item) => item.id !== targetId))
+    setSelectedDrawingId(null)
+  }
+
+  const handleDrawColorChange = (tool: DrawableTool, color: string) => {
+    setDrawColorsByTool((prev) => ({ ...prev, [tool]: color }))
+  }
+
+  const activeDrawColor = drawTool === 'none' ? null : drawColorsByTool[drawTool]
+
+  const handleAddDrawing = (item: DrawingItem) => {
+    setDrawings((prev) => [...prev, item])
+    setSelectedDrawingId(null)
+  }
+
+  const requireChartDrawingAuth = () => {
+    if (!chartDrawingAuth) {
+      setDrawingLoginPromptOpen(true)
+      return false
+    }
+    return true
+  }
+
+  const handleSaveDrawingsClick = () => {
+    if (!requireChartDrawingAuth()) return
+    if (drawings.length === 0) {
+      setDrawingSaveError(t('chartDrawings.saveEmpty'))
+      setDrawingSaveModalOpen(true)
+      return
+    }
+    setDrawingSaveError(null)
+    setDrawingSaveModalOpen(true)
+  }
+
+  const handleDrawingHistoryClick = () => {
+    if (!requireChartDrawingAuth()) return
+    if (!selectedAsset) return
+    setDrawingHistoryModalOpen(true)
+  }
+
+  const handleConfirmDrawingSave = async (name: string) => {
+    if (!selectedAsset) return
+    setDrawingSaveLoading(true)
+    setDrawingSaveError(null)
+    try {
+      await createChartDrawingSave({
+        assetKey: selectedAsset.id,
+        assetSymbol: selectedAsset.symbol,
+        assetType: selectedAsset.type,
+        name,
+        drawings,
+      })
+      setDrawingSaveModalOpen(false)
+    } catch {
+      setDrawingSaveError(t('chartDrawings.saveError'))
+    } finally {
+      setDrawingSaveLoading(false)
+    }
+  }
+
+  const handleSelectSavedDrawing = async (summary: ChartDrawingSaveSummary) => {
+    setDrawingHistoryLoadingId(summary.id)
+    try {
+      const detail = await fetchChartDrawingSave(summary.id)
+      setDrawings(hydrateSavedDrawings(detail.drawings))
+      setSelectedDrawingId(null)
+      setDrawTool('none')
+      setDrawingHistoryModalOpen(false)
+    } catch {
+      /* keep modal open */
+    } finally {
+      setDrawingHistoryLoadingId(null)
+    }
+  }
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const tag = (event.target as HTMLElement | null)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedDrawingId) {
+        event.preventDefault()
+        const id = selectedDrawingId
+        setDrawings((prev) => prev.filter((item) => item.id !== id))
+        setSelectedDrawingId(null)
+      }
+      if (event.key === 'Escape') {
+        setSelectedDrawingId(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedDrawingId])
+
+  const latestBarReadout = useMemo((): OhlcTooltipState => {
+    const last = selectedWindowSeries[selectedWindowSeries.length - 1]
+    if (!last) return null
+    const ma20Point = indicators.ma20[indicators.ma20.length - 1]
+    const ma50Point = indicators.ma50[indicators.ma50.length - 1]
+    const rsiPoint = indicators.rsi[indicators.rsi.length - 1]
+    return {
+      timeLabel: new Date(last.time * 1000).toLocaleString(language),
+      open: last.open,
+      high: last.high,
+      low: last.low,
+      close: last.close,
+      volume: last.volume,
+      ma20: ma20Point && Number.isFinite(ma20Point.value) ? ma20Point.value : undefined,
+      ma50: ma50Point && Number.isFinite(ma50Point.value) ? ma50Point.value : undefined,
+      rsi: rsiPoint && Number.isFinite(rsiPoint.value) ? rsiPoint.value : undefined,
+    }
+  }, [indicators.ma20, indicators.ma50, indicators.rsi, language, selectedWindowSeries])
+
+  const chartInsightReadout = chartHoverReadout ?? latestBarReadout
+  const chartInsightMode = chartHoverReadout ? 'crosshair' : latestBarReadout ? 'latest' : 'empty'
+
+  const candleWindow = useMemo(() => {
+    if (selectedWindowSeries.length === 0) {
+      return null
+    }
+    return {
+      fromSec: Number(selectedWindowSeries[0].time),
+      toSec: Number(selectedWindowSeries[selectedWindowSeries.length - 1].time),
+    }
+  }, [selectedWindowSeries])
+
+  useEffect(() => {
+    if (!showNewsOnChart || !selectedAsset || !candleWindow) {
+      return
+    }
+    const categoryUi = resolveChartNewsCategoryUi(selectedAsset)
+    let cancelled = false
+    setChartNewsLoading(true)
+    void fetchNewsForChart({
+      symbol: selectedAsset.symbol,
+      categoryUi,
+      fromSec: Math.max(0, candleWindow.fromSec - 3_600),
+      toSec: candleWindow.toSec + 86_400,
+      language,
+    })
+      .then((items) => {
+        if (!cancelled) {
+          setChartNewsFeed(items)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setChartNewsFeed([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setChartNewsLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [candleWindow, language, selectedAsset, showNewsOnChart])
 
   useEffect(() => {
     if (!selectedAsset?.id) return
@@ -236,23 +466,12 @@ export function AnalysisPage() {
   }, [marketBySymbol, selectedAsset, selectedWindowSeries])
 
   const relatedNews = useMemo(() => {
-    const target = selectedAsset ? normalizeSymbol(selectedAsset.symbol) : ''
-    const mapped = newsFeed
-      .filter((item) => (item.relatedSymbols ?? []).map((s) => normalizeSymbol(s)).includes(target))
-      .map<AssetNewsItem>((item) => ({
-        id: String(item.id),
-        assetId: selectedAsset?.id ?? 'unknown',
-        title: item.title ?? item.titleOriginal ?? '',
-        summary: item.summary ?? item.summaryOriginal ?? '',
-        source: item.sourceName,
-        impact: item.sentiment,
-        createdAt: Math.floor(Date.parse(item.publishedAt) / 1000) as UTCTimestamp,
-        reactionPercent1h: item.reactionPercent1h ?? 0,
-        relatedAssets: item.relatedSymbols ?? [],
-      }))
-      .filter((item) => Number.isFinite(item.createdAt))
-    return [...mapped].sort((a, b) => b.createdAt - a.createdAt)
-  }, [newsFeed, selectedAsset])
+    if (!showNewsOnChart || !selectedAsset || selectedWindowSeries.length === 0) {
+      return []
+    }
+    const categoryUi = resolveChartNewsCategoryUi(selectedAsset)
+    return mapNewsToChartItems(chartNewsFeed, selectedAsset, categoryUi, selectedWindowSeries)
+  }, [chartNewsFeed, selectedAsset, selectedWindowSeries, showNewsOnChart])
 
   const comparisonLines = useMemo(() => {
     if (selectedAsset == null) return []
@@ -277,7 +496,7 @@ export function AnalysisPage() {
 
   const tableRows = useMemo(
     () =>
-      assets.slice(0, 8).map((asset) => {
+      assets.slice(0, 50).map((asset) => {
         const summary = marketBySymbol.get(asset.symbol.toUpperCase())
         return {
           assetId: asset.id,
@@ -322,6 +541,40 @@ export function AnalysisPage() {
     handleAssetChange(id)
     setInstrumentPickerOpen(false)
   }
+
+  const handleInstrumentCategoryChange = (category: MarketCategory) => {
+    setInstrumentCategory(category)
+    setDeepLinkedRow(null)
+    setDeepLinkedAsset(null)
+  }
+
+  const lastSyncedSymbolRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (catalogLoading || assets.length === 0) {
+      return
+    }
+    if (selectedSymbol) {
+      const found = assets.find((asset) => normalizeSymbol(asset.symbol) === normalizeSymbol(selectedSymbol))
+      if (found?.marketSegment && found.marketSegment !== 'all' && lastSyncedSymbolRef.current !== selectedSymbol) {
+        setInstrumentCategory(found.marketSegment)
+        lastSyncedSymbolRef.current = selectedSymbol
+      }
+      if (!found && !deepLinkLoading && !deepLinkedAsset && assets.length > 0) {
+        const first = assets[0]
+        const next = new URLSearchParams(searchParams)
+        next.set('symbol', first.symbol.replace('/', '').toUpperCase())
+        setSearchParams(next, { replace: true })
+      }
+      return
+    }
+    if (assets.length > 0) {
+      const first = assets[0]
+      const next = new URLSearchParams(searchParams)
+      next.set('symbol', first.symbol.replace('/', '').toUpperCase())
+      setSearchParams(next, { replace: true })
+    }
+  }, [assets, catalogLoading, deepLinkLoading, deepLinkedAsset, searchParams, selectedSymbol, setSearchParams])
 
   useEffect(() => {
     setInstrumentPickerOpen(false)
@@ -386,6 +639,8 @@ export function AnalysisPage() {
                     onInstrumentTriggerClick={() => setInstrumentPickerOpen((open) => !open)}
                     horizonReturns={horizonReturns}
                   />
+                ) : deepLinkLoading && selectedSymbol ? (
+                  <p className="fi-empty">{t('common:loading')}</p>
                 ) : null}
                 {instrumentPickerOpen && selectedAsset ? (
                   <div
@@ -412,9 +667,10 @@ export function AnalysisPage() {
                       variant="popover"
                       assets={assets}
                       selectedAssetId={selectedAsset.id}
-                      comparisonListCategory={comparisonListCategory}
+                      instrumentCategory={instrumentCategory}
+                      onInstrumentCategoryChange={handleInstrumentCategoryChange}
                       onAssetChange={handlePickAssetFromPopover}
-                      onComparisonListCategoryChange={setComparisonListCategory}
+                      catalogLoading={catalogLoading}
                     />
                   </div>
                 ) : null}
@@ -429,6 +685,7 @@ export function AnalysisPage() {
                   timeRange={timeRange}
                   onRangeChange={handleRangeChange}
                   showNewsOnChart={showNewsOnChart}
+                  chartNewsLoading={chartNewsLoading}
                   showMA20={showMA20}
                   showMA50={showMA50}
                   showRsi={showRsi}
@@ -440,15 +697,27 @@ export function AnalysisPage() {
                   onToggleVolume={() => setShowVolume((v) => !v)}
                   drawTool={drawTool}
                   onDrawToolChange={setDrawTool}
+                  drawColorsByTool={drawColorsByTool}
+                  onDrawColorChange={handleDrawColorChange}
+                  selectedDrawingId={selectedDrawingId}
+                  hasDrawings={drawings.length > 0}
+                  showDrawingLibrary={chartDrawingAuth}
+                  canSaveDrawings={drawings.length > 0}
+                  onSaveDrawingsClick={handleSaveDrawingsClick}
+                  onDrawingHistoryClick={handleDrawingHistoryClick}
+                  onDeleteSelectedDrawing={handleDeleteSelectedDrawing}
                   compareSlots={compareSlotAssets}
                   compareCandidates={comparisonCandidates}
                   mainAssetId={selectedAsset?.id ?? null}
                   onCompareSlotSet={handleCompareSlotSet}
+                  chartType={chartDisplayType}
+                  onChartTypeChange={setChartDisplayType}
                 >
                   <AnalysisChart
                     embedded
                     candles={selectedWindowSeries}
-                    fitContentKey={`${selectedAsset?.id ?? 'none'}-${timeRange}`}
+                    chartType={chartDisplayType}
+                    fitContentKey={`${selectedAsset?.id ?? 'none'}-${timeRange}-${chartDisplayType}`}
                     comparisonLines={comparisonLines}
                     showCompare={comparisonLines.length > 0}
                     showMA20={showMA20 && !indicatorsError}
@@ -465,11 +734,16 @@ export function AnalysisPage() {
                     selectedBarTime={selectedBarTime}
                     onBarSelect={setSelectedBarTime}
                     drawTool={drawTool}
+                    activeDrawColor={activeDrawColor}
                     drawings={drawings}
-                    onAddDrawing={(item) => setDrawings((prev) => [...prev, item])}
+                    selectedDrawingId={selectedDrawingId}
+                    onAddDrawing={handleAddDrawing}
+                    onSelectDrawing={setSelectedDrawingId}
+                    onDrawComplete={() => setDrawTool('none')}
                     locale={language}
                     currency={currency}
                     assetType={selectedAsset?.type ?? 'stock'}
+                    onLiveOhlcForPanel={setChartHoverReadout}
                   />
                 </AnalysisChartFrame>
                 {candlesLoading && selectedWindowSeries.length === 0 ? (
@@ -505,12 +779,57 @@ export function AnalysisPage() {
                 ) : null}
                 {assets.length === 0 ? <p className="fi-empty">{t('common:noData')}</p> : null}
               </div>
+              <ChartHoverInsightCard
+                symbol={selectedAsset?.symbol ?? null}
+                readout={chartInsightReadout}
+                mode={chartInsightMode}
+                showMA20={showMA20 && !indicatorsError}
+                showMA50={showMA50 && !indicatorsError}
+                showRsi={showRsi && !indicatorsError}
+                locale={language}
+                currency={currency}
+                assetType={selectedAsset?.type ?? 'stock'}
+              />
             </div>
           </div>
         </div>
       </div>
 
       <PerformanceTable titleRange={timeRange} assets={assets} rows={tableRows} />
+
+      {drawingSaveModalOpen && selectedAsset ? (
+        <ChartDrawingSaveModal
+          symbol={selectedAsset.symbol}
+          drawingCount={drawings.length}
+          saving={drawingSaveLoading}
+          error={drawingSaveError}
+          onClose={() => {
+            setDrawingSaveModalOpen(false)
+            setDrawingSaveError(null)
+          }}
+          onSave={(name) => {
+            void handleConfirmDrawingSave(name)
+          }}
+        />
+      ) : null}
+
+      {drawingHistoryModalOpen && selectedAsset ? (
+        <ChartDrawingHistoryModal
+          assetKey={selectedAsset.id}
+          symbol={selectedAsset.symbol}
+          loadingId={drawingHistoryLoadingId}
+          onClose={() => setDrawingHistoryModalOpen(false)}
+          onSelect={(summary) => {
+            void handleSelectSavedDrawing(summary)
+          }}
+        />
+      ) : null}
+
+      {drawingLoginPromptOpen ? (
+        <ChartDrawingLoginPrompt
+          onClose={() => setDrawingLoginPromptOpen(false)}
+        />
+      ) : null}
     </section>
   )
 }
