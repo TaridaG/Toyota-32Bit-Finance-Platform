@@ -1,5 +1,6 @@
 package com.company.marketdataservice.service;
 
+import com.company.marketdataservice.catalog.MarketCatalogSegmentRules;
 import com.company.marketdataservice.dto.HistoryPointDto;
 import com.company.marketdataservice.dto.MarketPriceSummaryDto;
 import com.company.marketdataservice.history.FundNavHistoryEntry;
@@ -116,6 +117,12 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
                     continue;
                 }
                 latestPrice = latestOpt.get().getNav();
+            } else if (isFxSymbol(symbol)) {
+                List<HistoryPointDto> latestPoints = fxRateHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
+                if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
+                    continue;
+                }
+                latestPrice = latestPoints.get(0).value();
             } else {
                 List<HistoryPointDto> latestPoints = marketPriceHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
                 if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
@@ -126,6 +133,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             validSymbols++;
 
             double change1D;
+            double change1W;
             double change1M;
             double change3M;
             double change6M;
@@ -133,6 +141,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             if (symbol.startsWith("FUND_")) {
                 String fundCode = symbol.substring("FUND_".length());
                 change1D = computeFundNavTrailingPercent(fundCode, now, 1);
+                change1W = computeFundNavTrailingPercent(fundCode, now, 7);
                 change1M = computeFundNavTrailingPercent(fundCode, now, 30);
                 change3M = computeFundNavTrailingPercent(fundCode, now, 90);
                 change6M = computeFundNavTrailingPercent(fundCode, now, 180);
@@ -141,19 +150,21 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
                 // Bond ingest stores calendar-daily rows (EVDS daily + forward-fill). Prefer last day-to-day step;
                 // fallback window if history is still warming up.
                 change1D = computeTcmbBondLatestStepPercentChange(symbol, now, toExclusive);
+                change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
                 change1M = computePeriodChange(symbol, now.minus(45, ChronoUnit.DAYS), toExclusive);
                 change3M = computePeriodChange(symbol, now.minus(120, ChronoUnit.DAYS), toExclusive);
                 change6M = computePeriodChange(symbol, now.minus(210, ChronoUnit.DAYS), toExclusive);
                 change1Y = computePeriodChange(symbol, now.minus(400, ChronoUnit.DAYS), toExclusive);
             } else {
                 change1D = computePeriodChange(symbol, now.minus(1, ChronoUnit.DAYS), toExclusive);
+                change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
                 change1M = computePeriodChange(symbol, now.minus(30, ChronoUnit.DAYS), toExclusive);
                 change3M = computePeriodChange(symbol, now.minus(90, ChronoUnit.DAYS), toExclusive);
                 change6M = computePeriodChange(symbol, now.minus(180, ChronoUnit.DAYS), toExclusive);
                 change1Y = computePeriodChange(symbol, now.minus(365, ChronoUnit.DAYS), toExclusive);
             }
 
-            out.put(symbol, new MarketPriceSummaryDto(latestPrice, change1D, change1M, change3M, change6M, change1Y));
+            out.put(symbol, new MarketPriceSummaryDto(latestPrice, change1D, change1W, change1M, change3M, change6M, change1Y));
         }
         log.info("MARKET_DB_SUMMARY_READ symbolsRequested={} symbolsResolved={}", symbols.size(), validSymbols);
         return out;
@@ -233,7 +244,14 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             String fundCode = symbol.substring("FUND_".length());
             return fundNavHistoryRepository.findHistoryPoints(fundCode, fromInclusive, toExclusive);
         }
+        if (isFxSymbol(symbol)) {
+            return fxRateHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
+        }
         return marketPriceHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
+    }
+
+    private static boolean isFxSymbol(String symbol) {
+        return "FX".equals(MarketCatalogSegmentRules.inferWireCategory(symbol));
     }
 
     private static boolean isValid(String symbolOrCode, LocalDate from, LocalDate to) {
