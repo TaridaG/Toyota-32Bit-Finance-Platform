@@ -110,6 +110,56 @@ news:
       FON:
         - yatirim fonu
         - emeklilik fonu
+  topic-tags:
+    keywords:
+      bist:
+        - bist
+        - borsa istanbul
+        - hisse senedi
+        - hisse
+        - tcmb
+        - türkiye
+        - turkiye
+        - istanbul
+      fx:
+        - döviz
+        - doviz
+        - kur
+        - usdtry
+        - eurtry
+        - dolar
+        - euro
+        - altın
+        - altin
+        - gold
+        - gümüş
+        - petrol
+        - oil
+        - emtia
+        - ham petrol
+      macro:
+        - merkez bankası
+        - merkez bankasi
+        - fed
+        - ecb
+        - enflasyon
+        - faiz
+        - politika faizi
+        - resesyon
+        - gsyh
+        - savaş
+        - savas
+        - jeopolitik
+        - orta doğu
+      crypto:
+        - bitcoin
+        - kripto
+        - ethereum
+        - blockchain
+      viop:
+        - viop
+        - vadeli işlem
+        - vadeli islem
   relevance:
     enabled: true
     min-score: 3
@@ -188,6 +238,16 @@ news:
       - fashion week
       - football match
       - transfer rumor
+      - emekli olmaya
+      - emekli oldum
+      - retired with $
+      - retiring with $
+      - earn $14 an hour
+      - saatte 14 $
+      - tanrı benimle
+      - god took care of me
+      - personal finance tip
+      - life-changing money
   translation:
     enabled: true
     provider: mymemory

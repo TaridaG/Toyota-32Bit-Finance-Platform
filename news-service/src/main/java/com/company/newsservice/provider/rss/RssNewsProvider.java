@@ -53,11 +53,16 @@ public class RssNewsProvider implements NewsProvider {
 
                     int maxEntries = Math.max(newsProperties.getRss().getMaxEntriesPerFeed(), 1);
                     for (SyndEntry entry : feed.getEntries().stream().limit(maxEntries).toList()) {
+                        String articleUrl = ArticleUrlNormalizer.normalize(
+                                safe(entry.getLink()),
+                                feedConfig.getUrl(),
+                                feedConfig.getName()
+                        );
                         items.add(new ProviderNewsItem(
                                 entry.getUri(),
                                 safe(entry.getTitle()),
                                 safe(entry.getDescription() != null ? entry.getDescription().getValue() : null),
-                                safe(entry.getLink()),
+                                articleUrl,
                                 feedConfig.getName(),
                                 feedConfig.getCategory(),
                                 entry.getPublishedDate() != null

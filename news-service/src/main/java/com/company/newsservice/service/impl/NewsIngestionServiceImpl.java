@@ -8,6 +8,7 @@ import com.company.newsservice.repository.NewsArticleRepository;
 import com.company.newsservice.service.NewsIngestionService;
 import com.company.newsservice.service.NewsInstrumentMatcher;
 import com.company.newsservice.service.NewsRelevanceEvaluator;
+import com.company.newsservice.service.NewsTopicTagger;
 import com.company.newsservice.service.translation.NewsTranslationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -30,6 +32,7 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
     private final NewsArticleRepository newsArticleRepository;
     private final NewsInstrumentMatcher newsInstrumentMatcher;
     private final NewsRelevanceEvaluator newsRelevanceEvaluator;
+    private final NewsTopicTagger newsTopicTagger;
     private final NewsTranslationService newsTranslationService;
     private final KafkaTemplate<String, Object> newsKafkaTemplate;
 
@@ -90,6 +93,13 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
                     article.setPublishedAt(item.publishedAt());
 
                     List<String> matchedSymbols = newsInstrumentMatcher.match(article.getTitle(), article.getSummary());
+                    article.setRelatedSymbols(new ArrayList<>(matchedSymbols));
+                    article.setTopicTags(new ArrayList<>(newsTopicTagger.resolve(
+                            article.getCategory(),
+                            article.getTitle(),
+                            article.getSummary(),
+                            matchedSymbols
+                    )));
                     if (!matchedSymbols.isEmpty()) {
                         log.info(
                                 "NEWS_INSTRUMENT_MATCH articleUrl={} matchedSymbols={}",

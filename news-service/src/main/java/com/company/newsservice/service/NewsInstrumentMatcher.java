@@ -21,10 +21,10 @@ public class NewsInstrumentMatcher {
      */
     public List<String> match(String title, String summary) {
         Map<String, List<String>> map = newsProperties.getInstrumentKeywords();
-        if (map == null || map.isEmpty()) {
+        if (map.isEmpty()) {
             return List.of();
         }
-        String haystack = (nz(title) + " " + nz(summary)).toLowerCase(Locale.ROOT);
+        String haystack = normalizeHaystack(title, summary);
         if (haystack.isBlank()) {
             return List.of();
         }
@@ -50,6 +50,11 @@ public class NewsInstrumentMatcher {
             }
         }
         return out;
+    }
+
+    private static String normalizeHaystack(String title, String summary) {
+        String combined = nz(title) + " " + nz(summary);
+        return combined.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim().toLowerCase(Locale.ROOT);
     }
 
     private static String nz(String s) {

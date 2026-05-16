@@ -4,8 +4,12 @@ import com.company.newsservice.domain.enums.NewsCategory;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -56,6 +60,15 @@ public class NewsArticle {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "related_symbols", nullable = false, columnDefinition = "jsonb")
+    private List<String> relatedSymbols = new ArrayList<>();
+
+    /** UI filters: bist, fx, crypto, macro, viop (cross-market impact). */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "topic_tags", nullable = false, columnDefinition = "jsonb")
+    private List<String> topicTags = new ArrayList<>();
 
     @PrePersist
     void onCreate() {

@@ -101,4 +101,17 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long> 
 
     @Query("select count(n) from NewsArticle n where n.active = true and n.publishedAt >= :from and n.publishedAt < :to")
     long countPublishedBetween(@Param("from") Instant from, @Param("to") Instant to);
+
+    @Query("""
+            select n
+            from NewsArticle n
+            where n.active = true
+              and n.publishedAt >= :fromInclusive
+              and n.publishedAt <= :toInclusive
+            order by n.publishedAt asc
+            """)
+    List<NewsArticle> findActiveByPublishedAtBetween(
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toInclusive") Instant toInclusive
+    );
 }
