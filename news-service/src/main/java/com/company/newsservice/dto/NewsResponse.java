@@ -3,6 +3,7 @@ package com.company.newsservice.dto;
 import com.company.newsservice.domain.enums.NewsCategory;
 
 import java.time.Instant;
+import java.util.List;
 
 public record NewsResponse(
         Long id,
@@ -15,6 +16,8 @@ public record NewsResponse(
         String articleUrl,
         String sourceName,
         NewsCategory category,
-        Instant publishedAt
+        Instant publishedAt,
+        List<String> relatedSymbols,
+        List<String> topicTags
 ) {
 }

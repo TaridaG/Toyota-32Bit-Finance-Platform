@@ -11,6 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/news")
 @RequiredArgsConstructor
@@ -32,9 +35,22 @@ public class NewsController {
         return ApiResponse.success(result);
     }
 
+    @GetMapping("/chart")
+    public ApiResponse<List<NewsResponse>> chart(
+            @RequestParam Instant from,
+            @RequestParam Instant to,
+            @RequestParam(required = false) String lang
+    ) {
+        return ApiResponse.success(newsQueryService.listForChart(from, to, lang));
+    }
+
     @GetMapping("/{id}")
-    public ApiResponse<NewsDetailResponse> detail(@PathVariable Long id) {
-        return ApiResponse.success(newsQueryService.getById(id));
+    public ApiResponse<NewsDetailResponse> detail(
+            @PathVariable Long id,
+            @RequestParam(required = false) String lang,
+            @RequestParam(defaultValue = "true") boolean includeOriginal
+    ) {
+        return ApiResponse.success(newsQueryService.getById(id, lang, includeOriginal));
     }
 
     /**

@@ -1,28 +1,29 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { AssetDefinition, AssetType } from '../types'
+import type { MarketCategory } from '../../../shared/types/market'
+import { ANALYSIS_MARKET_CATEGORIES } from '../utils/analysisCatalog'
+import type { AssetDefinition } from '../types'
 
 type AssetSelectorProps = {
   assets: AssetDefinition[]
   selectedAssetId: string
-  /** Filters the comparison chip list only; primary instrument list stays full-catalog (search applies). */
-  comparisonListCategory: AssetType | 'all'
+  instrumentCategory: MarketCategory
+  onInstrumentCategoryChange: (category: MarketCategory) => void
   onAssetChange: (assetId: string) => void
-  onComparisonListCategoryChange: (type: AssetType | 'all') => void
-  /** Deck layout: numbered header and copy tuned for the analysis control strip. */
-  /** Popover: same fields as deck without the numbered step header (for ticker flyout). */
+  catalogLoading?: boolean
   variant?: 'default' | 'deck' | 'popover'
 }
 
 export function AssetSelector({
   assets,
   selectedAssetId,
-  comparisonListCategory,
+  instrumentCategory,
+  onInstrumentCategoryChange,
   onAssetChange,
-  onComparisonListCategoryChange,
+  catalogLoading = false,
   variant = 'default',
 }: AssetSelectorProps) {
-  const { t } = useTranslation('analysis')
+  const { t } = useTranslation(['analysis', 'marketsPage'])
   const [query, setQuery] = useState('')
 
   const instrumentOptions = useMemo(() => {
@@ -43,8 +44,46 @@ export function AssetSelector({
     return base
   }, [assets, query, selectedAssetId])
 
+  const categoryOptions = ANALYSIS_MARKET_CATEGORIES.filter((c) => c !== 'eurobond')
+
   const isDeck = variant === 'deck'
   const isPopover = variant === 'popover'
+
+  const categorySelect = (
+    <select
+      className={isPopover ? 'fi-asset-selector-popover-select' : undefined}
+      value={instrumentCategory}
+      onChange={(event) => onInstrumentCategoryChange(event.target.value as MarketCategory)}
+      disabled={catalogLoading}
+    >
+      {categoryOptions.map((cat) => (
+        <option key={cat} value={cat}>
+          {t(`marketsPage:categories.${cat}`)}
+        </option>
+      ))}
+    </select>
+  )
+
+  const instrumentSelect = (
+    <select
+      className={isPopover ? 'fi-asset-selector-popover-select' : undefined}
+      value={selectedAssetId}
+      onChange={(event) => onAssetChange(event.target.value)}
+      disabled={catalogLoading || instrumentOptions.length === 0}
+    >
+      {catalogLoading ? (
+        <option value="">{t('common:loading')}</option>
+      ) : instrumentOptions.length === 0 ? (
+        <option value="">{t('assetSelector.noMatches')}</option>
+      ) : (
+        instrumentOptions.map((asset) => (
+          <option key={asset.id} value={asset.id}>
+            {asset.symbol} — {asset.name}
+          </option>
+        ))
+      )}
+    </select>
+  )
 
   if (isPopover) {
     return (
@@ -73,22 +112,21 @@ export function AssetSelector({
             </div>
           </div>
           <div className="fi-asset-selector-popover-field fi-asset-selector-popover-field--category">
-            <label className="fi-asset-selector-label" htmlFor="fi-analysis-comparison-category-pop">
+            <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-category-pop">
               {t('assetSelector.deckCategoryLabel')}
             </label>
             <select
-              id="fi-analysis-comparison-category-pop"
+              id="fi-analysis-instrument-category-pop"
               className="fi-asset-selector-popover-select"
-              value={comparisonListCategory}
-              onChange={(event) => onComparisonListCategoryChange(event.target.value as AssetType | 'all')}
+              value={instrumentCategory}
+              onChange={(event) => onInstrumentCategoryChange(event.target.value as MarketCategory)}
+              disabled={catalogLoading}
             >
-              <option value="all">{t('assetSelector.types.all')}</option>
-              <option value="stock">{t('assetSelector.types.stock')}</option>
-              <option value="crypto">{t('assetSelector.types.crypto')}</option>
-              <option value="fx">{t('assetSelector.types.fx')}</option>
-              <option value="commodity">{t('assetSelector.types.commodity')}</option>
-              <option value="fund">{t('assetSelector.types.fund')}</option>
-              <option value="index">{t('assetSelector.types.index')}</option>
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat}>
+                  {t(`marketsPage:categories.${cat}`)}
+                </option>
+              ))}
             </select>
           </div>
           <div className="fi-asset-selector-popover-field fi-asset-selector-popover-field--symbol">
@@ -100,8 +138,11 @@ export function AssetSelector({
               className="fi-asset-selector-popover-select"
               value={selectedAssetId}
               onChange={(event) => onAssetChange(event.target.value)}
+              disabled={catalogLoading || instrumentOptions.length === 0}
             >
-              {instrumentOptions.length === 0 ? (
+              {catalogLoading ? (
+                <option value="">{t('common:loading')}</option>
+              ) : instrumentOptions.length === 0 ? (
                 <option value="">{t('assetSelector.noMatches')}</option>
               ) : (
                 instrumentOptions.map((asset) => (
@@ -114,7 +155,9 @@ export function AssetSelector({
           </div>
         </div>
         <p className="fi-asset-selector-popover-meta" aria-live="polite">
-          {t('assetSelector.deckTotalCount', { count: assets.length })}
+          {catalogLoading
+            ? t('common:loading')
+            : t('assetSelector.deckTotalCount', { count: instrumentOptions.length })}
         </p>
       </section>
     )
@@ -136,25 +179,24 @@ export function AssetSelector({
             autoComplete="off"
           />
           <span className="fi-asset-selector-count" aria-live="polite">
-            {t('assetSelector.instrumentCount', { count: assets.length })}
+            {t('assetSelector.instrumentCount', { count: instrumentOptions.length })}
           </span>
         </div>
         <div className="fi-asset-selector-row">
-          <label className="fi-asset-selector-label" htmlFor="fi-analysis-comparison-category">
-            {t('assetSelector.comparisonFilterLabel')}
+          <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-category">
+            {t('assetSelector.deckCategoryLabel')}
           </label>
           <select
-            id="fi-analysis-comparison-category"
-            value={comparisonListCategory}
-            onChange={(event) => onComparisonListCategoryChange(event.target.value as AssetType | 'all')}
+            id="fi-analysis-instrument-category"
+            value={instrumentCategory}
+            onChange={(event) => onInstrumentCategoryChange(event.target.value as MarketCategory)}
+            disabled={catalogLoading}
           >
-            <option value="all">{t('assetSelector.types.all')}</option>
-            <option value="stock">{t('assetSelector.types.stock')}</option>
-            <option value="crypto">{t('assetSelector.types.crypto')}</option>
-            <option value="fx">{t('assetSelector.types.fx')}</option>
-            <option value="commodity">{t('assetSelector.types.commodity')}</option>
-            <option value="fund">{t('assetSelector.types.fund')}</option>
-            <option value="index">{t('assetSelector.types.index')}</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat} value={cat}>
+                {t(`marketsPage:categories.${cat}`)}
+              </option>
+            ))}
           </select>
         </div>
         <div className="fi-asset-selector-row">
@@ -165,8 +207,11 @@ export function AssetSelector({
             id="fi-analysis-instrument-select"
             value={selectedAssetId}
             onChange={(event) => onAssetChange(event.target.value)}
+            disabled={catalogLoading || instrumentOptions.length === 0}
           >
-            {instrumentOptions.length === 0 ? (
+            {catalogLoading ? (
+              <option value="">{t('common:loading')}</option>
+            ) : instrumentOptions.length === 0 ? (
               <option value="">{t('assetSelector.noMatches')}</option>
             ) : (
               instrumentOptions.map((asset) => (
@@ -209,46 +254,22 @@ export function AssetSelector({
           />
         </div>
         <span className="fi-asset-selector-count fi-asset-selector-count--inline" aria-live="polite">
-          {t('assetSelector.deckTotalCount', { count: assets.length })}
+          {catalogLoading
+            ? t('common:loading')
+            : t('assetSelector.deckTotalCount', { count: instrumentOptions.length })}
         </span>
       </div>
       <div className="fi-asset-selector-row">
-        <label className="fi-asset-selector-label" htmlFor="fi-analysis-comparison-category-deck">
+        <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-category-deck">
           {t('assetSelector.deckCategoryLabel')}
         </label>
-        <select
-          id="fi-analysis-comparison-category-deck"
-          value={comparisonListCategory}
-          onChange={(event) => onComparisonListCategoryChange(event.target.value as AssetType | 'all')}
-        >
-          <option value="all">{t('assetSelector.types.all')}</option>
-          <option value="stock">{t('assetSelector.types.stock')}</option>
-          <option value="crypto">{t('assetSelector.types.crypto')}</option>
-          <option value="fx">{t('assetSelector.types.fx')}</option>
-          <option value="commodity">{t('assetSelector.types.commodity')}</option>
-          <option value="fund">{t('assetSelector.types.fund')}</option>
-          <option value="index">{t('assetSelector.types.index')}</option>
-        </select>
+        {categorySelect}
       </div>
       <div className="fi-asset-selector-row">
         <label className="fi-asset-selector-label" htmlFor="fi-analysis-instrument-select-deck">
           {t('assetSelector.deckChartSymbol')}
         </label>
-        <select
-          id="fi-analysis-instrument-select-deck"
-          value={selectedAssetId}
-          onChange={(event) => onAssetChange(event.target.value)}
-        >
-          {instrumentOptions.length === 0 ? (
-            <option value="">{t('assetSelector.noMatches')}</option>
-          ) : (
-            instrumentOptions.map((asset) => (
-              <option key={asset.id} value={asset.id}>
-                {asset.symbol} — {asset.name}
-              </option>
-            ))
-          )}
-        </select>
+        {instrumentSelect}
       </div>
     </section>
   )

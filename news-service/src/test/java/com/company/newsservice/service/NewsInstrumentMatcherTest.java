@@ -24,7 +24,7 @@ class NewsInstrumentMatcherTest {
         kw.put("USDTRY", List.of("usd", "dolar"));
         kw.put("GARAN", List.of("garanti"));
         kw.put("THYAO", List.of("thy", "turkish airlines"));
-        props.setInstrumentKeywords(kw);
+        props.getInstrument().setKeywords(kw);
         matcher = new NewsInstrumentMatcher(props);
     }
 

@@ -11,6 +11,7 @@ import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { marketSortFieldFromUrl, type MarketSortField } from '../../features/markets/lib/marketSort'
 import { isAuthenticated } from '../../shared/auth/session'
 import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../features/markets/api/watchlistApi'
+import { instrumentHelpRowProps } from '../../components/help/instrumentHelpAttrs'
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
@@ -840,7 +841,7 @@ export function MarketsPage() {
                           : undefined
                     return (
                       <Fragment key={row.symbol}>
-                        <tr>
+                        <tr {...instrumentHelpRowProps(row.symbol, row.name)}>
                           <td>
                             <button
                               type="button"

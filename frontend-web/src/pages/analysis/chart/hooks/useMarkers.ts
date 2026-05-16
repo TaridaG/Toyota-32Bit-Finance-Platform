@@ -42,7 +42,7 @@ function buildMarkers(
 }
 
 export function useChartMarkers(
-  candleSeries: ISeriesApi<'Candlestick'> | null,
+  markerSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | null,
   input: {
     newsMarkers: SeriesMarker<Time>[]
     trades: ChartTradeEvent[]
@@ -52,8 +52,8 @@ export function useChartMarkers(
   const pluginRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
 
   useLayoutEffect(() => {
-    if (!candleSeries) return
-    const plugin = createSeriesMarkers(candleSeries, [], { autoScale: true, zOrder: 'top' })
+    if (!markerSeries) return
+    const plugin = createSeriesMarkers(markerSeries, [], { autoScale: true, zOrder: 'top' })
     pluginRef.current = plugin
     return () => {
       try {
@@ -63,7 +63,7 @@ export function useChartMarkers(
       }
       pluginRef.current = null
     }
-  }, [candleSeries])
+  }, [markerSeries])
 
   useEffect(() => {
     const plugin = pluginRef.current
@@ -71,5 +71,5 @@ export function useChartMarkers(
     plugin.setMarkers(
       buildMarkers(input.newsMarkers, input.trades, input.selectedBarTime),
     )
-  }, [candleSeries, input.newsMarkers, input.trades, input.selectedBarTime])
+  }, [markerSeries, input.newsMarkers, input.trades, input.selectedBarTime])
 }

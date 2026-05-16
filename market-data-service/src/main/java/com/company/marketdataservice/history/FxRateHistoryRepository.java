@@ -1,6 +1,7 @@
 package com.company.marketdataservice.history;
 
 import com.company.marketdataservice.dto.HistoryPointDto;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -68,5 +69,16 @@ public interface FxRateHistoryRepository extends JpaRepository<FxRateHistoryEntr
             @Param("canonicalSymbol") String canonicalSymbol,
             @Param("fromInclusive") Instant fromInclusive,
             @Param("toExclusive") Instant toExclusive
+    );
+
+    @Query("""
+            select new com.company.marketdataservice.dto.HistoryPointDto(e.observedAt, e.mid)
+            from FxRateHistoryEntry e
+            where e.canonicalSymbol = :canonicalSymbol
+            order by e.observedAt desc
+            """)
+    List<HistoryPointDto> findLatestHistoryPoint(
+            @Param("canonicalSymbol") String canonicalSymbol,
+            Pageable pageable
     );
 }

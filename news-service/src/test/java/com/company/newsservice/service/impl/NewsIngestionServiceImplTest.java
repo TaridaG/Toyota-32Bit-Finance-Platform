@@ -7,6 +7,7 @@ import com.company.newsservice.provider.ProviderNewsItem;
 import com.company.newsservice.repository.NewsArticleRepository;
 import com.company.newsservice.service.NewsInstrumentMatcher;
 import com.company.newsservice.service.NewsRelevanceEvaluator;
+import com.company.newsservice.service.NewsTopicTagger;
 import com.company.newsservice.service.translation.NewsTranslationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,18 +50,23 @@ class NewsIngestionServiceImplTest {
     @Mock
     private NewsTranslationService newsTranslationService;
 
+    @Mock
+    private NewsTopicTagger newsTopicTagger;
+
     private NewsIngestionServiceImpl ingestionService;
 
     @BeforeEach
     void setUp() {
         lenient().when(newsInstrumentMatcher.match(anyString(), any())).thenReturn(List.of());
         lenient().when(newsRelevanceEvaluator.isRelevant(any())).thenReturn(true);
+        lenient().when(newsTopicTagger.resolve(any(), anyString(), any(), any())).thenReturn(List.of("macro"));
         ingestionService =
                 new NewsIngestionServiceImpl(
                         List.of(newsProvider),
                         newsArticleRepository,
                         newsInstrumentMatcher,
                         newsRelevanceEvaluator,
+                        newsTopicTagger,
                         newsTranslationService,
                         newsKafkaTemplate
                 );

@@ -1,15 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { topGainers, topLosers } from './mockData'
 import type { NewsCategory, NewsDataPoint, SentimentType } from './types'
 import { fetchNewsOriginal, type NewsApiItem } from '../../features/news/api/newsService'
 import { useNews } from '../../features/news/hooks/useNews'
 import type { NewsFetchFilters } from '../../features/news/api/newsService'
 import { NewsCard } from './components/NewsCard'
-import { TrendingList } from './components/TrendingList'
-import { SentimentChart } from './components/SentimentChart'
-import { InsightBox } from './components/InsightBox'
+import { NewsDetailModal } from './components/NewsDetailModal'
 
 export function NewsPage() {
   const { t, i18n } = useTranslation('newsPage')
@@ -19,6 +16,8 @@ export function NewsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<NewsFetchFilters>(defaultFilters)
   const [appliedFilters, setAppliedFilters] = useState<NewsFetchFilters>(defaultFilters)
+  const [searchDraft, setSearchDraft] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
   const {
     data: streamApiData,
     loading: streamLoading,
@@ -26,8 +25,8 @@ export function NewsPage() {
     refetch: refetchStream,
     totalElements,
     totalPages,
-  } = useNews(page, pageSize, i18n.language, appliedFilters)
-  const [selectedNews, setSelectedNews] = useState<NewsDataPoint | null>(null)
+  } = useNews(page, pageSize, i18n.language, appliedFilters, appliedSearch)
+  const [selectedNewsId, setSelectedNewsId] = useState<string | null>(null)
   useDocumentTitle(t('titleDoc'))
 
   const streamNews = useMemo<NewsDataPoint[]>(
@@ -35,31 +34,58 @@ export function NewsPage() {
     [streamApiData, t],
   )
 
-  const sentimentCounts = useMemo(
-    () => ({
-      positive: streamNews.filter((item) => item.sentiment === 'positive').length,
-      negative: streamNews.filter((item) => item.sentiment === 'negative').length,
-      neutral: streamNews.filter((item) => item.sentiment === 'neutral').length,
-    }),
-    [streamNews],
-  )
+  useEffect(() => {
+    const trimmed = searchDraft.trim()
+    if (trimmed === appliedSearch) {
+      return
+    }
+    const timer = window.setTimeout(() => {
+      setAppliedSearch(trimmed)
+      setPage(0)
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [appliedSearch, searchDraft])
 
-  const aiInsight = useMemo(() => {
-    if (sentimentCounts.positive > sentimentCounts.negative) {
-      return t('aiInsightPositive')
-    }
-    if (sentimentCounts.negative > sentimentCounts.positive) {
-      return t('aiInsightNegative')
-    }
-    return t('aiInsightNeutral')
-  }, [sentimentCounts.negative, sentimentCounts.positive, t])
+  const applySearchNow = () => {
+    const trimmed = searchDraft.trim()
+    setAppliedSearch(trimmed)
+    setPage(0)
+  }
+
+  const clearSearch = () => {
+    setSearchDraft('')
+    setAppliedSearch('')
+    setPage(0)
+  }
 
   return (
     <>
       <section className="fi-news-page">
-        <div className="fi-main-grid">
-          <article className="card fi-news-feed">
+        <article className="card fi-news-feed">
             <div className="fi-news-feed-head">
+              <form
+                className="fi-news-search"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  applySearchNow()
+                }}
+              >
+                <input
+                  type="search"
+                  value={searchDraft}
+                  onChange={(event) => setSearchDraft(event.target.value)}
+                  placeholder={t('searchPlaceholder')}
+                  aria-label={t('searchLabel')}
+                />
+                <button type="submit" className="fi-news-search-btn">
+                  {t('searchAction')}
+                </button>
+                {appliedSearch ? (
+                  <button type="button" className="fi-news-search-clear" onClick={clearSearch}>
+                    {t('clearSearch')}
+                  </button>
+                ) : null}
+              </form>
               <div className="fi-inline-filter-wrap">
                 <button type="button" className="fi-filter-toggle fi-inline-filter-button" onClick={() => setFiltersOpen((prev) => !prev)}>
                   <IconFilter />
@@ -157,7 +183,8 @@ export function NewsPage() {
                   <NewsCard
                     key={item.id}
                     item={item}
-                    onOpen={setSelectedNews}
+                    searchQuery={appliedSearch}
+                    onOpen={(item) => setSelectedNewsId(item.id)}
                     onRequestOriginal={async (id) => {
                       try {
                         const response = await fetchNewsOriginal(Number(id))
@@ -169,7 +196,7 @@ export function NewsPage() {
                   />
                 ))
               ) : (
-                <p className="fi-empty">{t('noNews')}</p>
+                <p className="fi-empty">{appliedSearch ? t('noSearchResults') : t('noNews')}</p>
               )}
             </div>
             {!streamLoading && !streamError && totalElements > 0 ? (
@@ -183,7 +210,11 @@ export function NewsPage() {
                   ‹ Önceki
                 </button>
                 <span className="fi-pagination-summary">
-                  Sayfa {page + 1} / {Math.max(totalPages, 1)} · {totalElements} haber
+                  {t('paginationSummary', {
+                    page: page + 1,
+                    totalPages: Math.max(totalPages, 1),
+                    count: totalElements,
+                  })}
                 </span>
                 <button
                   type="button"
@@ -195,36 +226,15 @@ export function NewsPage() {
                 </button>
               </div>
             ) : null}
-          </article>
-
-          <aside className="fi-right-column">
-            <TrendingList title={t('risingTitle')} items={topGainers} />
-            <TrendingList title={t('fallingTitle')} items={topLosers} />
-            <SentimentChart counts={sentimentCounts} />
-            <InsightBox text={aiInsight} />
-          </aside>
-        </div>
+        </article>
       </section>
 
-      {selectedNews ? (
-        <div className="fi-modal-wrap" role="dialog" aria-modal="true">
-          <button className="fi-modal-backdrop" onClick={() => setSelectedNews(null)} aria-label={t('closeDetails')} />
-          <article className="card fi-modal">
-            <div className="fi-modal-head">
-              <h3>{selectedNews.title}</h3>
-              <button type="button" onClick={() => setSelectedNews(null)}>
-                ×
-              </button>
-            </div>
-            <p>{selectedNews.details}</p>
-            <p className="fi-modal-corr">{selectedNews.correlationNote}</p>
-            <div className="fi-modal-tags">
-              {selectedNews.relatedAssets.map((asset) => (
-                <span key={asset}>{asset}</span>
-              ))}
-            </div>
-          </article>
-        </div>
+      {selectedNewsId ? (
+        <NewsDetailModal
+          newsId={selectedNewsId}
+          searchQuery={appliedSearch}
+          onClose={() => setSelectedNewsId(null)}
+        />
       ) : null}
     </>
   )
@@ -257,6 +267,7 @@ function mapNewsItem(item: NewsApiItem, t: (key: string, options?: Record<string
     timeAgoMinutes: toMinutesAgo(item.publishedAt),
     timeAgoLabel: toRelativeTimeLabel(item.publishedAt, t),
     category: mapCategory(item.category),
+    topicTags: normalizeTopicTags(item.topicTags, item.category),
     sentiment: item.sentiment,
     tags: relatedAssets,
     relatedAssets,
@@ -268,6 +279,20 @@ function mapNewsItem(item: NewsApiItem, t: (key: string, options?: Record<string
 
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function normalizeTopicTags(
+  topicTags: string[] | undefined,
+  wireCategory: string | null | undefined,
+): Exclude<NewsCategory, 'all'>[] {
+  const allowed = new Set<Exclude<NewsCategory, 'all'>>(['bist', 'viop', 'fx', 'crypto', 'macro'])
+  const fromApi = (topicTags ?? [])
+    .map((tag) => tag.toLowerCase())
+    .filter((tag): tag is Exclude<NewsCategory, 'all'> => allowed.has(tag as Exclude<NewsCategory, 'all'>))
+  if (fromApi.length > 0) {
+    return [...new Set(fromApi)]
+  }
+  return [mapCategory(wireCategory)]
 }
 
 function mapCategory(category: string | null | undefined): Exclude<NewsCategory, 'all'> {

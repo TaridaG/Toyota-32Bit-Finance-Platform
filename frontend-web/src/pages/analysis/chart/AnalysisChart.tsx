@@ -1,15 +1,25 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { LineData, MouseEventParams, Time, UTCTimestamp } from 'lightweight-charts'
-import type { AssetNewsItem, AssetType, CandlePoint, ChartTradeEvent, DrawTool, DrawingItem } from '../types'
+import type {
+  AssetNewsItem,
+  AssetType,
+  CandlePoint,
+  ChartDisplayType,
+  ChartTradeEvent,
+  DrawTool,
+  DrawingItem,
+} from '../types'
 import { DrawingToolsLayer } from '../components/DrawingToolsLayer'
 import { useChart } from './hooks/useChart'
 import { useCrosshairTooltip, type OhlcTooltipState } from './hooks/useCrosshairTooltip'
 import { useCompareSeries, type ComparisonLine } from './hooks/useCompare'
 import { useMovingAverageIndicators, useRsiIndicator } from './hooks/useIndicators'
 import { useChartMarkers } from './hooks/useMarkers'
-import { useCandleVolumeData, useCandleVolumeSeries } from './hooks/useSeries'
+import { useMainPriceData, useMainPriceSeries } from './hooks/useSeries'
+import { useNewsMarkerTooltip } from './hooks/useNewsMarkerTooltip'
 import { useNewsMarkers } from './hooks/useNewsMarkers'
 import { nearestCandleByTime } from './utils/nearestCandle'
+import { useTranslation } from 'react-i18next'
 import { formatNumber, formatPrice } from '../../../shared/format/number'
 
 export type { ComparisonLine } from './hooks/useCompare'
@@ -34,11 +44,16 @@ type AnalysisChartProps = {
   onBarSelect: (time: UTCTimestamp | null) => void
   onLiveOhlcForPanel?: (state: OhlcTooltipState) => void
   drawTool: DrawTool
+  activeDrawColor: string | null
   drawings: DrawingItem[]
+  selectedDrawingId: string | null
   onAddDrawing: (item: DrawingItem) => void
+  onSelectDrawing: (id: string | null) => void
+  onDrawComplete?: () => void
   locale: string
   currency: string
   assetType: AssetType
+  chartType?: ChartDisplayType
   /** Inside chart workbench: fills plot cell, no outer card chrome. */
   embedded?: boolean
 }
@@ -63,18 +78,30 @@ export function AnalysisChart({
   onBarSelect,
   onLiveOhlcForPanel,
   drawTool,
+  activeDrawColor,
   drawings,
+  selectedDrawingId,
   onAddDrawing,
+  onSelectDrawing,
+  onDrawComplete,
   locale,
   currency,
   assetType,
+  chartType = 'candle',
   embedded = false,
 }: AnalysisChartProps) {
+  const { t } = useTranslation('analysis')
   const newsMarkers = useNewsMarkers(newsItems, showEventMarkers)
 
-  const [tooltip, setTooltip] = useState<OhlcTooltipState>(null)
+  const [inlineTooltip, setInlineTooltip] = useState<OhlcTooltipState>(null)
+  const showInlineTooltip = !embedded
   const { containerRef, chartMountRef, chart } = useChart()
-  const seriesBundle = useCandleVolumeSeries(chart)
+  const newsTooltip = useNewsMarkerTooltip({
+    chart,
+    newsItems,
+    enabled: showEventMarkers,
+  })
+  const seriesBundle = useMainPriceSeries(chart, chartType)
 
   const candlesRef = useRef(candles)
   const newsRef = useRef(newsItems)
@@ -90,7 +117,7 @@ export function AnalysisChart({
     selectedBarTimeRef.current = selectedBarTime
   }, [candles, newsItems, onSelectNews, onBarSelect, selectedBarTime])
 
-  useCandleVolumeData(chart, seriesBundle, candles, fitContentKey)
+  useMainPriceData(chart, seriesBundle, candles, fitContentKey)
 
   useEffect(() => {
     if (!seriesBundle?.volume) return
@@ -106,26 +133,26 @@ export function AnalysisChart({
     ma50Visible: showMA50,
   })
   useRsiIndicator(chart, seriesBundle, rsiData, showRSI)
-  useChartMarkers(seriesBundle?.candle ?? null, {
+  useChartMarkers(seriesBundle?.main ?? null, {
     newsMarkers,
     trades: tradeEvents,
     selectedBarTime,
   })
   useCompareSeries(chart, comparisonLines, showCompare)
 
-  const onTooltip = useCallback((state: OhlcTooltipState) => {
-    setTooltip(state)
-  }, [])
+  const onInlineTooltip = useCallback((state: OhlcTooltipState) => {
+    if (showInlineTooltip) setInlineTooltip(state)
+  }, [showInlineTooltip])
 
   useCrosshairTooltip({
     chart,
-    candleSeries: seriesBundle?.candle ?? null,
+    priceSeries: seriesBundle?.main ?? null,
     candles,
     ma20Data: movingAverageData.ma20,
     ma50Data: movingAverageData.ma50,
     rsiData,
-    onChange: onTooltip,
-    onPanelSync: onLiveOhlcForPanel,
+    onChange: onInlineTooltip,
+    onPanelSync: embedded ? onLiveOhlcForPanel : undefined,
   })
 
   useEffect(() => {
@@ -138,10 +165,14 @@ export function AnalysisChart({
     })
   }, [chart, newsItems, selectedNewsId])
 
+  const drawToolRef = useRef(drawTool)
+  drawToolRef.current = drawTool
+
   useEffect(() => {
     if (!chart) return
 
     const handler = (param: MouseEventParams<Time>) => {
+      if (drawToolRef.current !== 'none') return
       if (param.point === undefined) return
 
       const oid = param.hoveredObjectId
@@ -191,36 +222,90 @@ export function AnalysisChart({
             <span>Try another symbol or time range.</span>
           </div>
         ) : null}
-        <DrawingToolsLayer drawTool={drawTool} drawings={drawings} onAddDrawing={onAddDrawing} />
+        <DrawingToolsLayer
+          chart={chart}
+          priceSeries={seriesBundle?.main ?? null}
+          mountRef={chartMountRef}
+          candles={candles}
+          drawTool={drawTool}
+          activeDrawColor={activeDrawColor}
+          drawings={drawings}
+          selectedDrawingId={selectedDrawingId}
+          onAddDrawing={onAddDrawing}
+          onSelectDrawing={onSelectDrawing}
+          onDrawComplete={onDrawComplete}
+        />
+        {newsTooltip ? (
+          <div
+            className="fi-chart-news-tooltip"
+            role="status"
+            style={{ left: newsTooltip.x + 12, top: newsTooltip.y + 12 }}
+          >
+            <strong>{newsTooltip.item.title}</strong>
+            {newsTooltip.item.summary ? <p>{newsTooltip.item.summary}</p> : null}
+            {newsTooltip.item.matchReasons && newsTooltip.item.matchReasons.length > 0 ? (
+              <ul className="fi-chart-news-tooltip-tags">
+                {newsTooltip.item.matchReasons.map((reason, index) => (
+                  <li key={`${reason.kind}-${reason.categoryUi}-${index}`}>
+                    {reason.kind === 'asset' && reason.symbol
+                      ? t('chartNews.matchAsset', { symbol: reason.symbol })
+                      : t('chartNews.matchCategory', {
+                          category: t(`news:categories.${reason.categoryUi}`, {
+                            defaultValue: reason.categoryUi.toUpperCase(),
+                          }),
+                        })}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <footer>
+              <span>{newsTooltip.item.source}</span>
+              {newsTooltip.item.nextDayChangePercent != null &&
+              Number.isFinite(newsTooltip.item.nextDayChangePercent) ? (
+                <span
+                  className={
+                    newsTooltip.item.nextDayChangePercent >= 0
+                      ? 'fi-chart-news-tooltip-change-up'
+                      : 'fi-chart-news-tooltip-change-down'
+                  }
+                >
+                  {t('chartNews.nextDayChange', {
+                    value: newsTooltip.item.nextDayChangePercent.toFixed(2),
+                  })}
+                </span>
+              ) : null}
+            </footer>
+          </div>
+        ) : null}
       </div>
-      {tooltip ? (
+      {showInlineTooltip && inlineTooltip ? (
         <div className="fi-crosshair-tooltip" role="status">
-          <div className="fi-crosshair-tooltip-time">{tooltip.timeLabel}</div>
-          <div className={`fi-crosshair-direction ${(tooltip.close ?? 0) >= (tooltip.open ?? 0) ? 'up' : 'down'}`}>
-            {(tooltip.close ?? 0) >= (tooltip.open ?? 0) ? '↑' : '↓'}
+          <div className="fi-crosshair-tooltip-time">{inlineTooltip.timeLabel}</div>
+          <div className={`fi-crosshair-direction ${(inlineTooltip.close ?? 0) >= (inlineTooltip.open ?? 0) ? 'up' : 'down'}`}>
+            {(inlineTooltip.close ?? 0) >= (inlineTooltip.open ?? 0) ? '↑' : '↓'}
           </div>
           <section className="fi-crosshair-tooltip-section">
             <strong>OHLC</strong>
             <div className="fi-crosshair-tooltip-grid">
               <span>O</span>
-              <span>{formatPrice(tooltip.open, locale, currency, assetType)}</span>
+              <span>{formatPrice(inlineTooltip.open, locale, currency, assetType)}</span>
               <span>H</span>
-              <span>{formatPrice(tooltip.high, locale, currency, assetType)}</span>
+              <span>{formatPrice(inlineTooltip.high, locale, currency, assetType)}</span>
               <span>L</span>
-              <span>{formatPrice(tooltip.low, locale, currency, assetType)}</span>
+              <span>{formatPrice(inlineTooltip.low, locale, currency, assetType)}</span>
               <span>C</span>
-              <span>{formatPrice(tooltip.close, locale, currency, assetType)}</span>
+              <span>{formatPrice(inlineTooltip.close, locale, currency, assetType)}</span>
             </div>
           </section>
           <section className="fi-crosshair-tooltip-section">
             <strong>Indicators</strong>
             <div className="fi-crosshair-tooltip-grid">
               <span>MA20</span>
-              <span>{formatPrice(tooltip.ma20, locale, currency, assetType)}</span>
+              <span>{formatPrice(inlineTooltip.ma20, locale, currency, assetType)}</span>
               <span>MA50</span>
-              <span>{formatPrice(tooltip.ma50, locale, currency, assetType)}</span>
+              <span>{formatPrice(inlineTooltip.ma50, locale, currency, assetType)}</span>
               <span>RSI</span>
-              <span>{formatNumber(tooltip.rsi, locale, 2)}</span>
+              <span>{formatNumber(inlineTooltip.rsi, locale, 2)}</span>
             </div>
           </section>
           <div className="fi-crosshair-tooltip-rsi-hint">

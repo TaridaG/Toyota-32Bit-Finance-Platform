@@ -2,6 +2,7 @@ package com.company.newsservice.config;
 
 import com.company.newsservice.domain.enums.NewsCategory;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,13 +21,37 @@ public class NewsProperties {
     private Scheduler scheduler = new Scheduler();
     private Rss rss = new Rss();
     private Relevance relevance = new Relevance();
+    private TopicTags topicTags = new TopicTags();
     private Translation translation = new Translation();
     private List<Feed> feeds = new ArrayList<>();
 
+    private Instrument instrument = new Instrument();
+
     /**
-     * Symbol (e.g. BTCUSDT) → lowercase substring keywords for ingest-time matching only.
+     * Legacy flat binding ({@code news.instrument-keywords.*}). Prefer {@link #instrument}{@code .keywords}.
      */
+    @Getter(AccessLevel.NONE)
+    @Setter
     private Map<String, List<String>> instrumentKeywords = new LinkedHashMap<>();
+
+    /**
+     * Resolved keyword map for instrument matching (YAML: {@code news.instrument.keywords}).
+     */
+    public Map<String, List<String>> getInstrumentKeywords() {
+        if (instrument != null && instrument.getKeywords() != null && !instrument.getKeywords().isEmpty()) {
+            return instrument.getKeywords();
+        }
+        return instrumentKeywords == null ? Map.of() : instrumentKeywords;
+    }
+
+    @Getter
+    @Setter
+    public static class Instrument {
+        /**
+         * Symbol (e.g. BTCUSDT) → lowercase substring keywords matched in title/summary.
+         */
+        private Map<String, List<String>> keywords = new LinkedHashMap<>();
+    }
 
     @Getter
     @Setter
@@ -107,6 +132,19 @@ public class NewsProperties {
                 return List.of();
             }
             return Collections.unmodifiableList(keywords);
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class TopicTags {
+        /**
+         * UI topic id → lowercase keywords (bist, fx, crypto, macro, viop).
+         */
+        private Map<String, List<String>> keywords = new LinkedHashMap<>();
+
+        public Map<String, List<String>> safeKeywords() {
+            return keywords == null || keywords.isEmpty() ? Map.of() : keywords;
         }
     }
 

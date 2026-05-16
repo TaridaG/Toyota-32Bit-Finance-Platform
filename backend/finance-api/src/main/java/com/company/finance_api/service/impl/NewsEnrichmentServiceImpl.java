@@ -1,8 +1,14 @@
 package com.company.finance_api.service.impl;
 
+import com.company.finance_api.domain.Instrument;
+import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.dto.NewsEnrichedDetailResponse;
 import com.company.finance_api.dto.NewsEnrichedPageResponse;
 import com.company.finance_api.dto.NewsEnrichedResponse;
 import com.company.finance_api.dto.NewsOriginalResponse;
+import com.company.finance_api.dto.NewsRelatedAssetPerformance;
+import com.company.finance_api.exception.ResourceNotFoundException;
+import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.service.InstrumentService;
 import com.company.finance_api.service.NewsEnrichmentService;
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -26,11 +32,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 
 @Service
@@ -39,6 +48,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     private static final Logger log = LoggerFactory.getLogger(NewsEnrichmentServiceImpl.class);
     private static final Duration CACHE_TTL = Duration.ofSeconds(10);
     private static final Duration ORIGINAL_CACHE_TTL = Duration.ofMinutes(10);
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final Set<String> POSITIVE_KEYWORDS = Set.of(
             "gain", "gains", "rally", "rise", "rises", "up", "bull", "surge", "positive", "beat"
     );
@@ -47,6 +57,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     );
 
     private final InstrumentService instrumentService;
+    private final InstrumentPriceRepository instrumentPriceRepository;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
     private final RestClient restClient = RestClient.create();
@@ -57,38 +68,63 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     @Value("${clients.analytics.base-url:http://analytics-service:8080}")
     private String analyticsBaseUrl;
 
+    @Value("${clients.market-data.base-url:http://market-data-service:8080}")
+    private String marketDataBaseUrl;
+
     public NewsEnrichmentServiceImpl(
             InstrumentService instrumentService,
+            InstrumentPriceRepository instrumentPriceRepository,
             ObjectMapper objectMapper,
             ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider
     ) {
         this.instrumentService = instrumentService;
+        this.instrumentPriceRepository = instrumentPriceRepository;
         this.objectMapper = objectMapper;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
     }
 
     @Override
-    public NewsEnrichedPageResponse getEnrichedNews(int page, int size, String language, String category, String sentiment, Integer maxAgeMinutes) {
+    public NewsEnrichedPageResponse getEnrichedNews(
+            int page,
+            int size,
+            String language,
+            String category,
+            String sentiment,
+            Integer maxAgeMinutes,
+            String search
+    ) {
         int resolvedPage = Math.max(page, 0);
         int resolvedSize = Math.max(size, 1);
         String resolvedLang = normalizeLanguage(language);
         String resolvedCategory = normalizeCategoryFilter(category);
         String resolvedSentiment = normalizeSentimentFilter(sentiment);
         Integer resolvedMaxAgeMinutes = normalizeMaxAge(maxAgeMinutes);
+        String resolvedSearch = normalizeSearch(search);
         String cacheKey = "news:enriched:lang:" + resolvedLang
                 + ":page:" + resolvedPage
                 + ":size:" + resolvedSize
                 + ":category:" + resolvedCategory
                 + ":sentiment:" + resolvedSentiment
-                + ":maxAge:" + (resolvedMaxAgeMinutes == null ? "all" : resolvedMaxAgeMinutes);
+                + ":maxAge:" + (resolvedMaxAgeMinutes == null ? "all" : resolvedMaxAgeMinutes)
+                + ":q:" + (resolvedSearch == null ? "" : resolvedSearch.toLowerCase(Locale.ROOT));
         Optional<NewsEnrichedPageResponse> cached = readFromCache(cacheKey);
         if (cached.isPresent()) {
             return cached.get();
         }
-        boolean hasFilters = !"all".equals(resolvedCategory) || !"all".equals(resolvedSentiment) || resolvedMaxAgeMinutes != null;
-        NewsServicePageResponse<NewsServiceNewsItem> upstream = hasFilters
-                ? collectFilteredUpstreamPage(resolvedPage, resolvedSize, resolvedLang, resolvedCategory, resolvedSentiment, resolvedMaxAgeMinutes)
-                : fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, false);
+        boolean hasClientFilters = !"all".equals(resolvedCategory)
+                || !"all".equals(resolvedSentiment)
+                || resolvedMaxAgeMinutes != null;
+        NewsServicePageResponse<NewsServiceNewsItem> upstream = hasClientFilters
+                ? collectFilteredUpstreamPage(
+                        resolvedPage,
+                        resolvedSize,
+                        resolvedLang,
+                        resolvedCategory,
+                        resolvedSentiment,
+                        resolvedMaxAgeMinutes,
+                        resolvedSearch
+                )
+                : fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, false, resolvedSearch);
         List<String> symbols;
         try {
             symbols = instrumentService.getAllActive().stream()
@@ -122,7 +158,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             String language,
             String category,
             String sentiment,
-            Integer maxAgeMinutes
+            Integer maxAgeMinutes,
+            String search
     ) {
         final int scanPageSize = Math.max(50, Math.min(200, size * 5));
         final long startIndex = (long) page * size;
@@ -135,7 +172,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
         while (upstreamPageIndex < upstreamTotalPages) {
             NewsServicePageResponse<NewsServiceNewsItem> upstreamPage =
-                    fetchNewsPage(upstreamPageIndex, scanPageSize, language, false);
+                    fetchNewsPage(upstreamPageIndex, scanPageSize, language, false, search);
             upstreamTotalPages = Math.max(upstreamPage.totalPages(), upstreamPageIndex + 1);
 
             for (NewsServiceNewsItem item : upstreamPage.content()) {
@@ -156,6 +193,102 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
         int totalPages = filteredTotal == 0 ? 0 : (int) Math.ceil((double) filteredTotal / size);
         return new NewsServicePageResponse<>(selectedPageItems, page, size, filteredTotal, totalPages);
+    }
+
+    @Override
+    public List<NewsEnrichedResponse> getEnrichedChartNews(
+            String symbol,
+            String categoryUi,
+            Instant fromInclusive,
+            Instant toInclusive,
+            String language
+    ) {
+        if (!StringUtils.hasText(symbol) || fromInclusive == null || toInclusive == null || toInclusive.isBefore(fromInclusive)) {
+            return List.of();
+        }
+        String resolvedLang = normalizeLanguage(language);
+        String resolvedSymbol = symbol.trim().toUpperCase(Locale.ROOT);
+        String resolvedCategoryUi = normalizeCategoryFilter(categoryUi);
+        String cacheKey = "news:chart:lang:" + resolvedLang
+                + ":symbol:" + resolvedSymbol
+                + ":category:" + resolvedCategoryUi
+                + ":from:" + fromInclusive
+                + ":to:" + toInclusive;
+        Optional<List<NewsEnrichedResponse>> cached = readFromCache(cacheKey, new TypeReference<>() {
+        });
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+        List<NewsServiceNewsItem> upstream = fetchNewsChart(fromInclusive, toInclusive, resolvedLang);
+        List<String> catalogSymbols;
+        try {
+            catalogSymbols = instrumentService.getAllActive().stream()
+                    .map(instrument -> instrument.getSymbol().toUpperCase(Locale.ROOT))
+                    .sorted(Comparator.comparingInt(String::length).reversed())
+                    .toList();
+        } catch (Exception ex) {
+            log.warn("NEWS_INSTRUMENT_CATALOG_LOAD_FAIL reason={}", ex.toString());
+            catalogSymbols = List.of();
+        }
+        final List<String> symbolsForEnrichment = catalogSymbols;
+        List<NewsEnrichedResponse> enriched = upstream.stream()
+                .map(item -> enrich(item, symbolsForEnrichment))
+                .filter(item -> matchesChartNews(item, resolvedSymbol, resolvedCategoryUi))
+                .toList();
+        writeToCache(cacheKey, enriched, Duration.ofMinutes(2));
+        return enriched;
+    }
+
+    @Override
+    public NewsEnrichedDetailResponse getEnrichedNewsDetail(Long id, String language) {
+        String resolvedLang = normalizeLanguage(language);
+        NewsServiceNewsDetailItem item = fetchNewsDetail(id, resolvedLang);
+        String title = nz(item.title());
+        String summary = nz(item.summary());
+        String bag = (title + " " + summary).toLowerCase(Locale.ROOT);
+        String sentiment = resolveSentiment(bag);
+        String categoryUi = mapCategoryToUi(item.category());
+        List<String> catalogSymbols;
+        try {
+            catalogSymbols = instrumentService.getAllActive().stream()
+                    .map(instrument -> instrument.getSymbol().toUpperCase(Locale.ROOT))
+                    .sorted(Comparator.comparingInt(String::length).reversed())
+                    .toList();
+        } catch (Exception ex) {
+            log.warn("NEWS_INSTRUMENT_CATALOG_LOAD_FAIL reason={}", ex.toString());
+            catalogSymbols = List.of();
+        }
+        List<String> relatedSymbols = item.relatedSymbols() == null || item.relatedSymbols().isEmpty()
+                ? extractSymbols(title + " " + summary, catalogSymbols)
+                : List.copyOf(item.relatedSymbols());
+        Map<String, String> namesBySymbol = instrumentService.getAllActive().stream()
+                .collect(Collectors.toMap(
+                        instrument -> instrument.getSymbol().toUpperCase(Locale.ROOT),
+                        Instrument::getName,
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
+        List<NewsRelatedAssetPerformance> relatedAssets = relatedSymbols.stream()
+                .map(symbol -> buildRelatedAssetPerformance(symbol, namesBySymbol.get(symbol.toUpperCase(Locale.ROOT))))
+                .toList();
+        return new NewsEnrichedDetailResponse(
+                item.id(),
+                title,
+                summary,
+                item.titleOriginal(),
+                item.summaryOriginal(),
+                item.translatedLanguage(),
+                item.translated(),
+                item.articleUrl(),
+                item.sourceName(),
+                item.category(),
+                categoryUi,
+                item.publishedAt(),
+                sentiment,
+                relatedSymbols,
+                resolveTopicTags(item),
+                relatedAssets
+        );
     }
 
     @Override
@@ -188,7 +321,9 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         String summary = nz(item.summary());
         String bag = (title + " " + summary)
                 .toLowerCase(Locale.ROOT);
-        List<String> relatedSymbols = extractSymbols(title + " " + summary, symbols);
+        List<String> relatedSymbols = item.relatedSymbols() != null && !item.relatedSymbols().isEmpty()
+                ? List.copyOf(item.relatedSymbols())
+                : extractSymbols(title + " " + summary, symbols);
         String sentiment = resolveSentiment(bag);
         BigDecimal reactionPercent1h = relatedSymbols.isEmpty() ? null : computeReactionPercent1h(relatedSymbols.get(0));
 
@@ -205,6 +340,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
                 item.publishedAt(),
                 sentiment,
                 relatedSymbols,
+                resolveTopicTags(item),
                 reactionPercent1h
         );
     }
@@ -221,8 +357,94 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         return "neutral";
     }
 
+    /** Match by symbol, any topic tag, or legacy primary category. */
+    private boolean matchesChartNews(NewsEnrichedResponse item, String symbol, String categoryUi) {
+        if (hasRelatedSymbolMatch(item, symbol)) {
+            return true;
+        }
+        return matchesCategoryUi(item, categoryUi);
+    }
+
+    private boolean matchesCategoryUi(NewsEnrichedResponse item, String categoryUi) {
+        if ("all".equals(categoryUi)) {
+            return true;
+        }
+        if (categoryUi.equals(mapCategoryToUi(item.category()))) {
+            return true;
+        }
+        return item.topicTags() != null && item.topicTags().stream().anyMatch(categoryUi::equals);
+    }
+
+    private boolean matchesCategoryUi(NewsServiceNewsItem item, String categoryUi) {
+        if ("all".equals(categoryUi)) {
+            return true;
+        }
+        if (categoryUi.equals(mapCategoryToUi(item.category()))) {
+            return true;
+        }
+        return item.topicTags() != null && item.topicTags().stream().anyMatch(categoryUi::equals);
+    }
+
+    private List<String> resolveTopicTags(NewsServiceNewsItem item) {
+        return resolveTopicTags(item.topicTags(), item.category());
+    }
+
+    private List<String> resolveTopicTags(NewsServiceNewsDetailItem item) {
+        return resolveTopicTags(item.topicTags(), item.category());
+    }
+
+    private List<String> resolveTopicTags(List<String> topicTags, String wireCategory) {
+        if (topicTags != null && !topicTags.isEmpty()) {
+            return List.copyOf(topicTags);
+        }
+        return List.of(mapCategoryToUi(wireCategory));
+    }
+
+    private boolean hasRelatedSymbolMatch(NewsEnrichedResponse item, String symbol) {
+        if (item.relatedSymbols() == null || item.relatedSymbols().isEmpty()) {
+            return false;
+        }
+        String target = normalizeSymbolKey(symbol);
+        for (String related : item.relatedSymbols()) {
+            if (related != null && normalizeSymbolKey(related).equals(target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String normalizeSymbolKey(String symbol) {
+        if (!StringUtils.hasText(symbol)) {
+            return "";
+        }
+        return symbol.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
+    }
+
+    private List<NewsServiceNewsItem> fetchNewsChart(Instant fromInclusive, Instant toInclusive, String language) {
+        String url = UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
+                .path("/api/news/chart")
+                .queryParam("from", fromInclusive)
+                .queryParam("to", toInclusive)
+                .queryParam("lang", language)
+                .toUriString();
+        try {
+            NewsServiceApiResponse<List<NewsServiceNewsItem>> body = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+            if (body == null || body.data() == null) {
+                return List.of();
+            }
+            return body.data();
+        } catch (Exception ex) {
+            log.warn("NEWS_CHART_FETCH_FAIL from={} to={} reason={}", fromInclusive, toInclusive, ex.toString());
+            return List.of();
+        }
+    }
+
     private boolean matchesFilters(NewsServiceNewsItem item, String category, String sentiment, Integer maxAgeMinutes) {
-        if (!"all".equals(category) && !category.equals(mapCategoryToUi(item.category()))) {
+        if (!"all".equals(category) && !matchesCategoryUi(item, category)) {
             return false;
         }
         if (!"all".equals(sentiment)) {
@@ -292,14 +514,23 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         }
     }
 
-    private NewsServicePageResponse<NewsServiceNewsItem> fetchNewsPage(int page, int size, String language, boolean includeOriginal) {
-        String url = UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
+    private NewsServicePageResponse<NewsServiceNewsItem> fetchNewsPage(
+            int page,
+            int size,
+            String language,
+            boolean includeOriginal,
+            String search
+    ) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
                 .path("/api/news")
                 .queryParam("page", page)
                 .queryParam("size", size)
                 .queryParam("lang", language)
-                .queryParam("includeOriginal", includeOriginal)
-                .toUriString();
+                .queryParam("includeOriginal", includeOriginal);
+        if (StringUtils.hasText(search)) {
+            builder.queryParam("q", search);
+        }
+        String url = builder.toUriString();
 
         NewsServiceApiResponse<NewsServicePageResponse<NewsServiceNewsItem>> body = restClient.get()
                 .uri(url)
@@ -313,11 +544,131 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         return body.data();
     }
 
+    private NewsRelatedAssetPerformance buildRelatedAssetPerformance(String symbol, String name) {
+        String resolvedName = StringUtils.hasText(name) ? name : symbol;
+        try {
+            PriceSummaryDto summary = fetchPriceSummary(symbol);
+            BigDecimal current = summary != null ? summary.price() : resolveLatestPrice(symbol);
+            Instant now = Instant.now();
+            BigDecimal change1d = summary != null ? summary.change1D() : null;
+            BigDecimal change1w = summary != null ? summary.change1W() : null;
+            BigDecimal change1m = summary != null ? summary.change1M() : null;
+            BigDecimal change3m = summary != null ? summary.change3M() : null;
+            BigDecimal change6m = summary != null ? summary.change6M() : null;
+            BigDecimal change1y = summary != null ? summary.change1Y() : null;
+            if (change1d == null) {
+                change1d = computePercentageChange(current, baselinePriceAt(symbol, now.minus(Duration.ofDays(1))));
+            }
+            if (change1w == null) {
+                change1w = computePercentageChange(current, baselinePriceAt(symbol, now.minus(Duration.ofDays(7))));
+            }
+            if (change1m == null) {
+                change1m = computePercentageChange(current, baselinePriceAt(symbol, now.minus(Duration.ofDays(30))));
+            }
+            if (change3m == null) {
+                change3m = computePercentageChange(current, baselinePriceAt(symbol, now.minus(Duration.ofDays(90))));
+            }
+            if (change6m == null) {
+                change6m = computePercentageChange(current, baselinePriceAt(symbol, now.minus(Duration.ofDays(180))));
+            }
+            if (change1y == null) {
+                change1y = computePercentageChange(current, baselinePriceAt(symbol, now.minus(Duration.ofDays(365))));
+            }
+            return new NewsRelatedAssetPerformance(
+                    symbol,
+                    resolvedName,
+                    current,
+                    change1d,
+                    change1w,
+                    change1m,
+                    change3m,
+                    change6m,
+                    change1y
+            );
+        } catch (Exception ex) {
+            log.debug("NEWS_RELATED_ASSET_PERF_FAIL symbol={} reason={}", symbol, ex.toString());
+            return new NewsRelatedAssetPerformance(
+                    symbol, resolvedName, null, null, null, null, null, null, null
+            );
+        }
+    }
+
+    private BigDecimal resolveLatestPrice(String symbol) {
+        return baselinePriceAt(symbol, Instant.now());
+    }
+
+    private BigDecimal baselinePriceAt(String symbol, Instant target) {
+        return instrumentPriceRepository
+                .findLatestPricesAtOrBefore(List.of(symbol), PriceType.MARKET.name(), target)
+                .stream()
+                .findFirst()
+                .map(InstrumentPriceRepository.SymbolPriceView::getPrice)
+                .orElse(null);
+    }
+
+    private BigDecimal computePercentageChange(BigDecimal current, BigDecimal baseline) {
+        if (current == null || baseline == null || baseline.compareTo(BigDecimal.ZERO) == 0) {
+            return null;
+        }
+        return current.subtract(baseline)
+                .divide(baseline, 8, RoundingMode.HALF_UP)
+                .multiply(HUNDRED)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private PriceSummaryDto fetchPriceSummary(String symbol) {
+        Map<String, PriceSummaryDto> summaries = fetchPriceSummaries(List.of(symbol));
+        return summaries.get(symbol);
+    }
+
+    private Map<String, PriceSummaryDto> fetchPriceSummaries(List<String> symbols) {
+        if (symbols == null || symbols.isEmpty()) {
+            return Map.of();
+        }
+        String url = UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
+                .path("/api/market/prices/summary")
+                .queryParam("symbols", String.join(",", symbols))
+                .toUriString();
+        try {
+            Map<String, PriceSummaryDto> body = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+            return body == null ? Map.of() : body;
+        } catch (Exception ex) {
+            log.debug("NEWS_PRICE_SUMMARY_FAIL symbols={} reason={}", symbols, ex.toString());
+            return Map.of();
+        }
+    }
+
+    private NewsServiceNewsDetailItem fetchNewsDetail(Long id, String language) {
+        String url = UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
+                .path("/api/news/{id}")
+                .queryParam("lang", language)
+                .queryParam("includeOriginal", true)
+                .buildAndExpand(id)
+                .toUriString();
+        NewsServiceApiResponse<NewsServiceNewsDetailItem> body = restClient.get()
+                .uri(url)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
+        if (body == null || body.data() == null) {
+            throw new ResourceNotFoundException("News article not found: " + id);
+        }
+        return body.data();
+    }
+
     private List<AnalyticsCandleDto> fetchCandles(String symbol) {
+        return fetchCandles(symbol, LocalDate.now().minusDays(2), LocalDate.now());
+    }
+
+    private List<AnalyticsCandleDto> fetchCandles(String symbol, LocalDate from, LocalDate to) {
         String url = UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
                 .path("/api/analytics/instruments/{symbol}/candles")
-                .queryParam("from", LocalDate.now().minusDays(1))
-                .queryParam("to", LocalDate.now())
+                .queryParam("from", from)
+                .queryParam("to", to)
                 .buildAndExpand(symbol)
                 .toUriString();
 
@@ -399,7 +750,9 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             boolean translated,
             String sourceName,
             String category,
-            Instant publishedAt
+            Instant publishedAt,
+            List<String> relatedSymbols,
+            List<String> topicTags
             ) {
 
     }
@@ -407,7 +760,17 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     private record NewsServiceNewsDetailItem(
             Long id,
             String title,
-            String summary
+            String summary,
+            String titleOriginal,
+            String summaryOriginal,
+            String translatedLanguage,
+            boolean translated,
+            String articleUrl,
+            String sourceName,
+            String category,
+            Instant publishedAt,
+            List<String> relatedSymbols,
+            List<String> topicTags
             ) {
 
     }
@@ -475,7 +838,26 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         return maxAgeMinutes;
     }
 
+    private static String normalizeSearch(String search) {
+        if (!StringUtils.hasText(search)) {
+            return null;
+        }
+        String normalized = search.trim();
+        return normalized.isBlank() ? null : normalized;
+    }
+
     private static String nz(String value) {
         return value == null ? "" : value;
+    }
+
+    private record PriceSummaryDto(
+            BigDecimal price,
+            BigDecimal change1D,
+            BigDecimal change1W,
+            BigDecimal change1M,
+            BigDecimal change3M,
+            BigDecimal change6M,
+            BigDecimal change1Y
+    ) {
     }
 }

@@ -1,4 +1,4 @@
-import type { CandlestickData, HistogramData, Time } from 'lightweight-charts'
+import type { CandlestickData, HistogramData, LineData, Time } from 'lightweight-charts'
 import type { CandlePoint } from '../../types'
 
 export function toCandlestickData(candle: CandlePoint): CandlestickData<Time> {
@@ -11,10 +11,18 @@ export function toCandlestickData(candle: CandlePoint): CandlestickData<Time> {
   }
 }
 
-export function toVolumeHistogramData(candle: CandlePoint): HistogramData<Time> {
+export function toLineData(candle: CandlePoint): LineData<Time> {
+  return {
+    time: candle.time,
+    value: candle.close,
+  }
+}
+
+export function toVolumeHistogramData(candle: CandlePoint, prevClose?: number): HistogramData<Time> {
+  const ref = prevClose ?? candle.open
   return {
     time: candle.time,
     value: candle.volume,
-    color: candle.close >= candle.open ? 'rgba(34,197,94,0.45)' : 'rgba(239,68,68,0.45)',
+    color: candle.close >= ref ? 'rgba(34,197,94,0.45)' : 'rgba(239,68,68,0.45)',
   }
 }

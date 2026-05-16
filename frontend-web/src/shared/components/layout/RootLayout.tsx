@@ -6,6 +6,10 @@ import { normalizeLocale } from '../../i18n'
 import { useAppPreferences } from '../../preferences/useAppPreferences'
 import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
 import { SUPPORTED_CURRENCIES } from '../../preferences/preferences'
+import { LiteracyHelpLayer } from '../../../features/literacy-help/LiteracyHelpLayer'
+import { AdminInfoCardPickLayer } from '../../../features/admin-info-card-pick/AdminInfoCardPickLayer'
+import { AdminInfoCardPickEditor } from '../../../features/admin-info-card-pick/AdminInfoCardPickEditor'
+import { AdminInfoCardPickRouteSync } from '../../../features/admin-info-card-pick/AdminInfoCardPickRouteSync'
 
 export function RootLayout() {
   const navigate = useNavigate()
@@ -63,7 +67,11 @@ export function RootLayout() {
 
   return (
     <>
+      <AdminInfoCardPickRouteSync />
       <PortalHeader isAuthenticated={authenticated} onLogout={handleLogout} />
+      <LiteracyHelpLayer />
+      <AdminInfoCardPickLayer />
+      <AdminInfoCardPickEditor />
       <Outlet />
     </>
   )

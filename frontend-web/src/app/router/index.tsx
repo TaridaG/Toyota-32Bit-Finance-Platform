@@ -10,6 +10,9 @@ import { NewsPage } from '../../pages/news/NewsPage'
 import { AnalysisPage } from '../../pages/analysis/AnalysisPage'
 import { FaizVadeliPage } from '../../pages/faiz-vadeli/FaizVadeliPage'
 import { BankRatesPage } from '../../pages/bank-rates/BankRatesPage'
+import { TurkiyeEkonomisiPage } from '../../pages/turkiye-ekonomisi/TurkiyeEkonomisiPage'
+import { FinansalOkuryazarlikPage } from '../../pages/finansal-okuryazarlik/FinansalOkuryazarlikPage'
+import { BilgiKartlariPage } from '../../pages/bilgi-kartlari/BilgiKartlariPage'
 import { ProfileSettingsPage } from '../../pages/profile/ProfileSettingsPage'
 import { LandingPage } from '../../pages/public/LandingPage'
 import { LoginPage } from '../../pages/public/LoginPage'
@@ -114,6 +117,8 @@ export const appRouter = createBrowserRouter([
         ),
         children: [
           { index: true, element: <Navigate to="/app/markets" replace /> },
+          { path: 'turkiye-ekonomisi', element: <TurkiyeEkonomisiPage /> },
+          { path: 'finansal-okuryazarlik', element: <FinansalOkuryazarlikPage /> },
           { path: 'bank-rates', element: <BankRatesPage /> },
           { path: 'markets', element: <MarketsPage /> },
           { path: 'faiz-vadeli', element: <FaizVadeliPage /> },
@@ -124,6 +129,14 @@ export const appRouter = createBrowserRouter([
           { path: 'portfolio', element: <ExternalPortfolioPage /> },
           { path: 'simulation', element: <SimulationPage /> },
           { path: 'profile', element: <ProfileSettingsPage /> },
+          {
+            path: 'bilgi-kartlari',
+            element: (
+              <RequireAdmin>
+                <BilgiKartlariPage />
+              </RequireAdmin>
+            ),
+          },
         ],
       },
     ],

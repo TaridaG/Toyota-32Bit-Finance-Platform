@@ -62,6 +62,7 @@ const RANGE_TO_FALLBACK_POINTS: Record<AnalysisRange, number> = {
 }
 
 const RANGE_TO_HISTORY_DAYS: Partial<Record<AnalysisRange, number>> = {
+  '7d': 14,
   '30d': 30,
   '90d': 90,
   '1y': 365,
@@ -296,7 +297,8 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
   const fromTs = Date.now() - RANGE_TO_MS[range]
   const historyDays = RANGE_TO_HISTORY_DAYS[range]
 
-  if (historyDays) {
+  const useHistoryFirst = historyDays != null && (kind === 'fx' || kind === 'fund')
+  if (useHistoryFirst && historyDays) {
     const historyToTs = Date.now() - DAY_MS
     const historyFromTs = historyToTs - (historyDays - 1) * DAY_MS
     const historyPoints = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
@@ -307,14 +309,24 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
 
   const points = await fetchAnalyticsCandlesForRange(analyticsCandidates, interval, fromTs)
   const windowed = points.filter((point) => point.time * 1000 >= fromTs)
-  if (windowed.length > 0) {
+  if (windowed.length > 0 && !shouldUseHistoryFallback(windowed, range)) {
     return windowed
   }
-  if (points.length > 0) {
+
+  if (historyDays) {
+    const historyToTs = Date.now() - DAY_MS
+    const historyFromTs = historyToTs - (historyDays - 1) * DAY_MS
+    const historyPoints = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
+    if (historyPoints.length > 0) {
+      return historyPoints
+    }
+  }
+
+  if (points.length > 0 && !shouldUseHistoryFallback(points, range)) {
     return points
   }
 
-  if (interval === 'ONE_DAY' && shouldUseHistoryFallback(points, range)) {
+  if (shouldUseHistoryFallback(windowed.length > 0 ? windowed : points, range)) {
     const historyToTs = Date.now() - DAY_MS
     const historyFromTs = historyDays ? historyToTs - (historyDays - 1) * DAY_MS : fromTs
     const historyFallback = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
@@ -334,7 +346,11 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
 }
 
 function shouldUseHistoryFallback(points: CandlePoint[], range: AnalysisRange): boolean {
-  const minPoints = range === '1y' ? 90 : range === '5y' ? 180 : 45
+  if (points.length === 0) {
+    return true
+  }
+  const minPoints =
+    range === '1y' ? 90 : range === '5y' ? 180 : range === '90d' ? 45 : range === '30d' ? 20 : range === '7d' ? 5 : 3
   return points.length < minPoints
 }
 

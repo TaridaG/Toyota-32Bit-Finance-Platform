@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { LineSeries, type IChartApi, type ISeriesApi, type LineData, type Time } from 'lightweight-charts'
-import type { CandleVolumeSeries } from './useSeries'
+import type { MainPriceSeries } from './useSeries'
 
 function safeRemoveLine(chart: IChartApi, series: ISeriesApi<'Line'>) {
   try {
@@ -17,7 +17,7 @@ export type MaSeriesBundle = {
 
 export function useMovingAverageIndicators(
   chart: IChartApi | null,
-  seriesBundle: CandleVolumeSeries | null,
+  seriesBundle: MainPriceSeries | null,
   maData: { ma20: LineData<Time>[]; ma50: LineData<Time>[] },
   visibility: { ma20Visible: boolean; ma50Visible: boolean },
 ) {
@@ -41,7 +41,7 @@ export function useMovingAverageIndicators(
       visible: true,
     })
 
-    const mainPane = seriesBundle.candle.getPane().paneIndex()
+    const mainPane = seriesBundle.main.getPane().paneIndex()
     ma20.moveToPane(mainPane)
     ma50.moveToPane(mainPane)
 
@@ -71,7 +71,7 @@ type RsiSeriesBundle = {
 
 export function useRsiIndicator(
   chart: IChartApi | null,
-  seriesBundle: CandleVolumeSeries | null,
+  seriesBundle: MainPriceSeries | null,
   rsiData: LineData<Time>[],
   visible: boolean,
 ) {
@@ -102,7 +102,7 @@ export function useRsiIndicator(
       lastValueVisible: false,
     })
 
-    const mainPane = seriesBundle.candle.getPane().paneIndex()
+    const mainPane = seriesBundle.main.getPane().paneIndex()
     rsi.moveToPane(mainPane + 1)
     upper.moveToPane(mainPane + 1)
     lower.moveToPane(mainPane + 1)

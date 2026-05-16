@@ -1,0 +1,329 @@
+package com.company.finance_api.infocards;
+
+import com.company.finance_api.domain.InfoCardEntity;
+import com.company.finance_api.infocards.dto.InfoCardDto;
+import com.company.finance_api.infocards.dto.InfoCardInputDto;
+import com.company.finance_api.infocards.dto.InfoCardsDashboardDto;
+import com.company.finance_api.infocards.dto.InfoCardsPageDto;
+import com.company.finance_api.repository.InfoCardRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class InfoCardService {
+
+    private static final String ACTIVE = "ACTIVE";
+    private static final String PASSIVE = "PASSIVE";
+
+    private final InfoCardRepository repository;
+    private final ObjectMapper objectMapper;
+
+    public InfoCardService(InfoCardRepository repository, ObjectMapper objectMapper) {
+        this.repository = repository;
+        this.objectMapper = objectMapper;
+    }
+
+    @Transactional(readOnly = true)
+    public List<InfoCardDto> listPortalCards(String pageKey, boolean includeAdminOnly) {
+        return repository.findByStatusOrderByUpdatedAtDesc(ACTIVE).stream()
+                .filter(card -> pageKey == null || pageKey.isBlank() || card.getPages().contains(pageKey))
+                .filter(card -> includeAdminOnly || !card.isAdminOnly())
+                .map(InfoCardMapper::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<InfoCardDto> findBySlug(String slug) {
+        return repository.findBySlug(slug).map(InfoCardMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<InfoCardDto> findById(UUID id) {
+        return repository.findById(id).map(InfoCardMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<InfoCardDto> lookupHelpTarget(
+            String pageKey,
+            String term,
+            String elementId,
+            String instrumentSymbol
+    ) {
+        if (pageKey == null || pageKey.isBlank()) {
+            return Optional.empty();
+        }
+        String normalizedTerm = term != null ? term.trim().toLowerCase(Locale.ROOT) : "";
+        String normalizedInstrument = instrumentSymbol != null
+                ? instrumentSymbol.trim().toUpperCase(Locale.ROOT)
+                : "";
+        return repository.findByStatusOrderByUpdatedAtDesc(ACTIVE).stream()
+                .filter(card -> card.getPages().contains(pageKey))
+                .filter(card -> matchesElement(card, elementId)
+                        || matchesTerm(card, normalizedTerm)
+                        || matchesInstrument(card, normalizedInstrument))
+                .findFirst()
+                .map(InfoCardMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public InfoCardsPageDto listAdmin(int page, int size, String portalPage, String query, String statusFilter) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(100, Math.max(1, size));
+        List<InfoCardEntity> filtered = repository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt")).stream()
+                .filter(card -> matchesListStatus(card, statusFilter))
+                .filter(card -> portalPage == null || portalPage.isBlank() || card.getPages().contains(portalPage))
+                .filter(card -> matchesQuery(card, query))
+                .toList();
+        int totalElements = filtered.size();
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / safeSize);
+        int from = Math.min(safePage * safeSize, totalElements);
+        int to = Math.min(from + safeSize, totalElements);
+        List<InfoCardDto> content = filtered.subList(from, to).stream().map(InfoCardMapper::toDto).toList();
+        return new InfoCardsPageDto(content, safePage, safeSize, totalElements, totalPages);
+    }
+
+    @Transactional(readOnly = true)
+    public InfoCardsDashboardDto dashboard() {
+        List<InfoCardEntity> all = repository.findAll(Sort.by(Sort.Direction.DESC, "updatedAt"));
+        long active = all.stream().filter(c -> ACTIVE.equals(c.getStatus())).count();
+        long passive = all.size() - active;
+        double avgWords = all.stream()
+                .mapToInt(c -> wordCount(c.getShortDescription()))
+                .average()
+                .orElse(0);
+        Set<String> pages = new HashSet<>();
+        Map<String, Long> pageCounts = new java.util.HashMap<>();
+        long beginner = 0;
+        long intermediate = 0;
+        long advanced = 0;
+        for (InfoCardEntity card : all) {
+            for (String page : card.getPages()) {
+                pages.add(page);
+                pageCounts.merge(page, 1L, Long::sum);
+            }
+            switch (card.getDifficulty()) {
+                case "BEGINNER" -> beginner++;
+                case "INTERMEDIATE" -> intermediate++;
+                case "ADVANCED" -> advanced++;
+                default -> { }
+            }
+        }
+        String mostPage = pageCounts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+        String lastTitle = all.stream().findFirst().map(InfoCardEntity::getTitle).orElse(null);
+        return new InfoCardsDashboardDto(
+                active,
+                passive,
+                Math.round(avgWords * 10.0) / 10.0,
+                pages.size(),
+                mostPage,
+                beginner,
+                intermediate,
+                advanced,
+                lastTitle
+        );
+    }
+
+    @Transactional
+    public InfoCardDto create(InfoCardInputDto input) {
+        validateInput(input);
+        InfoCardEntity entity = InfoCardMapper.newEntity(input);
+        entity.setSlug(resolveUniqueSlug(entity.getSlug(), null));
+        return InfoCardMapper.toDto(repository.save(entity));
+    }
+
+    @Transactional
+    public InfoCardDto update(UUID id, InfoCardInputDto input) {
+        validateInput(input);
+        InfoCardEntity entity = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Info card not found"));
+        InfoCardMapper.applyInput(entity, input);
+        entity.setSlug(resolveUniqueSlug(InfoCardMapper.resolveSlug(input), id));
+        return InfoCardMapper.toDto(repository.save(entity));
+    }
+
+    @Transactional
+    public InfoCardDto toggleStatus(UUID id) {
+        InfoCardEntity entity = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Info card not found"));
+        entity.setStatus(ACTIVE.equals(entity.getStatus()) ? PASSIVE : ACTIVE);
+        return InfoCardMapper.toDto(repository.save(entity));
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Info card not found");
+        }
+        repository.deleteById(id);
+    }
+
+    @Transactional
+    public int seedDefaults() {
+        if (repository.count() > 0) {
+            return 0;
+        }
+        List<InfoCardInputDto> seeds = loadDefaultSeeds();
+        int created = 0;
+        for (InfoCardInputDto seed : seeds) {
+            repository.save(InfoCardMapper.newEntity(seed));
+            created++;
+        }
+        return created;
+    }
+
+    private boolean matchesQuery(InfoCardEntity card, String query) {
+        if (query == null || query.isBlank()) {
+            return true;
+        }
+        String q = query.trim().toLowerCase(Locale.ROOT);
+        if (card.getTitle().toLowerCase(Locale.ROOT).contains(q)) {
+            return true;
+        }
+        if (card.getShortDescription().toLowerCase(Locale.ROOT).contains(q)) {
+            return true;
+        }
+        if (card.getDetailedDescription().toLowerCase(Locale.ROOT).contains(q)) {
+            return true;
+        }
+        return card.getTargetTerms().stream().anyMatch(t -> t.toLowerCase(Locale.ROOT).contains(q))
+                || card.getRelatedTerms().stream().anyMatch(t -> t.toLowerCase(Locale.ROOT).contains(q));
+    }
+
+    private boolean matchesElement(InfoCardEntity card, String elementId) {
+        return elementId != null
+                && !elementId.isBlank()
+                && card.getTargetElementIds().contains(elementId.trim());
+    }
+
+    private boolean matchesTerm(InfoCardEntity card, String normalizedTerm) {
+        if (normalizedTerm.isEmpty()) {
+            return false;
+        }
+        return card.getTargetTerms().stream()
+                .anyMatch(term -> term.trim().toLowerCase(Locale.ROOT).equals(normalizedTerm));
+    }
+
+    private boolean matchesListStatus(InfoCardEntity card, String statusFilter) {
+        if (statusFilter == null || statusFilter.isBlank() || "ALL".equalsIgnoreCase(statusFilter)) {
+            return true;
+        }
+        if ("PASSIVE".equalsIgnoreCase(statusFilter)) {
+            return PASSIVE.equals(card.getStatus());
+        }
+        return ACTIVE.equals(card.getStatus());
+    }
+
+    private boolean matchesInstrument(InfoCardEntity card, String normalizedSymbol) {
+        if (normalizedSymbol.isEmpty()) {
+            return false;
+        }
+        return card.getTargetInstrumentSymbols().stream()
+                .anyMatch(symbol -> symbol.trim().toUpperCase(Locale.ROOT).equals(normalizedSymbol));
+    }
+
+    private void validateInput(InfoCardInputDto input) {
+        if (input.pages() == null || input.pages().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one page is required");
+        }
+        boolean hasTerms = input.targetTerms() != null && !input.targetTerms().isEmpty();
+        boolean hasElements = input.targetElementIds() != null && !input.targetElementIds().isEmpty();
+        boolean hasInstruments = input.targetInstrumentSymbols() != null && !input.targetInstrumentSymbols().isEmpty();
+        if (!hasTerms && !hasElements && !hasInstruments) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "At least one target term, page element, or instrument symbol is required"
+            );
+        }
+    }
+
+    private String resolveUniqueSlug(String baseSlug, UUID excludeId) {
+        String normalized = InfoCardMapper.slugify(baseSlug);
+        if (normalized.isBlank()) {
+            normalized = "card";
+        }
+        String candidate = normalized;
+        int suffix = 2;
+        while (true) {
+            Optional<InfoCardEntity> existing = repository.findBySlug(candidate);
+            if (existing.isEmpty() || (excludeId != null && existing.get().getId().equals(excludeId))) {
+                return candidate;
+            }
+            candidate = normalized + "-" + suffix;
+            suffix++;
+        }
+    }
+
+    private int wordCount(String text) {
+        if (text == null || text.isBlank()) {
+            return 0;
+        }
+        return text.trim().split("\\s+").length;
+    }
+
+    private List<InfoCardInputDto> loadDefaultSeeds() {
+        try (InputStream in = new ClassPathResource("seed/info-cards-default.json").getInputStream()) {
+            List<Map<String, Object>> raw = objectMapper.readValue(in, new TypeReference<>() {});
+            return raw.stream().map(this::mapSeed).collect(Collectors.toCollection(ArrayList::new));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load default info cards seed", e);
+        }
+    }
+
+  @SuppressWarnings("unchecked")
+    private InfoCardInputDto mapSeed(Map<String, Object> row) {
+        return new InfoCardInputDto(
+                stringVal(row.get("id")),
+                stringVal(row.get("slug")),
+                stringVal(row.get("title")),
+                stringList(row.get("targetTerms")),
+                stringList(row.get("targetElementIds")),
+                stringList(row.get("targetInstrumentSymbols")),
+                stringList(row.get("pages")),
+                stringVal(row.get("category")),
+                stringVal(row.get("type")),
+                stringVal(row.get("difficulty")),
+                stringVal(row.get("status")),
+                stringVal(row.get("shortDescription")),
+                stringVal(row.get("detailedDescription")),
+                stringVal(row.get("howToInterpret")),
+                stringVal(row.get("commonMistake")),
+                stringVal(row.get("example")),
+                stringList(row.get("relatedTerms")),
+                Boolean.TRUE.equals(row.get("adminOnly"))
+        );
+    }
+
+    private String stringVal(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> stringList(Object value) {
+        if (value instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        return List.of();
+    }
+}

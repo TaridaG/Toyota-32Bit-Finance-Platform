@@ -815,6 +815,68 @@ export async function fetchMarketCatalogSnapshot(params: {
   return { filteredRows: filteredBySearch, fxResponseItems }
 }
 
+function inferPriceSourceFromExchange(exchange: string | null): string | null {
+  if (!exchange) {
+    return null
+  }
+  const ex = exchange.trim().toUpperCase()
+  if (ex === 'BIST' || ex.includes('ISTANBUL')) {
+    return 'YAHOO'
+  }
+  if (ex === 'NASDAQ' || ex === 'NYSE' || ex === 'FINNHUB') {
+    return 'FINNHUB'
+  }
+  return null
+}
+
+function catalogRowFromInstrument(symbol: string, meta: InstrumentMetadata): CatalogRow {
+  const sym = symbol.trim().toUpperCase()
+  return {
+    symbol: sym,
+    name: meta.name ?? sym,
+    price: 0,
+    source: inferPriceSourceFromExchange(meta.exchange),
+    timestamp: null,
+    freshness: 'STALE',
+    change24h: 0,
+    high24h: 0,
+    low24h: 0,
+    category: toCategory(sym),
+    instrumentId: meta.id,
+    listedExchange: meta.exchange,
+  }
+}
+
+/**
+ * Analysis instrument picker: merges `/api/instruments` with live `/api/market/prices`
+ * so symbols without a recent tick still appear (aligned with Piyasalar segment filters).
+ */
+export async function fetchAnalysisInstrumentCatalog(params: {
+  category?: MarketCategory
+  query?: string
+}): Promise<MarketCatalogSnapshot> {
+  const snapshot = await fetchMarketCatalogSnapshot(params)
+  const metaMap = await fetchInstrumentMetadataBySymbolMap()
+  const seen = new Set(snapshot.filteredRows.map((row) => normalizeCatalogSymbol(row.symbol)))
+  const extras: CatalogRow[] = []
+  for (const [rawSymbol, meta] of Object.entries(metaMap)) {
+    const norm = normalizeCatalogSymbol(rawSymbol)
+    if (!norm || seen.has(norm)) {
+      continue
+    }
+    seen.add(norm)
+    extras.push(catalogRowFromInstrument(rawSymbol, meta))
+  }
+  if (extras.length === 0) {
+    return snapshot
+  }
+  const merged = filterRowsByCategory([...snapshot.filteredRows, ...extras], params.category)
+  const filteredBySearch = params.query?.trim()
+    ? merged.filter((row) => row.symbol.includes(params.query!.trim().toUpperCase()))
+    : merged
+  return { filteredRows: filteredBySearch, fxResponseItems: snapshot.fxResponseItems }
+}
+
 /** Pure follow-up on an in-memory catalog: sort, optional period prefetch, pagination, row shaping. */
 export async function buildMarketOverviewFromCatalog(
   snapshot: MarketCatalogSnapshot,
@@ -924,6 +986,46 @@ export async function buildMarketOverviewFromCatalog(
 
 export async function fetchMarketOverview(params: FetchMarketsParams): Promise<MarketOverviewPageResponse> {
   return fetchMarketOverviewPage(params)
+}
+
+function normalizeCatalogSymbol(symbol: string): string {
+  return symbol.trim().replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+}
+
+/**
+ * Resolves a single instrument for deep links (e.g. news → analysis) when it is absent from
+ * paginated {@link fetchMarketOverviewPage} (TCMB FX pairs live under `/api/market/fx`).
+ */
+export async function fetchMarketOverviewItemBySymbol(
+  symbol: string,
+  displayCurrency: SupportedCurrency = 'USD',
+): Promise<MarketOverviewItem | null> {
+  const normalized = normalizeCatalogSymbol(symbol)
+  if (!normalized) {
+    return null
+  }
+  try {
+    const snapshot = await fetchMarketCatalogSnapshot({ query: normalized })
+    const row = snapshot.filteredRows.find((item) => normalizeCatalogSymbol(item.symbol) === normalized)
+    if (!row) {
+      return null
+    }
+    const focused: MarketCatalogSnapshot = {
+      filteredRows: [row],
+      fxResponseItems: snapshot.fxResponseItems,
+    }
+    const page = await buildMarketOverviewFromCatalog(focused, {
+      page: 0,
+      size: 1,
+      category: 'all',
+      displayCurrency,
+    })
+    return (
+      page.content.find((item) => normalizeCatalogSymbol(item.symbol) === normalized) ?? page.content[0] ?? null
+    )
+  } catch {
+    return null
+  }
 }
 
 export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
