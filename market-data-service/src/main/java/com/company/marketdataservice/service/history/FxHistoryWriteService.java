@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -20,10 +21,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FxHistoryWriteService {
 
-    private static final int BATCH_SIZE = 250;
     private final FxRateHistoryRepository repository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void save(FxSnapshotUpdatedEvent event) {
         FxRateHistoryEntry entry = toEntry(event);
         if (entry == null) {
@@ -43,32 +43,12 @@ public class FxHistoryWriteService {
         }
     }
 
-    @Transactional
     public void saveBatch(List<FxSnapshotUpdatedEvent> events) {
         if (events == null || events.isEmpty()) {
             return;
         }
-        List<FxRateHistoryEntry> entries = new ArrayList<>();
-        List<FxSnapshotUpdatedEvent> validEvents = new ArrayList<>();
         for (FxSnapshotUpdatedEvent event : events) {
-            FxRateHistoryEntry entry = toEntry(event);
-            if (entry != null) {
-                entries.add(entry);
-                validEvents.add(event);
-            }
-        }
-        if (entries.isEmpty()) {
-            return;
-        }
-        for (int i = 0; i < entries.size(); i += BATCH_SIZE) {
-            int end = Math.min(i + BATCH_SIZE, entries.size());
-            try {
-                repository.saveAll(entries.subList(i, end));
-            } catch (DataIntegrityViolationException ex) {
-                for (FxSnapshotUpdatedEvent event : validEvents.subList(i, end)) {
-                    save(event);
-                }
-            }
+            save(event);
         }
     }
 

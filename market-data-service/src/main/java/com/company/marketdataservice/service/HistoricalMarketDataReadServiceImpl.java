@@ -6,6 +6,7 @@ import com.company.marketdataservice.dto.MarketPriceSummaryDto;
 import com.company.marketdataservice.history.FundNavHistoryEntry;
 import com.company.marketdataservice.history.FundNavHistoryRepository;
 import com.company.marketdataservice.history.FxRateHistoryRepository;
+import com.company.marketdataservice.fund.TefasFundNavHistoryRehydrationService;
 import com.company.marketdataservice.history.MarketPriceHistoryRepository;
 import com.company.marketdataservice.history.MarketPriceHistoryRepository.DebugHistoryRowView;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
@@ -39,21 +41,27 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
      */
     private static final long MAX_TRBOND_RANGE_DAYS = 2000L;
     private static final Logger log = LoggerFactory.getLogger(HistoricalMarketDataReadServiceImpl.class);
+    private static final ZoneId TURKEY = ZoneId.of("Europe/Istanbul");
+    /** Max calendar slip when baseline NAV is older than the requested lookback (data gaps). */
+    private static final long FUND_NAV_TRAILING_MAX_SLIP_DAYS = 12L;
 
     private final MarketPriceHistoryRepository marketPriceHistoryRepository;
     private final FxRateHistoryRepository fxRateHistoryRepository;
     private final FundNavHistoryRepository fundNavHistoryRepository;
+    private final TefasFundNavHistoryRehydrationService fundNavHistoryRehydrationService;
     private final Clock clock;
 
     public HistoricalMarketDataReadServiceImpl(
             MarketPriceHistoryRepository marketPriceHistoryRepository,
             FxRateHistoryRepository fxRateHistoryRepository,
             FundNavHistoryRepository fundNavHistoryRepository,
+            @Autowired(required = false) TefasFundNavHistoryRehydrationService fundNavHistoryRehydrationService,
             @Autowired(required = false) Clock clock
     ) {
         this.marketPriceHistoryRepository = marketPriceHistoryRepository;
         this.fxRateHistoryRepository = fxRateHistoryRepository;
         this.fundNavHistoryRepository = fundNavHistoryRepository;
+        this.fundNavHistoryRehydrationService = fundNavHistoryRehydrationService;
         this.clock = clock != null ? clock : Clock.systemUTC();
     }
 
@@ -68,6 +76,9 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         if (normalized.startsWith("FUND_")) {
             String fundCode = normalized.substring("FUND_".length());
             return fundNavHistoryRepository.findHistoryPoints(fundCode, fromInclusive, toExclusive);
+        }
+        if (usesFxRateHistory(normalized)) {
+            return fxRateHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
         }
         return marketPriceHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
     }
@@ -88,10 +99,14 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         if (!isValid(fundCode, from, to)) {
             return List.of();
         }
-        String normalized = fundCode.trim().toUpperCase(Locale.ROOT);
+        String normalized = normalizeFundCode(fundCode);
         Instant fromInclusive = from.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant toExclusive = to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
-        return fundNavHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
+        List<HistoryPointDto> points = fundNavHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
+        if (fundNavHistoryRehydrationService != null && shouldRepairFundNavGaps(points, from, to)) {
+            fundNavHistoryRehydrationService.scheduleRepairInteriorGapsInRange(normalized, from, to);
+        }
+        return points;
     }
 
     @Override
@@ -117,7 +132,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
                     continue;
                 }
                 latestPrice = latestOpt.get().getNav();
-            } else if (isFxSymbol(symbol)) {
+            } else if (usesFxRateHistory(symbol)) {
                 List<HistoryPointDto> latestPoints = fxRateHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
                 if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
                     continue;
@@ -193,6 +208,12 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         if (Objects.equals(latest.get().getId(), baseline.get().getId())) {
             return 0d;
         }
+        LocalDate latestDay = latest.get().getObservedAt().atZone(TURKEY).toLocalDate();
+        LocalDate baselineDay = baseline.get().getObservedAt().atZone(TURKEY).toLocalDate();
+        long spanDays = ChronoUnit.DAYS.between(baselineDay, latestDay);
+        if (spanDays > periodDays + FUND_NAV_TRAILING_MAX_SLIP_DAYS) {
+            return 0d;
+        }
         BigDecimal firstNav = baseline.get().getNav();
         if (firstNav.compareTo(BigDecimal.ZERO) == 0) {
             return 0d;
@@ -244,14 +265,51 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             String fundCode = symbol.substring("FUND_".length());
             return fundNavHistoryRepository.findHistoryPoints(fundCode, fromInclusive, toExclusive);
         }
-        if (isFxSymbol(symbol)) {
+        if (usesFxRateHistory(symbol)) {
             return fxRateHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
         }
         return marketPriceHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
     }
 
-    private static boolean isFxSymbol(String symbol) {
-        return "FX".equals(MarketCatalogSegmentRules.inferWireCategory(symbol));
+    /** TCMB crosses and TRY spot metals ({@code XAUTRY}, …) are stored in {@code mds_fx_rate_history}. */
+    private static boolean usesFxRateHistory(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return false;
+        }
+        String wire = MarketCatalogSegmentRules.inferWireCategory(symbol);
+        return MarketCatalogSegmentRules.usesFxHistoryPath(symbol, wire);
+    }
+
+    private static String normalizeFundCode(String fundCode) {
+        String normalized = fundCode.trim().toUpperCase(Locale.ROOT);
+        if (normalized.startsWith("FUND_")) {
+            return normalized.substring("FUND_".length());
+        }
+        return normalized;
+    }
+
+    private static boolean shouldRepairFundNavGaps(List<HistoryPointDto> points, LocalDate from, LocalDate to) {
+        if (points == null || points.isEmpty()) {
+            return true;
+        }
+        if (points.size() < 2) {
+            long spanDays = ChronoUnit.DAYS.between(from, to) + 1;
+            return spanDays > 14;
+        }
+        for (int i = 1; i < points.size(); i++) {
+            Instant prevAt = points.get(i - 1).time();
+            Instant curAt = points.get(i).time();
+            if (prevAt == null || curAt == null) {
+                continue;
+            }
+            long gapDays = ChronoUnit.DAYS.between(
+                    prevAt.atZone(ZoneOffset.UTC).toLocalDate(),
+                    curAt.atZone(ZoneOffset.UTC).toLocalDate());
+            if (gapDays > 10) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isValid(String symbolOrCode, LocalDate from, LocalDate to) {

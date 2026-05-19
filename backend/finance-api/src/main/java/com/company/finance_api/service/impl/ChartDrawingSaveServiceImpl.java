@@ -171,6 +171,7 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
 
     private DrawingMeta parseDrawingMeta(JsonNode drawings) {
         Set<String> types = new LinkedHashSet<>();
+        List<DrawingMarkerDto> markers = new ArrayList<>();
         Long minTime = null;
         Long maxTime = null;
         Double minPrice = null;
@@ -181,6 +182,8 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
                 String type = item.path("type").asText(null);
                 if (StringUtils.hasText(type)) {
                     types.add(type);
+                    String color = item.path("color").asText(null);
+                    markers.add(new DrawingMarkerDto(type, StringUtils.hasText(color) ? color.trim() : DEFAULT_DRAW_COLOR));
                 }
                 minTime = mergeMinTime(minTime, item.path("time"));
                 maxTime = mergeMaxTime(maxTime, item.path("time"));

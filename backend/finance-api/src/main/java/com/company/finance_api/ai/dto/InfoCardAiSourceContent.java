@@ -1,0 +1,16 @@
+package com.company.finance_api.ai.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+import java.util.List;
+
+public record InfoCardAiSourceContent(
+        @NotBlank String title,
+        @NotBlank String shortDescription,
+        String detailedDescription,
+        String howToInterpret,
+        String commonMistake,
+        String example,
+        List<String> relatedTerms
+) {
+}

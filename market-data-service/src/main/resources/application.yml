@@ -106,6 +106,14 @@ market:
     tl-deposit-evds-frequency: ${MARKET_EVDS_TL_DEPOSIT_FREQUENCY:5}
     # Kartta gösterilen dilim (MT04 = 1 yıla kadar vadeli)
     tl-deposit-card-maturity: ${MARKET_EVDS_TL_DEPOSIT_CARD_MATURITY:MT04}
+    # TÜFE genel endeks (2003=100); aylık/yıllık % değişimler DB'de türetilir
+    cpi-index-series: ${MARKET_EVDS_CPI_INDEX_SERIES:TP.FG.J0}
+    cpi-evds-frequency: ${MARKET_EVDS_CPI_FREQUENCY:5}
+  cpi:
+    monthly-sync:
+      enabled: ${MARKET_CPI_MONTHLY_SYNC_ENABLED:true}
+      startup-delay-ms: ${MARKET_CPI_MONTHLY_SYNC_STARTUP_DELAY_MS:55000}
+      monthly-cron: ${MARKET_CPI_MONTHLY_SYNC_CRON:0 35 8 5 * *}
   policy-rate:
     weekly-sync:
       enabled: ${MARKET_POLICY_RATE_WEEKLY_SYNC_ENABLED:true}

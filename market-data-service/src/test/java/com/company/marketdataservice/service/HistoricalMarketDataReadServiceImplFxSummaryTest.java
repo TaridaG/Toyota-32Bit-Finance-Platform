@@ -68,7 +68,7 @@ class HistoricalMarketDataReadServiceImplFxSummaryTest {
 
         HistoricalMarketDataReadServiceImpl svc =
                 new HistoricalMarketDataReadServiceImpl(
-                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, clock);
+                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, clock);
 
         Map<String, MarketPriceSummaryDto> out = svc.getPriceSummary(List.of("USDTRY"));
         MarketPriceSummaryDto dto = out.get("USDTRY");

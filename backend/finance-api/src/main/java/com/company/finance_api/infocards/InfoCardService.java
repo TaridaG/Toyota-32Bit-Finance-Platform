@@ -3,6 +3,7 @@ package com.company.finance_api.infocards;
 import com.company.finance_api.domain.InfoCardEntity;
 import com.company.finance_api.infocards.dto.InfoCardDto;
 import com.company.finance_api.infocards.dto.InfoCardInputDto;
+import com.company.finance_api.infocards.dto.InfoCardLocaleContentDto;
 import com.company.finance_api.infocards.dto.InfoCardsDashboardDto;
 import com.company.finance_api.infocards.dto.InfoCardsPageDto;
 import com.company.finance_api.repository.InfoCardRepository;
@@ -43,17 +44,18 @@ public class InfoCardService {
     }
 
     @Transactional(readOnly = true)
-    public List<InfoCardDto> listPortalCards(String pageKey, boolean includeAdminOnly) {
+    public List<InfoCardDto> listPortalCards(String pageKey, boolean includeAdminOnly, String locale) {
+        String resolvedLocale = InfoCardLocaleResolver.normalizeLocale(locale);
         return repository.findByStatusOrderByUpdatedAtDesc(ACTIVE).stream()
                 .filter(card -> pageKey == null || pageKey.isBlank() || card.getPages().contains(pageKey))
                 .filter(card -> includeAdminOnly || !card.isAdminOnly())
-                .map(InfoCardMapper::toDto)
+                .map(card -> InfoCardMapper.toPortalDto(card, resolvedLocale))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public Optional<InfoCardDto> findBySlug(String slug) {
-        return repository.findBySlug(slug).map(InfoCardMapper::toDto);
+    public Optional<InfoCardDto> findBySlug(String slug, String locale) {
+        return repository.findBySlug(slug).map(card -> InfoCardMapper.toPortalDto(card, locale));
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +68,8 @@ public class InfoCardService {
             String pageKey,
             String term,
             String elementId,
-            String instrumentSymbol
+            String instrumentSymbol,
+            String locale
     ) {
         if (pageKey == null || pageKey.isBlank()) {
             return Optional.empty();
@@ -81,7 +84,7 @@ public class InfoCardService {
                         || matchesTerm(card, normalizedTerm)
                         || matchesInstrument(card, normalizedInstrument))
                 .findFirst()
-                .map(InfoCardMapper::toDto);
+                .map(card -> InfoCardMapper.toPortalDto(card, locale));
     }
 
     @Transactional(readOnly = true)
@@ -256,6 +259,32 @@ public class InfoCardService {
                     "At least one target term, page element, or instrument symbol is required"
             );
         }
+        if (hasCompleteTranslations(input)) {
+            return;
+        }
+        if (input.title() == null || input.title().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title is required");
+        }
+        if (input.shortDescription() == null || input.shortDescription().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Short description is required");
+        }
+    }
+
+    private boolean hasCompleteTranslations(InfoCardInputDto input) {
+        if (input.translations() == null || input.translations().isEmpty()) {
+            return false;
+        }
+        for (String locale : InfoCardLocaleResolver.SUPPORTED_LOCALES) {
+            InfoCardLocaleContentDto content = input.translations().get(locale);
+            if (content == null
+                    || content.title() == null
+                    || content.title().isBlank()
+                    || content.shortDescription() == null
+                    || content.shortDescription().isBlank()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String resolveUniqueSlug(String baseSlug, UUID excludeId) {
@@ -311,7 +340,8 @@ public class InfoCardService {
                 stringVal(row.get("commonMistake")),
                 stringVal(row.get("example")),
                 stringList(row.get("relatedTerms")),
-                Boolean.TRUE.equals(row.get("adminOnly"))
+                Boolean.TRUE.equals(row.get("adminOnly")),
+                null
         );
     }
 

@@ -44,6 +44,13 @@ public class MarketEvdsProperties {
     /** Suffix of the series shown on the dashboard card (default {@code MT04} = up to 1 year). */
     private String tlDepositCardMaturity = "MT04";
 
+    /**
+     * EVDS TÜFE genel endeks (2003=100), aylık {@code frequency=5}. Aylık/yıllık % değişimler bu seriden türetilir.
+     */
+    private String cpiIndexSeries = "TP.FG.J0";
+
+    private String cpiEvdsFrequency = "5";
+
     public String getApiKey() {
         return apiKey;
     }
@@ -98,5 +105,21 @@ public class MarketEvdsProperties {
 
     public void setTlDepositCardMaturity(String tlDepositCardMaturity) {
         this.tlDepositCardMaturity = tlDepositCardMaturity;
+    }
+
+    public String getCpiIndexSeries() {
+        return cpiIndexSeries;
+    }
+
+    public void setCpiIndexSeries(String cpiIndexSeries) {
+        this.cpiIndexSeries = cpiIndexSeries;
+    }
+
+    public String getCpiEvdsFrequency() {
+        return cpiEvdsFrequency;
+    }
+
+    public void setCpiEvdsFrequency(String cpiEvdsFrequency) {
+        this.cpiEvdsFrequency = cpiEvdsFrequency;
     }
 }
