@@ -12,6 +12,7 @@ import {
   convertToDisplayCurrency,
   inferNativeQuote,
 } from '../lib/marketDisplayConversion'
+import { normalizeFxQuotePrice } from '../lib/fxTryHubConversion'
 import {
   parseMarketSortQuery,
   SORT_DISPLAY_AMOUNT_KEY,
@@ -21,6 +22,9 @@ import {
   type MarketOverviewSortOptions,
 } from '../lib/marketSort'
 
+/** Overview enriches full segment server-side; allow longer than default API timeout. */
+const MARKET_OVERVIEW_TIMEOUT_MS = 60_000
+
 type FetchMarketsParams = {
   page: number
   size: number
@@ -29,6 +33,7 @@ type FetchMarketsParams = {
   sort?: string
   /** Header currency: drives `displayAmount` TRY-bridge conversion on each row. */
   displayCurrency?: SupportedCurrency
+  signal?: AbortSignal
 }
 
 const categoryToQueryParam: Record<Exclude<MarketCategory, 'all'>, string> = {
@@ -227,7 +232,7 @@ function normalizeFxRows(items: FxRateApiItem[]) {
     .filter((item) => typeof item?.symbol === 'string' && item.symbol.trim().length > 0)
     .map((item) => {
       const symbol = String(item.symbol).trim().toUpperCase()
-      const price = toNumber(item.mid ?? item.ask ?? item.bid ?? 0, 0)
+      const price = normalizeFxQuotePrice(symbol, toNumber(item.mid ?? item.ask ?? item.bid ?? 0, 0))
       return {
         symbol,
         name: symbol,
@@ -482,7 +487,7 @@ async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
     fxRows.map(async (row) => {
       try {
         const history = await fetchFxHistory(row.symbol, 365)
-        fxPeriodBySymbol[row.symbol] = computePeriodChanges(history)
+        fxPeriodBySymbol[row.symbol] = computePeriodChanges(history, row.symbol)
       } catch {
         fxPeriodBySymbol[row.symbol] = { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
       }
@@ -568,18 +573,19 @@ async function fetchFxHistory(symbol: string, days: number): Promise<HistoryPoin
   return Array.isArray(response.data) ? response.data : []
 }
 
-function parseHistory(points: HistoryPoint[]): ParsedHistoryPoint[] {
+function parseHistory(points: HistoryPoint[], symbol?: string): ParsedHistoryPoint[] {
+  const sym = symbol?.trim().toUpperCase()
   return points
     .map((p) => ({
       time: Date.parse(String(p.time ?? '')),
-      value: toNumber(p.value, NaN),
+      value: sym ? normalizeFxQuotePrice(sym, toNumber(p.value, NaN)) : toNumber(p.value, NaN),
     }))
     .filter((p) => Number.isFinite(p.time) && Number.isFinite(p.value))
     .sort((a, b) => a.time - b.time)
 }
 
-function computePeriodChanges(points: HistoryPoint[]): PeriodChanges {
-  const parsed = parseHistory(points)
+function computePeriodChanges(points: HistoryPoint[], symbol?: string): PeriodChanges {
+  const parsed = parseHistory(points, symbol)
   if (parsed.length < 2) {
     return { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
   }
@@ -685,9 +691,11 @@ function mapTrendLabel(raw: string | null | undefined): MarketOverviewItem['tren
 
 function mapOverviewWireItem(row: OverviewWireRow): MarketOverviewItem {
   const hasNative = row.nativePrice != null && row.nativePrice !== ''
-  const nativeNum = hasNative ? toNumber(row.nativePrice, 0) : toNumber(row.price ?? 0, 0)
-  const displayNum =
+  const rawNative = hasNative ? toNumber(row.nativePrice, 0) : toNumber(row.price ?? 0, 0)
+  const nativeNum = normalizeFxQuotePrice(row.symbol, rawNative)
+  const rawDisplay =
     hasNative && row.price != null && row.price !== '' ? toNumber(row.price, 0) : null
+  const displayNum = rawDisplay != null ? normalizeFxQuotePrice(row.symbol, rawDisplay) : null
   const cat = (row.category ?? '').trim().toUpperCase() || null
   const idRaw = row.instrumentId
   let instrumentId: number | null = null
@@ -721,6 +729,19 @@ function mapOverviewWireItem(row: OverviewWireRow): MarketOverviewItem {
   }
 }
 
+const overviewCategoryQuery: Record<MarketCategory, string> = {
+  all: 'ALL',
+  crypto: 'CRYPTO',
+  bist: 'BIST',
+  nasdaq: 'NASDAQ',
+  forex: 'FOREX',
+  metals: 'METALS',
+  globalFutures: 'GLOBALFUTURES',
+  funds: 'FUNDS',
+  bonds: 'BONDS',
+  eurobond: 'BONDS',
+}
+
 /** Paginated markets table backed by finance-api {@code GET /api/market/overview} (server-side segment + sort + pagination). */
 export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promise<MarketOverviewPageResponse> {
   const page = Math.max(params.page ?? 0, 0)
@@ -729,7 +750,7 @@ export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promi
   const requestParams: Record<string, string | number> = {
     page,
     size,
-    category: category === 'all' ? 'ALL' : category.toUpperCase(),
+    category: overviewCategoryQuery[category],
   }
   const q = params.query?.trim()
   if (q) {
@@ -744,6 +765,8 @@ export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promi
     {
       params: requestParams,
       headers: params.displayCurrency ? { 'X-Currency': params.displayCurrency } : undefined,
+      timeout: MARKET_OVERVIEW_TIMEOUT_MS,
+      signal: params.signal,
     },
   )
   const body = root?.data
@@ -877,6 +900,38 @@ export async function fetchAnalysisInstrumentCatalog(params: {
   return { filteredRows: filteredBySearch, fxResponseItems: snapshot.fxResponseItems }
 }
 
+export type CategoryPerformanceRow = {
+  symbol: string
+  name: string
+  weeklyPct: number
+  monthlyPct: number
+  yearlyPct: number
+}
+
+function weeklyPctFromPeriodRow(row: CatalogRowWithPeriods): number {
+  if (row.change1M != null && Number.isFinite(row.change1M)) {
+    return row.change1M / 4
+  }
+  return row.change1D ?? row.change24h ?? 0
+}
+
+/** Loads period % changes for all instruments in an analysis segment (BIST, NASDAQ, …). */
+export async function fetchCategoryPerformanceRows(category: MarketCategory): Promise<CategoryPerformanceRow[]> {
+  const snapshot = await fetchAnalysisInstrumentCatalog({
+    category: category === 'all' ? undefined : category,
+  })
+  const { rows } = await enrichCatalogRowsWithPeriodMetrics(snapshot.filteredRows)
+  return rows
+    .filter((row) => (row.price ?? 0) > 0)
+    .map((row) => ({
+      symbol: row.symbol.trim().toUpperCase(),
+      name: row.name?.trim() || row.symbol,
+      weeklyPct: weeklyPctFromPeriodRow(row),
+      monthlyPct: row.change1M ?? 0,
+      yearlyPct: row.change1Y ?? 0,
+    }))
+}
+
 /** Pure follow-up on an in-memory catalog: sort, optional period prefetch, pagination, row shaping. */
 export async function buildMarketOverviewFromCatalog(
   snapshot: MarketCatalogSnapshot,
@@ -932,7 +987,7 @@ export async function buildMarketOverviewFromCatalog(
       fxSymbols.map(async (symbol) => {
         try {
           const history = await fetchFxHistory(symbol, 365)
-          fxPeriodBySymbol[symbol] = computePeriodChanges(history)
+          fxPeriodBySymbol[symbol] = computePeriodChanges(history, symbol)
         } catch {
           fxPeriodBySymbol[symbol] = { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
         }
@@ -1184,7 +1239,7 @@ function syntheticTefasFundFundamentals(symbol: string): InstrumentFundamentals 
     symbol: s,
     provider: 'INTERNAL_META',
     providerSymbol: s,
-    companyName: `${code} (TEFAS)`,
+    companyName: code,
     country: 'TR',
     currency: 'TRY',
     exchange: 'TEFAS',

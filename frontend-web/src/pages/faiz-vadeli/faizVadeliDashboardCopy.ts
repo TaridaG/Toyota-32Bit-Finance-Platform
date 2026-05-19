@@ -6,7 +6,7 @@ export type StatIconId = 'bank' | 'coins' | 'doc' | 'spread' | 'bell'
 
 export type StatCardCopy = {
   /** When set, dashboard replaces mock value with live TCMB policy rate from `/api/rates/policy-rate/latest`. */
-  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'eurobond'
+  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'inflation'
   icon: StatIconId
   title: string
   value: string
@@ -76,8 +76,9 @@ const TR: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'inflation',
       icon: 'bell',
-      title: 'Yıllık Enflasyon (TÜFE)',
+      title: 'Enflasyon',
       value: '%69,80',
       sub1: 'Nisan 2024',
       delta: '+1,20',
@@ -140,8 +141,9 @@ const EN: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'inflation',
       icon: 'bell',
-      title: 'Annual CPI inflation',
+      title: 'Inflation',
       value: '69.80%',
       sub1: 'April 2024',
       delta: '+1.20',
@@ -204,8 +206,9 @@ const DE: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'inflation',
       icon: 'bell',
-      title: 'Inflation (VPI, jährlich)',
+      title: 'Inflation',
       value: '69,80 %',
       sub1: 'April 2024',
       delta: '+1,20',

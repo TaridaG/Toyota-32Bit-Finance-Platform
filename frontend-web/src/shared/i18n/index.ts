@@ -51,6 +51,7 @@ function getStoredLocale(): SupportedLocale | null {
 
 function setApiLocaleHeader(locale: SupportedLocale) {
   apiClient.defaults.headers.common['Accept-Language'] = locale
+  apiClient.defaults.headers.common['X-Language'] = locale
 }
 
 export async function setAppLocale(
@@ -59,12 +60,12 @@ export async function setAppLocale(
 ): Promise<SupportedLocale> {
   const normalizedLocale = normalizeLocale(locale) ?? DEFAULT_LOCALE
 
-  await i18n.changeLanguage(normalizedLocale)
-  setApiLocaleHeader(normalizedLocale)
-
   if (options?.persist !== false && typeof window !== 'undefined') {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, normalizedLocale)
   }
+  setApiLocaleHeader(normalizedLocale)
+
+  await i18n.changeLanguage(normalizedLocale)
 
   return normalizedLocale
 }

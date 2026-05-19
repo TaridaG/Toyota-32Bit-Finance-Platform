@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
+import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { isAdminUser } from '../../shared/auth/session'
 import { infoCardsApi } from '../../services/infoCardsApi'
 import { useInfoCards } from '../../features/info-cards/InfoCardsProvider'
+import { translatePortalPageKey } from '../../data/portalPages'
 import { infoCardToLiteracyEntry } from './utils/infoCardAdapter'
-import { countByCategory, countByType, filterLiteracyEntries } from './utils/filterLiteracyEntries'
+import { countByType, filterLiteracyEntries } from './utils/filterLiteracyEntries'
 import type {
   LiteracyCategory,
   LiteracyContentType,
@@ -15,33 +17,33 @@ import type {
   LiteracyPortalPage,
 } from './types/financialLiteracy'
 import { LiteracyHero } from './components/LiteracyHero'
-import { LiteracyCategoryCards } from './components/LiteracyCategoryCards'
 import { LiteracySidebarFilters } from './components/LiteracySidebarFilters'
 import { LiteracyTermCard } from './components/LiteracyTermCard'
 import { LiteracyDetailDrawer } from './components/LiteracyDetailDrawer'
-import { LearningPathCard } from './components/LearningPathCard'
 import { LiteracyEmptyState } from './components/LiteracyEmptyState'
-
-const LEARNING_PATH: { order: number; labelKey: string; category: LiteracyCategory }[] = [
-  { order: 1, labelKey: 'BASIC_FINANCE', category: 'BASIC_FINANCE' },
-  { order: 2, labelKey: 'MARKET_DATA', category: 'MARKET_DATA' },
-  { order: 3, labelKey: 'CHARTS', category: 'CHARTS' },
-  { order: 4, labelKey: 'PORTFOLIO_ANALYSIS', category: 'PORTFOLIO_ANALYSIS' },
-  { order: 5, labelKey: 'TURKEY_ECONOMY', category: 'TURKEY_ECONOMY' },
-  { order: 6, labelKey: 'SIMULATION', category: 'SIMULATION' },
-]
+import { InfoCardEditorDrawer } from '../bilgi-kartlari/components/InfoCardEditorDrawer'
+import { isLiteracyCatalogCard } from './utils/literacyCatalogCards'
+import type { InfoCardInput } from '../../types/infoCards'
 
 export function FinansalOkuryazarlikPage() {
   const { t } = useTranslation('common')
+  const { language } = useAppPreferences()
   const [searchParams, setSearchParams] = useSearchParams()
   useDocumentTitle(t('finansalOkuryazarlikPage.titleDoc'))
 
-  const { cards, loading } = useInfoCards()
+  const { cards, loading, createCard } = useInfoCards()
   const showAdminTerms = isAdminUser()
+  const [editorOpen, setEditorOpen] = useState(false)
+
   const visibleEntries = useMemo(
     () =>
       cards
-        .filter((c) => c.status === 'ACTIVE' && (!c.adminOnly || showAdminTerms))
+        .filter(
+          (c) =>
+            c.status === 'ACTIVE' &&
+            isLiteracyCatalogCard(c) &&
+            (!c.adminOnly || showAdminTerms),
+        )
         .map(infoCardToLiteracyEntry),
     [cards, showAdminTerms],
   )
@@ -52,6 +54,15 @@ export function FinansalOkuryazarlikPage() {
   const [contentTypes, setContentTypes] = useState<LiteracyContentType[]>([])
   const [portalPages, setPortalPages] = useState<LiteracyPortalPage[]>([])
   const [selectedEntry, setSelectedEntry] = useState<LiteracyEntry | null>(null)
+
+  useEffect(() => {
+    setSelectedEntry((current) => {
+      if (!current) {
+        return null
+      }
+      return visibleEntries.find((entry) => entry.id === current.id) ?? current
+    })
+  }, [visibleEntries, language])
 
   useEffect(() => {
     const termSlug = searchParams.get('term')
@@ -102,7 +113,7 @@ export function FinansalOkuryazarlikPage() {
   const labelCategory = (c: LiteracyCategory) => t(`finansalOkuryazarlikPage.categories.${c}`)
   const labelDifficulty = (d: LiteracyDifficulty) => t(`finansalOkuryazarlikPage.difficulties.${d}`)
   const labelType = (type: LiteracyContentType) => t(`finansalOkuryazarlikPage.contentTypes.${type}`)
-  const labelPortal = (p: LiteracyPortalPage) => t(`finansalOkuryazarlikPage.portalPages.${p}`)
+  const labelPortal = (p: LiteracyPortalPage | string) => translatePortalPageKey(t, p)
 
   if (loading) {
     return (
@@ -137,17 +148,25 @@ export function FinansalOkuryazarlikPage() {
             </span>
           </>
         }
+        adminActions={
+          showAdminTerms ? (
+            <button type="button" className="lit-btn-primary" onClick={() => setEditorOpen(true)}>
+              {t('finansalOkuryazarlikPage.admin.addCard')}
+            </button>
+          ) : null
+        }
       />
 
-      <LiteracyCategoryCards
-        activeCategory={category}
-        onSelect={setCategory}
-        labelForCategory={labelCategory}
-        descriptionForCategory={(c) => t(`finansalOkuryazarlikPage.categoryDescriptions.${c}`)}
-        countForCategory={(c) => countByCategory(visibleEntries, c)}
-        allLabel={t('finansalOkuryazarlikPage.allCategories')}
-        allCount={visibleEntries.length}
-        showSystemCategory={showAdminTerms}
+      <InfoCardEditorDrawer
+        open={editorOpen}
+        initial={null}
+        defaultPage="FINANCIAL_LITERACY"
+        mode="literacy"
+        onClose={() => setEditorOpen(false)}
+        onSave={async (input: InfoCardInput) => {
+          await createCard(input)
+          setEditorOpen(false)
+        }}
       />
 
       <div className="lit-main-layout">
@@ -176,16 +195,6 @@ export function FinansalOkuryazarlikPage() {
         />
 
         <div className="lit-content-column">
-          <LearningPathCard
-            title={t('finansalOkuryazarlikPage.learningPathTitle')}
-            steps={LEARNING_PATH.map((step) => ({
-              order: step.order,
-              label: labelCategory(step.category),
-              categoryKey: step.category,
-            }))}
-            onStepClick={(key) => setCategory(key as LiteracyCategory)}
-          />
-
           {filtered.length === 0 ? (
             <LiteracyEmptyState
               title={t('finansalOkuryazarlikPage.emptyTitle')}

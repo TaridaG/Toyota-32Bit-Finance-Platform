@@ -180,6 +180,11 @@
         "analysisTools": "analiz aracı",
         "macro": "makro gösterge"
       },
+      "admin": {
+        "addCard": "+ Genel bilgi kartı",
+        "editorTitle": "Genel bilgi kartı ekle",
+        "editorBindingHint": "Bu kart yalnızca Finansal Okuryazarlık listesinde görünür; portalda bir butona veya sayfa öğesine bağlanmaz."
+      },
       "allCategories": "Tüm içerikler",
       "filtersTitle": "Filtreler",
       "categoryTitle": "Kategori",
@@ -363,12 +368,32 @@
         "detailedDescription": "Detaylı açıklama",
         "howToInterpret": "Nasıl yorumlanır?",
         "commonMistake": "Sık yapılan yanlış",
+        "example": "Örnek",
         "relatedTerms": "İlgili terimler (virgülle)",
         "active": "Aktif",
         "cancel": "İptal",
         "save": "Kaydet",
         "saving": "Kaydediliyor…",
-        "saveError": "Kart kaydedilemedi. Lütfen tekrar deneyin."
+        "saveError": "Kart kaydedilemedi. Lütfen tekrar deneyin.",
+        "wizard": {
+          "localeRailAria": "Dil adımları",
+          "preview": "Önizle",
+          "stepLead": "{{locale}} içeriğini girin",
+          "localeRequired": "Bu dil için başlık ve kısa açıklama zorunludur.",
+          "allLocalesRequired": "Kaydetmeden önce üç dilde de başlık ve kısa açıklama doldurun.",
+          "back": "Geri",
+          "next": "İleri",
+          "toPreview": "Önizlemeye geç",
+          "saveAll": "3 dilde kaydet",
+          "aiComplete": "AI ile Eksik Alanları Doldur",
+          "aiCompleteLoading": "AI içerik üretiliyor…",
+          "aiTranslate": "AI ile {{source}} dilinden {{target}} diline doldur",
+          "aiTranslateLoading": "AI çeviri yapılıyor…",
+          "aiDisabled": "AI içerik üretimi şu anda devre dışı.",
+          "aiFailed": "AI yanıtı alınamadı. Lütfen tekrar deneyin.",
+          "aiQuotaExceeded": "OpenAI API kotası dolmuş. platform.openai.com üzerinden bakiye veya plan kontrol edin.",
+          "aiTimeout": "AI isteği zaman aşımına uğradı. Birkaç saniye sonra tekrar deneyin."
+        }
       }
     },
     "bankRatesPage": {
@@ -401,6 +426,27 @@
         "chartEmpty": "Kayıtlı haftalık veri bulunamadı.",
         "chartFoot": "Çizgi, veritabanındaki haftalık TCMB serisini yansıtır; ilan tarihleri ve hafta sonu uçları şekli etkileyebilir.",
         "chartInflationHint": "Enflasyon serisi hazır olduğunda aynı grafikte ikinci çizgi olarak eklenebilir."
+      },
+      "inflation": {
+        "liveNoData": "Henüz gösterilecek enflasyon verisi yok.",
+        "liveNoDataHint": "TCMB EVDS TÜFE senkronu tamamlanınca (birkaç dakika) burada görünür.",
+        "liveLoadError": "Enflasyon verisi alınamadı. Bağlantıyı kontrol edin.",
+        "liveSkeletonAria": "Güncel enflasyon yükleniyor",
+        "chartOpenHint": "Ana alanda son beş yılın TÜFE grafiğini göster",
+        "chartTitle": "TÜFE — son 5 yıl (aylık)",
+        "chartAxisPct": "Değişim (%)",
+        "chartAxisIndex": "Endeks (2003=100)",
+        "chartLoading": "Grafik yükleniyor",
+        "chartError": "Geçmiş veri yüklenemedi.",
+        "chartRetry": "Tekrar dene",
+        "chartEmpty": "Kayıtlı aylık veri bulunamadı.",
+        "chartFoot": "Kaynak: TCMB EVDS genel TÜFE endeksi; aylık ve yıllık % değişimler endeksten türetilir.",
+        "metricTabsAria": "TÜFE göstergesi seçin",
+        "metric": {
+          "YEARLY_PCT": "Yıllık %",
+          "MONTHLY_PCT": "Aylık %",
+          "INDEX": "Endeks"
+        }
       },
       "tlDeposit": {
         "maturitySelectAria": "Vade dilimi seçin",
@@ -754,6 +800,8 @@
     "favorite": "Favorilere ekle",
     "unfavorite": "Favorilerden çıkar",
     "noMatches": "Bu filtreye uygun enstrüman bulunamadı.",
+    "loadError": "Piyasa verisi yüklenemedi. Lütfen tekrar deneyin.",
+    "loadErrorTimeout": "Piyasa verisi zaman aşımına uğradı. Kategori değiştirip tekrar deneyin veya bir süre bekleyin.",
     "lastUpdated": "Son güncelleme: şimdi",
     "insights": {
       "topGainers": "En Çok Yükselenler",
@@ -761,6 +809,44 @@
       "noGainers": "Yükselen veri bulunamadı.",
       "noLosers": "Düşen veri bulunamadı.",
       "loadError": "Piyasa içgörüleri yüklenemedi."
+    },
+    "aiInsight": {
+      "title": "AI'dan bilgi al",
+      "lead": "Sembol ekleyin; yanıtlar tarayıcınızda kaydedilir.",
+      "symbolPlaceholder": "Sembol (örn. THYAO)",
+      "addAria": "Sembol ekle",
+      "empty": "Henüz sembol eklenmedi.",
+      "answerPlaceholder": "AI yanıtı burada görünecek…",
+      "removeAria": "{{symbol}} kaldır"
+    },
+    "portfolioSim": {
+      "title": "Portföy simülasyonu",
+      "lead": "Tablodan varlığı grafiğe sürükleyin; başlangıç tarihine göre varlık ve kur getirisi hesaplanır.",
+      "dropHint": "Varlığı buraya sürükleyin",
+      "empty": "Henüz varlık yok — tablodan satırı grafiğe sürükleyin.",
+      "equalize": "Eşit dağıt",
+      "normalize": "Oranları %100 yap",
+      "weightTotal": "Toplam ağırlık: %{{value}}",
+      "startDate": "Başlangıç tarihi",
+      "baseCurrency": "Para birimi",
+      "baseCurrencyAria": "Simülasyon para birimi",
+      "currencyTry": "TRY",
+      "currencyUsd": "Dolar",
+      "loadError": "Fiyat geçmişi yüklenemedi.",
+      "noResult": "Seçilen tarih veya dağılım için sonuç hesaplanamadı.",
+      "totalReturn": "Portföy getirisi",
+      "displayCurrency": "Gösterim: {{currency}}",
+      "period": "{{from}} → {{to}}",
+      "metricAsset": "Parite",
+      "metricFx": "Kur (USD)",
+      "metricTotal": "Toplam",
+      "holdingLoading": "Hesaplanıyor…",
+      "holdingError": "Bu varlık için hesaplanamadı",
+      "removeAria": "{{symbol}} kaldır",
+      "dragAllocation": "Dilim sınırlarını sürükleyerek oranları ayarlayın",
+      "allocationCenter": "Toplam",
+      "allocationChartAria": "Portföy dağılım grafiği",
+      "legendAria": "Portföy varlık listesi"
     },
     "pagination": {
       "prev": "Önceki",
@@ -854,6 +940,38 @@
     "relatedNewsTitle": "İlgili Haberler",
     "performanceTableTitle": "Performans Tablosu",
     "syncedWithRange": "{{range}} ile senkron",
+    "winnersLosers": {
+      "subtitle": "{{segment}} · haftalık / aylık / yıllık getiri",
+      "loadError": "Kazanan ve kaybeden listesi yüklenemedi.",
+      "emptyWinners": "Bu kategoride yükselen bulunamadı.",
+      "emptyLosers": "Bu kategoride düşen bulunamadı.",
+      "titles": {
+        "winners": {
+          "all": "Piyasanın Kazananları",
+          "bist": "BIST'in Kazananları",
+          "nasdaq": "NASDAQ'ın Kazananları",
+          "crypto": "Kripto'nun Kazananları",
+          "forex": "Döviz'in Kazananları",
+          "metals": "Maden (Spot)'un Kazananları",
+          "globalFutures": "Yurtdışı Vadeli'nin Kazananları",
+          "funds": "Fon'un Kazananları",
+          "bonds": "Tahvil / Bono'nun Kazananları",
+          "eurobond": "Eurobond'un Kazananları"
+        },
+        "losers": {
+          "all": "Piyasanın Kaybedenleri",
+          "bist": "BIST'in Kaybedenleri",
+          "nasdaq": "NASDAQ'ın Kaybedenleri",
+          "crypto": "Kripto'nun Kaybedenleri",
+          "forex": "Döviz'in Kaybedenleri",
+          "metals": "Maden (Spot)'un Kaybedenleri",
+          "globalFutures": "Yurtdışı Vadeli'nin Kaybedenleri",
+          "funds": "Fon'un Kaybedenleri",
+          "bonds": "Tahvil / Bono'nun Kaybedenleri",
+          "eurobond": "Eurobond'un Kaybedenleri"
+        }
+      }
+    },
     "sortNews": "Haber sırala:",
     "sort": {
       "byTime": "Zamana Göre",
@@ -891,6 +1009,7 @@
       "deckSymbolLabel": "Sembol",
       "deckCategoryLabel": "Kategori",
       "deckChartSymbol": "Grafikteki enstrüman",
+      "pickInstrument": "Enstrüman seçin…",
       "deckTotalCount": "Toplam {{count}} enstrüman",
       "types": {
         "all": "Tüm kategoriler",
@@ -1049,6 +1168,40 @@
       "weekly": "Haftalık %",
       "monthly": "Aylık %",
       "yearly": "Yıllık %"
+    },
+    "inflationDeposit": {
+      "title": "Enflasyon ve mevduat",
+      "subtitle": "TCMB EVDS · TÜFE ve TL mevduat",
+      "inflationLabel": "TÜFE (yıllık)",
+      "depositLabel": "TL mevduat",
+      "viewDetails": "Faiz ve vadeli sayfasına git"
+    },
+    "simulation": {
+      "title": "Yatırım simülasyonu",
+      "subtitle": "{{symbol}} · grafikteki varlık",
+      "noAsset": "Simülasyon için önce grafikte bir enstrüman seçin.",
+      "amountLabel": "Yatırım tutarı",
+      "currencyAria": "Yatırım para birimi",
+      "fxUnavailable": "Kur verisi yüklenemedi; simülasyon hesaplanamıyor.",
+      "noEntryFx": "{{from}} → {{to}} alım kuru bulunamadı.",
+      "noExitFx": "{{from}} → {{to}} güncel kur bulunamadı.",
+      "entryFx": "Alım kuru ({{date}})",
+      "exitFx": "Güncel kur ({{date}})",
+      "fxRateLine": "1 {{from}} = {{rate}} {{to}}",
+      "costNative": "Alım tutarı ({{currency}})",
+      "valueNative": "Güncel değer ({{currency}})",
+      "lots": "Lot",
+      "dateLabel": "Alım tarihi",
+      "chartPickFromChart": "Grafikten tarih seç",
+      "chartPickHint": "Grafikte bir bara tıklayın; alım tarihi olarak ayarlanır.",
+      "chartPickCancel": "İptal",
+      "entryPrice": "{{date}} kapanış: {{price}}",
+      "noPriceOnDate": "Bu tarihte fiyat verisi yok.",
+      "cost": "Maliyet",
+      "currentValue": "Güncel değer",
+      "pnl": "Kar / zarar",
+      "pnlPct": "Getiri %",
+      "disclaimer": "Kapanış fiyatı ve MDS tarihsel kurlarla hesaplanır; alım günü ve bugünkü kur ayrı uygulanır. Komisyon ve vergi dahil değildir."
     }
   },
   "portfolio": {

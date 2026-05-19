@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { infoCardsApi } from '../../services/infoCardsApi'
 import { fetchAdminInfoCardsDashboard } from './api/infoCardsHttpApi'
+import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import type { InfoCard, InfoCardInput, InfoCardsDashboard } from '../../types/infoCards'
 
 type InfoCardsContextValue = {
@@ -18,13 +19,18 @@ type InfoCardsContextValue = {
 const InfoCardsContext = createContext<InfoCardsContextValue | null>(null)
 
 export function InfoCardsProvider({ children }: { children: ReactNode }) {
+  const { language } = useAppPreferences()
   const [cards, setCards] = useState<InfoCard[]>([])
   const [dashboard, setDashboard] = useState<InfoCardsDashboard | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedOnce = useRef(false)
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? hasLoadedOnce.current
+    if (!silent) {
+      setLoading(true)
+    }
     setError(null)
     try {
       const [portalCards, dash] = await Promise.all([
@@ -33,18 +39,21 @@ export function InfoCardsProvider({ children }: { children: ReactNode }) {
       ])
       setCards(portalCards)
       setDashboard(dash ?? infoCardsApi.getDashboard())
+      hasLoadedOnce.current = true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load info cards')
       setCards(infoCardsApi.getAll())
       setDashboard(infoCardsApi.getDashboard())
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }, [])
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    void refresh({ silent: hasLoadedOnce.current })
+  }, [language, refresh])
 
   const value = useMemo<InfoCardsContextValue>(
     () => ({

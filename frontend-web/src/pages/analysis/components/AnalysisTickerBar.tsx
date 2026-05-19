@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatNumber, formatPrice } from '../../../shared/format/number'
 import type { AssetDefinition, AssetType } from '../types'
+import { resolveInstrumentDisplayLabel } from '../../../features/markets/lib/tefasFundDisplay'
 
 export type TickerHorizonReturns = {
   weekly: number | null
@@ -86,6 +88,10 @@ export function AnalysisTickerBar({
   horizonReturns = null,
 }: AnalysisTickerBarProps) {
   const { t } = useTranslation('analysis')
+  const displayLabel = useMemo(
+    () => resolveInstrumentDisplayLabel(asset.symbol, asset.name),
+    [asset.symbol, asset.name],
+  )
   const absMove = pctDeltaFromDaily(price, dailyPct)
   const up = dailyPct >= 0
 
@@ -123,14 +129,14 @@ export function AnalysisTickerBar({
             aria-label={t('ticker.openInstrumentPicker')}
           >
             <span className="fi-analysis-ticker-symbol-trigger-main">
-              <span className="fi-analysis-ticker-symbol">{asset.symbol}</span>
+              <span className="fi-analysis-ticker-symbol">{displayLabel.symbol}</span>
               <span className="fi-analysis-ticker-chevron" aria-hidden="true">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </span>
             </span>
-            <span className="fi-analysis-ticker-name">{asset.name}</span>
+            <span className="fi-analysis-ticker-name">{displayLabel.name}</span>
             <span className="fi-analysis-ticker-tags">
               <span className="fi-analysis-ticker-tag">{categoryTag}</span>
               <span className="fi-analysis-ticker-tag">{currencyCode}</span>

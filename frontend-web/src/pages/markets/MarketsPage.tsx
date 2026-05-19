@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useMarkets } from '../../features/markets/hooks/useMarkets'
-import { useMarketsCategoryPulse } from '../../features/markets/hooks/useMarketsCategoryPulse'
-import { useMarketInsights } from '../../features/markets/hooks/useMarketInsights'
+import { MarketsPortfolioSimulationCard } from './components/MarketsPortfolioSimulationCard'
+import { MARKETS_ROW_DRAG_MIME, serializeMarketsRowDrag } from './lib/marketsRowDrag'
 import { fetchInstrumentFundamentals } from '../../features/markets/api/marketService'
 import type { InstrumentFundamentals, MarketCategory, MarketOverviewItem } from '../../shared/types/market'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
@@ -12,6 +12,7 @@ import { marketSortFieldFromUrl, type MarketSortField } from '../../features/mar
 import { isAuthenticated } from '../../shared/auth/session'
 import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../features/markets/api/watchlistApi'
 import { instrumentHelpRowProps } from '../../components/help/instrumentHelpAttrs'
+import { resolveInstrumentDisplayLabel } from '../../features/markets/lib/tefasFundDisplay'
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
@@ -35,6 +36,7 @@ function normalizeMarketCategory(raw: string | null): MarketCategory {
     case 'nasdaq':
       return 'nasdaq'
     case 'forex':
+    case 'fx':
       return 'forex'
     case 'metals':
       return 'metals'
@@ -187,15 +189,6 @@ export function MarketsPage() {
     sort: sortQuery,
     displayCurrency: currency,
   })
-  const {
-    topGainers,
-    topLosers,
-    loading: insightsLoading,
-    error: insightsError,
-    refetch: refetchInsights,
-  } = useMarketInsights()
-  const pulse = useMarketsCategoryPulse()
-
   /** Header-selected currency (converted line). */
   const selectedCurrencyFormat = useMemo(
     () =>
@@ -216,6 +209,19 @@ export function MarketsPage() {
         currencyDisplay: 'narrowSymbol',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
+      }),
+    [i18n.language],
+  )
+
+  /** JPYTRY: ~0.28 TRY per 1 JPY — show kuruş precision, not 28 (per 100 JPY). */
+  const jpyTryNativeFormat = useMemo(
+    () =>
+      new Intl.NumberFormat(i18n.language, {
+        style: 'currency',
+        currency: 'TRY',
+        currencyDisplay: 'narrowSymbol',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
       }),
     [i18n.language],
   )
@@ -573,58 +579,10 @@ export function MarketsPage() {
         <span>{marketStatusLabel}</span>
       </div>
 
-      <div className="markets-pulse-wrap">
-        <div className="markets-pulse-strip" role="region" aria-label={t('categoryPulse.aria')}>
-          <button
-            key="pulse-overall"
-            type="button"
-            className={`markets-pulse-card${selectedCategory === 'all' && !showFavoritesOnly ? ' markets-pulse-card-active' : ''}${
-              pulse.loading && !pulse.items ? ' markets-pulse-card-loading' : ''
-            }`}
-            onClick={() => {
-              setShowFavoritesOnly(false)
-              updateParams((next) => {
-                next.set('category', 'ALL')
-                next.set('page', '0')
-              })
-            }}
-          >
-            <span className="markets-pulse-label">{t('title')}</span>
-            {pulse.loading && !pulse.items ? (
-              <span className="markets-pulse-value markets-pulse-value-muted">…</span>
-            ) : null}
-          </button>
-          {pulse.categories.map((cat) => {
-            const active = selectedCategory === cat && !showFavoritesOnly
-            return (
-              <button
-                key={cat}
-                type="button"
-                className={`markets-pulse-card${active ? ' markets-pulse-card-active' : ''}${
-                  pulse.loading && !pulse.items ? ' markets-pulse-card-loading' : ''
-                }`}
-                onClick={() => {
-                  setShowFavoritesOnly(false)
-                  updateParams((next) => {
-                    next.set('category', cat.toUpperCase())
-                    next.set('page', '0')
-                  })
-                }}
-              >
-                <span className="markets-pulse-label">{t(`categories.${cat}`)}</span>
-                {pulse.loading && !pulse.items ? (
-                  <span className="markets-pulse-value markets-pulse-value-muted">…</span>
-                ) : null}
-              </button>
-            )
-          })}
-        </div>
-        {pulse.error && !pulse.items && !pulse.loading ? (
-          <p className="markets-pulse-error">{t('categoryPulse.loadError')}</p>
-        ) : null}
-      </div>
 
-      <div className="markets-layout">
+      <MarketsPortfolioSimulationCard />
+
+      <div className="markets-layout markets-layout-single">
         <article className="card markets-main-card">
           <label className="markets-search-field markets-search-row">
             <span>{t('searchLabel')}</span>
@@ -659,6 +617,9 @@ export function MarketsPage() {
                   key={category}
                   type="button"
                   className={`markets-filter${selectedCategory === category ? ' markets-filter-active' : ''}`}
+                  data-help-i18n-key={`categories.${category}`}
+                  data-help-i18n-ns="markets"
+                  data-help-term={t(`categories.${category}`)}
                   onClick={() => {
                     updateParams((next) => {
                       next.set('category', category.toUpperCase())
@@ -814,12 +775,18 @@ export function MarketsPage() {
                   </tr>
                 ) : visibleRows.length > 0 ? (
                   visibleRows.map((row: MarketOverviewItem) => {
+                    const displayLabel = resolveInstrumentDisplayLabel(row.symbol, row.name)
                     const isBond = isBondOverviewRow(row)
                     const isPositive = (row.change24h ?? 0) >= 0
                     const percentDisplay = row.category === 'FX' ? percentFormatFx : percentFormat
                     const animatedNat = animatedPriceBySymbol[row.symbol] ?? row.price
                     const nativeQ = row.nativeQuote ?? 'USD'
-                    const nativeFmt = nativeQ === 'TRY' ? tryNativeFormat : usdNativeFormat
+                    const nativeFmt =
+                      row.symbol === 'JPYTRY'
+                        ? jpyTryNativeFormat
+                        : nativeQ === 'TRY'
+                          ? tryNativeFormat
+                          : usdNativeFormat
                     const redundantCol =
                       !isBond &&
                       ((nativeQ === 'TRY' && currency === 'TRY') || (nativeQ === 'USD' && currency === 'USD'))
@@ -841,7 +808,22 @@ export function MarketsPage() {
                           : undefined
                     return (
                       <Fragment key={row.symbol}>
-                        <tr {...instrumentHelpRowProps(row.symbol, row.name)}>
+                        <tr
+                          {...instrumentHelpRowProps(row.symbol, row.name)}
+                          className="instrument-help-row markets-table-row-draggable"
+                          draggable
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData(
+                              MARKETS_ROW_DRAG_MIME,
+                              serializeMarketsRowDrag({
+                                symbol: row.symbol,
+                                name: displayLabel.name,
+                                category: row.category,
+                              }),
+                            )
+                            event.dataTransfer.effectAllowed = 'copy'
+                          }}
+                        >
                           <td>
                             <button
                               type="button"
@@ -866,12 +848,15 @@ export function MarketsPage() {
                         <td>
                           <div className="markets-symbol-cell">
                             <strong>
-                              {row.symbol}
+                              {displayLabel.symbol}
+                              {displayLabel.isTefasFund ? (
+                                <span className="markets-tefas-badge">TEFAS</span>
+                              ) : null}
                               {row.freshness === 'STALE' ? (
                                 <span className="markets-freshness-badge">Delayed data</span>
                               ) : null}
                             </strong>
-                            <span>{row.name}</span>
+                            <span>{displayLabel.name}</span>
                           </div>
                         </td>
                         <td className={`markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
@@ -923,16 +908,24 @@ export function MarketsPage() {
                             const points = toSparklinePoints(row)
                             const path = toSparklinePath(points)
                             const isTrendUp = points[points.length - 1] >= points[0]
-                            const score = row.trendScore ?? 0
+                            const score = row.trendScore
                             const trendClass =
-                              score < 35 ? 'markets-trend-badge-weak' : score < 65 ? 'markets-trend-badge-neutral' : 'markets-trend-badge-strong'
+                              score == null
+                                ? 'markets-trend-badge-neutral'
+                                : score < 35
+                                  ? 'markets-trend-badge-weak'
+                                  : score < 65
+                                    ? 'markets-trend-badge-neutral'
+                                    : 'markets-trend-badge-strong'
                             const tooltip = `P${(row.trendPercentile ?? 0).toFixed(0)} | Medyana gore ${percentDisplay.format(
                               row.trendRelativeWeekly ?? 0,
                             )}`
                             return (
                               <div className="markets-trend-cell" title={tooltip}>
                                 <span className={`markets-trend-badge ${trendClass}`}>
-                                  {score.toFixed(0)} · {trendLabelText(row.trendLabel)}
+                                  {score != null
+                                    ? `${score.toFixed(0)} · ${trendLabelText(row.trendLabel)}`
+                                    : '—'}
                                 </span>
                                 <svg
                                   className="sparkline sparkline-compact"
@@ -1103,78 +1096,6 @@ export function MarketsPage() {
           </div>
           <p className="markets-last-updated">{t('lastUpdated')}</p>
         </article>
-
-        <aside className="markets-insights-column">
-          <article className="card markets-insights-card">
-            <h3>{t('insights.topGainers')}</h3>
-            {insightsLoading ? (
-              <p className="markets-insights-empty">{t('common:loading')}</p>
-            ) : insightsError ? (
-              <div className="markets-error-wrap">
-                <span>{t('insights.loadError')}</span>
-                <button type="button" className="markets-filter" onClick={() => void refetchInsights()}>
-                  {t('common:retry')}
-                </button>
-              </div>
-            ) : topGainers.length === 0 ? (
-              <p className="markets-insights-empty">{t('insights.noGainers')}</p>
-            ) : (
-              <ul className="markets-insights-list">
-                {topGainers.map((item) => (
-                  <li key={`gainer-${item.symbol}`} className="markets-insights-item">
-                    <div>
-                      <strong>
-                        {item.symbol}
-                        {item.freshness === 'STALE' ? (
-                          <span className="markets-freshness-badge">Delayed data</span>
-                        ) : null}
-                      </strong>
-                      <span>{item.name}</span>
-                    </div>
-                    <b className="markets-positive">
-                      {item.change24h == null ? '-' : percentFormat.format(item.change24h)}
-                    </b>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
-
-          <article className="card markets-insights-card">
-            <h3>{t('insights.topLosers')}</h3>
-            {insightsLoading ? (
-              <p className="markets-insights-empty">{t('common:loading')}</p>
-            ) : insightsError ? (
-              <div className="markets-error-wrap">
-                <span>{t('insights.loadError')}</span>
-                <button type="button" className="markets-filter" onClick={() => void refetchInsights()}>
-                  {t('common:retry')}
-                </button>
-              </div>
-            ) : topLosers.length === 0 ? (
-              <p className="markets-insights-empty">{t('insights.noLosers')}</p>
-            ) : (
-              <ul className="markets-insights-list">
-                {topLosers.map((item) => (
-                  <li key={`loser-${item.symbol}`} className="markets-insights-item">
-                    <div>
-                      <strong>
-                        {item.symbol}
-                        {item.freshness === 'STALE' ? (
-                          <span className="markets-freshness-badge">Delayed data</span>
-                        ) : null}
-                      </strong>
-                      <span>{item.name}</span>
-                    </div>
-                    <b className="markets-negative">
-                      {item.change24h == null ? '-' : percentFormat.format(item.change24h)}
-                    </b>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </article>
-        </aside>
       </div>
     </section>
   )

@@ -1,5 +1,9 @@
 package com.company.finance_api.exception;
 
+import com.company.finance_api.ai.config.AiConfigurationException;
+import com.company.finance_api.ai.config.AiDisabledException;
+import com.company.finance_api.ai.config.AiOpenAiException;
+import com.company.finance_api.ai.config.AiOpenAiQuotaException;
 import com.company.finance_api.common.ApiError;
 import com.company.finance_api.common.ApiResponse;
 import jakarta.servlet.ServletException;
@@ -137,6 +141,32 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(
                 new ApiError("ACCESS_DENIED", ex.getMessage())
         );
+    }
+
+    @ExceptionHandler(AiDisabledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiDisabled(AiDisabledException ex) {
+        ApiError error = new ApiError("AI_DISABLED", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.error(error));
+    }
+
+    @ExceptionHandler(AiConfigurationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiConfiguration(AiConfigurationException ex) {
+        ApiError error = new ApiError("AI_CONFIGURATION", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.error(error));
+    }
+
+    @ExceptionHandler(AiOpenAiQuotaException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiOpenAiQuota(AiOpenAiQuotaException ex) {
+        log.warn("OpenAI quota exceeded");
+        ApiError error = new ApiError("OPENAI_QUOTA_EXCEEDED", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.error(error));
+    }
+
+    @ExceptionHandler(AiOpenAiException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiOpenAi(AiOpenAiException ex) {
+        log.warn("OpenAI integration failure", ex);
+        ApiError error = new ApiError("AI_OPENAI_ERROR", "AI response could not be retrieved");
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ApiResponse.error(error));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

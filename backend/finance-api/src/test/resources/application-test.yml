@@ -17,3 +17,9 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ""
+
+app:
+  ai:
+    enabled: false
+    openai:
+      api-key: ""

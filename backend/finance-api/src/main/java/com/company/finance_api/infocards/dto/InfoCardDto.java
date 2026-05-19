@@ -2,6 +2,7 @@ package com.company.finance_api.infocards.dto;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 public record InfoCardDto(
         String id,
@@ -22,6 +23,7 @@ public record InfoCardDto(
         String example,
         List<String> relatedTerms,
         Boolean adminOnly,
+        Map<String, InfoCardLocaleContentDto> translations,
         Instant createdAt,
         Instant updatedAt
 ) {

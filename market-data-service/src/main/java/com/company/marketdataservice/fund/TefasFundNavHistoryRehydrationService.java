@@ -1,6 +1,7 @@
 package com.company.marketdataservice.fund;
 
 import com.company.marketdataservice.config.FundMarketProperties;
+import com.company.marketdataservice.dto.HistoryPointDto;
 import com.company.marketdataservice.event.FundSnapshotUpdatedEvent;
 import com.company.marketdataservice.history.FundNavHistoryEntry;
 import com.company.marketdataservice.history.FundNavHistoryRepository;
@@ -18,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +50,13 @@ public class TefasFundNavHistoryRehydrationService {
     private final InstrumentMappingService instrumentMappingService;
     private final FundHistoryWriteService fundHistoryWriteService;
     private final FundNavHistoryRepository fundNavHistoryRepository;
+
+    /**
+     * Non-blocking: HTTP read path must not call TEFAS ({@code WebClient.block}) on a reactive thread.
+     */
+    public void scheduleRepairInteriorGapsInRange(String fundCode, LocalDate from, LocalDate to) {
+        Thread.startVirtualThread(() -> repairInteriorGapsInRange(fundCode, from, to));
+    }
 
     public void rehydrateTrackedFundsLastYear() {
         List<String> codes = fundMarketProperties.getTrackedFundCodes();
@@ -136,6 +145,82 @@ public class TefasFundNavHistoryRehydrationService {
      * Repeatedly compares the two most recent stored NAV calendar dates (Turkey). A large jump (e.g. live scheduler
      * appended "today" while bootstrap left months empty) is filled with {@link #rehydrateOne}.
      */
+    /**
+     * Scans all NAV rows in {@code [from, to]} (not only the latest pair) and backfills TEFAS for interior
+     * calendar gaps (e.g. chart shows Feb → May with March–April missing).
+     */
+    public void repairInteriorGapsInRange(String fundCode, LocalDate from, LocalDate to) {
+        if (fundCode == null || fundCode.isBlank() || from == null || to == null || to.isBefore(from)) {
+            return;
+        }
+        String code = fundCode.trim().toUpperCase(Locale.ROOT);
+        Instant fromInclusive = from.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant toExclusive = to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        try {
+            for (int pass = 0; pass < INTERIOR_GAP_MAX_PASSES; pass++) {
+                List<HistoryPointDto> points =
+                        fundNavHistoryRepository.findHistoryPoints(code, fromInclusive, toExclusive);
+                Optional<GapWindow> gap = findLargestInteriorGap(points);
+                if (gap.isEmpty()) {
+                    if (points.isEmpty()
+                            && fundMarketProperties.getTrackedFundCodes().stream()
+                                    .anyMatch(c -> code.equalsIgnoreCase(c))) {
+                        log.info("TEFAS_NAV_RANGE_REPAIR_EMPTY fundCode={} window={}..{}", code, from, to);
+                        rehydrateOne(code, from, to);
+                    }
+                    return;
+                }
+                GapWindow window = gap.get();
+                log.info(
+                        "TEFAS_NAV_RANGE_INTERIOR_GAP_REPAIR fundCode={} window={}..{} pass={}",
+                        code,
+                        window.from(),
+                        window.to(),
+                        pass
+                );
+                rehydrateOne(code, window.from(), window.to());
+                Thread.sleep(800L);
+            }
+            log.warn("TEFAS_NAV_RANGE_INTERIOR_GAP_REPAIR_MAX_PASSES fundCode={}", code);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.warn("TEFAS_NAV_RANGE_INTERIOR_GAP_REPAIR_INTERRUPTED fundCode={}", code);
+        } catch (Exception ex) {
+            log.warn("TEFAS_NAV_RANGE_INTERIOR_GAP_REPAIR_FAILED fundCode={} reason={}", code, ex.toString());
+        }
+    }
+
+    private Optional<GapWindow> findLargestInteriorGap(List<HistoryPointDto> points) {
+        if (points == null || points.size() < 2) {
+            return Optional.empty();
+        }
+        long largestGapDays = 0;
+        GapWindow largest = null;
+        for (int i = 1; i < points.size(); i++) {
+            Instant prevAt = points.get(i - 1).time();
+            Instant curAt = points.get(i).time();
+            if (prevAt == null || curAt == null) {
+                continue;
+            }
+            LocalDate prevDay = prevAt.atZone(TURKEY).toLocalDate();
+            LocalDate curDay = curAt.atZone(TURKEY).toLocalDate();
+            long gapDays = ChronoUnit.DAYS.between(prevDay, curDay);
+            if (gapDays <= INTERIOR_CALENDAR_GAP_THRESHOLD_DAYS) {
+                continue;
+            }
+            LocalDate fillFrom = prevDay.plusDays(1);
+            LocalDate fillTo = curDay.minusDays(1);
+            if (fillFrom.isAfter(fillTo) || gapDays <= largestGapDays) {
+                continue;
+            }
+            largestGapDays = gapDays;
+            largest = new GapWindow(fillFrom, fillTo);
+        }
+        return Optional.ofNullable(largest);
+    }
+
+    private record GapWindow(LocalDate from, LocalDate to) {}
+
     private void repairLargestRecentCalendarGaps(String fundCode) throws InterruptedException {
         for (int pass = 0; pass < INTERIOR_GAP_MAX_PASSES; pass++) {
             List<FundNavHistoryEntry> top =

@@ -9,9 +9,13 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.company.finance_api.infocards.dto.InfoCardLocaleContentDto;
+
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -77,6 +81,10 @@ public class InfoCardEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "related_terms", nullable = false, columnDefinition = "jsonb")
     private List<String> relatedTerms = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(nullable = false, columnDefinition = "jsonb")
+    private Map<String, InfoCardLocaleContentDto> translations = new LinkedHashMap<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -251,6 +259,14 @@ public class InfoCardEntity {
 
     public void setRelatedTerms(List<String> relatedTerms) {
         this.relatedTerms = relatedTerms != null ? new ArrayList<>(relatedTerms) : new ArrayList<>();
+    }
+
+    public Map<String, InfoCardLocaleContentDto> getTranslations() {
+        return translations;
+    }
+
+    public void setTranslations(Map<String, InfoCardLocaleContentDto> translations) {
+        this.translations = translations != null ? new LinkedHashMap<>(translations) : new LinkedHashMap<>();
     }
 
     public Instant getCreatedAt() {

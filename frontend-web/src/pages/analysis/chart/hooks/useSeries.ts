@@ -6,8 +6,8 @@ import {
   type IChartApi,
   type ISeriesApi,
 } from 'lightweight-charts'
-import type { CandlePoint, ChartDisplayType } from '../../types'
-import { toCandlestickData, toLineData, toVolumeHistogramData } from '../utils/candleMappers'
+import type { AssetType, CandlePoint, ChartDisplayType } from '../../types'
+import { toCandlestickData, toLineData, toLineDataWithGapBreaks, toVolumeHistogramData } from '../utils/candleMappers'
 
 export type MainPriceSeries = {
   chartType: ChartDisplayType
@@ -91,6 +91,7 @@ export function useMainPriceData(
   series: MainPriceSeries | null,
   candles: CandlePoint[],
   fitContentKey: string,
+  assetType: AssetType = 'stock',
 ) {
   const prevFitKeyRef = useRef<string | null>(null)
   const prevChartRef = useRef<IChartApi | null>(null)
@@ -135,7 +136,9 @@ export function useMainPriceData(
         }
       } else {
         const lineSeries = series.main as ISeriesApi<'Line'>
-        if (canIncremental) {
+        const lineData = assetType === 'fund' ? toLineDataWithGapBreaks(candles) : candles.map(toLineData)
+        const useIncremental = canIncremental && assetType !== 'fund'
+        if (useIncremental) {
           for (let i = prev.length - 1; i < candles.length; i += 1) {
             if (i < 0) continue
             lineSeries.update(toLineData(candles[i]))
@@ -143,7 +146,7 @@ export function useMainPriceData(
             series.volume.update(toVolumeHistogramData(candles[i], prevClose))
           }
         } else {
-          lineSeries.setData(candles.map(toLineData))
+          lineSeries.setData(lineData)
           series.volume.setData(
             candles.map((candle, index) =>
               toVolumeHistogramData(candle, index > 0 ? candles[index - 1].close : candle.open),
@@ -165,5 +168,5 @@ export function useMainPriceData(
     } catch {
       /* unmount / chart.remove racing with data update */
     }
-  }, [chart, series, candles, fitContentKey])
+  }, [assetType, chart, series, candles, fitContentKey])
 }

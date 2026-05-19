@@ -1,8 +1,11 @@
 package com.company.marketdataservice.api;
 
+import com.company.marketdataservice.dto.CpiLatestDto;
 import com.company.marketdataservice.dto.PolicyRateHistoryResponseDto;
 import com.company.marketdataservice.dto.PolicyRateLatestDto;
 import com.company.marketdataservice.dto.TlDepositLatestDto;
+import com.company.marketdataservice.rates.CpiHistoryService;
+import com.company.marketdataservice.rates.CpiMetric;
 import com.company.marketdataservice.rates.PolicyRateHistoryService;
 import com.company.marketdataservice.rates.TlDepositHistoryService;
 import org.springframework.http.HttpStatus;
@@ -18,13 +21,16 @@ public class RatesController {
 
     private final PolicyRateHistoryService policyRateHistoryService;
     private final TlDepositHistoryService tlDepositHistoryService;
+    private final CpiHistoryService cpiHistoryService;
 
     public RatesController(
             PolicyRateHistoryService policyRateHistoryService,
-            TlDepositHistoryService tlDepositHistoryService
+            TlDepositHistoryService tlDepositHistoryService,
+            CpiHistoryService cpiHistoryService
     ) {
         this.policyRateHistoryService = policyRateHistoryService;
         this.tlDepositHistoryService = tlDepositHistoryService;
+        this.cpiHistoryService = cpiHistoryService;
     }
 
     @GetMapping("/policy-rate/latest")
@@ -50,6 +56,30 @@ public class RatesController {
     public TlDepositLatestDto tlDepositLatest(@RequestParam(required = false) String maturity) {
         try {
             return tlDepositHistoryService.loadLatest(maturity);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @GetMapping("/cpi/latest")
+    public CpiLatestDto cpiLatest(@RequestParam(defaultValue = "YEARLY_PCT") String metric) {
+        try {
+            return cpiHistoryService.loadLatest(CpiMetric.parse(metric));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @GetMapping("/cpi/history")
+    public PolicyRateHistoryResponseDto cpiHistory(
+            @RequestParam(defaultValue = "YEARLY_PCT") String metric,
+            @RequestParam(defaultValue = "5Y") String range
+    ) {
+        if (!"5Y".equalsIgnoreCase(range == null ? "" : range.trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported range (use range=5Y)");
+        }
+        try {
+            return cpiHistoryService.loadFiveYearMonthlyFromDb(CpiMetric.parse(metric));
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }

@@ -2,6 +2,8 @@ import type { LineData, Time, UTCTimestamp } from 'lightweight-charts'
 import { apiClient } from '../../../shared/api/client'
 import type { CandlePoint } from '../../../pages/analysis/types'
 import { symbolUsesFundMarketHistory, symbolUsesFxMarketHistory, US_LISTED_ETF_TICKERS_AS_FUNDS } from '../../markets/api/marketService'
+import { normalizeFxCandleSeries } from '../../markets/lib/fxTryHubConversion'
+import { tefasFundCodeFromSymbol } from '../../markets/lib/tefasFundDisplay'
 
 type ApiResponse<T> = {
   success: boolean
@@ -135,9 +137,13 @@ function historyUrl(kind: AnalysisHistoryKind): string {
   return '/api/market/prices/history'
 }
 
+function historyFundCode(symbol: string): string {
+  return tefasFundCodeFromSymbol(symbol) ?? symbol.trim().toUpperCase()
+}
+
 function historyParams(symbol: string, from: string, to: string, kind: AnalysisHistoryKind): Record<string, string> {
   if (kind === 'fund') {
-    return { fundCode: symbol, from, to }
+    return { fundCode: historyFundCode(symbol), from, to }
   }
   return { symbol, from, to }
 }
@@ -175,6 +181,10 @@ async function collectHistoryPoints(symbol: string, fromTs: number, toTs: number
 
 function bucketGranularity(range: AnalysisRange): 'hour' | 'day' {
   return range === '1h' || range === '6h' || range === '24h' ? 'hour' : 'day'
+}
+
+function finalizeFxCandles(symbol: string, kind: AnalysisHistoryKind, candles: CandlePoint[]): CandlePoint[] {
+  return kind === 'fx' ? normalizeFxCandleSeries(symbol, candles) : candles
 }
 
 function historyPointsToCandles(points: HistoryPointDto[], granularity: 'hour' | 'day', maxBars: number): CandlePoint[] {
@@ -303,14 +313,14 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
     const historyFromTs = historyToTs - (historyDays - 1) * DAY_MS
     const historyPoints = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyPoints.length > 0) {
-      return historyPoints
+      return finalizeFxCandles(historySym, kind, historyPoints)
     }
   }
 
   const points = await fetchAnalyticsCandlesForRange(analyticsCandidates, interval, fromTs)
   const windowed = points.filter((point) => point.time * 1000 >= fromTs)
   if (windowed.length > 0 && !shouldUseHistoryFallback(windowed, range)) {
-    return windowed
+    return finalizeFxCandles(historySym, kind, windowed)
   }
 
   if (historyDays) {
@@ -318,12 +328,12 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
     const historyFromTs = historyToTs - (historyDays - 1) * DAY_MS
     const historyPoints = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyPoints.length > 0) {
-      return historyPoints
+      return finalizeFxCandles(historySym, kind, historyPoints)
     }
   }
 
   if (points.length > 0 && !shouldUseHistoryFallback(points, range)) {
-    return points
+    return finalizeFxCandles(historySym, kind, points)
   }
 
   if (shouldUseHistoryFallback(windowed.length > 0 ? windowed : points, range)) {
@@ -331,18 +341,18 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
     const historyFromTs = historyDays ? historyToTs - (historyDays - 1) * DAY_MS : fromTs
     const historyFallback = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyFallback.length > 0) {
-      return historyFallback
+      return finalizeFxCandles(historySym, kind, historyFallback)
     }
   }
 
   const fromMarket = await candlesFromMarketHistory(historySym, range, fromTs, Date.now(), kind)
   if (fromMarket.length > 0) {
     const w = fromMarket.filter((point) => point.time * 1000 >= fromTs)
-    return w.length > 0 ? w : fromMarket
+    return finalizeFxCandles(historySym, kind, w.length > 0 ? w : fromMarket)
   }
 
   const fallbackPoints = RANGE_TO_FALLBACK_POINTS[range]
-  return points.slice(Math.max(0, points.length - fallbackPoints))
+  return finalizeFxCandles(historySym, kind, points.slice(Math.max(0, points.length - fallbackPoints)))
 }
 
 function shouldUseHistoryFallback(points: CandlePoint[], range: AnalysisRange): boolean {
@@ -369,7 +379,7 @@ async function candlesFromMarketHistory(
   }
   const granularity = bucketGranularity(range)
   const maxBars = Math.min(5000, Math.max(120, spanDays * (granularity === 'hour' ? 24 : 1) + 50))
-  return historyPointsToCandles(raw, granularity, maxBars)
+  return finalizeFxCandles(symbol, kind, historyPointsToCandles(raw, granularity, maxBars))
 }
 
 async function fetchHistoryCandles(
@@ -388,7 +398,7 @@ async function fetchHistoryCandles(
     return []
   }
   const candles = historyPointsToCandles(raw, 'day', Math.max(targetDays + 10, 120))
-  return candles.sort((a, b) => a.time - b.time).slice(-Math.max(targetDays + 10, 120))
+  return finalizeFxCandles(symbol, kind, candles.sort((a, b) => a.time - b.time).slice(-Math.max(targetDays + 10, 120)))
 }
 
 function calculateMovingAverage(candles: CandlePoint[], period: number): LineData<Time>[] {

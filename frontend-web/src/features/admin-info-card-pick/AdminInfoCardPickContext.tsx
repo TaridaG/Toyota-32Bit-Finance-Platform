@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import type { SupportedLocale } from '../../shared/i18n'
 import type { PortalPageKey } from '../../types/infoCards'
 
 export type InfoCardPickPrefill = {
@@ -8,6 +9,7 @@ export type InfoCardPickPrefill = {
   targetInstrumentSymbols?: string[]
   title: string
   pickLabel: string
+  localeTitles: Record<SupportedLocale, string>
 }
 
 type AdminInfoCardPickContextValue = {

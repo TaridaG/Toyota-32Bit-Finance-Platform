@@ -148,6 +148,8 @@ services:
       context: ../backend/finance-api
       dockerfile: Dockerfile
     container_name: finance-api
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -182,6 +184,7 @@ services:
       - APP_REGISTRATION_VERIFICATION_FROM=32bitdemofinanceplatformmm@gmail.com
       - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
       - MARKET_TR_USD_EUROBOND_YAHOO_ENABLED=${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:-true}
+      - AI_ENABLED=true
     networks:
       - finance-net
 

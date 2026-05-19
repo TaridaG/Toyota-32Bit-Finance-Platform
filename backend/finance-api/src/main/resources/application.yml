@@ -47,6 +47,13 @@ scheduler:
     delay-ms: 60000
 
 app:
+  ai:
+    enabled: ${AI_ENABLED:false}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      models:
+        admin-content: ${OPENAI_MODEL_ADMIN_CONTENT:gpt-4.1-mini}
+        translation: ${OPENAI_MODEL_TRANSLATION:gpt-4.1-mini}
   security:
     allow-header-user-fallback: ${APP_SECURITY_ALLOW_HEADER_USER_FALLBACK:true}
   registration:

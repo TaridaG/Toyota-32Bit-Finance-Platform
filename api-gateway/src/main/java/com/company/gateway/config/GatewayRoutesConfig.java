@@ -102,9 +102,7 @@ public class GatewayRoutesConfig {
                 .setRateLimiter(apiRateLimiter)
                 .setKeyResolver(userIdKeyResolver)
                 )
-                .circuitBreaker(cb -> cb
-                .setName("financeCircuitBreaker")
-                .setFallbackUri("forward:/fallback/finance"))
+                .circuitBreaker(cb -> cb.setName("financeCircuitBreaker"))
                 )
                 .uri(financeBaseUri))
                 .build();

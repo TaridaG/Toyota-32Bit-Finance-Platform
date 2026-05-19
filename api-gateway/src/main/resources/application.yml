@@ -5,6 +5,11 @@ spring:
     name: api-gateway
   main:
     web-application-type: reactive
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 120s
   security:
     oauth2:
       resourceserver:
@@ -17,6 +22,24 @@ app:
       issuer-uri: ${JWT_ISSUER_URI:http://localhost:8085/realms/finance}
       # JWKS-only JWT decode (no iss hostname coupling). Without this, gateway may use issuer-uri-only decoder.
       jwk-set-uri: http://localhost:8085/realms/finance/protocol/openid-connect/certs
+
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 120s
+        cancelRunningFuture: true
+    instances:
+      financeCircuitBreaker:
+        baseConfig: default
+      marketCircuitBreaker:
+        baseConfig: default
+      newsCircuitBreaker:
+        baseConfig: default
+      reportingCircuitBreaker:
+        baseConfig: default
+      analyticsCircuitBreaker:
+        baseConfig: default
 
 gateway:
   cors:

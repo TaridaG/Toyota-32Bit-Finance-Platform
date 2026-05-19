@@ -19,6 +19,13 @@ market:
       - isin: US900123CM05
         yahoo-chart-symbol: "TLT"
 app:
+  ai:
+    enabled: ${AI_ENABLED:false}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      models:
+        admin-content: ${OPENAI_MODEL_ADMIN_CONTENT:gpt-4.1-mini}
+        translation: ${OPENAI_MODEL_TRANSLATION:gpt-4.1-mini}
   profile-avatar:
     # Persist across container restarts by mounting this path as a volume.
     storage-root: ${PROFILE_AVATAR_STORAGE_ROOT:/data/profile-avatars}

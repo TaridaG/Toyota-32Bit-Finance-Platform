@@ -29,6 +29,7 @@ function mapCard(raw: InfoCard): InfoCard {
     relatedTerms: raw.relatedTerms ?? [],
     targetTerms: raw.targetTerms ?? [],
     pages: raw.pages ?? [],
+    translations: raw.translations ?? undefined,
   }
 }
 
