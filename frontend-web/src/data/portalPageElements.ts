@@ -11,6 +11,9 @@ export interface PortalPageElement {
   term: string
   kind: PortalPageElementKind
   section?: string
+  /** i18n key for admin pick / multi-locale card titles (namespace defaults to common) */
+  labelI18nKey?: string
+  labelI18nNs?: string
 }
 
 function el(
@@ -20,6 +23,8 @@ function el(
   kind: PortalPageElementKind,
   section?: string,
   term = label,
+  labelI18nKey?: string,
+  labelI18nNs?: string,
 ): PortalPageElement {
   const slug = matchKey.replace(/[^a-z0-9]+/gi, '-').toLowerCase()
   return {
@@ -30,6 +35,8 @@ function el(
     term,
     kind,
     section,
+    labelI18nKey,
+    labelI18nNs,
   }
 }
 
@@ -61,10 +68,13 @@ export const PORTAL_PAGE_ELEMENTS: PortalPageElement[] = [
   el('MARKETS', 'change-1d', '1G Değişim', 'COLUMN', 'Tablo', '1G'),
   el('MARKETS', 'volume', 'Hacim', 'COLUMN', 'Tablo'),
   el('MARKETS', 'market-cap', 'Piyasa değeri', 'COLUMN', 'Tablo'),
-  el('MARKETS', 'category-equity', 'Hisse', 'BUTTON', 'Kategori filtresi'),
-  el('MARKETS', 'category-bond', 'Tahvil', 'BUTTON', 'Kategori filtresi'),
-  el('MARKETS', 'category-fx', 'Döviz', 'BUTTON', 'Kategori filtresi'),
-  el('MARKETS', 'category-commodity', 'Emtia', 'BUTTON', 'Kategori filtresi'),
+  el('MARKETS', 'category-equity', 'Hisse', 'BUTTON', 'Kategori filtresi', 'Hisse', 'categories.stocks', 'markets'),
+  el('MARKETS', 'category-bond', 'Tahvil', 'BUTTON', 'Kategori filtresi', 'Tahvil', 'categories.bonds', 'markets'),
+  el('MARKETS', 'category-fx', 'Döviz', 'BUTTON', 'Kategori filtresi', 'Döviz', 'categories.forex', 'markets'),
+  el('MARKETS', 'category-commodity', 'Emtia', 'BUTTON', 'Kategori filtresi', 'Emtia', 'categories.metals', 'markets'),
+  el('MARKETS', 'category-crypto', 'Kripto', 'BUTTON', 'Kategori filtresi', 'Kripto', 'categories.crypto', 'markets'),
+  el('MARKETS', 'category-bist', 'BIST', 'BUTTON', 'Kategori filtresi', 'BIST', 'categories.bist', 'markets'),
+  el('MARKETS', 'category-nasdaq', 'NASDAQ', 'BUTTON', 'Kategori filtresi', 'NASDAQ', 'categories.nasdaq', 'markets'),
   el('MARKETS', 'search', 'Sembol ara', 'TEXT', 'Araç çubuğu'),
   el('MARKETS', 'watchlist', 'İzleme listesi', 'BUTTON', 'Araç çubuğu'),
 

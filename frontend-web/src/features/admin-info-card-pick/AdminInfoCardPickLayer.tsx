@@ -2,14 +2,17 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { DEFAULT_LOCALE, normalizeLocale } from '../../shared/i18n'
 import { resolvePageKeyFromPath } from '../../data/portalPages'
 import { useLiteracyHelpMode } from '../literacy-help/LiteracyHelpModeContext'
 import { useAdminInfoCardPick } from './AdminInfoCardPickContext'
 import { resolveElementIdsForPick } from './resolvePickElementIds'
+import { resolvePickLocaleTitles, uniqueTargetTerms } from './resolvePickLocaleTitles'
 import { isAdminPickRouteAllowed, resolvePickTargetFromEvent } from './pickTargetUtils'
 
 export function AdminInfoCardPickLayer() {
-  const { t } = useTranslation('common')
+  const { t, i18n } = useTranslation('common')
+  const adminLocale = normalizeLocale(i18n.language) ?? DEFAULT_LOCALE
   const { pathname } = useLocation()
   const { deactivate: deactivateHelp } = useLiteracyHelpMode()
   const { pickModeActive, canPickOnRoute, deactivatePickMode, openEditorFromPick } = useAdminInfoCardPick()
@@ -52,17 +55,34 @@ export function AdminInfoCardPickLayer() {
       const targetElementIds = pick.instrumentSymbol
         ? []
         : resolveElementIdsForPick(pageKey, pick.label, pick.term, pick.elementId)
+      const localeTitles = resolvePickLocaleTitles({
+        label: pick.label,
+        term: pick.term,
+        pageKey,
+        elementId: targetElementIds[0] ?? pick.elementId,
+        instrumentSymbol: pick.instrumentSymbol,
+        i18nKey: pick.i18nKey,
+        i18nNs: pick.i18nNs,
+      })
+      const targetTerms = uniqueTargetTerms(
+        pick.term,
+        pick.label,
+        localeTitles,
+        pick.instrumentSymbol,
+      )
+      const primaryTitle = localeTitles[adminLocale] || pick.term
       openEditorFromPick({
         pageKey,
-        targetTerms: pick.instrumentSymbol ? [pick.instrumentSymbol] : [pick.term],
+        targetTerms,
         targetElementIds,
         targetInstrumentSymbols: pick.instrumentSymbol ? [pick.instrumentSymbol] : [],
         title: pick.instrumentSymbol
           ? pick.label.includes('—')
             ? pick.label.split('—')[1]?.trim() || pick.term
             : pick.term
-          : pick.term,
+          : primaryTitle,
         pickLabel: pick.label,
+        localeTitles,
       })
     }
 

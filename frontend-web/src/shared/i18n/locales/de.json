@@ -180,6 +180,11 @@
         "analysisTools": "Analysewerkzeuge",
         "macro": "Makroindikatoren"
       },
+      "admin": {
+        "addCard": "+ Allgemeine Infokarte",
+        "editorTitle": "Allgemeine Infokarte hinzufügen",
+        "editorBindingHint": "Diese Karte erscheint nur in der Liste Finanzielle Bildung und ist mit keinem Portal-Button verknüpft."
+      },
       "allCategories": "Alle Inhalte",
       "filtersTitle": "Filter",
       "categoryTitle": "Kategorie",
@@ -237,7 +242,10 @@
         "NEWS": "News",
         "NOTIFICATIONS": "Benachrichtigungen",
         "ADMIN": "Admin",
-        "BANK_RATES": "Bankkurse"
+        "BANK_RATES": "Bankkurse",
+        "FINANCIAL_LITERACY": "Finanzielle Bildung",
+        "INFO_CARDS": "Infokarten",
+        "AUDIT_LOGS": "Audit-Protokolle"
       },
       "sections": {
         "shortDefinition": "Kurzdefinition",
@@ -312,7 +320,8 @@
         "ADMIN_KPI_NEWS": "KPI — Nachrichtenquellen",
         "ADMIN_KPI_SYSTEM": "KPI — Systemstatus",
         "ADMIN_KPI_LATENCY": "KPI — Ø Latenz",
-        "INFO_CARDS": "Infokarten"
+        "INFO_CARDS": "Infokarten",
+        "AUDIT_LOGS": "Audit-Protokolle"
       },
       "editor": {
         "newTitle": "Neue Infokarte",
@@ -355,12 +364,32 @@
         "detailedDescription": "Detailbeschreibung",
         "howToInterpret": "Interpretation",
         "commonMistake": "Häufiger Fehler",
+        "example": "Beispiel",
         "relatedTerms": "Verwandte Begriffe",
         "active": "Aktiv",
         "cancel": "Abbrechen",
         "save": "Speichern",
         "saving": "Wird gespeichert…",
-        "saveError": "Karte konnte nicht gespeichert werden. Bitte erneut versuchen."
+        "saveError": "Karte konnte nicht gespeichert werden. Bitte erneut versuchen.",
+        "wizard": {
+          "localeRailAria": "Sprachschritte",
+          "preview": "Vorschau",
+          "stepLead": "Inhalt auf {{locale}} eingeben",
+          "localeRequired": "Titel und Kurzbeschreibung sind für diese Sprache erforderlich.",
+          "allLocalesRequired": "Bitte Titel und Kurzbeschreibung in allen drei Sprachen ausfüllen.",
+          "back": "Zurück",
+          "next": "Weiter",
+          "toPreview": "Zur Vorschau",
+          "saveAll": "In 3 Sprachen speichern",
+          "aiComplete": "Fehlende Felder mit KI ausfüllen",
+          "aiCompleteLoading": "KI-Inhalt wird erzeugt…",
+          "aiTranslate": "{{target}} aus {{source}} mit KI ausfüllen",
+          "aiTranslateLoading": "KI-Übersetzung läuft…",
+          "aiDisabled": "KI-Inhaltserstellung ist derzeit deaktiviert.",
+          "aiFailed": "Keine KI-Antwort erhalten. Bitte erneut versuchen.",
+          "aiQuotaExceeded": "OpenAI-API-Kontingent überschritten. Bitte Guthaben oder Plan auf platform.openai.com prüfen.",
+          "aiTimeout": "Die KI-Anfrage ist abgelaufen. Bitte in ein paar Sekunden erneut versuchen."
+        }
       }
     },
     "bankRatesPage": {
@@ -393,6 +422,27 @@
         "chartEmpty": "Keine wöchentlichen Einträge gefunden.",
         "chartFoot": "Die Linie entspricht der gespeicherten wöchentlichen TCMB-Serie; Bekanntmachungstermine und Wochengrenzen können die Form leicht beeinflussen.",
         "chartInflationHint": "Eine Inflationsserie kann hier als zweite Linie ergänzt werden, sobald die Daten-API angebunden ist."
+      },
+      "inflation": {
+        "liveNoData": "Noch keine Inflationsdaten.",
+        "liveNoDataHint": "Erscheint nach dem TCMB-EVDS-VPI-Sync (einige Minuten).",
+        "liveLoadError": "Inflationsdaten konnten nicht geladen werden.",
+        "liveSkeletonAria": "Aktuelle Inflation wird geladen",
+        "chartOpenHint": "Fünf-Jahres-VPI-Diagramm im Hauptbereich anzeigen",
+        "chartTitle": "VPI — letzte 5 Jahre (monatlich)",
+        "chartAxisPct": "Veränderung (%)",
+        "chartAxisIndex": "Index (2003=100)",
+        "chartLoading": "Diagramm wird geladen",
+        "chartError": "Verlauf konnte nicht geladen werden.",
+        "chartRetry": "Erneut versuchen",
+        "chartEmpty": "Keine monatlichen Daten vorhanden.",
+        "chartFoot": "Quelle: TCMB EVDS VPI-Gesamtindex; monatliche und jährliche % aus dem Index abgeleitet.",
+        "metricTabsAria": "VPI-Kennzahl wählen",
+        "metric": {
+          "YEARLY_PCT": "Jährlich %",
+          "MONTHLY_PCT": "Monatlich %",
+          "INDEX": "Index"
+        }
       },
       "tlDeposit": {
         "maturitySelectAria": "Laufzeitband wählen",
@@ -746,6 +796,8 @@
     "favorite": "Zu Favoriten",
     "unfavorite": "Aus Favoriten entfernen",
     "noMatches": "Keine Instrumente für diesen Filter gefunden.",
+    "loadError": "Marktdaten konnten nicht geladen werden. Bitte erneut versuchen.",
+    "loadErrorTimeout": "Zeitüberschreitung beim Laden der Marktdaten. Andere Kategorie wählen oder kurz warten.",
     "lastUpdated": "Letztes Update: gerade eben",
     "insights": {
       "topGainers": "Top Gewinner",
@@ -753,6 +805,44 @@
       "noGainers": "Keine Gewinner verfügbar.",
       "noLosers": "Keine Verlierer verfügbar.",
       "loadError": "Markteinblicke konnten nicht geladen werden."
+    },
+    "aiInsight": {
+      "title": "Info von KI",
+      "lead": "Symbol hinzufügen; Antworten werden vorerst im Browser gespeichert.",
+      "symbolPlaceholder": "Symbol (z. B. AAPL)",
+      "addAria": "Symbol hinzufügen",
+      "empty": "Noch kein Symbol hinzugefügt.",
+      "answerPlaceholder": "KI-Antwort erscheint hier…",
+      "removeAria": "{{symbol}} entfernen"
+    },
+    "portfolioSim": {
+      "title": "Portfolio-Simulation",
+      "lead": "Zeile auf das Diagramm ziehen; Rendite ab Startdatum (Asset- und FX-Anteil).",
+      "dropHint": "Asset hier ablegen",
+      "empty": "Noch kein Asset — Zeile aus der Tabelle auf das Diagramm ziehen.",
+      "equalize": "Gleich verteilen",
+      "normalize": "Auf 100 % normalisieren",
+      "weightTotal": "Gesamtgewicht: {{value}} %",
+      "removeAria": "{{symbol}} entfernen",
+      "startDate": "Startdatum",
+      "baseCurrency": "Währung",
+      "baseCurrencyAria": "Anzeigewährung der Simulation",
+      "currencyTry": "TRY",
+      "currencyUsd": "USD",
+      "loadError": "Kursverlauf konnte nicht geladen werden.",
+      "noResult": "Kein Ergebnis für dieses Datum oder diese Gewichtung.",
+      "totalReturn": "Portfolio-Rendite",
+      "displayCurrency": "Anzeige: {{currency}}",
+      "period": "{{from}} → {{to}}",
+      "metricAsset": "Asset",
+      "metricFx": "FX",
+      "metricTotal": "Gesamt",
+      "holdingLoading": "Wird berechnet…",
+      "holdingError": "Für dieses Asset nicht berechenbar",
+      "dragAllocation": "Segmentgrenzen ziehen, um Gewichte anzupassen",
+      "allocationCenter": "Gesamt",
+      "allocationChartAria": "Portfolio-Gewichtungsdiagramm",
+      "legendAria": "Portfolio-Assets"
     },
     "pagination": {
       "prev": "Zurück",
@@ -847,6 +937,38 @@
     "relatedNewsTitle": "Zugehörige News",
     "performanceTableTitle": "Performance-Tabelle",
     "syncedWithRange": "Synchronisiert mit {{range}}",
+    "winnersLosers": {
+      "subtitle": "{{segment}} · Woche / Monat / Jahr",
+      "loadError": "Gewinner und Verlierer konnten nicht geladen werden.",
+      "emptyWinners": "Keine Gewinner in dieser Kategorie.",
+      "emptyLosers": "Keine Verlierer in dieser Kategorie.",
+      "titles": {
+        "winners": {
+          "all": "Marktgewinner",
+          "bist": "BIST-Gewinner",
+          "nasdaq": "NASDAQ-Gewinner",
+          "crypto": "Krypto-Gewinner",
+          "forex": "Devisen-Gewinner",
+          "metals": "Metalle (Spot)-Gewinner",
+          "globalFutures": "Globale Futures-Gewinner",
+          "funds": "Fonds-Gewinner",
+          "bonds": "Anleihen-Gewinner",
+          "eurobond": "Eurobond-Gewinner"
+        },
+        "losers": {
+          "all": "Marktverlierer",
+          "bist": "BIST-Verlierer",
+          "nasdaq": "NASDAQ-Verlierer",
+          "crypto": "Krypto-Verlierer",
+          "forex": "Devisen-Verlierer",
+          "metals": "Metalle (Spot)-Verlierer",
+          "globalFutures": "Globale Futures-Verlierer",
+          "funds": "Fonds-Verlierer",
+          "bonds": "Anleihen-Verlierer",
+          "eurobond": "Eurobond-Verlierer"
+        }
+      }
+    },
     "sortNews": "News sortieren:",
     "sort": {
       "byTime": "Nach Zeit",
@@ -879,6 +1001,7 @@
       "deckSymbolLabel": "Symbol",
       "deckCategoryLabel": "Kategorie",
       "deckChartSymbol": "Chart-Symbol",
+      "pickInstrument": "Instrument wählen…",
       "deckTotalCount": "Gesamt {{count}} Instrumente",
       "types": {
         "all": "Alle Kategorien",
@@ -1037,6 +1160,40 @@
       "weekly": "Wöchentlich %",
       "monthly": "Monatlich %",
       "yearly": "Jährlich %"
+    },
+    "inflationDeposit": {
+      "title": "Inflation & Einlagen",
+      "subtitle": "TCMB EVDS · VPI und TL-Einlagen",
+      "inflationLabel": "VPI (jährlich)",
+      "depositLabel": "TL-Einlage",
+      "viewDetails": "Zur Zins- & Festgeldseite"
+    },
+    "simulation": {
+      "title": "Investitionssimulation",
+      "subtitle": "{{symbol}} · Chart-Asset",
+      "noAsset": "Wählen Sie zuerst ein Instrument im Chart.",
+      "amountLabel": "Anlagebetrag",
+      "currencyAria": "Anlagewährung",
+      "fxUnavailable": "Wechselkursdaten nicht verfügbar; Simulation nicht möglich.",
+      "noEntryFx": "Kein {{from}} → {{to}}-Kurs am Kaufdatum.",
+      "noExitFx": "Kein {{from}} → {{to}}-Kurs am aktuellen Datum.",
+      "entryFx": "Kurs am Kauf ({{date}})",
+      "exitFx": "Aktueller Kurs ({{date}})",
+      "fxRateLine": "1 {{from}} = {{rate}} {{to}}",
+      "costNative": "Kosten ({{currency}})",
+      "valueNative": "Aktueller Wert ({{currency}})",
+      "lots": "Stück",
+      "dateLabel": "Kaufdatum",
+      "chartPickFromChart": "Datum aus Chart wählen",
+      "chartPickHint": "Klicken Sie auf einen Balken im Chart, um das Kaufdatum zu setzen.",
+      "chartPickCancel": "Abbrechen",
+      "entryPrice": "{{date}} Schluss: {{price}}",
+      "noPriceOnDate": "Keine Preisdaten für dieses Datum.",
+      "cost": "Kosten",
+      "currentValue": "Aktueller Wert",
+      "pnl": "Gewinn / Verlust",
+      "pnlPct": "Rendite %",
+      "disclaimer": "Schlusskurse und MDS-Historikkurse (Kauf- und aktueller Tag). Ohne Gebühren und Steuern."
     }
   },
   "portfolio": {

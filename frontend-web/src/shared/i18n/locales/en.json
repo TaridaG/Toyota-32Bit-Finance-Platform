@@ -180,6 +180,11 @@
         "analysisTools": "analysis tools",
         "macro": "macro indicators"
       },
+      "admin": {
+        "addCard": "+ General info card",
+        "editorTitle": "Add general info card",
+        "editorBindingHint": "This card appears only on the Financial literacy list; it is not linked to any portal button or page element."
+      },
       "allCategories": "All content",
       "filtersTitle": "Filters",
       "categoryTitle": "Category",
@@ -237,7 +242,10 @@
         "NEWS": "News",
         "NOTIFICATIONS": "Notifications",
         "ADMIN": "Admin",
-        "BANK_RATES": "Bank FX rates"
+        "BANK_RATES": "Bank FX rates",
+        "FINANCIAL_LITERACY": "Financial literacy",
+        "INFO_CARDS": "Info cards",
+        "AUDIT_LOGS": "Audit logs"
       },
       "sections": {
         "shortDefinition": "Short definition",
@@ -312,7 +320,8 @@
         "ADMIN_KPI_NEWS": "KPI — News sources",
         "ADMIN_KPI_SYSTEM": "KPI — System status",
         "ADMIN_KPI_LATENCY": "KPI — Avg. latency",
-        "INFO_CARDS": "Info cards"
+        "INFO_CARDS": "Info cards",
+        "AUDIT_LOGS": "Audit logs"
       },
       "editor": {
         "newTitle": "New info card",
@@ -355,12 +364,32 @@
         "detailedDescription": "Detailed description",
         "howToInterpret": "How to interpret",
         "commonMistake": "Common mistake",
+        "example": "Example",
         "relatedTerms": "Related terms (comma-separated)",
         "active": "Active",
         "cancel": "Cancel",
         "save": "Save",
         "saving": "Saving…",
-        "saveError": "Could not save the card. Please try again."
+        "saveError": "Could not save the card. Please try again.",
+        "wizard": {
+          "localeRailAria": "Language steps",
+          "preview": "Preview",
+          "stepLead": "Enter content in {{locale}}",
+          "localeRequired": "Title and short description are required for this language.",
+          "allLocalesRequired": "Fill title and short description in all three languages before saving.",
+          "back": "Back",
+          "next": "Next",
+          "toPreview": "Go to preview",
+          "saveAll": "Save in 3 languages",
+          "aiComplete": "Fill missing fields with AI",
+          "aiCompleteLoading": "Generating AI content…",
+          "aiTranslate": "Fill {{target}} from {{source}} with AI",
+          "aiTranslateLoading": "Translating with AI…",
+          "aiDisabled": "AI content generation is currently disabled.",
+          "aiFailed": "Could not get an AI response. Please try again.",
+          "aiQuotaExceeded": "OpenAI API quota exceeded. Check billing or plan at platform.openai.com.",
+          "aiTimeout": "The AI request timed out. Please try again in a few seconds."
+        }
       }
     },
     "bankRatesPage": {
@@ -393,6 +422,27 @@
         "chartEmpty": "No weekly records found.",
         "chartFoot": "The line reflects the weekly TCMB series stored in the database; announcement timing and week boundaries may shift the shape slightly.",
         "chartInflationHint": "An inflation series can be added as a second line on this chart when the data API is wired."
+      },
+      "inflation": {
+        "liveNoData": "No inflation data to display yet.",
+        "liveNoDataHint": "Appears here after the TCMB EVDS CPI sync completes (a few minutes).",
+        "liveLoadError": "Could not load inflation data. Check your connection.",
+        "liveSkeletonAria": "Loading current inflation",
+        "chartOpenHint": "Show the five-year CPI chart in the main panel",
+        "chartTitle": "CPI — last 5 years (monthly)",
+        "chartAxisPct": "Change (%)",
+        "chartAxisIndex": "Index (2003=100)",
+        "chartLoading": "Loading chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "chartEmpty": "No monthly data on file.",
+        "chartFoot": "Source: TCMB EVDS general CPI index; monthly and yearly % changes are derived from the index.",
+        "metricTabsAria": "Select CPI indicator",
+        "metric": {
+          "YEARLY_PCT": "Year-on-year %",
+          "MONTHLY_PCT": "Month-on-month %",
+          "INDEX": "Index"
+        }
       },
       "tlDeposit": {
         "maturitySelectAria": "Choose maturity bucket",
@@ -746,6 +796,8 @@
     "favorite": "Add to favorites",
     "unfavorite": "Remove from favorites",
     "noMatches": "No instruments found for this filter.",
+    "loadError": "Market data could not be loaded. Please try again.",
+    "loadErrorTimeout": "Market data timed out. Try another category or wait a moment and retry.",
     "lastUpdated": "Last update: just now",
     "insights": {
       "topGainers": "Top Gainers",
@@ -753,6 +805,44 @@
       "noGainers": "No gainers available.",
       "noLosers": "No losers available.",
       "loadError": "Market insights could not be loaded."
+    },
+    "aiInsight": {
+      "title": "Get info from AI",
+      "lead": "Add a symbol; answers are saved in your browser for now.",
+      "symbolPlaceholder": "Symbol (e.g. AAPL)",
+      "addAria": "Add symbol",
+      "empty": "No symbols added yet.",
+      "answerPlaceholder": "AI answer will appear here…",
+      "removeAria": "Remove {{symbol}}"
+    },
+    "portfolioSim": {
+      "title": "Portfolio simulation",
+      "lead": "Drag a row onto the chart; returns are computed from the start date (asset and FX legs).",
+      "dropHint": "Drop an asset here",
+      "empty": "No assets yet — drag a row from the table onto the chart.",
+      "equalize": "Equal split",
+      "normalize": "Normalize to 100%",
+      "weightTotal": "Total weight: {{value}}%",
+      "removeAria": "Remove {{symbol}}",
+      "startDate": "Start date",
+      "baseCurrency": "Currency",
+      "baseCurrencyAria": "Simulation display currency",
+      "currencyTry": "TRY",
+      "currencyUsd": "USD",
+      "loadError": "Could not load price history.",
+      "noResult": "No result for this date or allocation.",
+      "totalReturn": "Portfolio return",
+      "displayCurrency": "Display: {{currency}}",
+      "period": "{{from}} → {{to}}",
+      "metricAsset": "Asset",
+      "metricFx": "FX",
+      "metricTotal": "Total",
+      "holdingLoading": "Computing…",
+      "holdingError": "Could not compute for this asset",
+      "dragAllocation": "Drag slice edges to adjust weights",
+      "allocationCenter": "Total",
+      "allocationChartAria": "Portfolio allocation chart",
+      "legendAria": "Portfolio holdings"
     },
     "pagination": {
       "prev": "Prev",
@@ -847,6 +937,38 @@
     "relatedNewsTitle": "Related News",
     "performanceTableTitle": "Performance Table",
     "syncedWithRange": "Synced with {{range}}",
+    "winnersLosers": {
+      "subtitle": "{{segment}} · weekly / monthly / yearly return",
+      "loadError": "Could not load winners and losers.",
+      "emptyWinners": "No gainers in this category.",
+      "emptyLosers": "No losers in this category.",
+      "titles": {
+        "winners": {
+          "all": "Market Winners",
+          "bist": "BIST Winners",
+          "nasdaq": "NASDAQ Winners",
+          "crypto": "Crypto Winners",
+          "forex": "FX Winners",
+          "metals": "Metals (Spot) Winners",
+          "globalFutures": "Global Futures Winners",
+          "funds": "Fund Winners",
+          "bonds": "Bond Winners",
+          "eurobond": "Eurobond Winners"
+        },
+        "losers": {
+          "all": "Market Losers",
+          "bist": "BIST Losers",
+          "nasdaq": "NASDAQ Losers",
+          "crypto": "Crypto Losers",
+          "forex": "FX Losers",
+          "metals": "Metals (Spot) Losers",
+          "globalFutures": "Global Futures Losers",
+          "funds": "Fund Losers",
+          "bonds": "Bond Losers",
+          "eurobond": "Eurobond Losers"
+        }
+      }
+    },
     "sortNews": "Sort news:",
     "sort": {
       "byTime": "By Time",
@@ -884,6 +1006,7 @@
       "deckSymbolLabel": "Symbol",
       "deckCategoryLabel": "Category",
       "deckChartSymbol": "Chart symbol",
+      "pickInstrument": "Select an instrument…",
       "deckTotalCount": "Total {{count}} instruments",
       "popoverToolbarAria": "Search, filter category, and choose chart instrument",
       "types": {
@@ -1044,6 +1167,40 @@
       "weekly": "Weekly %",
       "monthly": "Monthly %",
       "yearly": "Yearly %"
+    },
+    "inflationDeposit": {
+      "title": "Inflation & deposits",
+      "subtitle": "CBRT EVDS · CPI and TRY deposit rates",
+      "inflationLabel": "CPI (year-on-year)",
+      "depositLabel": "TRY deposit",
+      "viewDetails": "Open rates & fixed income page"
+    },
+    "simulation": {
+      "title": "Investment simulation",
+      "subtitle": "{{symbol}} · chart asset",
+      "noAsset": "Select an instrument on the chart to run a simulation.",
+      "amountLabel": "Investment amount",
+      "currencyAria": "Investment currency",
+      "fxUnavailable": "FX data could not be loaded; simulation unavailable.",
+      "noEntryFx": "No {{from}} → {{to}} rate on purchase date.",
+      "noExitFx": "No {{from}} → {{to}} rate for latest date.",
+      "entryFx": "FX on purchase ({{date}})",
+      "exitFx": "FX today ({{date}})",
+      "fxRateLine": "1 {{from}} = {{rate}} {{to}}",
+      "costNative": "Cost ({{currency}})",
+      "valueNative": "Current value ({{currency}})",
+      "lots": "Units",
+      "dateLabel": "Purchase date",
+      "chartPickFromChart": "Pick date from chart",
+      "chartPickHint": "Click a bar on the chart to set the purchase date.",
+      "chartPickCancel": "Cancel",
+      "entryPrice": "{{date}} close: {{price}}",
+      "noPriceOnDate": "No price data for this date.",
+      "cost": "Cost",
+      "currentValue": "Current value",
+      "pnl": "Profit / loss",
+      "pnlPct": "Return %",
+      "disclaimer": "Uses closing prices and MDS historical FX (entry-day and latest rates). Excludes fees and taxes."
     }
   },
   "portfolio": {

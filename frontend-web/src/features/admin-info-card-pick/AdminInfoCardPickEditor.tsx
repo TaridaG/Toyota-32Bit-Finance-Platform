@@ -28,6 +28,7 @@ export function AdminInfoCardPickEditor() {
         targetInstrumentSymbols: pickPrefill.targetInstrumentSymbols,
         pages: [pickPrefill.pageKey],
         pickLabel: pickPrefill.pickLabel,
+        localeTitles: pickPrefill.localeTitles,
       }}
       onClose={closeEditor}
       onSave={handleSave}

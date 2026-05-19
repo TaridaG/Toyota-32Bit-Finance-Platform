@@ -9,6 +9,8 @@ export type PickTargetResult = {
   label: string
   instrumentSymbol?: string
   elementId?: string
+  i18nKey?: string
+  i18nNs?: string
 }
 
 export function extractElementLabel(element: HTMLElement): string | null {
@@ -65,8 +67,10 @@ export function resolvePickTargetFromEvent(event: MouseEvent): PickTargetResult 
   }
 
   const elementId = candidate.getAttribute('data-help-element-id') ?? undefined
+  const i18nKey = candidate.getAttribute('data-help-i18n-key') ?? undefined
+  const i18nNs = candidate.getAttribute('data-help-i18n-ns') ?? undefined
 
-  return { term: label, label, elementId }
+  return { term: label, label, elementId, i18nKey, i18nNs }
 }
 
 export function isAdminPickRouteAllowed(pathname: string): boolean {

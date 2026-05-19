@@ -5,6 +5,7 @@ import { addWatchlistItem, fetchWatchlist } from '../../../features/markets/api/
 import { useMarkets } from '../../../features/markets/hooks/useMarkets'
 import type { MarketOverviewItem } from '../../../shared/types/market'
 import { instrumentHelpRowProps } from '../../../components/help/instrumentHelpAttrs'
+import { resolveInstrumentDisplayLabel } from '../../../features/markets/lib/tefasFundDisplay'
 
 const watchlistRanges: AnalysisRange[] = ['24h', '7d', '30d', '90d', '1y']
 
@@ -176,7 +177,9 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
                     </tr>
                   </thead>
                   <tbody>
-                    {watchlistRows.map((row) => (
+                    {watchlistRows.map((row) => {
+                      const displayLabel = resolveInstrumentDisplayLabel(row.symbol, row.name)
+                      return (
                       <tr
                         key={row.symbol}
                         {...instrumentHelpRowProps(row.symbol, row.name)}
@@ -188,8 +191,8 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
                         }}
                         style={{ cursor: 'pointer' }}
                       >
-                        <td><strong>{row.symbol}</strong></td>
-                        <td>{row.name}</td>
+                        <td><strong>{displayLabel.symbol}</strong></td>
+                        <td>{displayLabel.name}</td>
                         <td>{currencyFormat.format(row.price)}</td>
                         <td className={(row.change1D ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}>
                           {percentFormat.format(row.change1D ?? 0)}
@@ -201,7 +204,7 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
                           {percentFormat.format(row.change1Y ?? 0)}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -211,7 +214,12 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
               <section className="my-portfolio-watchlist-chart">
                 <div className="my-portfolio-card-head">
                   <h3>
-                    {expandedRow?.symbol} - {expandedRow?.name}
+                    {expandedRow
+                      ? (() => {
+                          const label = resolveInstrumentDisplayLabel(expandedRow.symbol, expandedRow.name)
+                          return `${label.symbol} — ${label.name}`
+                        })()
+                      : null}
                   </h3>
                   <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
                     {watchlistRanges.map((range) => (
@@ -267,11 +275,12 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
             <ul className="my-portfolio-watchlist-catalog">
               {catalogRows.map((row) => {
                 const already = watchlistSymbols.includes(row.symbol.toUpperCase())
+                const displayLabel = resolveInstrumentDisplayLabel(row.symbol, row.name)
                 return (
                   <li key={`catalog-${row.symbol}`}>
                     <div>
-                      <strong>{row.symbol}</strong>
-                      <small>{row.name}</small>
+                      <strong>{displayLabel.symbol}</strong>
+                      <small>{displayLabel.name}</small>
                     </div>
                     <button
                       type="button"

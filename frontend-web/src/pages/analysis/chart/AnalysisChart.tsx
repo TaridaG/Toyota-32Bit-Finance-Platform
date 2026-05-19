@@ -40,8 +40,9 @@ type AnalysisChartProps = {
   tradeEvents: ChartTradeEvent[]
   selectedNewsId: string | null
   onSelectNews: (item: AssetNewsItem) => void
-  selectedBarTime: UTCTimestamp | null
-  onBarSelect: (time: UTCTimestamp | null) => void
+  /** When true, chart clicks set simulation purchase date via `onBarClick`. */
+  barClickEnabled?: boolean
+  onBarClick?: (time: UTCTimestamp) => void
   onLiveOhlcForPanel?: (state: OhlcTooltipState) => void
   drawTool: DrawTool
   activeDrawColor: string | null
@@ -74,8 +75,8 @@ export function AnalysisChart({
   tradeEvents,
   selectedNewsId,
   onSelectNews,
-  selectedBarTime,
-  onBarSelect,
+  barClickEnabled = false,
+  onBarClick,
   onLiveOhlcForPanel,
   drawTool,
   activeDrawColor,
@@ -106,18 +107,18 @@ export function AnalysisChart({
   const candlesRef = useRef(candles)
   const newsRef = useRef(newsItems)
   const onSelectNewsRef = useRef(onSelectNews)
-  const onBarSelectRef = useRef(onBarSelect)
-  const selectedBarTimeRef = useRef(selectedBarTime)
+  const barClickEnabledRef = useRef(barClickEnabled)
+  const onBarClickRef = useRef(onBarClick)
 
   useLayoutEffect(() => {
     candlesRef.current = candles
     newsRef.current = newsItems
     onSelectNewsRef.current = onSelectNews
-    onBarSelectRef.current = onBarSelect
-    selectedBarTimeRef.current = selectedBarTime
-  }, [candles, newsItems, onSelectNews, onBarSelect, selectedBarTime])
+    barClickEnabledRef.current = barClickEnabled
+    onBarClickRef.current = onBarClick
+  }, [barClickEnabled, candles, newsItems, onBarClick, onSelectNews])
 
-  useMainPriceData(chart, seriesBundle, candles, fitContentKey)
+  useMainPriceData(chart, seriesBundle, candles, fitContentKey, assetType)
 
   useEffect(() => {
     if (!seriesBundle?.volume) return
@@ -136,7 +137,6 @@ export function AnalysisChart({
   useChartMarkers(seriesBundle?.main ?? null, {
     newsMarkers,
     trades: tradeEvents,
-    selectedBarTime,
   })
   useCompareSeries(chart, comparisonLines, showCompare)
 
@@ -184,12 +184,13 @@ export function AnalysisChart({
         }
       }
 
+      if (!barClickEnabledRef.current || !onBarClickRef.current) return
+
       const t = param.time
       if (t !== undefined && typeof t === 'number') {
         const pick = nearestCandleByTime(candlesRef.current, t)
         if (pick) {
-          const next = pick.time
-          onBarSelectRef.current(selectedBarTimeRef.current === next ? null : next)
+          onBarClickRef.current(pick.time)
         }
       }
     }

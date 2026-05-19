@@ -201,3 +201,15 @@ export function resolvePageKeyFromPath(pathname: string): PortalPageKey | null {
 export function getPortalPageRoute(key: PortalPageKey): string {
   return PORTAL_PAGE_DEFS[key]?.route ?? '/app'
 }
+
+/** Localized portal page name (shared by literacy cards, admin editor, etc.). */
+export function translatePortalPageKey(
+  t: (key: string) => string,
+  pageKey: PortalPageKey | string,
+): string {
+  const def = PORTAL_PAGE_DEFS[pageKey as PortalPageKey]
+  if (def) {
+    return t(def.labelKey)
+  }
+  return t(`bilgiKartlariPage.pages.${pageKey}`)
+}

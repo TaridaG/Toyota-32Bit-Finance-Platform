@@ -131,6 +131,7 @@ export const infoCardsApi = {
       example: patch.example ?? current?.example,
       relatedTerms: patch.relatedTerms ?? current?.relatedTerms ?? [],
       adminOnly: patch.adminOnly ?? current?.adminOnly,
+      translations: patch.translations ?? current?.translations,
     }
     const card = await updateAdminInfoCard(id, merged)
     await infoCardsApi.loadPortalCards(true)

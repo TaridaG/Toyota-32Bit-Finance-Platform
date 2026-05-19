@@ -1,4 +1,18 @@
+import type { SupportedLocale } from '../shared/i18n'
+
 export type InfoCardStatus = 'ACTIVE' | 'PASSIVE'
+
+export type InfoCardLocaleContent = {
+  title: string
+  shortDescription: string
+  detailedDescription: string
+  howToInterpret?: string
+  commonMistake?: string
+  example?: string
+  relatedTerms: string[]
+}
+
+export type InfoCardTranslations = Partial<Record<SupportedLocale, InfoCardLocaleContent>>
 
 export type InfoCardType =
   | 'TERM'
@@ -66,6 +80,7 @@ export interface InfoCard {
   example?: string
   relatedTerms: string[]
   adminOnly?: boolean
+  translations?: InfoCardTranslations
   createdAt: string
   updatedAt: string
 }
@@ -85,4 +100,5 @@ export interface InfoCardsDashboard {
 export type InfoCardInput = Omit<InfoCard, 'id' | 'slug' | 'createdAt' | 'updatedAt'> & {
   id?: string
   slug?: string
+  translations?: InfoCardTranslations
 }

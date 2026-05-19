@@ -1,4 +1,5 @@
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
+import { normalizeFxQuotePrice } from './fxTryHubConversion'
 import { BIST_TRY_QUOTED_SYMBOLS } from './bistTrySymbols'
 
 /** Minimal FX row shape (matches `/api/market/fx` entries). */
@@ -37,8 +38,9 @@ export function buildFxTryHub(fxItems: FxMidRow[]): FxTryHub | null {
     const sym = String(item.symbol ?? '')
       .trim()
       .toUpperCase()
-    const mid = toNum(item.mid ?? item.ask ?? item.bid)
-    if (!mid) continue
+    const rawMid = toNum(item.mid ?? item.ask ?? item.bid)
+    if (!rawMid) continue
+    const mid = sym === 'JPYTRY' || sym === 'JPYUSD' ? normalizeFxQuotePrice(sym, rawMid) : rawMid
     switch (sym) {
       case 'USDTRY':
         tryPerUsd = mid

@@ -80,6 +80,7 @@ export function FaizVadeliStatCard({
   valueSkeleton,
   valueSkeletonAria,
   interactive,
+  active,
   onActivate,
   interactiveAriaLabel,
   interactiveTitle,
@@ -92,6 +93,7 @@ export function FaizVadeliStatCard({
   valueSkeleton?: boolean
   valueSkeletonAria?: string
   interactive?: boolean
+  active?: boolean
   onActivate?: () => void
   interactiveAriaLabel?: string
   interactiveTitle?: string
@@ -123,6 +125,7 @@ export function FaizVadeliStatCard({
   const cardClass =
     'fi-faiz-stat-card' +
     (canActivate ? ' fi-faiz-stat-card--clickable' : '') +
+    (active ? ' fi-faiz-stat-card--active' : '') +
     (headEndSlot ? ' fi-faiz-stat-card--has-head-slot' : '')
 
   const head = (

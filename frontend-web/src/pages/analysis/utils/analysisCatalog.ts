@@ -1,5 +1,6 @@
 import type { CatalogRow } from '../../../features/markets/api/marketService'
-import type { MarketCategory, MarketOverviewItem } from '../../../shared/types/market'
+import { inferNativeQuote } from '../../../features/markets/lib/marketDisplayConversion'
+import type { MarketCategory, MarketNativeQuote, MarketOverviewItem } from '../../../shared/types/market'
 import type { AssetDefinition, AssetType } from '../types'
 
 export const ANALYSIS_MARKET_CATEGORIES: MarketCategory[] = [
@@ -91,10 +92,12 @@ export function overviewRowToAsset(row: MarketOverviewItem): AssetDefinition {
 }
 
 export function catalogRowToOverview(row: CatalogRow): MarketOverviewItem {
+  const nativeQuote = inferNativeQuote(row.symbol, row.category ?? null, row.source, row.listedExchange)
   return {
     symbol: row.symbol.trim().toUpperCase(),
     name: row.name?.trim() || row.symbol,
     price: row.price ?? 0,
+    nativeQuote,
     timestamp: row.timestamp,
     freshness: row.freshness,
     change24h: row.change24h ?? null,
@@ -105,4 +108,28 @@ export function catalogRowToOverview(row: CatalogRow): MarketOverviewItem {
     exchange: row.listedExchange ?? null,
     instrumentId: row.instrumentId,
   }
+}
+
+/** Quote currency for chart/ticker labels — native feed currency, not header preference. */
+export function resolveAnalysisQuoteCurrency(
+  asset: AssetDefinition | null | undefined,
+  overview: MarketOverviewItem | null | undefined,
+  catalogRow?: CatalogRow | null,
+): MarketNativeQuote {
+  if (overview?.nativeQuote) {
+    return overview.nativeQuote
+  }
+  if (catalogRow) {
+    return inferNativeQuote(catalogRow.symbol, catalogRow.category ?? null, catalogRow.source, catalogRow.listedExchange)
+  }
+  if (asset) {
+    const exchange =
+      asset.marketSegment === 'bist'
+        ? 'BIST'
+        : asset.marketSegment === 'nasdaq'
+          ? 'NASDAQ'
+          : null
+    return inferNativeQuote(asset.symbol, asset.wireCategory, null, exchange)
+  }
+  return 'USD'
 }

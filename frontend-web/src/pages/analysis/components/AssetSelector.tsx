@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { MarketCategory } from '../../../shared/types/market'
 import { ANALYSIS_MARKET_CATEGORIES } from '../utils/analysisCatalog'
 import type { AssetDefinition } from '../types'
+import { formatInstrumentOptionLabel } from '../../../features/markets/lib/tefasFundDisplay'
 
 type AssetSelectorProps = {
   assets: AssetDefinition[]
@@ -12,6 +13,8 @@ type AssetSelectorProps = {
   onAssetChange: (assetId: string) => void
   catalogLoading?: boolean
   variant?: 'default' | 'deck' | 'popover'
+  /** When false, the chart asset is not injected into another category's list (popover browsing). */
+  retainOffListSelection?: boolean
 }
 
 export function AssetSelector({
@@ -22,8 +25,9 @@ export function AssetSelector({
   onAssetChange,
   catalogLoading = false,
   variant = 'default',
+  retainOffListSelection = true,
 }: AssetSelectorProps) {
-  const { t } = useTranslation(['analysis', 'marketsPage'])
+  const { t } = useTranslation(['analysis', 'markets'])
   const [query, setQuery] = useState('')
 
   const instrumentOptions = useMemo(() => {
@@ -35,14 +39,18 @@ export function AssetSelector({
           asset.symbol.toLowerCase().includes(lowered) || asset.name.toLowerCase().includes(lowered),
       )
     }
-    if (selectedAssetId && !base.some((a) => a.id === selectedAssetId)) {
+    if (
+      retainOffListSelection &&
+      selectedAssetId &&
+      !base.some((a) => a.id === selectedAssetId)
+    ) {
       const current = assets.find((a) => a.id === selectedAssetId)
       if (current) {
         base = [current, ...base]
       }
     }
     return base
-  }, [assets, query, selectedAssetId])
+  }, [assets, query, retainOffListSelection, selectedAssetId])
 
   const categoryOptions = ANALYSIS_MARKET_CATEGORIES.filter((c) => c !== 'eurobond')
 
@@ -57,8 +65,13 @@ export function AssetSelector({
       disabled={catalogLoading}
     >
       {categoryOptions.map((cat) => (
-        <option key={cat} value={cat}>
-          {t(`marketsPage:categories.${cat}`)}
+        <option
+          key={cat}
+          value={cat}
+          data-help-i18n-key={`categories.${cat}`}
+          data-help-i18n-ns="markets"
+        >
+          {t(`markets:categories.${cat}`)}
         </option>
       ))}
     </select>
@@ -78,7 +91,7 @@ export function AssetSelector({
       ) : (
         instrumentOptions.map((asset) => (
           <option key={asset.id} value={asset.id}>
-            {asset.symbol} — {asset.name}
+            {formatInstrumentOptionLabel(asset.symbol, asset.name)}
           </option>
         ))
       )}
@@ -124,7 +137,7 @@ export function AssetSelector({
             >
               {categoryOptions.map((cat) => (
                 <option key={cat} value={cat}>
-                  {t(`marketsPage:categories.${cat}`)}
+                  {t(`markets:categories.${cat}`)}
                 </option>
               ))}
             </select>
@@ -137,7 +150,12 @@ export function AssetSelector({
               id="fi-analysis-instrument-select-pop"
               className="fi-asset-selector-popover-select"
               value={selectedAssetId}
-              onChange={(event) => onAssetChange(event.target.value)}
+              onChange={(event) => {
+                const nextId = event.target.value
+                if (nextId) {
+                  onAssetChange(nextId)
+                }
+              }}
               disabled={catalogLoading || instrumentOptions.length === 0}
             >
               {catalogLoading ? (
@@ -145,11 +163,16 @@ export function AssetSelector({
               ) : instrumentOptions.length === 0 ? (
                 <option value="">{t('assetSelector.noMatches')}</option>
               ) : (
-                instrumentOptions.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.symbol} — {asset.name}
-                  </option>
-                ))
+                <>
+                  {!selectedAssetId ? (
+                    <option value="">{t('assetSelector.pickInstrument')}</option>
+                  ) : null}
+                  {instrumentOptions.map((asset) => (
+                    <option key={asset.id} value={asset.id}>
+                      {formatInstrumentOptionLabel(asset.symbol, asset.name)}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
           </div>
@@ -194,7 +217,7 @@ export function AssetSelector({
           >
             {categoryOptions.map((cat) => (
               <option key={cat} value={cat}>
-                {t(`marketsPage:categories.${cat}`)}
+                {t(`markets:categories.${cat}`)}
               </option>
             ))}
           </select>
@@ -216,7 +239,7 @@ export function AssetSelector({
             ) : (
               instrumentOptions.map((asset) => (
                 <option key={asset.id} value={asset.id}>
-                  {asset.symbol} — {asset.name}
+                  {formatInstrumentOptionLabel(asset.symbol, asset.name)}
                 </option>
               ))
             )}

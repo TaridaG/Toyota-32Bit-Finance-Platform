@@ -23,7 +23,9 @@ import { ChartDrawingLoginPrompt } from './components/ChartDrawingLoginPrompt'
 import { ChartDrawingSaveModal } from './components/ChartDrawingSaveModal'
 import { ChartHoverInsightCard } from './components/ChartHoverInsightCard'
 import { AnalysisTickerBar } from './components/AnalysisTickerBar'
-import { PerformanceTable } from './components/PerformanceTable'
+import { AnalysisInflationDepositCard } from './components/AnalysisInflationDepositCard'
+import { AnalysisInvestmentSimulationCard } from './components/AnalysisInvestmentSimulationCard'
+import { utcTimestampToIsoDay } from './utils/investmentSimulation'
 import {
   createChartDrawingSave,
   fetchChartDrawingSave,
@@ -37,8 +39,13 @@ import { useIndicators } from '../../features/analysis/hooks/useIndicators'
 import { useAnalysisInstrumentCatalog } from './hooks/useAnalysisInstrumentCatalog'
 import { fetchMarketOverviewItemBySymbol } from '../../features/markets/api/marketService'
 import { fetchNewsForChart, type NewsApiItem } from '../../features/news/api/newsService'
-import { catalogRowToOverview, overviewRowToAsset } from './utils/analysisCatalog'
+import {
+  catalogRowToOverview,
+  overviewRowToAsset,
+  resolveAnalysisQuoteCurrency,
+} from './utils/analysisCatalog'
 import { mapNewsToChartItems, resolveChartNewsCategoryUi } from './utils/chartNews'
+import { computeHorizonReturns, trailingCalendarReturnPercent } from './utils/horizonReturns'
 import type { MarketCategory, MarketOverviewItem } from '../../shared/types/market'
 
 const comparePalette = ['#f59e0b', '#8b5cf6', '#14b8a6', '#f97316', '#22c55e']
@@ -56,7 +63,9 @@ export function AnalysisPage() {
   useDocumentTitle(t('titleDoc'))
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [instrumentCategory, setInstrumentCategory] = useState<MarketCategory>('bist')
+  const [chartSegment, setChartSegment] = useState<MarketCategory>('bist')
+  const [pickerCategory, setPickerCategory] = useState<MarketCategory>('bist')
+  const [pickerSelectedId, setPickerSelectedId] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
   const [showNewsOnChart, setShowNewsOnChart] = useState(false)
   const [chartNewsFeed, setChartNewsFeed] = useState<NewsApiItem[]>([])
@@ -75,7 +84,8 @@ export function AnalysisPage() {
   const tickerShellRef = useRef<HTMLDivElement>(null)
   const [instrumentPickerOpen, setInstrumentPickerOpen] = useState(false)
   const [selectedNews, setSelectedNews] = useState<AssetNewsItem | null>(null)
-  const [selectedBarTime, setSelectedBarTime] = useState<UTCTimestamp | null>(null)
+  const [simPurchaseDate, setSimPurchaseDate] = useState('')
+  const [simChartPickActive, setSimChartPickActive] = useState(false)
   const [comparisonSeriesByAsset, setComparisonSeriesByAsset] = useState<Record<string, CandlePoint[]>>({})
   const [drawingSaveModalOpen, setDrawingSaveModalOpen] = useState(false)
   const [drawingHistoryModalOpen, setDrawingHistoryModalOpen] = useState(false)
@@ -87,7 +97,12 @@ export function AnalysisPage() {
   const chartDrawingAuth = isAuthenticated()
 
   const { assets: catalogAssets, rows: catalogRows, loading: catalogLoading } =
-    useAnalysisInstrumentCatalog(instrumentCategory)
+    useAnalysisInstrumentCatalog(chartSegment)
+
+  const {
+    assets: pickerCatalogAssets,
+    loading: pickerCatalogLoading,
+  } = useAnalysisInstrumentCatalog(pickerCategory)
 
   const [deepLinkedRow, setDeepLinkedRow] = useState<MarketOverviewItem | null>(null)
   const [deepLinkedAsset, setDeepLinkedAsset] = useState<AssetDefinition | null>(null)
@@ -127,7 +142,7 @@ export function AnalysisPage() {
     return () => {
       cancelled = true
     }
-  }, [catalogAssets, currency, instrumentCategory, selectedSymbol])
+  }, [catalogAssets, currency, chartSegment, selectedSymbol])
 
   const assets = useMemo<AssetDefinition[]>(() => {
     if (!deepLinkedAsset) {
@@ -177,6 +192,24 @@ export function AnalysisPage() {
     [marketBySymbol, selectedAsset],
   )
 
+  const catalogRowBySymbol = useMemo(() => {
+    const map = new Map<string, (typeof catalogRows)[number]>()
+    catalogRows.forEach((row) => {
+      map.set(row.symbol.toUpperCase(), row)
+    })
+    return map
+  }, [catalogRows])
+
+  const quoteCurrency = useMemo(
+    () =>
+      resolveAnalysisQuoteCurrency(
+        selectedAsset,
+        overview ?? deepLinkedRow,
+        selectedAsset ? (catalogRowBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null) : null,
+      ),
+    [catalogRowBySymbol, deepLinkedRow, overview, selectedAsset],
+  )
+
   const comparisonAssetIds = useMemo(() => compareSlotIds.filter((id): id is string => id != null), [compareSlotIds])
 
   const compareSlotAssets = useMemo(
@@ -197,7 +230,7 @@ export function AnalysisPage() {
   const { candles: selectedWindowSeries, loading: candlesLoading, error: candlesError, refetch: refetchCandles } = useCandles(
     selectedAsset?.symbol ?? '',
     timeRange,
-    { currencyKey: currency, wireCategory: selectedAsset?.wireCategory ?? null },
+    { wireCategory: selectedAsset?.wireCategory ?? null },
   )
 
   const {
@@ -428,42 +461,34 @@ export function AnalysisPage() {
 
   const windowedTradeEvents = useMemo(() => [], [])
 
+  const isFundAsset = selectedAsset?.type === 'fund'
+
   const stats = useMemo(() => {
     const current = selectedWindowSeries[selectedWindowSeries.length - 1]
-    const overview = selectedAsset ? marketBySymbol.get(selectedAsset.symbol.toUpperCase()) : null
+    const overview = selectedAsset ? marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null : null
     const daily = getPerformancePercent(sliceLast(selectedWindowSeries, 24))
-    const weekly = getPerformancePercent(sliceLast(selectedWindowSeries, 7 * 24))
-    const monthly = getPerformancePercent(sliceLast(selectedWindowSeries, 30 * 24))
-    const yearly = getPerformancePercent(sliceLast(selectedWindowSeries, 365 * 24))
+    const weekly = isFundAsset
+      ? (trailingCalendarReturnPercent(selectedWindowSeries, 7) ?? 0)
+      : getPerformancePercent(sliceLast(selectedWindowSeries, 7 * 24))
+    const monthly = isFundAsset
+      ? (trailingCalendarReturnPercent(selectedWindowSeries, 30) ?? overview?.change1M ?? 0)
+      : (overview?.change1M ?? getPerformancePercent(sliceLast(selectedWindowSeries, 30 * 24)))
+    const yearly = isFundAsset
+      ? (trailingCalendarReturnPercent(selectedWindowSeries, 365) ?? overview?.change1Y ?? 0)
+      : (overview?.change1Y ?? getPerformancePercent(sliceLast(selectedWindowSeries, 365 * 24)))
     return {
       currentPrice: current?.close ?? overview?.price ?? 0,
       daily: overview?.change1D ?? daily,
       weekly,
-      monthly: overview?.change1M ?? monthly,
-      yearly: overview?.change1Y ?? yearly,
+      monthly,
+      yearly,
     }
-  }, [marketBySymbol, selectedAsset, selectedWindowSeries])
+  }, [isFundAsset, marketBySymbol, selectedAsset, selectedWindowSeries])
 
   const horizonReturns = useMemo(() => {
     const ov = selectedAsset ? (marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null) : null
-    const s = selectedWindowSeries
-    const pct = (points: typeof s) => {
-      if (points.length < 2) return null
-      const v = getPerformancePercent(points)
-      return Number.isFinite(v) ? v : null
-    }
-    const pick = (apiVal: number | null | undefined, candlePoints: typeof s) => {
-      if (apiVal != null && Number.isFinite(apiVal)) return apiVal
-      return pct(candlePoints)
-    }
-    return {
-      weekly: pct(sliceLast(s, 7 * 24)),
-      monthly: pick(ov?.change1M, sliceLast(s, 30 * 24)),
-      threeMonth: pick(ov?.change3M, sliceLast(s, 90 * 24)),
-      sixMonth: pick(ov?.change6M, sliceLast(s, 180 * 24)),
-      yearly: pick(ov?.change1Y, sliceLast(s, 365 * 24)),
-    }
-  }, [marketBySymbol, selectedAsset, selectedWindowSeries])
+    return computeHorizonReturns(selectedWindowSeries, ov, isFundAsset)
+  }, [isFundAsset, marketBySymbol, selectedAsset, selectedWindowSeries])
 
   const relatedNews = useMemo(() => {
     if (!showNewsOnChart || !selectedAsset || selectedWindowSeries.length === 0) {
@@ -494,21 +519,6 @@ export function AnalysisPage() {
       .filter((line) => line.data.length > 0)
   }, [comparisonAssetIds, comparisonSeriesByAsset, selectedAsset, timeRange])
 
-  const tableRows = useMemo(
-    () =>
-      assets.slice(0, 50).map((asset) => {
-        const summary = marketBySymbol.get(asset.symbol.toUpperCase())
-        return {
-          assetId: asset.id,
-          daily: summary?.change1D ?? 0,
-          weekly: summary?.change1M != null ? summary.change1M / 4 : 0,
-          monthly: summary?.change1M ?? 0,
-          yearly: summary?.change1Y ?? 0,
-        }
-      }),
-    [assets, marketBySymbol],
-  )
-
   const handleCompareSlotSet = (slotIndex: number, assetId: string | null) => {
     if (slotIndex < 0 || slotIndex > 2) return
     if (assetId != null && selectedAsset?.id === assetId) return
@@ -526,11 +536,24 @@ export function AnalysisPage() {
     })
   }
 
-  const handleAssetChange = (id: string) => {
-    setSelectedBarTime(null)
+  const handleChartBarClick = (time: UTCTimestamp) => {
+    if (!simChartPickActive) return
+    setSimPurchaseDate(utcTimestampToIsoDay(time))
+    setSimChartPickActive(false)
+  }
+
+  useEffect(() => {
+    setSimChartPickActive(false)
+    setSimPurchaseDate('')
+  }, [selectedAsset?.id])
+
+  const handleAssetChange = (id: string, sourceAssets: AssetDefinition[] = assets) => {
     setSelectedNews(null)
-    const asset = assets.find((item) => item.id === id)
+    const asset = sourceAssets.find((item) => item.id === id)
     if (asset) {
+      if (asset.marketSegment && asset.marketSegment !== 'all') {
+        setChartSegment(asset.marketSegment)
+      }
       const next = new URLSearchParams(searchParams)
       next.set('symbol', asset.symbol.replace('/', '').toUpperCase())
       setSearchParams(next, { replace: true })
@@ -538,17 +561,51 @@ export function AnalysisPage() {
   }
 
   const handlePickAssetFromPopover = (id: string) => {
-    handleAssetChange(id)
+    handleAssetChange(id, pickerCatalogAssets)
     setInstrumentPickerOpen(false)
   }
 
-  const handleInstrumentCategoryChange = (category: MarketCategory) => {
-    setInstrumentCategory(category)
-    setDeepLinkedRow(null)
-    setDeepLinkedAsset(null)
+  const handlePickerCategoryChange = (category: MarketCategory) => {
+    setPickerCategory(category)
+    setPickerSelectedId(null)
   }
 
   const lastSyncedSymbolRef = useRef<string | null>(null)
+  const pickerOpenSyncedRef = useRef(false)
+
+  useEffect(() => {
+    if (!instrumentPickerOpen) {
+      pickerOpenSyncedRef.current = false
+      return
+    }
+    if (pickerOpenSyncedRef.current || !selectedAsset) {
+      return
+    }
+    pickerOpenSyncedRef.current = true
+    const segment =
+      selectedAsset.marketSegment && selectedAsset.marketSegment !== 'all'
+        ? selectedAsset.marketSegment
+        : chartSegment
+    setPickerCategory(segment)
+  }, [chartSegment, instrumentPickerOpen, selectedAsset?.id])
+
+  useEffect(() => {
+    if (!instrumentPickerOpen || pickerCatalogLoading || !selectedAsset) {
+      return
+    }
+    setPickerSelectedId((prev) => {
+      if (prev && pickerCatalogAssets.some((a) => a.id === prev)) {
+        return prev
+      }
+      return pickerCatalogAssets.some((a) => a.id === selectedAsset.id) ? selectedAsset.id : null
+    })
+  }, [instrumentPickerOpen, pickerCatalogAssets, pickerCatalogLoading, selectedAsset])
+
+  useEffect(() => {
+    if (deepLinkedAsset?.marketSegment && deepLinkedAsset.marketSegment !== 'all') {
+      setChartSegment(deepLinkedAsset.marketSegment)
+    }
+  }, [deepLinkedAsset])
 
   useEffect(() => {
     if (catalogLoading || assets.length === 0) {
@@ -557,14 +614,8 @@ export function AnalysisPage() {
     if (selectedSymbol) {
       const found = assets.find((asset) => normalizeSymbol(asset.symbol) === normalizeSymbol(selectedSymbol))
       if (found?.marketSegment && found.marketSegment !== 'all' && lastSyncedSymbolRef.current !== selectedSymbol) {
-        setInstrumentCategory(found.marketSegment)
+        setChartSegment(found.marketSegment)
         lastSyncedSymbolRef.current = selectedSymbol
-      }
-      if (!found && !deepLinkLoading && !deepLinkedAsset && assets.length > 0) {
-        const first = assets[0]
-        const next = new URLSearchParams(searchParams)
-        next.set('symbol', first.symbol.replace('/', '').toUpperCase())
-        setSearchParams(next, { replace: true })
       }
       return
     }
@@ -574,11 +625,7 @@ export function AnalysisPage() {
       next.set('symbol', first.symbol.replace('/', '').toUpperCase())
       setSearchParams(next, { replace: true })
     }
-  }, [assets, catalogLoading, deepLinkLoading, deepLinkedAsset, searchParams, selectedSymbol, setSearchParams])
-
-  useEffect(() => {
-    setInstrumentPickerOpen(false)
-  }, [selectedAsset?.id])
+  }, [assets, catalogLoading, searchParams, selectedSymbol, setSearchParams])
 
   useEffect(() => {
     if (!instrumentPickerOpen) {
@@ -604,7 +651,6 @@ export function AnalysisPage() {
   }, [instrumentPickerOpen])
 
   const handleRangeChange = (range: TimeRange) => {
-    setSelectedBarTime(null)
     setSelectedNews(null)
     setInstrumentPickerOpen(false)
     setTimeRange(range)
@@ -630,10 +676,10 @@ export function AnalysisPage() {
                     trendScore={overview?.trendScore ?? null}
                     trendLabel={overview?.trendLabel ?? null}
                     categoryTag={categoryTag}
-                    currencyCode={currency}
+                    currencyCode={quoteCurrency}
                     scopeTag={scopeTag}
                     locale={language}
-                    currency={currency}
+                    currency={quoteCurrency}
                     assetType={selectedAsset.type}
                     instrumentPickerOpen={instrumentPickerOpen}
                     onInstrumentTriggerClick={() => setInstrumentPickerOpen((open) => !open)}
@@ -665,12 +711,13 @@ export function AnalysisPage() {
                     </div>
                     <AssetSelector
                       variant="popover"
-                      assets={assets}
-                      selectedAssetId={selectedAsset.id}
-                      instrumentCategory={instrumentCategory}
-                      onInstrumentCategoryChange={handleInstrumentCategoryChange}
+                      assets={pickerCatalogAssets}
+                      selectedAssetId={pickerSelectedId ?? ''}
+                      instrumentCategory={pickerCategory}
+                      onInstrumentCategoryChange={handlePickerCategoryChange}
                       onAssetChange={handlePickAssetFromPopover}
-                      catalogLoading={catalogLoading}
+                      catalogLoading={pickerCatalogLoading}
+                      retainOffListSelection={false}
                     />
                   </div>
                 ) : null}
@@ -731,8 +778,8 @@ export function AnalysisPage() {
                     tradeEvents={windowedTradeEvents}
                     selectedNewsId={selectedNews?.id ?? null}
                     onSelectNews={setSelectedNews}
-                    selectedBarTime={selectedBarTime}
-                    onBarSelect={setSelectedBarTime}
+                    barClickEnabled={simChartPickActive}
+                    onBarClick={handleChartBarClick}
                     drawTool={drawTool}
                     activeDrawColor={activeDrawColor}
                     drawings={drawings}
@@ -741,7 +788,7 @@ export function AnalysisPage() {
                     onSelectDrawing={setSelectedDrawingId}
                     onDrawComplete={() => setDrawTool('none')}
                     locale={language}
-                    currency={currency}
+                    currency={quoteCurrency}
                     assetType={selectedAsset?.type ?? 'stock'}
                     onLiveOhlcForPanel={setChartHoverReadout}
                   />
@@ -787,7 +834,7 @@ export function AnalysisPage() {
                 showMA50={showMA50 && !indicatorsError}
                 showRsi={showRsi && !indicatorsError}
                 locale={language}
-                currency={currency}
+                currency={quoteCurrency}
                 assetType={selectedAsset?.type ?? 'stock'}
               />
             </div>
@@ -795,7 +842,18 @@ export function AnalysisPage() {
         </div>
       </div>
 
-      <PerformanceTable titleRange={timeRange} assets={assets} rows={tableRows} />
+      <div className="fi-analysis-bottom-grid">
+        <AnalysisInvestmentSimulationCard
+          asset={selectedAsset}
+          fallbackSeries={selectedWindowSeries}
+          displayCurrency={quoteCurrency}
+          purchaseDate={simPurchaseDate}
+          onPurchaseDateChange={setSimPurchaseDate}
+          chartPickActive={simChartPickActive}
+          onChartPickActiveChange={setSimChartPickActive}
+        />
+        <AnalysisInflationDepositCard />
+      </div>
 
       {drawingSaveModalOpen && selectedAsset ? (
         <ChartDrawingSaveModal

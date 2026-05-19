@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import axios from 'axios'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { fetchMarketOverviewPage } from '../api/marketService'
 import type { MarketCategory, MarketOverviewItem } from '../../../shared/types/market'
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
@@ -25,10 +27,21 @@ type UseMarketsResult = {
 
 type RefetchOptions = {
   silent?: boolean
+  signal?: AbortSignal
 }
 
 const POLL_INTERVAL_VISIBLE_MS = 10_000
 const POLL_INTERVAL_HIDDEN_MS = 30_000
+
+function isAbortError(err: unknown): boolean {
+  if (axios.isCancel(err)) {
+    return true
+  }
+  if (axios.isAxiosError(err) && err.code === 'ERR_CANCELED') {
+    return true
+  }
+  return err instanceof DOMException && err.name === 'AbortError'
+}
 
 function rowsEqual(prev: MarketOverviewItem[], next: MarketOverviewItem[]): boolean {
   if (prev.length !== next.length) {
@@ -76,16 +89,26 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 export function useMarkets({ page, size, category, searchTerm, sort, displayCurrency }: UseMarketsParams): UseMarketsResult {
+  const { t } = useTranslation('markets')
   const [rows, setRows] = useState<MarketOverviewItem[]>([])
   const [totalElements, setTotalElements] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 350)
+  const abortRef = useRef<AbortController | null>(null)
 
   const refetchInternal = useCallback(
     async (options?: RefetchOptions) => {
       const silent = options?.silent === true
+      const externalSignal = options?.signal
+
+      if (!silent) {
+        abortRef.current?.abort()
+        abortRef.current = new AbortController()
+      }
+
+      const signal = externalSignal ?? abortRef.current?.signal
       if (!silent) {
         setLoading(true)
       }
@@ -97,7 +120,11 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
           query: debouncedSearch,
           sort,
           displayCurrency,
+          signal,
         })
+        if (signal?.aborted) {
+          return
+        }
         const nextRows = Array.isArray(response.content) ? response.content : []
         setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
         const nextTotalElements = response.totalElements ?? 0
@@ -106,34 +133,56 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
         setTotalPages((prev) => (prev === nextTotalPages ? prev : nextTotalPages))
         setError(null)
       } catch (err) {
+        if (isAbortError(err) || signal?.aborted) {
+          return
+        }
         console.error('market overview request failed', err)
         if (!silent) {
-          setError('Market data could not be loaded. Please try again.')
+          const timedOut = axios.isAxiosError(err) && err.code === 'ECONNABORTED'
+          setError(timedOut ? t('loadErrorTimeout') : t('loadError'))
         }
       } finally {
-        if (!silent) {
+        if (!silent && !signal?.aborted) {
           setLoading(false)
         }
       }
     },
-    [category, debouncedSearch, displayCurrency, page, size, sort],
+    [category, debouncedSearch, displayCurrency, page, size, sort, t],
   )
 
   const refetch = useCallback(async () => refetchInternal(), [refetchInternal])
 
   useEffect(() => {
-    void refetchInternal()
+    const controller = new AbortController()
+    void refetchInternal({ signal: controller.signal })
+    return () => {
+      controller.abort()
+    }
   }, [refetchInternal])
 
   useEffect(() => {
     let intervalId: number | null = null
+    let pollInFlight = false
+
+    const tick = async () => {
+      if (pollInFlight || document.visibilityState !== 'visible') {
+        return
+      }
+      pollInFlight = true
+      try {
+        await refetchInternal({ silent: true })
+      } finally {
+        pollInFlight = false
+      }
+    }
+
     const restartPolling = () => {
       if (intervalId != null) {
         window.clearInterval(intervalId)
       }
       const intervalMs = document.visibilityState === 'visible' ? POLL_INTERVAL_VISIBLE_MS : POLL_INTERVAL_HIDDEN_MS
       intervalId = window.setInterval(() => {
-        void refetchInternal({ silent: true })
+        void tick()
       }, intervalMs)
     }
     const onVisibilityChange = () => restartPolling()
@@ -146,6 +195,12 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
       }
     }
   }, [refetchInternal])
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   return {
     rows,

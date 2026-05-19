@@ -1,17 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import type { UTCTimestamp } from 'lightweight-charts'
-import { createSeriesMarkers, type ISeriesApi, type ISeriesMarkersPluginApi, type SeriesMarker, type Time } from 'lightweight-charts'
+import type { ISeriesApi, ISeriesMarkersPluginApi, SeriesMarker, Time } from 'lightweight-charts'
+import { createSeriesMarkers } from 'lightweight-charts'
 import type { ChartTradeEvent } from '../../types'
 
-const SELECTION_MARKER_ID = '__bar_selection__'
-
-function buildMarkers(
-  newsMarkers: SeriesMarker<Time>[],
-  trades: ChartTradeEvent[],
-  selectedBarTime: UTCTimestamp | null,
-): SeriesMarker<Time>[] {
-  const eventMarkers: SeriesMarker<Time>[] = []
-
+function buildMarkers(newsMarkers: SeriesMarker<Time>[], trades: ChartTradeEvent[]): SeriesMarker<Time>[] {
   const tradeMarkers: SeriesMarker<Time>[] = trades.map((ev) => {
     const up = ev.side === 'buy'
     return {
@@ -24,21 +16,7 @@ function buildMarkers(
       text: ev.title,
     }
   })
-  eventMarkers.push(...newsMarkers, ...tradeMarkers)
-
-  if (selectedBarTime != null) {
-    eventMarkers.push({
-      time: selectedBarTime,
-      position: 'inBar',
-      color: '#fbbf24',
-      shape: 'square',
-      size: 2,
-      id: SELECTION_MARKER_ID,
-      text: 'Selected bar',
-    })
-  }
-
-  return eventMarkers.sort((a, b) => Number(a.time) - Number(b.time))
+  return [...newsMarkers, ...tradeMarkers].sort((a, b) => Number(a.time) - Number(b.time))
 }
 
 export function useChartMarkers(
@@ -46,7 +24,6 @@ export function useChartMarkers(
   input: {
     newsMarkers: SeriesMarker<Time>[]
     trades: ChartTradeEvent[]
-    selectedBarTime: UTCTimestamp | null
   },
 ) {
   const pluginRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
@@ -68,8 +45,6 @@ export function useChartMarkers(
   useEffect(() => {
     const plugin = pluginRef.current
     if (!plugin) return
-    plugin.setMarkers(
-      buildMarkers(input.newsMarkers, input.trades, input.selectedBarTime),
-    )
-  }, [markerSeries, input.newsMarkers, input.trades, input.selectedBarTime])
+    plugin.setMarkers(buildMarkers(input.newsMarkers, input.trades))
+  }, [markerSeries, input.newsMarkers, input.trades])
 }
