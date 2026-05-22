@@ -79,6 +79,15 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long> 
             Pageable pageable
     );
 
+    @Query("""
+        select n
+        from NewsArticle n
+        where n.active = true
+          and (n.imageUrl is null or n.imageUrl = '')
+        order by n.publishedAt desc
+    """)
+    Page<NewsArticle> findActiveWithoutImageUrl(Pageable pageable);
+
     long countByActiveTrue();
 
     @Query("select count(distinct n.sourceName) from NewsArticle n where n.active = true")

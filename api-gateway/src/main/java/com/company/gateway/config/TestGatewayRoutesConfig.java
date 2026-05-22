@@ -47,7 +47,13 @@ public class TestGatewayRoutesConfig {
                 .filters(f -> f
                 .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}"))
                 .uri(marketBaseUri))
-                .route("news-service", r -> r.path("/api/news/**")
+                .route("finance-api-news-enriched", r -> r.order(-10)
+                        .path(
+                                "/api/news/enriched", "/api/news/enriched/", "/api/news/enriched/**",
+                                "/api/news/favorites", "/api/news/favorites/", "/api/news/favorites/**"
+                        )
+                        .uri(financeBaseUri))
+                .route("news-service", r -> r.order(-9).path("/api/news/**")
                 .uri(newsBaseUri))
                 .route("reporting-service", r -> r.path("/api/reports/**")
                 .uri(reportingBaseUri))

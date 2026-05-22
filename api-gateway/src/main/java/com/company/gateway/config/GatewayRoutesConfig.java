@@ -71,9 +71,12 @@ public class GatewayRoutesConfig {
                 .setFallbackUri("forward:/fallback/market"))
                 )
                 .uri(marketBaseUri))
-                // Must be higher priority than finance-api /api/** (order 0), otherwise /api/news/admin/* hits finance-api.
+                // Must be higher priority than news-service /api/news/** (order -9).
                 .route("finance-api-news-enriched", r -> r.order(-10)
-                        .path("/api/news/enriched", "/api/news/enriched/", "/api/news/enriched/**")
+                        .path(
+                                "/api/news/enriched", "/api/news/enriched/", "/api/news/enriched/**",
+                                "/api/news/favorites", "/api/news/favorites/", "/api/news/favorites/**"
+                        )
                         .uri(financeBaseUri))
                 .route("news-service", r -> r.order(-9).path("/api/news/**")
                 .filters(f -> f
