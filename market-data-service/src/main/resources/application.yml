@@ -56,6 +56,13 @@ providers:
       - NVDA
       - MSFT
       - GOOGL
+      - TSLA
+      - META
+      - AVGO
+      - AMD
+      - NFLX
+      - INTC
+      - CSCO
       - VOO
       - VTI
       - QQQ
@@ -87,6 +94,14 @@ management:
       endpoint: http://jaeger:4318/v1/traces
 
 market:
+  bank-rates:
+    cache-ttl-ms: ${MARKET_BANK_RATES_CACHE_TTL_MS:60000}
+    user-agent: Mozilla/5.0 (compatible; FinanceMarketDataService/1.0)
+    page-urls:
+      USD: https://kur.doviz.com/serbest-piyasa/amerikan-dolari
+      EUR: https://kur.doviz.com/serbest-piyasa/euro
+      GBP: https://kur.doviz.com/serbest-piyasa/sterlin
+      GOLD: https://altin.doviz.com/gram-altin
   evds:
     # TCMB yeni uç (evds2 → 302 / SPA); veri: https://github.com/fatihmete/evds — /igmevdsms-dis/series=...&type=json
     base-url: ${MARKET_EVDS_BASE_URL:https://evds3.tcmb.gov.tr/igmevdsms-dis}
@@ -126,6 +141,12 @@ market:
       weekly-cron: ${MARKET_TL_DEPOSIT_WEEKLY_SYNC_CRON:0 25 7 * * MON}
   ingestion:
     env: ${MARKET_INGESTION_ENV:dev}
+  metal-futures:
+    history-bootstrap:
+      enabled: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_ENABLED:true}
+      startup-delay-ms: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_DELAY_MS:90000}
+      years: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_YEARS:5}
+      periodic-delay-ms: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_PERIODIC_MS:3600000}
   history:
     backfill:
       enabled: ${MARKET_HISTORY_BACKFILL_ENABLED:false}
@@ -153,21 +174,33 @@ market:
     - AFA
     - AFO
     - GTA
-  tracked-symbols:
-    - BTCUSDT
-    - ETHUSDT
-    - BNBUSDT
-    - SOLUSDT
-    - XRPUSDT
+  # tracked-symbols: defaults to TrackedCryptoSymbols.SYMBOLS (10 USDT pairs). Override here to subset.
+  tracked-symbols: []
   tracked-stocks:
     - GARAN
     - THYAO
     - ASELS
+    - AKBNK
+    - AVGYO
+    - EREGL
+    - BIMAS
+    - TUPRS
+    - ISCTR
+    - SAHOL
+    - AVPGY
+    - SARKY
     - AAPL
     - AMZN
     - NVDA
     - MSFT
     - GOOGL
+    - TSLA
+    - META
+    - AVGO
+    - AMD
+    - NFLX
+    - INTC
+    - CSCO
     - VOO
     - VTI
     - QQQ

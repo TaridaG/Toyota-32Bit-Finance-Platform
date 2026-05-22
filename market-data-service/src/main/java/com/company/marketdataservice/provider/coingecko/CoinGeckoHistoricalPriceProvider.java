@@ -1,5 +1,6 @@
 package com.company.marketdataservice.provider.coingecko;
 
+import com.company.marketdataservice.config.TrackedCryptoSymbols;
 import com.company.marketdataservice.historical.HistoricalPricePoint;
 import com.company.marketdataservice.historical.HistoricalPriceProvider;
 import com.company.marketdataservice.instrument.InstrumentMappingService;
@@ -22,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-
 @Component
 public class CoinGeckoHistoricalPriceProvider implements HistoricalPriceProvider {
 
@@ -33,14 +32,6 @@ public class CoinGeckoHistoricalPriceProvider implements HistoricalPriceProvider
     private static final long RETRY_WAIT_MS = 750L;
     private static final Logger log = LoggerFactory.getLogger(CoinGeckoHistoricalPriceProvider.class);
     private static final String COINGECKO_PROVIDER = "COINGECKO";
-    private static final Map<String, String> BASE_ASSET_TO_COINGECKO_ID = Map.of(
-            "BTC", "bitcoin",
-            "ETH", "ethereum",
-            "BNB", "binancecoin",
-            "SOL", "solana",
-            "XRP", "ripple"
-    );
-
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final InstrumentMappingService instrumentMappingService;
@@ -216,7 +207,7 @@ public class CoinGeckoHistoricalPriceProvider implements HistoricalPriceProvider
                 .map(String::toLowerCase)
                 .orElseGet(() -> {
                     String baseAsset = extractBaseAsset(normalizedSymbol);
-                    String mapped = BASE_ASSET_TO_COINGECKO_ID.get(baseAsset);
+                    String mapped = TrackedCryptoSymbols.COINGECKO_ID_BY_BASE.get(baseAsset);
                     if (mapped != null) {
                         return mapped;
                     }

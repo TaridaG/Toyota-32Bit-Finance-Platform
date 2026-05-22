@@ -1,6 +1,7 @@
 package com.company.marketdataservice.service;
 
 import com.company.marketdataservice.catalog.MarketCatalogSegmentRules;
+import com.company.marketdataservice.config.MetalFuturesSymbols;
 import com.company.marketdataservice.dto.HistoryPointDto;
 import com.company.marketdataservice.dto.MarketPriceSummaryDto;
 import com.company.marketdataservice.history.FundNavHistoryEntry;
@@ -40,6 +41,9 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
      * while {@link #getPriceSummary} still showed the latest print.
      */
     private static final long MAX_TRBOND_RANGE_DAYS = 2000L;
+    /** Yahoo metal futures backfill spans multiple years (see {@link com.company.marketdataservice.service.historical.MetalFuturesHistoryBootstrapper}). */
+    private static final long MAX_METAL_FUTURES_RANGE_DAYS = 2000L;
+    private static final String MARKET_PRICE_TYPE = "MARKET";
     private static final Logger log = LoggerFactory.getLogger(HistoricalMarketDataReadServiceImpl.class);
     private static final ZoneId TURKEY = ZoneId.of("Europe/Istanbul");
     /** Max calendar slip when baseline NAV is older than the requested lookback (data gaps). */
@@ -79,6 +83,10 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         }
         if (usesFxRateHistory(normalized)) {
             return fxRateHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
+        }
+        if (MetalFuturesSymbols.isFutures(normalized)) {
+            return marketPriceHistoryRepository.findHistoryPointsByPriceType(
+                    normalized, MARKET_PRICE_TYPE, fromInclusive, toExclusive);
         }
         return marketPriceHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
     }
@@ -318,8 +326,12 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         }
         long days = ChronoUnit.DAYS.between(from, to) + 1;
         String sym = symbolOrCode.trim().toUpperCase(Locale.ROOT);
-        long maxAllowed =
-                (sym.startsWith("TRBOND") || sym.startsWith("TRGOVUSD")) ? MAX_TRBOND_RANGE_DAYS : MAX_RANGE_DAYS;
+        long maxAllowed = MAX_RANGE_DAYS;
+        if (sym.startsWith("TRBOND") || sym.startsWith("TRGOVUSD")) {
+            maxAllowed = MAX_TRBOND_RANGE_DAYS;
+        } else if (MetalFuturesSymbols.isFutures(sym)) {
+            maxAllowed = MAX_METAL_FUTURES_RANGE_DAYS;
+        }
         return days <= maxAllowed;
     }
 }

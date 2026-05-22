@@ -1,6 +1,7 @@
 package com.company.marketdataservice.fundamentals.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.company.marketdataservice.config.TrackedCryptoSymbols;
 import com.company.marketdataservice.dto.InstrumentFundamentalsDto;
 import com.company.marketdataservice.instrument.InstrumentCatalogEntry;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,19 +11,9 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
-import java.util.Map;
-
 @Component
 public class CoinGeckoInstrumentFundamentalsProvider implements InstrumentFundamentalsProvider {
     private static final String PROVIDER = "COINGECKO";
-    private static final Map<String, String> COMMON_IDS = Map.of(
-            "BTC", "bitcoin",
-            "ETH", "ethereum",
-            "BNB", "binancecoin",
-            "XRP", "ripple",
-            "SOL", "solana"
-    );
-
     private final RestClient restClient = RestClient.create();
 
     @Value("${providers.coingecko.base-url:https://api.coingecko.com/api/v3}")
@@ -42,7 +33,7 @@ public class CoinGeckoInstrumentFundamentalsProvider implements InstrumentFundam
     public InstrumentFundamentalsDto fetch(InstrumentCatalogEntry instrument, String providerSymbol) {
         String normalized = normalize(providerSymbol);
         String ticker = normalized.endsWith("USDT") ? normalized.substring(0, normalized.length() - 4) : normalized;
-        String id = COMMON_IDS.getOrDefault(ticker, ticker.toLowerCase(Locale.ROOT));
+        String id = TrackedCryptoSymbols.COINGECKO_ID_BY_BASE.getOrDefault(ticker, ticker.toLowerCase(Locale.ROOT));
         JsonNode coin = getJson("/coins/" + id + "?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false");
         if (coin == null || coin.isMissingNode() || coin.path("id").isMissingNode()) {
             throw new IllegalStateException("CoinGecko metadata not found for symbol=" + providerSymbol);
