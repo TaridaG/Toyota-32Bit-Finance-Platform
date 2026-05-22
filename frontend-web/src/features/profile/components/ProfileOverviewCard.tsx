@@ -194,7 +194,7 @@ export function ProfileOverviewCard({ profile, onProfileUpdated }: Props) {
         <div className="profile-overview-fact">
           <span className="profile-overview-fact-label">{t('profileSettings.accountEmail')}</span>
           <span className="profile-overview-fact-value profile-overview-fact-mono">{profile.email}</span>
-          <span className="profile-overview-fact-hint">{t('profileSettings.emailReadonlyHint')}</span>
+          <span className="profile-overview-fact-hint">{t('profileSettings.emailEditHint')}</span>
         </div>
         <div className="profile-overview-fact">
           <span className="profile-overview-fact-label">{t('profileSettings.accountUsername')}</span>

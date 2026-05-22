@@ -14,7 +14,7 @@ export function FaizVadeliPage() {
           <h2 id="faiz-vadeli-heading">{t('faizVadeliPage.title')}</h2>
           <p className="fi-faiz-vadeli-page-sub">{t('faizVadeliPage.lead')}</p>
         </div>
-        <Link to="/app/markets" className="fi-faiz-vadeli-link">
+        <Link to="/markets" className="fi-faiz-vadeli-link">
           {t('faizVadeliPage.cardBondsCta')}
         </Link>
       </header>

@@ -119,8 +119,16 @@ export async function ensureFreshAccessToken(minComfortableTtlMs = 600_000): Pro
   return expMs > now
 }
 
+/** Guest-readable news stream only — not user favorites (require JWT). */
 function isPublicNewsCatalogUrl(url: string): boolean {
+  if (url.includes('/api/news/favorites')) {
+    return false
+  }
   return url.includes('/api/news') && !url.includes('/api/news/admin')
+}
+
+function isPublicPortalInfoCardsUrl(url: string): boolean {
+  return url.includes('/api/portal/info-cards')
 }
 
 /** 401 on these URLs should not force logout (public catalog / auth endpoints). */
@@ -130,6 +138,7 @@ function isPublicDataOrAuthUrl(url: string): boolean {
     url.includes('/api/market') ||
     url.includes('/api/rates') ||
     isPublicNewsCatalogUrl(url) ||
+    isPublicPortalInfoCardsUrl(url) ||
     url.includes('/api/instruments') ||
     url.includes('/api/analytics')
   )
@@ -169,6 +178,7 @@ function isPublicCatalogGetRequest(config: InternalAxiosRequestConfig): boolean 
     path.includes('/api/rates') ||
     path.includes('api/rates') ||
     isPublicNewsCatalogUrl(path) ||
+    isPublicPortalInfoCardsUrl(path) ||
     path.includes('/api/instruments') ||
     path.includes('/api/analytics')
   )

@@ -6,6 +6,10 @@ import { useFxTryHubHistory } from '../../analysis/hooks/useFxTryHubHistory'
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
 import { useAppPreferences } from '../../../shared/preferences/useAppPreferences'
 import type { CandlePoint } from '../../analysis/types'
+import {
+  MARKETS_PORTFOLIO_SIM_PANEL_ID,
+  registerMarketsPortfolioSimAdd,
+} from '../lib/marketsPortfolioSimBridge'
 import { type MarketsRowDragPayload } from '../lib/marketsRowDrag'
 import {
   buildPortfolioReturnSummary,
@@ -198,6 +202,8 @@ export function MarketsPortfolioSimulationCard() {
     })
   }, [])
 
+  useEffect(() => registerMarketsPortfolioSimAdd(addPayload), [addPayload])
+
   const removeHolding = useCallback((id: string) => {
     setActiveHoldingId(null)
     setHoldings((current) => {
@@ -230,7 +236,7 @@ export function MarketsPortfolioSimulationCard() {
   const anyLoading = loadingSymbols.length > 0 || fxLoading
 
   return (
-    <article className="card markets-portfolio-sim-panel">
+    <article id={MARKETS_PORTFOLIO_SIM_PANEL_ID} className="card markets-portfolio-sim-panel">
       <header className="markets-portfolio-sim-bar-header">
         <div>
           <h3>{t('portfolioSim.title')}</h3>

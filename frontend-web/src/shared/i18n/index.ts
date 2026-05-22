@@ -90,6 +90,8 @@ const resources: Record<
     auth: object
     markets: object
     newsPage: object
+    myNewsPage: object
+    myAnalysisPage: object
     analysis: object
     portfolio: object
     admin: object
@@ -101,6 +103,8 @@ const resources: Record<
     auth: (en as { auth?: object }).auth ?? {},
     markets: (en as { markets?: object }).markets ?? {},
     newsPage: (en as { newsPage?: object }).newsPage ?? {},
+    myNewsPage: (en as { myNewsPage?: object }).myNewsPage ?? {},
+    myAnalysisPage: (en as { myAnalysisPage?: object }).myAnalysisPage ?? {},
     analysis: (en as { analysis?: object }).analysis ?? {},
     portfolio: (en as { portfolio?: object }).portfolio ?? {},
     admin: (en as { admin?: object }).admin ?? {},
@@ -111,6 +115,8 @@ const resources: Record<
     auth: (tr as { auth?: object }).auth ?? {},
     markets: (tr as { markets?: object }).markets ?? {},
     newsPage: (tr as { newsPage?: object }).newsPage ?? {},
+    myNewsPage: (tr as { myNewsPage?: object }).myNewsPage ?? {},
+    myAnalysisPage: (tr as { myAnalysisPage?: object }).myAnalysisPage ?? {},
     analysis: (tr as { analysis?: object }).analysis ?? {},
     portfolio: (tr as { portfolio?: object }).portfolio ?? {},
     admin: (tr as { admin?: object }).admin ?? {},
@@ -121,6 +127,8 @@ const resources: Record<
     auth: (de as { auth?: object }).auth ?? {},
     markets: (de as { markets?: object }).markets ?? {},
     newsPage: (de as { newsPage?: object }).newsPage ?? {},
+    myNewsPage: (de as { myNewsPage?: object }).myNewsPage ?? {},
+    myAnalysisPage: (de as { myAnalysisPage?: object }).myAnalysisPage ?? {},
     analysis: (de as { analysis?: object }).analysis ?? {},
     portfolio: (de as { portfolio?: object }).portfolio ?? {},
     admin: (de as { admin?: object }).admin ?? {},
@@ -131,7 +139,7 @@ void i18n.use(initReactI18next).init({
   resources,
   lng: initialLocale,
   defaultNS: 'common',
-  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'analysis', 'portfolio', 'admin'],
+  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'myNewsPage', 'myAnalysisPage', 'analysis', 'portfolio', 'admin'],
   fallbackNS: 'common',
   fallbackLng: DEFAULT_LOCALE,
   interpolation: {

@@ -14,6 +14,23 @@ export type InfoCardsPageResponse = {
   totalPages: number
 }
 
+export type LiteracyCatalogStats = {
+  total: number
+  terms: number
+  charts: number
+  analysisTools: number
+  macro: number
+}
+
+export type LiteracyCatalogPageResponse = {
+  content: InfoCard[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+  stats: LiteracyCatalogStats
+}
+
 function unwrap<T>(payload: ApiEnvelope<T>): T {
   if (!payload?.success) {
     throw new Error('Info cards API request failed')
@@ -38,6 +55,36 @@ export async function fetchPortalInfoCards(pageKey?: PortalPageKey, includeAdmin
     params: { page: pageKey, includeAdminOnly },
   })
   return unwrap(data).map(mapCard)
+}
+
+const LITERACY_PAGE_SIZE = 30
+
+export async function fetchLiteracyCatalogPage(params: {
+  page: number
+  query?: string
+  category?: string
+  difficulties?: string[]
+  types?: string[]
+  portalPages?: string[]
+  includeAdminOnly?: boolean
+}): Promise<LiteracyCatalogPageResponse> {
+  const { data } = await apiClient.get<ApiEnvelope<LiteracyCatalogPageResponse>>(
+    '/api/portal/info-cards/literacy-catalog',
+    {
+      params: {
+        page: params.page,
+        size: LITERACY_PAGE_SIZE,
+        includeAdminOnly: params.includeAdminOnly ?? false,
+        query: params.query?.trim() || undefined,
+        category: params.category && params.category !== 'ALL' ? params.category : undefined,
+        difficulties: params.difficulties?.length ? params.difficulties.join(',') : undefined,
+        types: params.types?.length ? params.types.join(',') : undefined,
+        portalPages: params.portalPages?.length ? params.portalPages.join(',') : undefined,
+      },
+    },
+  )
+  const page = unwrap(data)
+  return { ...page, content: page.content.map(mapCard) }
 }
 
 export async function lookupPortalInfoCard(

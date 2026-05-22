@@ -38,6 +38,17 @@ export type MarketOverviewItem = {
   /** Listing exchange when API provides it (e.g. BIST, NASDAQ); optional. */
   exchange?: string | null
   instrumentId: number | null
+  volume24h?: number | null
+  openInterest?: number | null
+  dayOpen?: number | null
+  dayHigh?: number | null
+  dayLow?: number | null
+  exchangeName?: string | null
+  underlyingSymbol?: string | null
+  contractExpiry?: string | null
+  linkedSpotSymbol?: string | null
+  spotSpreadPct?: number | null
+  spotSpreadAbs?: number | null
 }
 
 export type MarketOverviewPageResponse = {

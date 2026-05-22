@@ -11,6 +11,8 @@
     "support247": "24/7 Support",
     "header": {
       "navPublic": {
+        "finansalOkuryazarlik": "Financial literacy",
+        "bankRates": "Bank FX rates",
         "markets": "Markets",
         "myPortfolio": "My Portfolio",
         "analysis": "Analysis",
@@ -63,6 +65,9 @@
         "empty": "You have no notifications yet.",
         "loadError": "Notifications could not be loaded."
       },
+      "alarms": {
+        "aria": "Price alerts"
+      },
       "theme": {
         "label": "Theme",
         "light": "Light",
@@ -99,8 +104,10 @@
       "cropError": "Could not prepare the image. Try another file.",
       "changePhoto": "Change photo",
       "emailReadonlyHint": "Managed in your identity provider.",
+      "emailEditHint": "Update your email using the card below with a verification code.",
       "phoneNotSet": "Not on file",
       "passwordSummary": "Protected credentials",
+      "kickerEmail": "Email",
       "kickerUsername": "Username",
       "kickerPhone": "Phone",
       "kickerPassword": "Password",
@@ -111,7 +118,7 @@
       "sectionUsername": "Username",
       "sectionContact": "Phone",
       "sectionNotifications": "Notifications",
-      "accountLead": "These values are tied to your sign-in identity. Email is read-only here.",
+      "accountLead": "These values are tied to your sign-in identity.",
       "accountEmail": "Work email",
       "accountUsername": "Username",
       "accountPhone": "Mobile / SMS",
@@ -121,8 +128,28 @@
       "passwordConfirm": "Confirm new password",
       "passwordTooShort": "New password must be at least 8 characters.",
       "passwordMismatch": "New password and confirmation do not match.",
+      "passwordMatchOk": "New passwords match.",
+      "passwordForgot": "Forgot password",
+      "passwordRecoveryLead": "A verification code was sent to {{email}}. Enter it and set your new password.",
+      "passwordRecoveryHint": "Verification code is sent to {{email}}.",
+      "passwordRecoveryCode": "Email verification code",
+      "passwordRecoveryCodeRequired": "Enter the verification code.",
+      "passwordResendCode": "Resend code",
+      "passwordUseCurrent": "Use current password instead",
       "passwordSubmit": "Update password",
       "passwordSuccess": "Password updated successfully.",
+      "emailLead": "A verification code is sent to your new email. After verification, both the app and identity provider are updated.",
+      "emailNew": "New email",
+      "emailSendCode": "Send code",
+      "emailResendCode": "Resend code",
+      "emailResendWait": "Try again in {{seconds}}s",
+      "emailVerificationCode": "Verification code",
+      "emailSubmit": "Verify and save email",
+      "emailSuccess": "Email updated.",
+      "emailInvalid": "Enter a valid email address.",
+      "emailUnchanged": "Enter an email different from your current one.",
+      "emailSendCodeFirst": "Send a verification code first.",
+      "emailCodeRequired": "Enter the verification code.",
       "usernameLead": "Changing your username updates both the app directory and your identity provider. You will stay signed in with a refreshed session.",
       "usernameCurrent": "Current username",
       "usernameNew": "New username",
@@ -131,6 +158,11 @@
       "usernameSuccess": "Username updated. Your session token was refreshed.",
       "usernameUnchanged": "Choose a username different from your current one.",
       "usernamePatternHint": "3–36 characters: letters, digits, dot, underscore, hyphen.",
+      "usernameChecking": "Checking…",
+      "usernameAvailable": "Available",
+      "usernameTaken": "This username is taken.",
+      "usernameSuggestionsTitle": "Suggestions:",
+      "usernameNotAvailable": "Choose an available username.",
       "phoneLead": "Optional phone number for alerts and future SMS features.",
       "phoneLabel": "Phone number",
       "phonePlaceholder": "+1 555 0100",
@@ -395,8 +427,44 @@
     "bankRatesPage": {
       "titleDoc": "Bank FX rates | Finance Platform",
       "title": "Bank FX rates",
-      "lead": "Corporate FX buy and sell quotes will be listed here. Tables and filters will appear once a data source is connected.",
-      "placeholder": "Data wiring for this page is not connected yet."
+      "lead": "Bank and institution buy/sell quotes with spread and best buy/sell highlights.",
+      "tabsAria": "Currency",
+      "tabs": {
+        "usd": "US dollar",
+        "eur": "Euro",
+        "gold": "Gold",
+        "gbp": "Sterling"
+      },
+      "sectionTitle": {
+        "usd": "US dollar bank rates",
+        "eur": "Euro bank rates",
+        "gold": "Gram gold bank rates",
+        "gbp": "Sterling bank rates"
+      },
+      "columns": {
+        "bank": "Bank",
+        "buy": "Buy",
+        "sell": "Sell",
+        "spread": "Spread",
+        "spreadPct": "Spread (%)"
+      },
+      "bestBuyHint": "Highest buy",
+      "bestSellHint": "Lowest sell",
+      "bestSpreadMinHint": "Lowest spread",
+      "bestSpreadMaxHint": "Highest spread",
+      "bestSpreadPctMinHint": "Lowest spread (%)",
+      "bestSpreadPctMaxHint": "Highest spread (%)",
+      "sidePanelAria": "Best buy and sell summary",
+      "sideBuyTitle": "Buy",
+      "sideSellTitle": "Sell",
+      "sideBuyEmpty": "No best buy rate found.",
+      "sideSellEmpty": "No best sell rate found.",
+      "refresh": "Refresh rates",
+      "updatedAt": "Last update: {{time}}",
+      "loading": "Loading bank rates…",
+      "loadError": "Could not load bank rates. Please try again.",
+      "empty": "No rates to display.",
+      "placeholder": "Loading bank rates…"
     },
     "faizVadeliPage": {
       "titleDoc": "Interest & term deposits | Finance Platform",
@@ -562,6 +630,25 @@
         "pastPickHintDate": "Click a day on the price or yield chart.",
         "pastPickHintPrice": "Click a day on the chart; that day’s close price and date are filled.",
         "pastPickCancel": "Cancel"
+      },
+      "metalFutures": {
+        "cardTitle": "Metal futures",
+        "symbolSelectAria": "Select futures contract",
+        "spotBasisSub": "Spot basis · {{spot}}: {{pct}}",
+        "exchangeSub": "{{exchange}}",
+        "liveNoData": "No data",
+        "liveNoDataHint": "Yahoo futures quotes appear within a few minutes.",
+        "liveLoadError": "Metal futures data unavailable.",
+        "liveSkeletonAria": "Loading metal futures",
+        "chartOpenHint": "Show price chart for the selected contract in the main panel",
+        "chartTitle": "{{symbol}} — last 5 years (daily close, USD)",
+        "chartBackToYield": "Back to policy rate chart",
+        "chartAxisY": "Price (USD)",
+        "chartLoading": "Loading chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "chartEmpty": "No data in this range.",
+        "chartFoot": "Line shows Yahoo futures daily closes from market-data history (GC=F, SI=F, …)."
       }
     }
   },
@@ -787,7 +874,18 @@
       "change24h": "24h",
       "high24h": "24h High",
       "low24h": "24h Low",
-      "exchange": "Exchange"
+      "exchange": "Exchange",
+      "marketCap": "Market cap",
+      "futuresVolume": "Volume",
+      "futuresOpenInterest": "Open interest",
+      "futuresSpotSpread": "Spot basis %",
+      "futuresDayRange": "Day range",
+      "futuresExchange": "Exchange",
+      "futuresUnderlying": "Underlying",
+      "futuresExpiry": "Expiry",
+      "futuresLinkedSpot": "Linked spot",
+      "futuresDayOpen": "Day open",
+      "futuresSpotSpreadAbs": "Spot basis (TRY)"
     },
     "searchLabel": "Search",
     "searchPlaceholder": "Symbol or asset name",
@@ -795,6 +893,7 @@
     "favoritesLoginRequired": "Sign in to view your favorites.",
     "favorite": "Add to favorites",
     "unfavorite": "Remove from favorites",
+    "addToPortfolioSim": "Add {{symbol}} to portfolio simulation",
     "noMatches": "No instruments found for this filter.",
     "loadError": "Market data could not be loaded. Please try again.",
     "loadErrorTimeout": "Market data timed out. Try another category or wait a moment and retry.",
@@ -805,6 +904,17 @@
       "noGainers": "No gainers available.",
       "noLosers": "No losers available.",
       "loadError": "Market insights could not be loaded."
+    },
+    "sidebar": {
+      "aria": "Market champions",
+      "heading": "Champions",
+      "noChampion": "No data",
+      "champions": {
+        "day": "Day's champion",
+        "week": "Week's champion",
+        "month": "Month's champion",
+        "year": "Year's champion"
+      }
     },
     "aiInsight": {
       "title": "Get info from AI",
@@ -860,6 +970,31 @@
       "loadError": "Segment averages could not be refreshed."
     }
   },
+  "myNewsPage": {
+    "titleDoc": "My News | Finance Platform",
+    "title": "My News",
+    "lead": "View and manage news you saved to favorites.",
+    "empty": "No favorite news yet.",
+    "loginRequired": "Sign in to view your favorite news.",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "myAnalysisPage": {
+    "title": "My Analysis",
+    "lead": "Browse saved chart drawings; expand a row to load the drawing payload and matching chart data.",
+    "empty": "No saved drawings yet. Create drawings on the Analysis page and save them from the chart toolbar.",
+    "loginRequired": "Sign in to view your saved drawings.",
+    "loadError": "Could not load saved drawings.",
+    "drawingCount": "{{count}} drawings",
+    "expandAria": "Preview {{name}}",
+    "expandSymbol": "Asset: {{symbol}}",
+    "expandRange": "Range: {{range}}",
+    "expandLoadError": "Could not load drawing details.",
+    "openInAnalysis": "Open in Analysis",
+    "prev": "Previous",
+    "next": "Next",
+    "paginationSummary": "Page {{page}} / {{totalPages}} · {{count}} saves"
+  },
   "newsPage": {
     "titleDoc": "News | Finance Platform",
     "kicker": "Live News Desk",
@@ -894,6 +1029,11 @@
     "noRelatedAssets": "No related assets were matched for this article.",
     "noSearchResults": "No news matched your search.",
     "paginationSummary": "Page {{page}} / {{totalPages}} · {{count}} articles",
+    "favoritesOnly": "Favorites",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites",
+    "favoriteUpdateError": "Could not update favorite. Please try again.",
+    "noFavoriteNews": "No favorite news found.",
     "filterToggle": "Filters",
     "applyFilters": "Apply Filter",
     "clearFilters": "Clear Filter",
@@ -928,6 +1068,25 @@
       "fx": "FX",
       "crypto": "Crypto",
       "macro": "Macro"
+    },
+    "sidebar": {
+      "aria": "Weekly news summary",
+      "weeklyHeading": "Weekly agenda",
+      "weeklyPeriod": "Last 7 days",
+      "weeklyPeriodSummary": "Last 7 days · {{count}} articles",
+      "weeklyNewsCount": "{{count}} weekly articles",
+      "categoryBreakdownTitle": "Category breakdown",
+      "topAssetsTitle": "Most mentioned assets",
+      "portfolioTitle": "Related to my portfolio",
+      "portfolioLead": "Weekly news matching your holdings",
+      "portfolioAction": "View related news",
+      "sourcesTitle": "Sources",
+      "loginRequired": "You must sign in",
+      "loginAction": "Sign in",
+      "noWeeklyData": "No weekly summary yet",
+      "portfolioFilterActive": "Showing news related to your portfolio.",
+      "clearPortfolioFilter": "Clear filter",
+      "noPortfolioNewsOnPage": "No portfolio-related news on this page. Try the next page."
     }
   },
   "analysis": {
@@ -977,7 +1136,8 @@
     "chartNews": {
       "nextDayChange": "Next day: {{value}}%",
       "matchAsset": "Asset: {{symbol}}",
-      "matchCategory": "Category: {{category}}"
+      "matchCategory": "Category: {{category}}",
+      "matchFavorite": "Favorite news"
     },
     "controls": {
       "showNews": "Show news",
@@ -1042,6 +1202,9 @@
     },
     "chartFrame": {
       "layerStripNews": "News",
+      "favoriteNews": "Show only favorite news on chart",
+      "unfavoriteNews": "Show news related to the asset",
+      "showFavoriteNews": "Show favorite news on chart",
       "layerStripMA20": "MA20",
       "layerStripMA50": "MA50",
       "layerStripRSI": "RSI",
@@ -1200,7 +1363,11 @@
       "currentValue": "Current value",
       "pnl": "Profit / loss",
       "pnlPct": "Return %",
-      "disclaimer": "Uses closing prices and MDS historical FX (entry-day and latest rates). Excludes fees and taxes."
+      "disclaimer": "Uses closing prices and MDS historical FX (entry-day and latest rates). Excludes fees and taxes.",
+      "inputsSectionAria": "Simulation inputs",
+      "breakdownSectionAria": "FX and units detail",
+      "resultSectionAria": "Summary results",
+      "breakdownEmpty": "FX and lot details appear here once amount and date are set."
     }
   },
   "portfolio": {
@@ -1216,11 +1383,18 @@
     "txTypeBuy": "Buy",
     "txTypeSell": "Sell",
     "insightTitle": "Market Insight",
+    "favoriteNewsTitle": "My Favorite News",
+    "favoriteNewsEmpty": "No favorite news yet. Star articles on the News page to save them here.",
     "fromLastYear": "from last year",
     "sinceYesterday": "vs. prior day (UTC)",
     "valueChart": {
       "empty": "History will appear after the server records a few portfolio snapshots for this account.",
-      "rangeAria": "Portfolio value chart range"
+      "rangeAria": "Portfolio value chart range",
+      "periodChange": "{{pct}} · {{range}}",
+      "flatInRange": "Flat in {{range}}",
+      "periodRange": "{{from}} – {{to}}",
+      "points": "{{count}} daily records",
+      "insufficient": "A few more daily snapshots are needed to show a trend"
     },
     "tradeFlow": {
       "buyLabel": "Buys",
@@ -1310,7 +1484,7 @@
         "news": "My News",
         "analysis": "My Analysis",
         "targets": "My Targets",
-        "watchlist": "Watchlist",
+        "watchlist": "Favorites",
         "settings": "Settings"
       },
       "historyPortfolioColumn": "Portfolio",
@@ -1339,10 +1513,13 @@
       "listingHintAll": "All quoted instruments are listed; payment currency follows the instrument you select."
     },
     "watchlist": {
-      "title": "My Watchlist",
-      "subtitle": "Only your favorite instruments are listed here.",
-      "empty": "No favorites yet. Add favorites from Markets page.",
-      "loadError": "Watchlist could not be loaded.",
+      "title": "Favorites",
+      "subtitle": "Instruments you starred on the Markets page appear here.",
+      "empty": "No favorites yet. Star instruments on the Markets page.",
+      "loadError": "Favorites could not be loaded.",
+      "prev": "Previous",
+      "next": "Next",
+      "paginationSummary": "Page {{page}} / {{totalPages}} · {{count}} favorites",
       "chartEmpty": "No chart data found for this instrument.",
       "chartLoadError": "Chart data could not be loaded.",
       "columns": {
@@ -1367,6 +1544,35 @@
           "metals": "Metals/Futures",
           "funds": "Funds"
         }
+      }
+    },
+    "goals": {
+      "pageTitle": "My goals",
+      "portfolioTitle": "Portfolio goal",
+      "profitTitle": "Profit goal",
+      "editPortfolio": "Edit portfolio goal",
+      "editProfit": "Edit profit goal",
+      "scopeUser": "Overview — all your portfolios",
+      "scopePortfolio": "For the selected portfolio",
+      "setTargetHint": "Edit to set a target",
+      "targetAmountLabel": "Target portfolio value",
+      "profitAmountLabel": "Target profit amount",
+      "profitPercentLabel": "Target profit rate (%)",
+      "plannedTitleLabel": "Goal title",
+      "plannedDescLabel": "Description",
+      "profitModeLegend": "Profit goal type",
+      "profitModeAbsolute": "Fixed profit amount",
+      "profitModePercent": "Portfolio-wide profit percent (%)",
+      "defaultPortfolioTitle": "Portfolio goal",
+      "defaultProfitTitle": "Profit goal",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "loadError": "Could not load goals.",
+      "saveError": "Could not save goal.",
+      "errors": {
+        "targetRequired": "Enter a valid target amount.",
+        "percentRequired": "Enter a valid target percent."
       }
     },
     "settingsPage": {

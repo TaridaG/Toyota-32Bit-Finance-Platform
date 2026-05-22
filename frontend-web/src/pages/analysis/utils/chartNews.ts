@@ -234,3 +234,51 @@ export function mapNewsToChartItems(
   }
   return items.sort((a, b) => b.createdAt - a.createdAt)
 }
+
+/** All favorites that fall on the visible chart window (no asset/category filter). */
+export function mapFavoriteNewsToChartItems(
+  feed: NewsApiItem[],
+  candles: CandlePoint[],
+  fallbackAssetId: string,
+): AssetNewsItem[] {
+  const items: AssetNewsItem[] = []
+  const seenIds = new Set<string>()
+  const usedTimes = new Map<number, number>()
+
+  for (const item of feed) {
+    const id = String(item.id)
+    if (seenIds.has(id)) {
+      continue
+    }
+    const publishedSec = Math.floor(Date.parse(item.publishedAt) / 1000)
+    if (!Number.isFinite(publishedSec)) {
+      continue
+    }
+    const snapped = snapNewsToChartTime(candles, publishedSec)
+    if (snapped == null) {
+      continue
+    }
+
+    seenIds.add(id)
+    const markerTime = allocateMarkerTime(Number(snapped), usedTimes)
+    const nextDayChange = computeNextDayChangePercent(candles, publishedSec)
+    const tone = toneFromNextDayChange(nextDayChange)
+
+    items.push({
+      id,
+      assetId: fallbackAssetId,
+      title: item.title ?? item.titleOriginal ?? '',
+      summary: item.summary ?? item.summaryOriginal ?? '',
+      source: item.sourceName,
+      impact: item.sentiment,
+      createdAt: markerTime,
+      reactionPercent1h: item.reactionPercent1h ?? 0,
+      relatedAssets: item.relatedSymbols ?? [],
+      nextDayChangePercent: nextDayChange,
+      markerTone: tone,
+      newsCategoryUi: mapNewsCategoryUi(item.category),
+      matchReasons: [{ kind: 'favorite', categoryUi: 'favorite' }],
+    })
+  }
+  return items.sort((a, b) => b.createdAt - a.createdAt)
+}

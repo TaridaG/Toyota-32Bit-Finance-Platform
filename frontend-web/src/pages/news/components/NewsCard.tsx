@@ -1,27 +1,50 @@
 import { useMemo, useState } from 'react'
+import type { SyntheticEvent } from 'react'
 import type { NewsDataPoint } from '../types'
 import { useTranslation } from 'react-i18next'
 import { collectMatchedKeywords, highlightSearchText } from '../utils/highlightSearchText'
+import {
+  resolveNewsDisplayText,
+  shouldShowNewsTranslationToggle,
+} from '../utils/newsTranslationDisplay'
 
 export function NewsCard({
   item,
   searchQuery,
   onOpen,
   onRequestOriginal,
+  showFavoriteStar = false,
+  isFavorite = false,
+  favoritePending = false,
+  onToggleFavorite,
 }: {
   item: NewsDataPoint
   searchQuery?: string
   onOpen: (item: NewsDataPoint) => void
   onRequestOriginal: (id: string) => Promise<{ title: string; summary: string } | null>
+  showFavoriteStar?: boolean
+  isFavorite?: boolean
+  favoritePending?: boolean
+  onToggleFavorite?: (newsId: string) => void
 }) {
   const { t, i18n } = useTranslation('newsPage')
-  const isPositive = item.reactionPercent1h >= 0
   const [showOriginal, setShowOriginal] = useState(false)
   const [originalText, setOriginalText] = useState<{ title: string; summary: string } | null>(null)
   const [loadingOriginal, setLoadingOriginal] = useState(false)
-  const effectiveOriginal = originalText ?? (item.titleOriginal ? { title: item.titleOriginal, summary: item.summaryOriginal ?? '' } : null)
-  const displayTitle = showOriginal ? effectiveOriginal?.title ?? item.title : item.title
-  const displaySummary = showOriginal ? effectiveOriginal?.summary ?? item.summary : item.summary
+  const [imageBroken, setImageBroken] = useState(false)
+  const showImage = Boolean(item.imageUrl?.trim()) && !imageBroken
+  const effectiveOriginal =
+    originalText ??
+    (item.titleOriginal
+      ? { title: item.titleOriginal, summary: item.summaryOriginal ?? '' }
+      : null)
+  const translatedText = { title: item.title, summary: item.summary }
+  const { title: displayTitle, summary: displaySummary } = resolveNewsDisplayText(
+    showOriginal,
+    translatedText,
+    effectiveOriginal,
+  )
+  const showTranslationToggle = shouldShowNewsTranslationToggle(item)
   const language = i18n.language.toLowerCase()
   const showOriginalLabel =
     language.startsWith('tr') ? 'Orijinali gör' : language.startsWith('de') ? 'Original anzeigen' : 'Show original'
@@ -39,10 +62,32 @@ export function NewsCard({
     )
   }, [activeSearch, displaySummary, displayTitle, item.relatedAssets])
 
-  return (
-    <article className="fi-news-card" onClick={() => onOpen(item)} role="button" tabIndex={0}>
+  const handleImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    event.currentTarget.style.display = 'none'
+    setImageBroken(true)
+  }
+
+  const cardBody = (
+    <>
       <div className="fi-news-card-head">
-        <strong>{activeSearch ? highlightSearchText(displayTitle, activeSearch) : displayTitle}</strong>
+        <div className="fi-news-card-title-row">
+          {showFavoriteStar ? (
+            <button
+              type="button"
+              aria-label={isFavorite ? t('unfavorite') : t('favorite')}
+              className={`fi-news-star${isFavorite ? ' fi-news-star-active' : ''}`}
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation()
+                onToggleFavorite?.(item.id)
+              }}
+              disabled={favoritePending}
+            >
+              {isFavorite ? '★' : '☆'}
+            </button>
+          ) : null}
+          <strong>{activeSearch ? highlightSearchText(displayTitle, activeSearch) : displayTitle}</strong>
+        </div>
         <span>{item.timeAgoLabel ?? t('time.minutesAgo', { count: item.timeAgoMinutes })}</span>
       </div>
 
@@ -58,11 +103,10 @@ export function NewsCard({
             </span>
           ))}
         </div>
-        <span className={`fi-sentiment fi-sentiment-${item.sentiment}`}>{t(`sentiment.${item.sentiment}`)}</span>
         <small className="fi-news-card-source">{item.source}</small>
       </div>
 
-      {item.translated ? (
+      {showTranslationToggle ? (
         <div className="fi-news-translate-row">
           <button
             type="button"
@@ -126,14 +170,33 @@ export function NewsCard({
           </div>
         </div>
       ) : null}
+    </>
+  )
 
-      <div className="fi-news-reaction">
-        <small>{t('marketReaction')}</small>
-        <strong className={isPositive ? 'fi-up' : 'fi-down'}>
-          {isPositive ? '+' : ''}
-          {t('reactionLast1h', { value: item.reactionPercent1h.toFixed(2) })}
-        </strong>
-      </div>
+  return (
+    <article
+      className={`fi-news-card${showImage ? ' fi-news-card-has-media' : ''}`}
+      onClick={() => onOpen(item)}
+      role="button"
+      tabIndex={0}
+    >
+      {showImage ? (
+        <div className="fi-news-card-layout">
+          <div className="fi-news-card-media">
+            <img
+              src={item.imageUrl ?? ''}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="fi-news-card-thumb"
+              onError={handleImageError}
+            />
+          </div>
+          <div className="fi-news-card-body">{cardBody}</div>
+        </div>
+      ) : (
+        cardBody
+      )}
     </article>
   )
 }

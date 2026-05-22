@@ -11,7 +11,7 @@ import {
 } from '../../shared/api/publicRegistration'
 
 export function RegisterPage() {
-  const { t } = useTranslation('auth')
+  const { t, i18n } = useTranslation('auth')
   useDocumentTitle(t('register.titleDoc'))
 
   const navigate = useNavigate()
@@ -122,7 +122,7 @@ export function RegisterPage() {
       }
       setSendingCode(true)
       try {
-        const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase())
+        const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase(), i18n.language)
         setVerifyCountdown(sent.expiresInSeconds)
         setResendCountdown(sent.resendInSeconds)
         setVerificationStep(true)
@@ -179,7 +179,7 @@ export function RegisterPage() {
     setError(null)
     setSendingCode(true)
     try {
-      const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase())
+      const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase(), i18n.language)
       setVerifyCountdown(sent.expiresInSeconds)
       setResendCountdown(sent.resendInSeconds)
     } catch (e) {

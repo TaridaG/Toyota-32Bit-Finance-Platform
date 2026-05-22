@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
@@ -6,9 +6,12 @@ import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { isAdminUser } from '../../shared/auth/session'
 import { infoCardsApi } from '../../services/infoCardsApi'
 import { useInfoCards } from '../../features/info-cards/InfoCardsProvider'
+import {
+  fetchLiteracyCatalogPage,
+  type LiteracyCatalogStats,
+} from '../../features/info-cards/api/infoCardsHttpApi'
 import { translatePortalPageKey } from '../../data/portalPages'
 import { infoCardToLiteracyEntry } from './utils/infoCardAdapter'
-import { countByType, filterLiteracyEntries } from './utils/filterLiteracyEntries'
 import type {
   LiteracyCategory,
   LiteracyContentType,
@@ -22,8 +25,16 @@ import { LiteracyTermCard } from './components/LiteracyTermCard'
 import { LiteracyDetailDrawer } from './components/LiteracyDetailDrawer'
 import { LiteracyEmptyState } from './components/LiteracyEmptyState'
 import { InfoCardEditorDrawer } from '../bilgi-kartlari/components/InfoCardEditorDrawer'
-import { isLiteracyCatalogCard } from './utils/literacyCatalogCards'
+import { InfoCardsPagination } from '../bilgi-kartlari/components/InfoCardsPagination'
 import type { InfoCardInput } from '../../types/infoCards'
+
+const EMPTY_STATS: LiteracyCatalogStats = {
+  total: 0,
+  terms: 0,
+  charts: 0,
+  analysisTools: 0,
+  macro: 0,
+}
 
 export function FinansalOkuryazarlikPage() {
   const { t } = useTranslation('common')
@@ -31,22 +42,9 @@ export function FinansalOkuryazarlikPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   useDocumentTitle(t('finansalOkuryazarlikPage.titleDoc'))
 
-  const { cards, loading, createCard } = useInfoCards()
+  const { createCard } = useInfoCards()
   const showAdminTerms = isAdminUser()
   const [editorOpen, setEditorOpen] = useState(false)
-
-  const visibleEntries = useMemo(
-    () =>
-      cards
-        .filter(
-          (c) =>
-            c.status === 'ACTIVE' &&
-            isLiteracyCatalogCard(c) &&
-            (!c.adminOnly || showAdminTerms),
-        )
-        .map(infoCardToLiteracyEntry),
-    [cards, showAdminTerms],
-  )
 
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<LiteracyCategory | 'ALL'>('ALL')
@@ -55,14 +53,50 @@ export function FinansalOkuryazarlikPage() {
   const [portalPages, setPortalPages] = useState<LiteracyPortalPage[]>([])
   const [selectedEntry, setSelectedEntry] = useState<LiteracyEntry | null>(null)
 
+  const [listPage, setListPage] = useState(0)
+  const [entries, setEntries] = useState<LiteracyEntry[]>([])
+  const [stats, setStats] = useState<LiteracyCatalogStats>(EMPTY_STATS)
+  const [totalElements, setTotalElements] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [listLoading, setListLoading] = useState(false)
+
+  const resetListPage = () => setListPage(0)
+
+  const loadCatalog = useCallback(async () => {
+    setListLoading(true)
+    try {
+      const page = await fetchLiteracyCatalogPage({
+        page: listPage,
+        query,
+        category,
+        difficulties,
+        types: contentTypes,
+        portalPages,
+        includeAdminOnly: showAdminTerms,
+      })
+      setEntries(page.content.map(infoCardToLiteracyEntry))
+      setStats(page.stats)
+      setTotalElements(page.totalElements)
+      setTotalPages(page.totalPages)
+    } finally {
+      setListLoading(false)
+      setLoading(false)
+    }
+  }, [listPage, query, category, difficulties, contentTypes, portalPages, showAdminTerms, language])
+
+  useEffect(() => {
+    void loadCatalog()
+  }, [loadCatalog])
+
   useEffect(() => {
     setSelectedEntry((current) => {
       if (!current) {
         return null
       }
-      return visibleEntries.find((entry) => entry.id === current.id) ?? current
+      return entries.find((entry) => entry.id === current.id) ?? current
     })
-  }, [visibleEntries, language])
+  }, [entries, language])
 
   useEffect(() => {
     const termSlug = searchParams.get('term')
@@ -76,6 +110,7 @@ export function FinansalOkuryazarlikPage() {
         const entry = infoCardToLiteracyEntry(card)
         setSelectedEntry(entry)
         setQuery(entry.title)
+        resetListPage()
       }
     })()
     setSearchParams({}, { replace: true })
@@ -86,26 +121,11 @@ export function FinansalOkuryazarlikPage() {
 
   const entriesByTitle = useMemo(() => {
     const map = new Map<string, LiteracyEntry>()
-    for (const entry of visibleEntries) {
+    for (const entry of entries) {
       map.set(entry.title, entry)
     }
     return map
-  }, [visibleEntries])
-
-  const filtered = useMemo(
-    () =>
-      filterLiteracyEntries(visibleEntries, {
-        query,
-        category,
-        difficulties,
-        contentTypes,
-        portalPages,
-        showAdminTerms,
-      }),
-    [visibleEntries, query, category, difficulties, contentTypes, portalPages, showAdminTerms],
-  )
-
-  const stats = countByType(visibleEntries)
+  }, [entries])
 
   const toggle = <T,>(list: T[], value: T): T[] =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -129,7 +149,10 @@ export function FinansalOkuryazarlikPage() {
         title={t('finansalOkuryazarlikPage.title')}
         lead={t('finansalOkuryazarlikPage.lead')}
         searchValue={query}
-        onSearchChange={setQuery}
+        onSearchChange={(value) => {
+          setQuery(value)
+          resetListPage()
+        }}
         searchPlaceholder={t('finansalOkuryazarlikPage.searchPlaceholder')}
         searchAriaLabel={t('finansalOkuryazarlikPage.searchAria')}
         stats={
@@ -166,19 +189,33 @@ export function FinansalOkuryazarlikPage() {
         onSave={async (input: InfoCardInput) => {
           await createCard(input)
           setEditorOpen(false)
+          setListPage(0)
+          await loadCatalog()
         }}
       />
 
       <div className="lit-main-layout">
         <LiteracySidebarFilters
           category={category}
-          onCategoryChange={setCategory}
+          onCategoryChange={(value) => {
+            setCategory(value)
+            resetListPage()
+          }}
           difficulties={difficulties}
-          onDifficultyToggle={(d) => setDifficulties((prev) => toggle(prev, d))}
+          onDifficultyToggle={(d) => {
+            setDifficulties((prev) => toggle(prev, d))
+            resetListPage()
+          }}
           contentTypes={contentTypes}
-          onContentTypeToggle={(type) => setContentTypes((prev) => toggle(prev, type))}
+          onContentTypeToggle={(type) => {
+            setContentTypes((prev) => toggle(prev, type))
+            resetListPage()
+          }}
           portalPages={portalPages}
-          onPortalPageToggle={(p) => setPortalPages((prev) => toggle(prev, p))}
+          onPortalPageToggle={(p) => {
+            setPortalPages((prev) => toggle(prev, p))
+            resetListPage()
+          }}
           showSystemCategory={showAdminTerms}
           labels={{
             filtersTitle: t('finansalOkuryazarlikPage.filtersTitle'),
@@ -195,26 +232,36 @@ export function FinansalOkuryazarlikPage() {
         />
 
         <div className="lit-content-column">
-          {filtered.length === 0 ? (
+          {listLoading ? (
+            <p className="lit-empty">{t('loading')}</p>
+          ) : entries.length === 0 ? (
             <LiteracyEmptyState
               title={t('finansalOkuryazarlikPage.emptyTitle')}
               message={t('finansalOkuryazarlikPage.emptyMessage')}
             />
           ) : (
-            <div className="lit-term-grid">
-              {filtered.map((entry) => (
-                <LiteracyTermCard
-                  key={entry.id}
-                  entry={entry}
-                  typeLabel={labelType(entry.type)}
-                  difficultyLabel={labelDifficulty(entry.difficulty)}
-                  usedInLabel={t('finansalOkuryazarlikPage.usedIn')}
-                  detailsLabel={t('finansalOkuryazarlikPage.details')}
-                  portalPageLabel={labelPortal}
-                  onOpenDetails={setSelectedEntry}
-                />
-              ))}
-            </div>
+            <>
+              <div className="lit-term-grid">
+                {entries.map((entry) => (
+                  <LiteracyTermCard
+                    key={entry.id}
+                    entry={entry}
+                    typeLabel={labelType(entry.type)}
+                    difficultyLabel={labelDifficulty(entry.difficulty)}
+                    usedInLabel={t('finansalOkuryazarlikPage.usedIn')}
+                    detailsLabel={t('finansalOkuryazarlikPage.details')}
+                    portalPageLabel={labelPortal}
+                    onOpenDetails={setSelectedEntry}
+                  />
+                ))}
+              </div>
+              <InfoCardsPagination
+                page={listPage}
+                totalPages={totalPages}
+                totalElements={totalElements}
+                onPageChange={setListPage}
+              />
+            </>
           )}
         </div>
       </div>

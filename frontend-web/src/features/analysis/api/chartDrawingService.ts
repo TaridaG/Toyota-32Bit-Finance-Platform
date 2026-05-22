@@ -24,6 +24,7 @@ export type ChartDrawingSaveSummary = {
   assetSymbol: string
   assetType: string | null
   createdAt: string
+  drawingCount: number
   drawingTypes: string[]
   drawingMarkers?: DrawingMarker[]
   minAnchorTime: number | null
@@ -34,6 +35,14 @@ export type ChartDrawingSaveSummary = {
 
 export type ChartDrawingSaveDetail = ChartDrawingSaveSummary & {
   drawings: SavedDrawingPayload[]
+}
+
+export type ChartDrawingSavePage = {
+  content: ChartDrawingSaveSummary[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
 }
 
 type ApiEnvelope<T> = {
@@ -134,6 +143,16 @@ export async function createChartDrawingSave(input: {
 export async function fetchChartDrawingSaves(assetKey: string): Promise<ChartDrawingSaveSummary[]> {
   const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSaveSummary[]>>('/api/chart-drawings', {
     params: { assetKey },
+  })
+  return data.data
+}
+
+export async function fetchChartDrawingSavesPage(
+  page: number,
+  size: number,
+): Promise<ChartDrawingSavePage> {
+  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSavePage>>('/api/chart-drawings/mine', {
+    params: { page, size },
   })
   return data.data
 }

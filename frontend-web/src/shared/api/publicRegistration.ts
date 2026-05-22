@@ -53,8 +53,14 @@ type UsernameAvailabilityEnvelope = {
   }
 }
 
-export async function sendRegistrationVerificationCode(email: string): Promise<{ expiresInSeconds: number; resendInSeconds: number }> {
-  const { data } = await apiClient.post<SendCodeEnvelope>('/api/public/register/send-code', { email })
+export async function sendRegistrationVerificationCode(
+  email: string,
+  locale?: string,
+): Promise<{ expiresInSeconds: number; resendInSeconds: number }> {
+  const { data } = await apiClient.post<SendCodeEnvelope>('/api/public/register/send-code', {
+    email,
+    locale: locale?.trim() || undefined,
+  })
   if (!data.success || !data.data) {
     throw new Error(data.error?.message ?? 'Verification code send failed')
   }

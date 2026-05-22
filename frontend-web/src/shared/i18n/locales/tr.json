@@ -11,6 +11,8 @@
     "support247": "7/24 Destek",
     "header": {
       "navPublic": {
+        "finansalOkuryazarlik": "Finansal Okuryazarlık",
+        "bankRates": "Banka kurları",
         "markets": "Piyasalar",
         "myPortfolio": "Portföyüm",
         "analysis": "Analiz",
@@ -63,6 +65,9 @@
         "empty": "Henüz bildirimin yok.",
         "loadError": "Bildirimler yüklenemedi."
       },
+      "alarms": {
+        "aria": "Fiyat alarmları"
+      },
       "theme": {
         "label": "Tema",
         "light": "Açık",
@@ -99,8 +104,10 @@
       "cropError": "Görüntü hazırlanamadı. Başka bir dosya deneyin.",
       "changePhoto": "Fotoğrafı değiştir",
       "emailReadonlyHint": "Kimlik sağlayıcıda yönetilir.",
+      "emailEditHint": "E-postayı aşağıdaki karttan doğrulama kodu ile güncelleyebilirsiniz.",
       "phoneNotSet": "Kayıtlı değil",
       "passwordSummary": "Korumalı oturum bilgisi",
+      "kickerEmail": "E-posta",
       "kickerUsername": "Kullanıcı adı",
       "kickerPhone": "Telefon",
       "kickerPassword": "Parola",
@@ -111,7 +118,7 @@
       "sectionUsername": "Kullanıcı adı",
       "sectionContact": "Telefon",
       "sectionNotifications": "Bildirimler",
-      "accountLead": "Bu alanlar giriş kimliğinle ilişkilidir. E-posta burada salt okunurdur.",
+      "accountLead": "Bu alanlar giriş kimliğinle ilişkilidir.",
       "accountEmail": "İş e-postası",
       "accountUsername": "Kullanıcı adı",
       "accountPhone": "Cep / SMS",
@@ -121,8 +128,28 @@
       "passwordConfirm": "Yeni parola (tekrar)",
       "passwordTooShort": "Yeni parola en az 8 karakter olmalıdır.",
       "passwordMismatch": "Yeni parola ile tekrarı eşleşmiyor.",
+      "passwordMatchOk": "Yeni parolalar eşleşiyor.",
+      "passwordForgot": "Şifremi unuttum",
+      "passwordRecoveryLead": "{{email}} adresine doğrulama kodu gönderildi. Kodu girip yeni parolanı belirle.",
+      "passwordRecoveryHint": "Doğrulama kodu {{email}} adresine gönderilir.",
+      "passwordRecoveryCode": "E-posta doğrulama kodu",
+      "passwordRecoveryCodeRequired": "Doğrulama kodunu girin.",
+      "passwordResendCode": "Kodu yeniden gönder",
+      "passwordUseCurrent": "Mevcut parola ile değiştir",
       "passwordSubmit": "Parolayı güncelle",
       "passwordSuccess": "Parola güncellendi.",
+      "emailLead": "Yeni e-posta adresine doğrulama kodu gönderilir. Kod doğrulanınca hem uygulama hem kimlik sağlayıcı güncellenir.",
+      "emailNew": "Yeni e-posta",
+      "emailSendCode": "Kod gönder",
+      "emailResendCode": "Kodu yeniden gönder",
+      "emailResendWait": "{{seconds}} sn sonra tekrar dene",
+      "emailVerificationCode": "Doğrulama kodu",
+      "emailSubmit": "E-postayı doğrula ve kaydet",
+      "emailSuccess": "E-posta güncellendi.",
+      "emailInvalid": "Geçerli bir e-posta adresi girin.",
+      "emailUnchanged": "Mevcut e-postadan farklı bir adres girin.",
+      "emailSendCodeFirst": "Önce doğrulama kodu gönderin.",
+      "emailCodeRequired": "Doğrulama kodunu girin.",
       "usernameLead": "Kullanıcı adı değişince hem uygulama kaydı hem kimlik sağlayıcı güncellenir; oturumun yeni jetonla devam eder.",
       "usernameCurrent": "Mevcut kullanıcı adı",
       "usernameNew": "Yeni kullanıcı adı",
@@ -131,6 +158,11 @@
       "usernameSuccess": "Kullanıcı adı güncellendi. Oturum jetonu yenilendi.",
       "usernameUnchanged": "Mevcut kullanıcı adından farklı bir ad seç.",
       "usernamePatternHint": "3–36 karakter: harf, rakam, nokta, alt çizgi, tire.",
+      "usernameChecking": "Kontrol ediliyor…",
+      "usernameAvailable": "Kullanılabilir",
+      "usernameTaken": "Bu kullanıcı adı alınmış.",
+      "usernameSuggestionsTitle": "Öneriler:",
+      "usernameNotAvailable": "Kullanılabilir bir kullanıcı adı seçin.",
       "phoneLead": "İsteğe bağlı telefon; uyarılar ve ileride SMS için kullanılabilir.",
       "phoneLabel": "Telefon numarası",
       "phonePlaceholder": "+90 555 123 4567",
@@ -399,8 +431,44 @@
     "bankRatesPage": {
       "titleDoc": "Banka kurları | Finans Platformu",
       "title": "Banka kurları",
-      "lead": "Kurumsal döviz alış ve satış kurları burada listelenecek. Veri kaynağı bağlandığında tablo ve filtreler güncellenecek.",
-      "placeholder": "Bu sayfa için veri bağlantısı henüz yapılmadı."
+      "lead": "Banka ve kurum alış-satış kurları; makas ve en iyi alış/satış satırları ile listelenir.",
+      "tabsAria": "Para birimi",
+      "tabs": {
+        "usd": "Dolar",
+        "eur": "Euro",
+        "gold": "Altın",
+        "gbp": "Sterlin"
+      },
+      "sectionTitle": {
+        "usd": "Amerikan Doları Banka Kurları",
+        "eur": "Euro Banka Kurları",
+        "gold": "Gram Altın Banka Kurları",
+        "gbp": "İngiliz Sterlini Banka Kurları"
+      },
+      "columns": {
+        "bank": "Banka",
+        "buy": "Alış",
+        "sell": "Satış",
+        "spread": "Makas",
+        "spreadPct": "Makas(%)"
+      },
+      "bestBuyHint": "En yüksek alış",
+      "bestSellHint": "En düşük satış",
+      "bestSpreadMinHint": "En düşük makas",
+      "bestSpreadMaxHint": "En yüksek makas",
+      "bestSpreadPctMinHint": "En düşük makas (%)",
+      "bestSpreadPctMaxHint": "En yüksek makas (%)",
+      "sidePanelAria": "En iyi alış ve satış özeti",
+      "sideBuyTitle": "Alım",
+      "sideSellTitle": "Satım",
+      "sideBuyEmpty": "En iyi alış bulunamadı.",
+      "sideSellEmpty": "En iyi satış bulunamadı.",
+      "refresh": "Kurları yenile",
+      "updatedAt": "Son güncelleme: {{time}}",
+      "loading": "Banka kurları yükleniyor…",
+      "loadError": "Banka kurları alınamadı. Lütfen tekrar deneyin.",
+      "empty": "Gösterilecek kur bulunamadı.",
+      "placeholder": "Banka kurları yükleniyor…"
     },
     "faizVadeliPage": {
       "titleDoc": "Faiz ve vadeli | Finans Platformu",
@@ -566,6 +634,25 @@
         "pastPickHintDate": "Fiyat veya getiri grafiğinde bir güne tıklayın.",
         "pastPickHintPrice": "Grafikte bir güne tıklayın; o günün kapanış fiyatı ve tarihi yazılır.",
         "pastPickCancel": "Vazgeç"
+      },
+      "metalFutures": {
+        "cardTitle": "vadeli maden",
+        "symbolSelectAria": "Vadeli kontrat seçin",
+        "spotBasisSub": "Spot farkı · {{spot}}: {{pct}}",
+        "exchangeSub": "{{exchange}}",
+        "liveNoData": "Veri yok",
+        "liveNoDataHint": "Yahoo vadeli kotasyonu birkaç dakika içinde görünür.",
+        "liveLoadError": "Vadeli maden verisi alınamadı.",
+        "liveSkeletonAria": "Vadeli maden yükleniyor",
+        "chartOpenHint": "Ana alanda seçili kontratın fiyat grafiğini göster",
+        "chartTitle": "{{symbol}} — son 5 yıl (günlük kapanış, USD)",
+        "chartBackToYield": "Politika faizi grafiğine dön",
+        "chartAxisY": "Fiyat (USD)",
+        "chartLoading": "Grafik yükleniyor",
+        "chartError": "Geçmiş veri yüklenemedi.",
+        "chartRetry": "Tekrar dene",
+        "chartEmpty": "Bu aralıkta kayıtlı veri yok.",
+        "chartFoot": "Çizgi, MDS’deki Yahoo vadeli günlük kapanış serisini gösterir (GC=F, SI=F, …)."
       }
     }
   },
@@ -791,7 +878,18 @@
       "change24h": "24s",
       "high24h": "24s En Yüksek",
       "low24h": "24s En Düşük",
-      "exchange": "Piyasa"
+      "exchange": "Piyasa",
+      "marketCap": "Piyasa Değeri",
+      "futuresVolume": "Hacim",
+      "futuresOpenInterest": "Açık pozisyon",
+      "futuresSpotSpread": "Spot farkı %",
+      "futuresDayRange": "Gün aralığı",
+      "futuresExchange": "Borsa",
+      "futuresUnderlying": "Dayanak",
+      "futuresExpiry": "Vade",
+      "futuresLinkedSpot": "Spot eşleşme",
+      "futuresDayOpen": "Gün açılış",
+      "futuresSpotSpreadAbs": "Spot farkı (TRY)"
     },
     "searchLabel": "Ara",
     "searchPlaceholder": "Sembol veya varlık adı",
@@ -799,6 +897,7 @@
     "favoritesLoginRequired": "Favorileri görüntüleyebilmek için giriş yapmalısın.",
     "favorite": "Favorilere ekle",
     "unfavorite": "Favorilerden çıkar",
+    "addToPortfolioSim": "{{symbol}} — portföy simülasyonuna ekle",
     "noMatches": "Bu filtreye uygun enstrüman bulunamadı.",
     "loadError": "Piyasa verisi yüklenemedi. Lütfen tekrar deneyin.",
     "loadErrorTimeout": "Piyasa verisi zaman aşımına uğradı. Kategori değiştirip tekrar deneyin veya bir süre bekleyin.",
@@ -809,6 +908,17 @@
       "noGainers": "Yükselen veri bulunamadı.",
       "noLosers": "Düşen veri bulunamadı.",
       "loadError": "Piyasa içgörüleri yüklenemedi."
+    },
+    "sidebar": {
+      "aria": "Piyasa şampiyonları",
+      "heading": "Şampiyonlar",
+      "noChampion": "Veri yok",
+      "champions": {
+        "day": "Günün şampiyonu",
+        "week": "Haftanın şampiyonu",
+        "month": "Ayın şampiyonu",
+        "year": "Yılın şampiyonu"
+      }
     },
     "aiInsight": {
       "title": "AI'dan bilgi al",
@@ -864,6 +974,31 @@
       "loadError": "Kategori ortalamaları yenilenemedi."
     }
   },
+  "myNewsPage": {
+    "titleDoc": "Haberlerim | Finans Platformu",
+    "title": "Haberlerim",
+    "lead": "Favorilere eklediğin haberleri burada görüntüle ve yönet.",
+    "empty": "Henüz favori haber yok.",
+    "loginRequired": "Favori haberlerini görmek için giriş yapmalısın.",
+    "prev": "Önceki",
+    "next": "Sonraki"
+  },
+  "myAnalysisPage": {
+    "title": "Analizim",
+    "lead": "Kaydettiğin grafik çizimlerini sıralı listede görüntüle; genişleterek çizimleri ve ilgili grafik verisini yükle.",
+    "empty": "Henüz kayıtlı çizim yok. Analiz sayfasında grafik üzerinde çizim yapıp kaydedebilirsin.",
+    "loginRequired": "Çizim kayıtlarını görmek için giriş yapmalısın.",
+    "loadError": "Çizim kayıtları yüklenemedi.",
+    "drawingCount": "{{count}} çizim",
+    "expandAria": "{{name}} önizlemesi",
+    "expandSymbol": "Varlık: {{symbol}}",
+    "expandRange": "Aralık: {{range}}",
+    "expandLoadError": "Çizim detayı yüklenemedi.",
+    "openInAnalysis": "Analiz sayfasında aç",
+    "prev": "Önceki",
+    "next": "Sonraki",
+    "paginationSummary": "Sayfa {{page}} / {{totalPages}} · {{count}} kayıt"
+  },
   "newsPage": {
     "titleDoc": "Haberler | Finans Platformu",
     "kicker": "Canlı Haber Masası",
@@ -898,6 +1033,11 @@
     "noRelatedAssets": "Bu haber için eşleşen varlık bulunamadı.",
     "noSearchResults": "Aramanızla eşleşen haber bulunamadı.",
     "paginationSummary": "Sayfa {{page}} / {{totalPages}} · {{count}} haber",
+    "favoritesOnly": "Favoriler",
+    "favorite": "Favorilere ekle",
+    "unfavorite": "Favorilerden çıkar",
+    "favoriteUpdateError": "Favori güncellenemedi. Lütfen tekrar deneyin.",
+    "noFavoriteNews": "Favori haber bulunamadı.",
     "filterToggle": "Filtreler",
     "applyFilters": "Filtrele",
     "clearFilters": "Filtreyi Temizle",
@@ -931,6 +1071,25 @@
       "fx": "FX",
       "crypto": "Kripto",
       "macro": "Makro"
+    },
+    "sidebar": {
+      "aria": "Haftalık haber özeti",
+      "weeklyHeading": "Haftalık Gündem",
+      "weeklyPeriod": "Son 7 gün",
+      "weeklyPeriodSummary": "Son 7 gün · {{count}} haber",
+      "weeklyNewsCount": "{{count}} haftalık haber",
+      "categoryBreakdownTitle": "Kategori dağılımı",
+      "topAssetsTitle": "En çok geçen varlıklar",
+      "portfolioTitle": "Portföyümle ilişkili",
+      "portfolioLead": "Portföyündeki varlıklarla eşleşen haftalık haber",
+      "portfolioAction": "İlgili Haberleri Gör",
+      "sourcesTitle": "Kaynaklar",
+      "loginRequired": "Giriş yapmalısın",
+      "loginAction": "Giriş Yap",
+      "noWeeklyData": "Bu hafta için özet veri yok",
+      "portfolioFilterActive": "Portföyünle ilişkili haberler listeleniyor.",
+      "clearPortfolioFilter": "Filtreyi kaldır",
+      "noPortfolioNewsOnPage": "Bu sayfada portföyünle eşleşen haber yok. Sonraki sayfayı deneyin."
     }
   },
   "analysis": {
@@ -980,7 +1139,8 @@
     "chartNews": {
       "nextDayChange": "Ertesi gün: %{{value}}",
       "matchAsset": "Varlık: {{symbol}}",
-      "matchCategory": "Kategori: {{category}}"
+      "matchCategory": "Kategori: {{category}}",
+      "matchFavorite": "Favori haber"
     },
     "controls": {
       "showNews": "Haberi göster",
@@ -1063,6 +1223,9 @@
       "compareEmpty": "Karşılaştırma yok",
       "closeCompareAdd": "Kapat",
       "layerStripNews": "Haber",
+      "favoriteNews": "Grafikte yalnızca favori haberleri göster",
+      "unfavoriteNews": "Varlığa göre ilgili haberleri göster",
+      "showFavoriteNews": "Favori haberleri grafikte göster",
       "layerStripMA20": "MA20",
       "layerStripMA50": "MA50",
       "layerStripRSI": "RSI",
@@ -1201,7 +1364,11 @@
       "currentValue": "Güncel değer",
       "pnl": "Kar / zarar",
       "pnlPct": "Getiri %",
-      "disclaimer": "Kapanış fiyatı ve MDS tarihsel kurlarla hesaplanır; alım günü ve bugünkü kur ayrı uygulanır. Komisyon ve vergi dahil değildir."
+      "disclaimer": "Kapanış fiyatı ve MDS tarihsel kurlarla hesaplanır; alım günü ve bugünkü kur ayrı uygulanır. Komisyon ve vergi dahil değildir.",
+      "inputsSectionAria": "Simülasyon girdileri",
+      "breakdownSectionAria": "Kur ve lot detayı",
+      "resultSectionAria": "Özet sonuçlar",
+      "breakdownEmpty": "Tutar ve tarih seçildiğinde kur ve lot detayı burada görünür."
     }
   },
   "portfolio": {
@@ -1217,11 +1384,18 @@
     "txTypeBuy": "Alım",
     "txTypeSell": "Satım",
     "insightTitle": "Piyasa İçgörüsü",
+    "favoriteNewsTitle": "Favori Haberlerim",
+    "favoriteNewsEmpty": "Henüz favori haber yok. Haberler sayfasından yıldızla kaydedebilirsin.",
     "fromLastYear": "geçen yıla göre",
     "sinceYesterday": "düne göre",
     "valueChart": {
       "empty": "Sunucu bu portföy için birkaç değer kaydı oluşturduğunda grafik görünür.",
-      "rangeAria": "Portföy değeri grafik aralığı"
+      "rangeAria": "Portföy değeri grafik aralığı",
+      "periodChange": "{{pct}} · {{range}}",
+      "flatInRange": "{{range}} aralığında sabit",
+      "periodRange": "{{from}} – {{to}}",
+      "points": "{{count}} günlük kayıt",
+      "insufficient": "Trend için birkaç günlük kayıt gerekir"
     },
     "tradeFlow": {
       "buyLabel": "Alım",
@@ -1311,7 +1485,7 @@
         "news": "Haberlerim",
         "analysis": "Analizim",
         "targets": "Hedefim",
-        "watchlist": "İzleme Listem",
+        "watchlist": "Favoriler",
         "settings": "Ayarlar"
       },
       "historyPortfolioColumn": "Portföy",
@@ -1340,10 +1514,13 @@
       "listingHintAll": "Tüm kotasyonlu enstrümanlar listelenir; ödeme para birimi seçtiğiniz varlığın kotasyonuna göre belirlenir."
     },
     "watchlist": {
-      "title": "İzleme Listem",
-      "subtitle": "Burada yalnızca favori enstrümanların listelenir.",
-      "empty": "Henüz favori enstrüman yok. Piyasalar sayfasından ekleyebilirsin.",
-      "loadError": "İzleme listesi yüklenemedi.",
+      "title": "Favoriler",
+      "subtitle": "Piyasalar sayfasında yıldızla işaretlediğin enstrümanlar burada listelenir.",
+      "empty": "Henüz favori enstrüman yok. Piyasalar sayfasından yıldız ile ekleyebilirsin.",
+      "loadError": "Favoriler yüklenemedi.",
+      "prev": "Önceki",
+      "next": "Sonraki",
+      "paginationSummary": "Sayfa {{page}} / {{totalPages}} · {{count}} favori",
       "chartEmpty": "Bu enstrüman için grafik verisi bulunamadı.",
       "chartLoadError": "Grafik verisi yüklenemedi.",
       "columns": {
@@ -1368,6 +1545,35 @@
           "metals": "Maden/Futures",
           "funds": "Fon"
         }
+      }
+    },
+    "goals": {
+      "pageTitle": "Hedeflerim",
+      "portfolioTitle": "Portföy hedefim",
+      "profitTitle": "Kar hedefim",
+      "editPortfolio": "Portföy hedefini düzenle",
+      "editProfit": "Kar hedefini düzenle",
+      "scopeUser": "Genel bakış — tüm portföyleriniz için",
+      "scopePortfolio": "Seçili portföy için",
+      "setTargetHint": "Hedef belirlemek için düzenle",
+      "targetAmountLabel": "Hedeflenen portföy tutarı",
+      "profitAmountLabel": "Hedef kar tutarı",
+      "profitPercentLabel": "Hedef kar oranı (%)",
+      "plannedTitleLabel": "Hedeflenen başlık",
+      "plannedDescLabel": "Açıklama",
+      "profitModeLegend": "Kar hedefi türü",
+      "profitModeAbsolute": "Sabit kar tutarı",
+      "profitModePercent": "Portföy genelinde kar oranı (%)",
+      "defaultPortfolioTitle": "Portföy hedefi",
+      "defaultProfitTitle": "Kar hedefi",
+      "cancel": "Vazgeç",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor…",
+      "loadError": "Hedefler yüklenemedi.",
+      "saveError": "Hedef kaydedilemedi.",
+      "errors": {
+        "targetRequired": "Geçerli bir hedef tutarı girin.",
+        "percentRequired": "Geçerli bir hedef yüzdesi girin."
       }
     },
     "settingsPage": {

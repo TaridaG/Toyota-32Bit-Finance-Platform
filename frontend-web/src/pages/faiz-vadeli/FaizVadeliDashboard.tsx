@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TabId } from './faizVadeliDashboardCopy'
 import { getFaizVadeliDashboardCopy } from './faizVadeliDashboardCopy'
 import { FaizVadeliStatCard } from './components/FaizVadeliStatCard'
 import { FaizVadeliPolicyRateStatCard } from './components/FaizVadeliPolicyRateStatCard'
@@ -14,21 +13,26 @@ import { FaizVadeliTahvilStatCard } from './components/FaizVadeliTahvilStatCard'
 import { FaizVadeliTahvilChartPanel } from './components/FaizVadeliTahvilChartPanel'
 import { FaizVadeliEurobondStatCard } from './components/FaizVadeliEurobondStatCard'
 import { FaizVadeliEurobondDetailPanel } from './components/FaizVadeliEurobondDetailPanel'
+import {
+  FaizVadeliMetalFuturesStatCard,
+  type MetalFuturesSymbol,
+} from './components/FaizVadeliMetalFuturesStatCard'
+import { FaizVadeliMetalFuturesChartPanel } from './components/FaizVadeliMetalFuturesChartPanel'
 import type { TlDepositMaturityCode } from './lib/tlDepositMaturity'
 import type { TahvilSymbol } from './lib/tahvilSymbol'
 import { TR_USD_EUROBOND_DEFAULT_ISIN } from './lib/trUsdEurobondIsins'
 import type { EurobondInstrumentWire } from './api/eurobondMarketApi'
 
-type MidPanel = 'policy' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'inflation'
+type MidPanel = 'policy' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'metal_futures' | 'inflation'
 
 export function FaizVadeliDashboard() {
   const { i18n } = useTranslation()
-  const [tab, setTab] = useState<TabId>('deposit')
   const [midChart, setMidChart] = useState<MidPanel>('policy')
   const [tlDepositMaturity, setTlDepositMaturity] = useState<TlDepositMaturityCode>('MT04')
   const [tahvilSymbol, setTahvilSymbol] = useState<TahvilSymbol>('TRBOND1Y')
   const [eurobondInstruments, setEurobondInstruments] = useState<EurobondInstrumentWire[]>([])
   const [eurobondIsin, setEurobondIsin] = useState(TR_USD_EUROBOND_DEFAULT_ISIN)
+  const [metalFuturesSymbol, setMetalFuturesSymbol] = useState<MetalFuturesSymbol>('GC=F')
   const [cpiMetric, setCpiMetric] = useState<CpiMetricCode>('YEARLY_PCT')
   const copy = useMemo(() => getFaizVadeliDashboardCopy(i18n.resolvedLanguage ?? i18n.language), [i18n.language, i18n.resolvedLanguage])
 
@@ -36,7 +40,7 @@ export function FaizVadeliDashboard() {
 
   return (
     <div className="fi-faiz-dash">
-      <div className="fi-faiz-stat-grid" role="list">
+      <div className="fi-faiz-stat-grid fi-faiz-stat-grid--cols-7" role="list">
         {copy.stats.map((stat) => (
           <div key={stat.statSlot ?? stat.title} role="listitem">
             {stat.statSlot === 'policy_rate' ? (
@@ -64,6 +68,14 @@ export function FaizVadeliDashboard() {
                 onIsinChange={setEurobondIsin}
                 onShowHistory={() => setMidChart('eurobond')}
               />
+            ) : stat.statSlot === 'metal_futures' ? (
+              <FaizVadeliMetalFuturesStatCard
+                template={stat}
+                symbol={metalFuturesSymbol}
+                active={midChart === 'metal_futures'}
+                onSymbolChange={setMetalFuturesSymbol}
+                onShowHistory={() => setMidChart('metal_futures')}
+              />
             ) : stat.statSlot === 'inflation' ? (
               <FaizVadeliInflationStatCard
                 template={stat}
@@ -89,36 +101,18 @@ export function FaizVadeliDashboard() {
           <FaizVadeliTlDepositChartPanel maturity={tlDepositMaturity} onBack={goPolicy} />
         ) : midChart === 'tahvil' ? (
           <FaizVadeliTahvilChartPanel symbol={tahvilSymbol} onBack={goPolicy} />
-        ) : (
+        ) : midChart === 'metal_futures' ? (
+          <FaizVadeliMetalFuturesChartPanel symbol={metalFuturesSymbol} onBack={goPolicy} />
+        ) : midChart === 'eurobond' ? (
           <FaizVadeliEurobondDetailPanel
             instruments={eurobondInstruments}
             selectedIsin={eurobondIsin}
             onSelectIsin={setEurobondIsin}
             onBack={goPolicy}
           />
+        ) : (
+          <FaizVadeliPolicyRateChartPanel />
         )}
-      </div>
-
-      <div className="fi-faiz-tabs" role="tablist" aria-label={copy.tabsAria}>
-        {copy.tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`fi-faiz-tab${tab === t.id ? ' fi-faiz-tab--active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="fi-faiz-tab-placeholder">
-        <p>
-          <strong>{copy.tabs.find((x) => x.id === tab)?.label}</strong>
-          <span className="fi-faiz-tab-placeholder-muted"> — {copy.tabPlaceholder}</span>
-        </p>
       </div>
     </div>
   )

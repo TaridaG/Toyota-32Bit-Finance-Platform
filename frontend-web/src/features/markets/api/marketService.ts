@@ -478,7 +478,7 @@ async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
   const fxRows = rows.filter((r) => rowUsesFxHistory(r))
   let summaryBySymbol: Record<string, PeriodChanges & { price: number }> = {}
   try {
-    summaryBySymbol = summaryRows.length > 0 ? await fetchPricesSummary(summaryRows.map((r) => r.symbol)) : {}
+    summaryBySymbol = summaryRows.length > 0 ? await fetchMarketPricesSummary(summaryRows.map((r) => r.symbol)) : {}
   } catch {
     summaryBySymbol = {}
   }
@@ -612,7 +612,9 @@ function computePeriodChanges(points: HistoryPoint[], symbol?: string): PeriodCh
 
 const SUMMARY_REQUEST_CHUNK = 40
 
-async function fetchPricesSummary(symbols: string[]): Promise<Record<string, PeriodChanges & { price: number }>> {
+export async function fetchMarketPricesSummary(
+  symbols: string[],
+): Promise<Record<string, PeriodChanges & { price: number }>> {
   if (symbols.length === 0) {
     return {}
   }
@@ -621,7 +623,17 @@ async function fetchPricesSummary(symbols: string[]): Promise<Record<string, Per
     const chunk = symbols.slice(i, i + SUMMARY_REQUEST_CHUNK)
     try {
       const response = await apiClient.get<Record<string, SummaryItem>>('/api/market/prices/summary', {
+        // Encode '=' in Yahoo futures (GC=F) — raw query strings split on '=' otherwise.
         params: { symbols: chunk.join(',') },
+        paramsSerializer: (params) => {
+          const search = new URLSearchParams()
+          for (const [key, value] of Object.entries(params)) {
+            if (value != null && value !== '') {
+              search.set(key, String(value))
+            }
+          }
+          return search.toString()
+        },
       })
       const data = response.data ?? {}
       for (const symbol of chunk) {
@@ -670,6 +682,17 @@ type OverviewWireRow = {
   low24h?: number | string | null
   category?: string | null
   instrumentId?: number | string | null
+  volume24h?: number | string | null
+  openInterest?: number | string | null
+  dayOpen?: number | string | null
+  dayHigh?: number | string | null
+  dayLow?: number | string | null
+  exchangeName?: string | null
+  underlyingSymbol?: string | null
+  contractExpiry?: string | null
+  linkedSpotSymbol?: string | null
+  spotSpreadPct?: number | string | null
+  spotSpreadAbs?: number | string | null
 }
 
 function toNullableNumber(value: unknown): number | null {
@@ -724,8 +747,19 @@ function mapOverviewWireItem(row: OverviewWireRow): MarketOverviewItem {
     high24h: toNullableNumber(row.high24h),
     low24h: toNullableNumber(row.low24h),
     category: row.category ?? null,
-    exchange: null,
+    exchange: row.exchangeName ?? null,
     instrumentId,
+    volume24h: toNullableNumber(row.volume24h),
+    openInterest: toNullableNumber(row.openInterest),
+    dayOpen: toNullableNumber(row.dayOpen),
+    dayHigh: toNullableNumber(row.dayHigh),
+    dayLow: toNullableNumber(row.dayLow),
+    exchangeName: row.exchangeName ?? null,
+    underlyingSymbol: row.underlyingSymbol ?? null,
+    contractExpiry: row.contractExpiry ?? null,
+    linkedSpotSymbol: row.linkedSpotSymbol ?? null,
+    spotSpreadPct: toNullableNumber(row.spotSpreadPct),
+    spotSpreadAbs: toNullableNumber(row.spotSpreadAbs),
   }
 }
 
@@ -978,7 +1012,7 @@ export async function buildMarketOverviewFromCatalog(
   if (sortRequiresPageSummaryFetch(sortMetricField)) {
     const summarySymbols = basePageRows.filter((row) => !rowUsesFxHistory(row)).map((row) => row.symbol)
     try {
-      summaryBySymbol = summarySymbols.length > 0 ? await fetchPricesSummary(summarySymbols) : {}
+      summaryBySymbol = summarySymbols.length > 0 ? await fetchMarketPricesSummary(summarySymbols) : {}
     } catch {
       summaryBySymbol = {}
     }

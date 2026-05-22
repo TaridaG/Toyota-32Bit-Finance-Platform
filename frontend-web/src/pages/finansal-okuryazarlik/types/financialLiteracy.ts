@@ -56,17 +56,17 @@ export interface LiteracyEntry {
 }
 
 export const LITERACY_PORTAL_ROUTES: Record<LiteracyPortalPage, string> = {
-  DASHBOARD: '/app/markets',
-  MARKETS: '/app/markets',
+  DASHBOARD: '/markets',
+  MARKETS: '/markets',
   PORTFOLIO: '/app/my-portfolio',
   SIMULATION: '/app/simulation',
-  TURKEY_ECONOMY: '/app/turkiye-ekonomisi',
+  TURKEY_ECONOMY: '/app/faiz-vadeli',
   FAIZ_VADELI: '/app/faiz-vadeli',
   ANALYSIS: '/app/analysis',
   NEWS: '/app/news',
   NOTIFICATIONS: '/app/profile',
   ADMIN: '/admin',
-  BANK_RATES: '/app/bank-rates',
+  BANK_RATES: '/bank-rates',
 }
 
 export const LITERACY_CATEGORIES: LiteracyCategory[] = [

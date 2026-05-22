@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, type SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { fetchNewsDetail, type NewsDetailApi } from '../../../features/news/api/newsService'
+import { fetchNewsDetail, fetchNewsOriginal, type NewsDetailApi } from '../../../features/news/api/newsService'
 import { highlightSearchText } from '../utils/highlightSearchText'
 import { resolveNewsArticleUrl } from '../utils/resolveNewsArticleUrl'
+import {
+  resolveNewsDisplayText,
+  shouldShowNewsTranslationToggle,
+} from '../utils/newsTranslationDisplay'
 
 type NewsDetailModalProps = {
   newsId: string
@@ -25,7 +29,22 @@ export function NewsDetailModal({ newsId, searchQuery, onClose }: NewsDetailModa
   const [detail, setDetail] = useState<NewsDetailApi | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showOriginal, setShowOriginal] = useState(false)
+  const [originalText, setOriginalText] = useState<{ title: string; summary: string } | null>(null)
+  const [loadingOriginal, setLoadingOriginal] = useState(false)
+  const [detailImageBroken, setDetailImageBroken] = useState(false)
   const activeSearch = searchQuery?.trim() ?? ''
+  const language = i18n.language.toLowerCase()
+  const showOriginalLabel =
+    language.startsWith('tr') ? 'Orijinali gör' : language.startsWith('de') ? 'Original anzeigen' : 'Show original'
+  const showTranslatedLabel =
+    language.startsWith('tr') ? 'Çeviriyi gör' : language.startsWith('de') ? 'Übersetzung anzeigen' : 'Show translation'
+
+  useEffect(() => {
+    setShowOriginal(false)
+    setOriginalText(null)
+    setDetailImageBroken(false)
+  }, [newsId, i18n.language])
 
   useEffect(() => {
     let cancelled = false
@@ -52,7 +71,25 @@ export function NewsDetailModal({ newsId, searchQuery, onClose }: NewsDetailModa
     }
   }, [i18n.language, newsId])
 
-  const bodyText = stripHtml(detail?.summary?.trim() || '')
+  const effectiveOriginal = useMemo(
+    () =>
+      originalText ??
+      (detail?.titleOriginal
+        ? { title: stripHtml(detail.titleOriginal), summary: stripHtml(detail.summaryOriginal?.trim() || '') }
+        : null),
+    [detail?.summaryOriginal, detail?.titleOriginal, originalText],
+  )
+  const displayText = useMemo(() => {
+    if (!detail) {
+      return { title: '', summary: '' }
+    }
+    return resolveNewsDisplayText(
+      showOriginal,
+      { title: stripHtml(detail.title), summary: stripHtml(detail.summary?.trim() || '') },
+      effectiveOriginal,
+    )
+  }, [detail, effectiveOriginal, showOriginal])
+  const showTranslationToggle = detail ? shouldShowNewsTranslationToggle(detail) : false
   const sourceUrl = detail ? resolveNewsArticleUrl(detail.articleUrl, detail.sourceName) : ''
 
   return (
@@ -60,7 +97,13 @@ export function NewsDetailModal({ newsId, searchQuery, onClose }: NewsDetailModa
       <button className="fi-modal-backdrop" onClick={onClose} aria-label={t('closeDetails')} />
       <article className="card fi-modal fi-news-detail-card">
         <div className="fi-modal-head">
-          <h3>{detail ? (activeSearch ? highlightSearchText(detail.title, activeSearch) : detail.title) : t('common:loading')}</h3>
+          <h3>
+            {detail
+              ? activeSearch
+                ? highlightSearchText(displayText.title, activeSearch)
+                : displayText.title
+              : t('common:loading')}
+          </h3>
           <button type="button" onClick={onClose} aria-label={t('closeDetails')}>
             ×
           </button>
@@ -71,6 +114,21 @@ export function NewsDetailModal({ newsId, searchQuery, onClose }: NewsDetailModa
 
         {!loading && !error && detail ? (
           <div className="fi-news-detail-body">
+            {detail.imageUrl?.trim() && !detailImageBroken ? (
+              <div className="fi-news-detail-media">
+                <img
+                  src={detail.imageUrl}
+                  alt=""
+                  className="fi-news-detail-thumb"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                    event.currentTarget.style.display = 'none'
+                    setDetailImageBroken(true)
+                  }}
+                />
+              </div>
+            ) : null}
             <div className="fi-news-detail-meta-row">
               <div className="fi-news-topic-tags">
                 {(detail.topicTags?.length ? detail.topicTags : [detail.categoryUi]).map((tag) => (
@@ -79,13 +137,44 @@ export function NewsDetailModal({ newsId, searchQuery, onClose }: NewsDetailModa
                   </span>
                 ))}
               </div>
-              <span className={`fi-sentiment fi-sentiment-${detail.sentiment}`}>{t(`sentiment.${detail.sentiment}`)}</span>
               <small>{detail.sourceName}</small>
               <small>{formatPublished(detail.publishedAt, t)}</small>
             </div>
 
+            {showTranslationToggle ? (
+              <div className="fi-news-translate-row">
+                <button
+                  type="button"
+                  className="fi-translate-toggle"
+                  onClick={async () => {
+                    if (!showOriginal) {
+                      if (!effectiveOriginal) {
+                        try {
+                          setLoadingOriginal(true)
+                          const response = await fetchNewsOriginal(Number(newsId))
+                          setOriginalText({
+                            title: stripHtml(response.title),
+                            summary: stripHtml(response.summary?.trim() || ''),
+                          })
+                        } finally {
+                          setLoadingOriginal(false)
+                        }
+                      }
+                      setShowOriginal(true)
+                      return
+                    }
+                    setShowOriginal(false)
+                  }}
+                  disabled={loadingOriginal}
+                >
+                  👁 {loadingOriginal ? t('common:loading') : showOriginal ? showTranslatedLabel : showOriginalLabel}
+                </button>
+                <small>{showOriginal ? 'Original' : detail.translatedLanguage?.toUpperCase()}</small>
+              </div>
+            ) : null}
+
             <div className="fi-news-detail-text">
-              {activeSearch ? highlightSearchText(bodyText, activeSearch) : bodyText}
+              {activeSearch ? highlightSearchText(displayText.summary, activeSearch) : displayText.summary}
             </div>
 
             {sourceUrl ? (

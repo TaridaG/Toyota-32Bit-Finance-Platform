@@ -58,7 +58,7 @@ export function HelpCardPopover({
       {card.howToInterpret ? <p className="lit-help-popover-hint">{card.howToInterpret}</p> : null}
       <div className="help-card-popover-actions">
         <Link
-          to={`/app/finansal-okuryazarlik?term=${card.slug}`}
+          to={`/finansal-okuryazarlik?term=${card.slug}`}
           className="lit-help-popover-link"
           onClick={onDeactivate}
         >

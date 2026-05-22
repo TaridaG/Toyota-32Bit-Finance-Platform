@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { infoCardsApi } from '../../services/infoCardsApi'
 import { fetchAdminInfoCardsDashboard } from './api/infoCardsHttpApi'
+import { isAdminUser } from '../../shared/auth/session'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import type { InfoCard, InfoCardInput, InfoCardsDashboard } from '../../types/infoCards'
 
@@ -33,9 +34,10 @@ export function InfoCardsProvider({ children }: { children: ReactNode }) {
     }
     setError(null)
     try {
+      const includeAdminOnly = isAdminUser()
       const [portalCards, dash] = await Promise.all([
-        infoCardsApi.loadPortalCards(true),
-        fetchAdminInfoCardsDashboard().catch(() => null),
+        infoCardsApi.loadPortalCards(includeAdminOnly),
+        includeAdminOnly ? fetchAdminInfoCardsDashboard().catch(() => null) : Promise.resolve(null),
       ])
       setCards(portalCards)
       setDashboard(dash ?? infoCardsApi.getDashboard())

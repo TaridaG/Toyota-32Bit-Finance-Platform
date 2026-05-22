@@ -10,13 +10,17 @@ import { NewsPage } from '../../pages/news/NewsPage'
 import { AnalysisPage } from '../../pages/analysis/AnalysisPage'
 import { FaizVadeliPage } from '../../pages/faiz-vadeli/FaizVadeliPage'
 import { BankRatesPage } from '../../pages/bank-rates/BankRatesPage'
-import { TurkiyeEkonomisiPage } from '../../pages/turkiye-ekonomisi/TurkiyeEkonomisiPage'
 import { FinansalOkuryazarlikPage } from '../../pages/finansal-okuryazarlik/FinansalOkuryazarlikPage'
 import { BilgiKartlariPage } from '../../pages/bilgi-kartlari/BilgiKartlariPage'
 import { ProfileSettingsPage } from '../../pages/profile/ProfileSettingsPage'
 import { LandingPage } from '../../pages/public/LandingPage'
 import { LoginPage } from '../../pages/public/LoginPage'
 import { RegisterPage } from '../../pages/public/RegisterPage'
+import {
+  PUBLIC_BANK_RATES_ROUTE,
+  PUBLIC_FINANCIAL_LITERACY_ROUTE,
+  PUBLIC_MARKETS_ROUTE,
+} from '../routes/publicCatalogRoutes'
 import { PublicOnly, RequireAdmin, RequireAuth } from './RouteGuards'
 import { AdminLayout } from '../../pages/admin/AdminLayout'
 import { AdminOverviewPage } from '../../pages/admin/AdminOverviewPage'
@@ -59,6 +63,14 @@ export const appRouter = createBrowserRouter([
       {
         path: 'markets',
         element: <MarketsPage />,
+      },
+      {
+        path: 'finansal-okuryazarlik',
+        element: <FinansalOkuryazarlikPage />,
+      },
+      {
+        path: 'bank-rates',
+        element: <BankRatesPage />,
       },
       {
         path: 'my-portfolio',
@@ -116,14 +128,18 @@ export const appRouter = createBrowserRouter([
           </RequireAuth>
         ),
         children: [
-          { index: true, element: <Navigate to="/app/markets" replace /> },
-          { path: 'turkiye-ekonomisi', element: <TurkiyeEkonomisiPage /> },
-          { path: 'finansal-okuryazarlik', element: <FinansalOkuryazarlikPage /> },
-          { path: 'bank-rates', element: <BankRatesPage /> },
-          { path: 'markets', element: <MarketsPage /> },
+          { index: true, element: <Navigate to={PUBLIC_MARKETS_ROUTE} replace /> },
+          { path: 'turkiye-ekonomisi', element: <Navigate to={PUBLIC_MARKETS_ROUTE} replace /> },
+          {
+            path: 'finansal-okuryazarlik',
+            element: <Navigate to={PUBLIC_FINANCIAL_LITERACY_ROUTE} replace />,
+          },
+          { path: 'bank-rates', element: <Navigate to={PUBLIC_BANK_RATES_ROUTE} replace /> },
+          { path: 'markets', element: <Navigate to={PUBLIC_MARKETS_ROUTE} replace /> },
           { path: 'faiz-vadeli', element: <FaizVadeliPage /> },
           { path: 'my-portfolio', element: <MyPortfolioPage /> },
           { path: 'news', element: <NewsPage /> },
+          { path: 'my-news', element: <Navigate to="/app/my-portfolio?section=news" replace /> },
           { path: 'analysis', element: <AnalysisPage /> },
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'portfolio', element: <ExternalPortfolioPage /> },

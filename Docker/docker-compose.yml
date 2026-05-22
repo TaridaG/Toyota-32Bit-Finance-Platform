@@ -182,9 +182,13 @@ services:
       - SPRING_MAIL_USERNAME=32bitdemofinanceplatformmm@gmail.com
       - SPRING_MAIL_PASSWORD=mpxnlgmbyehkiqwm
       - APP_REGISTRATION_VERIFICATION_FROM=32bitdemofinanceplatformmm@gmail.com
+      - APP_PORTAL_PUBLIC_URL=http://localhost:5173
       - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
       - MARKET_TR_USD_EUROBOND_YAHOO_ENABLED=${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:-true}
       - AI_ENABLED=true
+      - PROFILE_AVATAR_STORAGE_ROOT=/photos
+    volumes:
+      - ../photos:/photos
     networks:
       - finance-net
 
@@ -218,6 +222,7 @@ services:
       - FINNHUB_API_KEY=d7r26q9r01qtpsm0phfgd7r26q9r01qtpsm0phg0
       - MARKET_HISTORY_BACKFILL_ENABLED=true
       - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=false
+      - MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_ENABLED=true
       - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_ENABLED=true
       - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_DELAY_MS=90000
       - MARKET_FUND_NAV_HISTORY_LOOKBACK_DAYS=365

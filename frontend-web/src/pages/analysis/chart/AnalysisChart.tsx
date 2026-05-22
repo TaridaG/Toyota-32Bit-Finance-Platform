@@ -248,13 +248,15 @@ export function AnalysisChart({
               <ul className="fi-chart-news-tooltip-tags">
                 {newsTooltip.item.matchReasons.map((reason, index) => (
                   <li key={`${reason.kind}-${reason.categoryUi}-${index}`}>
-                    {reason.kind === 'asset' && reason.symbol
-                      ? t('chartNews.matchAsset', { symbol: reason.symbol })
-                      : t('chartNews.matchCategory', {
-                          category: t(`news:categories.${reason.categoryUi}`, {
-                            defaultValue: reason.categoryUi.toUpperCase(),
-                          }),
-                        })}
+                    {reason.kind === 'favorite'
+                      ? t('chartNews.matchFavorite')
+                      : reason.kind === 'asset' && reason.symbol
+                        ? t('chartNews.matchAsset', { symbol: reason.symbol })
+                        : t('chartNews.matchCategory', {
+                            category: t(`news:categories.${reason.categoryUi}`, {
+                              defaultValue: reason.categoryUi.toUpperCase(),
+                            }),
+                          })}
                   </li>
                 ))}
               </ul>
