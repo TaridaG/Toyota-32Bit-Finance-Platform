@@ -47,9 +47,18 @@ public class WebSecurityConfig {
         return p.equals("/api/market") || p.startsWith("/api/market/")
                 || p.equals("/api/rates") || p.startsWith("/api/rates/")
                 || p.equals("/market") || p.startsWith("/market/")
-                || p.equals("/api/news") || p.startsWith("/api/news/")
+                || isPublicGuestNewsPath(p)
                 || p.equals("/api/instruments") || p.startsWith("/api/instruments/")
-                || p.equals("/api/analytics") || p.startsWith("/api/analytics/");
+                || p.equals("/api/analytics") || p.startsWith("/api/analytics/")
+                || p.equals("/api/portal/info-cards") || p.startsWith("/api/portal/info-cards/");
+    }
+
+    /** Public news feed/chart/enriched — not authenticated favorites. */
+    private static boolean isPublicGuestNewsPath(String p) {
+        if (!p.equals("/api/news") && !p.startsWith("/api/news/")) {
+            return false;
+        }
+        return !p.startsWith("/api/news/favorites");
     }
 
     /**
@@ -106,14 +115,15 @@ public class WebSecurityConfig {
     }
 
     /**
-     * TCMB rates are public catalog reads (routed to market-data-service). This chain has no OAuth2/JWT filters so
-     * guests never see {@code 401} + {@code WWW-Authenticate: Bearer} (stale tokens or ordering quirks on the main chain).
+     * Public catalog GETs (TCMB rates, portal info-cards). No OAuth2/JWT filters — guests must not see 401 from stale Bearer.
      */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityWebFilterChain publicRatesSecurityWebFilterChain(ServerHttpSecurity http) {
+    public SecurityWebFilterChain publicAnonymousCatalogSecurityWebFilterChain(ServerHttpSecurity http) {
         return http
-                .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/api/rates", "/api/rates/**"))
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
+                        "/api/rates", "/api/rates/**",
+                        "/api/portal/info-cards", "/api/portal/info-cards/**"))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll())
                 .build();
@@ -131,7 +141,9 @@ public class WebSecurityConfig {
 
         return http
                 .securityMatcher(new NegatedServerWebExchangeMatcher(
-                        ServerWebExchangeMatchers.pathMatchers("/api/rates", "/api/rates/**")))
+                        ServerWebExchangeMatchers.pathMatchers(
+                                "/api/rates", "/api/rates/**",
+                                "/api/portal/info-cards", "/api/portal/info-cards/**")))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .headers(h -> h
                         .contentTypeOptions(c -> {})
@@ -156,10 +168,18 @@ public class WebSecurityConfig {
                                 .permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/market/**", "/api/rates/**", "/market/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/news/favorites", "/api/news/favorites/**")
+                                .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/news/favorites", "/api/news/favorites/**")
+                                .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/news/favorites", "/api/news/favorites/**")
+                                .hasAnyRole("USER", "ADMIN")
                         .pathMatchers(HttpMethod.GET, "/api/news/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/instruments", "/api/instruments/", "/api/instruments/**")
                                 .permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/portal/info-cards", "/api/portal/info-cards/**")
+                                .permitAll()
                         .pathMatchers("/api/news/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/users/me/**", "/api/profile/**").hasAnyRole("USER", "ADMIN")

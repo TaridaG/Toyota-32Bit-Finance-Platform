@@ -1,5 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
+import { FavoriteNewsInsightCard } from './components/FavoriteNewsInsightCard'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { fetchMarketOverview } from '../../features/markets/api/marketService'
 import { inferNativeQuote } from '../../features/markets/lib/marketDisplayConversion'
@@ -33,10 +35,14 @@ import type {
 import type { MarketOverviewPageResponse } from '../../shared/types/market'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
 import { PnlSplitDonut } from './components/PnlSplitDonut'
-import { PortfolioValueHistoryChart } from './components/PortfolioValueHistoryChart'
-import { TradeFlowHistoryChart, tradeFlowPeriodTotals } from './components/TradeFlowHistoryChart'
+import { PortfolioHistorySparkline } from './components/PortfolioHistorySparkline'
+import type { ValueChartRange } from './components/portfolioChartShared'
+import { tradeFlowPeriodTotals } from './components/TradeFlowHistoryChart'
 import { loadTradeFlowForPortfolio } from '../../features/portfolio/lib/loadTradeFlowForPortfolio'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
+import { MyAnalysisPanel } from '../my-analysis/MyAnalysisPanel'
+import { MyNewsPanel } from '../my-news/MyNewsPanel'
+import { PortfolioGoalsPanel } from './components/PortfolioGoalsPanel'
 
 const MyPortfolioWatchlistSection = lazy(async () => {
   const mod = await import('./components/MyPortfolioWatchlistSection')
@@ -349,39 +355,9 @@ function buildCategoryDonutRows(overview: PortfolioOverview | null, t: (key: str
   })
 }
 
-const topGainers = [
-  { symbol: 'AAPL', price: 120, change: 12.04 },
-  { symbol: 'AIRBNB', price: 120, change: 12.04 },
-  { symbol: 'NVDA', price: 120, change: 12.04 },
-  { symbol: 'AMZN', price: 120, change: 12.04 },
-  { symbol: 'SPTP', price: 120, change: 12.04 },
-]
-
-const marketInsights = [
-  {
-    titleKey: 'insights.items.tesla.title',
-    detailKey: 'insights.items.tesla.detail',
-    thumb: '🚗',
-  },
-  {
-    titleKey: 'insights.items.apple.title',
-    detailKey: 'insights.items.apple.detail',
-    thumb: '📱',
-  },
-  {
-    titleKey: 'insights.items.nvidia.title',
-    detailKey: 'insights.items.nvidia.detail',
-    thumb: '🧠',
-  },
-  {
-    titleKey: 'insights.items.banking.title',
-    detailKey: 'insights.items.banking.detail',
-    thumb: '🏦',
-  },
-]
-
 const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation'] as const
 const sidebarSecondaryKeys = ['news', 'analysis', 'targets', 'watchlist', 'settings'] as const
+const PORTFOLIO_SECTIONS = new Set<string>([...sidebarMainKeys, ...sidebarSecondaryKeys])
 type MarketOption = {
   instrumentId: number
   symbol: string
@@ -706,9 +682,11 @@ function AcquisitionFxPanel({
 
 export function MyPortfolioPage() {
   const { t, i18n } = useTranslation('portfolio')
+  const [searchParams, setSearchParams] = useSearchParams()
   const [isDarkTheme, setIsDarkTheme] = useState(() =>
     typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark',
   )
+  const [dashboardChartRange, setDashboardChartRange] = useState<ValueChartRange>('1m')
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null)
   const [tradeTargetPortfolioId, setTradeTargetPortfolioId] = useState<number | null>(null)
@@ -721,7 +699,30 @@ export function MyPortfolioPage() {
   const [deletePortfolioSubmitting, setDeletePortfolioSubmitting] = useState(false)
   const [amountsHiddenSaving, setAmountsHiddenSaving] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [activeSection, setActiveSection] = useState<string>('dashboard')
+  const sectionFromUrl = searchParams.get('section')
+  const [activeSection, setActiveSection] = useState<string>(() =>
+    sectionFromUrl && PORTFOLIO_SECTIONS.has(sectionFromUrl) ? sectionFromUrl : 'dashboard',
+  )
+
+  const selectPortfolioSection = (section: string) => {
+    setActiveSection(section)
+    if (section === 'dashboard') {
+      setSearchParams({}, { replace: true })
+    } else {
+      setSearchParams({ section }, { replace: true })
+    }
+  }
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('section')
+    if (fromUrl && PORTFOLIO_SECTIONS.has(fromUrl)) {
+      setActiveSection(fromUrl)
+      return
+    }
+    if (!fromUrl) {
+      setActiveSection('dashboard')
+    }
+  }, [searchParams])
   const [marketOptions, setMarketOptions] = useState<MarketOption[]>([])
   const [marketLoading, setMarketLoading] = useState(false)
   const [marketCatalogError, setMarketCatalogError] = useState<string | null>(null)
@@ -967,8 +968,10 @@ export function MyPortfolioPage() {
 
   const categoryDonutRows = useMemo(() => buildCategoryDonutRows(overview, t), [overview, t])
 
-  /** Üstteki alım/satım özetleri: sabit son 1 ay penceresi (aralık butonları kaldırıldı). */
-  const tradeFlowTotals = useMemo(() => tradeFlowPeriodTotals(tradeFlow?.points ?? [], '1m'), [tradeFlow])
+  const tradeFlowTotals = useMemo(
+    () => tradeFlowPeriodTotals(tradeFlow?.points ?? [], dashboardChartRange),
+    [tradeFlow, dashboardChartRange],
+  )
 
   /** Satım − alım oranı (alım bazlı). Satım fazlaysa pozitif (+, yeşil); alım fazlaysa negatif (kırmızı). */
   const tradeFlowFark = useMemo(() => {
@@ -1777,7 +1780,7 @@ export function MyPortfolioPage() {
                 key={item}
                 type="button"
                 className={`my-portfolio-sidebar-item${activeSection === item ? ' my-portfolio-sidebar-item-active' : ''}`}
-                onClick={() => setActiveSection(item)}
+                onClick={() => selectPortfolioSection(item)}
               >
                 <span className="my-portfolio-sidebar-item-icon" aria-hidden>
                   <SidebarItemIcon item={item} />
@@ -1793,7 +1796,7 @@ export function MyPortfolioPage() {
                 key={item}
                 type="button"
                 className={`my-portfolio-sidebar-item${activeSection === item ? ' my-portfolio-sidebar-item-active' : ''}`}
-                onClick={() => setActiveSection(item)}
+                onClick={() => selectPortfolioSection(item)}
               >
                 <span className="my-portfolio-sidebar-item-icon" aria-hidden>
                   <SidebarItemIcon item={item} />
@@ -2483,6 +2486,21 @@ export function MyPortfolioPage() {
             </article>
           ) : null}
 
+          {activeSection === 'news' ? <MyNewsPanel embedded /> : null}
+
+          {activeSection === 'analysis' ? <MyAnalysisPanel embedded /> : null}
+
+          {activeSection === 'targets' ? (
+            <PortfolioGoalsPanel
+              portfolioId={overviewApiPortfolioId}
+              displayCurrency={displayCurrency}
+              moneyFormat={displayDashboardCurrencyFormat}
+              percentFormat={dashboardPctFormat}
+              hideMoney={hideMoney}
+              isDarkTheme={isDarkTheme}
+            />
+          ) : null}
+
           {activeSection === 'watchlist' ? (
             <Suspense fallback={<div className="markets-skeleton-row" />}>
               <MyPortfolioWatchlistSection currencyFormat={currencyFormat} percentFormat={percentFormat} />
@@ -2573,24 +2591,14 @@ export function MyPortfolioPage() {
           ) : null}
 
           {activeSection !== 'watchlist' &&
+          activeSection !== 'news' &&
+          activeSection !== 'analysis' &&
+          activeSection !== 'targets' &&
           activeSection !== 'markets' &&
           activeSection !== 'portfolio' &&
           activeSection !== 'allocation' &&
           activeSection !== 'settings' ? (
             <>
-              <div className="my-portfolio-gainers">
-                <span>{t('topGainers')}</span>
-                <ul>
-                  {topGainers.map((item) => (
-                    <li key={item.symbol}>
-                      <strong>{item.symbol}</strong>
-                      <span>{currencyFormat.format(item.price)}</span>
-                      <small>{percentFormat.format(item.change)}</small>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
               <div className="my-portfolio-grid">
             <article className="card my-portfolio-card">
               <div className="my-portfolio-card-head">
@@ -2642,17 +2650,19 @@ export function MyPortfolioPage() {
                 )}
               </p>
               {selectedPortfolioId == null ? null : (
-                <>
-                  <PortfolioValueHistoryChart
-                    snapshots={valueSnapshots}
-                    liveTotalValue={overview ? parseApiDecimal(overview.totalValue, 0) : null}
-                    height={200}
-                    isDark={isDarkTheme}
-                    emptyLabel={t('valueChart.empty')}
-                    locale={i18n.language}
-                    maskAmounts={hideMoney}
-                  />
-                </>
+                <PortfolioHistorySparkline
+                  variant="value"
+                  snapshots={valueSnapshots}
+                  liveTotalValue={overview ? parseApiDecimal(overview.totalValue, 0) : null}
+                  range={dashboardChartRange}
+                  onRangeChange={setDashboardChartRange}
+                  isDark={isDarkTheme}
+                  locale={i18n.language}
+                  maskAmounts={hideMoney}
+                  formatValue={(v) => displayDashboardCurrencyFormat.format(v)}
+                  emptyLabel={t('valueChart.empty')}
+                  rangeAriaLabel={t('valueChart.rangeAria')}
+                />
               )}
             </article>
 
@@ -2731,23 +2741,21 @@ export function MyPortfolioPage() {
                   </strong>
                 </div>
               </div>
-              <p className="my-portfolio-sub-value my-portfolio-trade-flow-net-caption">{t('tradeFlow.netLabel')}</p>
-              {selectedPortfolioId == null ? null : !tradeFlowHydrated ? (
-                <div className="my-portfolio-value-chart-empty" style={{ minHeight: 200 }}>
-                  {t('tradeFlow.loading')}
-                </div>
-              ) : (
-                <>
-                  <TradeFlowHistoryChart
-                    points={tradeFlow?.points ?? []}
-                    height={200}
-                    isDark={isDarkTheme}
-                    emptyLabel={t('tradeFlow.empty')}
-                    locale={i18n.language}
-                    maskAmounts={hideMoney}
-                  />
-                </>
+              {selectedPortfolioId == null ? null : (
+                <PortfolioHistorySparkline
+                  variant="tradeFlow"
+                  tradeFlowPoints={tradeFlow?.points ?? []}
+                  range={dashboardChartRange}
+                  onRangeChange={setDashboardChartRange}
+                  isDark={isDarkTheme}
+                  locale={i18n.language}
+                  maskAmounts={hideMoney}
+                  formatValue={(v) => displayDashboardCurrencyFormat.format(v)}
+                  emptyLabel={t('tradeFlow.empty')}
+                  rangeAriaLabel={t('tradeFlow.rangeAria')}
+                />
               )}
+              <p className="my-portfolio-sub-value my-portfolio-trade-flow-net-caption">{t('tradeFlow.netLabel')}</p>
             </article>
 
             <article className="card my-portfolio-card">
@@ -2886,23 +2894,7 @@ export function MyPortfolioPage() {
               )}
             </article>
 
-            <article className="card my-portfolio-card">
-              <div className="my-portfolio-card-head">
-                <h3>{t('insightTitle')}</h3>
-                <button type="button">{t('actions.viewAll')}</button>
-              </div>
-              <ul className="my-portfolio-insight-list">
-                {marketInsights.map((item) => (
-                  <li key={item.titleKey}>
-                    <span>{item.thumb}</span>
-                    <div>
-                      <strong>{t(item.titleKey)}</strong>
-                      <small>{t(item.detailKey)}</small>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </article>
+            <FavoriteNewsInsightCard />
               </div>
             </>
           ) : null}

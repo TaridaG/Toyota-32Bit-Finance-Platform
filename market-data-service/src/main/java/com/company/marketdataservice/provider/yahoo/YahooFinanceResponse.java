@@ -33,7 +33,17 @@ public record YahooFinanceResponse(
     public record Meta(
             String symbol,
             Double regularMarketPrice,
-            Long regularMarketTime
+            Long regularMarketTime,
+            Long regularMarketVolume,
+            Double regularMarketOpen,
+            Double regularMarketDayHigh,
+            Double regularMarketDayLow,
+            Double openInterest,
+            String exchangeName,
+            String fullExchangeName,
+            String shortName,
+            String underlyingSymbol,
+            Long expireDate
     ) {
     }
 

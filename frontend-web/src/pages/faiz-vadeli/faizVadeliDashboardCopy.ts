@@ -2,11 +2,11 @@
 
 export type FaizVadeliLocale = 'tr' | 'en' | 'de'
 
-export type StatIconId = 'bank' | 'coins' | 'doc' | 'spread' | 'bell'
+export type StatIconId = 'bank' | 'coins' | 'doc' | 'spread' | 'bell' | 'metal'
 
 export type StatCardCopy = {
   /** When set, dashboard replaces mock value with live TCMB policy rate from `/api/rates/policy-rate/latest`. */
-  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'inflation'
+  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'metal_futures' | 'inflation'
   icon: StatIconId
   title: string
   value: string
@@ -17,20 +17,11 @@ export type StatCardCopy = {
   badge?: string
 }
 
-export type TabId = 'deposit' | 'bond' | 'auction' | 'real'
-
-export type TabCopy = { id: TabId; label: string }
-
 export type FaizVadeliDashboardCopy = {
-  tabPlaceholder: string
-  tabsAria: string
   stats: StatCardCopy[]
-  tabs: TabCopy[]
 }
 
 const TR: FaizVadeliDashboardCopy = {
-  tabPlaceholder: 'Bu sekme için ek düzen, veri bağlandığında genişletilebilir.',
-  tabsAria: 'Faiz ve vadeli görünümleri',
   stats: [
     {
       statSlot: 'policy_rate',
@@ -76,6 +67,13 @@ const TR: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'metal_futures',
+      icon: 'metal',
+      title: 'vadeli maden',
+      value: '—',
+      sub1: '',
+    },
+    {
       statSlot: 'inflation',
       icon: 'bell',
       title: 'Enflasyon',
@@ -85,17 +83,9 @@ const TR: FaizVadeliDashboardCopy = {
       deltaTone: 'negative',
     },
   ],
-  tabs: [
-    { id: 'deposit', label: 'Mevduat' },
-    { id: 'bond', label: 'Tahvil / Bono' },
-    { id: 'auction', label: 'Hazine İhaleleri' },
-    { id: 'real', label: 'Reel Getiri' },
-  ],
 }
 
 const EN: FaizVadeliDashboardCopy = {
-  tabPlaceholder: 'Additional layout for this tab can ship once data is wired.',
-  tabsAria: 'Interest and term deposit views',
   stats: [
     {
       statSlot: 'policy_rate',
@@ -141,6 +131,13 @@ const EN: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'metal_futures',
+      icon: 'metal',
+      title: 'Metal futures',
+      value: '—',
+      sub1: '',
+    },
+    {
       statSlot: 'inflation',
       icon: 'bell',
       title: 'Inflation',
@@ -150,17 +147,9 @@ const EN: FaizVadeliDashboardCopy = {
       deltaTone: 'negative',
     },
   ],
-  tabs: [
-    { id: 'deposit', label: 'Deposits' },
-    { id: 'bond', label: 'Bonds / bills' },
-    { id: 'auction', label: 'Treasury auctions' },
-    { id: 'real', label: 'Real yield' },
-  ],
 }
 
 const DE: FaizVadeliDashboardCopy = {
-  tabPlaceholder: 'Erweiterte Ansichten für diesen Tab folgen mit Datenanbindung.',
-  tabsAria: 'Ansichten Zinsen und Laufzeiten',
   stats: [
     {
       statSlot: 'policy_rate',
@@ -206,6 +195,13 @@ const DE: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'metal_futures',
+      icon: 'metal',
+      title: 'Metall-Futures',
+      value: '—',
+      sub1: '',
+    },
+    {
       statSlot: 'inflation',
       icon: 'bell',
       title: 'Inflation',
@@ -214,12 +210,6 @@ const DE: FaizVadeliDashboardCopy = {
       delta: '+1,20',
       deltaTone: 'negative',
     },
-  ],
-  tabs: [
-    { id: 'deposit', label: 'Einlagen' },
-    { id: 'bond', label: 'Anleihen' },
-    { id: 'auction', label: 'Auktionen' },
-    { id: 'real', label: 'Realrendite' },
   ],
 }
 

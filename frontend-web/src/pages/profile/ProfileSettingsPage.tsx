@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { fetchPortalProfile, readApiErrorMessage } from '../../features/profile/api/portalProfileApi'
+import { ProfileEmailCard } from '../../features/profile/components/ProfileEmailCard'
 import { ProfileNotificationsCard } from '../../features/profile/components/ProfileNotificationsCard'
 import { ProfileOverviewCard } from '../../features/profile/components/ProfileOverviewCard'
 import { ProfilePasswordCard } from '../../features/profile/components/ProfilePasswordCard'
@@ -59,8 +60,9 @@ export function ProfileSettingsPage() {
           <ProfileOverviewCard profile={profile} onProfileUpdated={setProfile} />
           <div className="profile-settings-stack">
             <ProfileUsernameCard profile={profile} onUsernameChanged={setProfile} />
+            <ProfileEmailCard profile={profile} onEmailChanged={setProfile} />
             <ProfilePhoneCard profile={profile} onUpdated={setProfile} />
-            <ProfilePasswordCard />
+            <ProfilePasswordCard accountEmail={profile.email} />
             <ProfileNotificationsCard profile={profile} onUpdated={setProfile} />
           </div>
         </div>

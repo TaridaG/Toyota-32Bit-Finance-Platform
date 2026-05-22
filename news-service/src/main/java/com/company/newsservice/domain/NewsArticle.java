@@ -42,6 +42,10 @@ public class NewsArticle {
     @Column(nullable = false, length = 1200)
     private String articleUrl;
 
+    /** Optional hero/thumbnail resolved from RSS HTML or article page Open Graph (not used for translation). */
+    @Column(length = 2000)
+    private String imageUrl;
+
     @Column(nullable = false, length = 150)
     private String sourceName;
 

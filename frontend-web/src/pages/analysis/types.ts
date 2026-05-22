@@ -27,7 +27,7 @@ export type AssetDefinition = {
 }
 
 export type NewsMatchReason = {
-  kind: 'asset' | 'category'
+  kind: 'asset' | 'category' | 'favorite'
   categoryUi: string
   symbol?: string
 }

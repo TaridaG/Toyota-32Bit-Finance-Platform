@@ -13,8 +13,13 @@ public class ChartDrawingSaveDetailDto {
     private final String assetSymbol;
     private final String assetType;
     private final Instant createdAt;
+    private final int drawingCount;
     private final List<String> drawingTypes;
     private final List<DrawingMarkerDto> drawingMarkers;
+    private final Long minAnchorTime;
+    private final Long maxAnchorTime;
+    private final Double minPrice;
+    private final Double maxPrice;
     private final JsonNode drawings;
 
     public ChartDrawingSaveDetailDto(
@@ -24,8 +29,13 @@ public class ChartDrawingSaveDetailDto {
             String assetSymbol,
             String assetType,
             Instant createdAt,
+            int drawingCount,
             List<String> drawingTypes,
             List<DrawingMarkerDto> drawingMarkers,
+            Long minAnchorTime,
+            Long maxAnchorTime,
+            Double minPrice,
+            Double maxPrice,
             JsonNode drawings
     ) {
         this.id = id;
@@ -34,8 +44,13 @@ public class ChartDrawingSaveDetailDto {
         this.assetSymbol = assetSymbol;
         this.assetType = assetType;
         this.createdAt = createdAt;
+        this.drawingCount = drawingCount;
         this.drawingTypes = drawingTypes;
         this.drawingMarkers = drawingMarkers;
+        this.minAnchorTime = minAnchorTime;
+        this.maxAnchorTime = maxAnchorTime;
+        this.minPrice = minPrice;
+        this.maxPrice = maxPrice;
         this.drawings = drawings;
     }
 
@@ -63,12 +78,32 @@ public class ChartDrawingSaveDetailDto {
         return createdAt;
     }
 
+    public int getDrawingCount() {
+        return drawingCount;
+    }
+
     public List<String> getDrawingTypes() {
         return drawingTypes;
     }
 
     public List<DrawingMarkerDto> getDrawingMarkers() {
         return drawingMarkers;
+    }
+
+    public Long getMinAnchorTime() {
+        return minAnchorTime;
+    }
+
+    public Long getMaxAnchorTime() {
+        return maxAnchorTime;
+    }
+
+    public Double getMinPrice() {
+        return minPrice;
+    }
+
+    public Double getMaxPrice() {
+        return maxPrice;
     }
 
     public JsonNode getDrawings() {

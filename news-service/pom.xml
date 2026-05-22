@@ -80,6 +80,13 @@
 			<version>2.1.0</version>
 		</dependency>
 
+		<!-- Article page Open Graph image (optional, separate from translation) -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.18.3</version>
+		</dependency>
+
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>

@@ -11,6 +11,7 @@ public class ChartDrawingSaveSummaryDto {
     private final String assetSymbol;
     private final String assetType;
     private final Instant createdAt;
+    private final int drawingCount;
     private final List<String> drawingTypes;
     private final List<DrawingMarkerDto> drawingMarkers;
     private final Long minAnchorTime;
@@ -25,6 +26,7 @@ public class ChartDrawingSaveSummaryDto {
             String assetSymbol,
             String assetType,
             Instant createdAt,
+            int drawingCount,
             List<String> drawingTypes,
             List<DrawingMarkerDto> drawingMarkers,
             Long minAnchorTime,
@@ -38,6 +40,7 @@ public class ChartDrawingSaveSummaryDto {
         this.assetSymbol = assetSymbol;
         this.assetType = assetType;
         this.createdAt = createdAt;
+        this.drawingCount = drawingCount;
         this.drawingTypes = drawingTypes;
         this.drawingMarkers = drawingMarkers;
         this.minAnchorTime = minAnchorTime;
@@ -68,6 +71,10 @@ public class ChartDrawingSaveSummaryDto {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public int getDrawingCount() {
+        return drawingCount;
     }
 
     public List<String> getDrawingTypes() {

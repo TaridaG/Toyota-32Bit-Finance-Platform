@@ -12,6 +12,7 @@ public record NewsEnrichedDetailResponse(
         String translatedLanguage,
         boolean translated,
         String articleUrl,
+        String imageUrl,
         String sourceName,
         String category,
         String categoryUi,

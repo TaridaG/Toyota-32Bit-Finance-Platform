@@ -3,6 +3,7 @@ package com.company.finance_api.service.impl;
 import com.company.finance_api.domain.ChartDrawingSave;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.dto.ChartDrawingSaveDetailDto;
+import com.company.finance_api.dto.ChartDrawingSavePageResponse;
 import com.company.finance_api.dto.ChartDrawingSaveSummaryDto;
 import com.company.finance_api.dto.DrawingMarkerDto;
 import com.company.finance_api.dto.CreateChartDrawingSaveRequest;
@@ -13,6 +14,8 @@ import com.company.finance_api.security.CurrentUserResolver;
 import com.company.finance_api.service.ChartDrawingSaveService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -84,6 +87,26 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
 
     @Override
     @Transactional(readOnly = true)
+    public ChartDrawingSavePageResponse listPage(int page, int size) {
+        UUID userId = currentUserResolver.getCurrentUserId();
+        int resolvedPage = Math.max(page, 0);
+        int resolvedSize = Math.min(Math.max(size, 1), 50);
+        Page<ChartDrawingSave> result = chartDrawingSaveRepository.findByUserIdOrderByCreatedAtDesc(
+                userId,
+                PageRequest.of(resolvedPage, resolvedSize)
+        );
+        List<ChartDrawingSaveSummaryDto> content = result.getContent().stream().map(this::toSummary).toList();
+        return new ChartDrawingSavePageResponse(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ChartDrawingSaveDetailDto getById(Long id) {
         UUID userId = currentUserResolver.getCurrentUserId();
         ChartDrawingSave row = chartDrawingSaveRepository.findByIdAndUserId(id, userId)
@@ -108,6 +131,7 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
                 row.getAssetSymbol(),
                 row.getAssetType(),
                 row.getCreatedAt(),
+                meta.drawingCount(),
                 meta.drawingTypes(),
                 meta.drawingMarkers(),
                 meta.minAnchorTime(),
@@ -127,8 +151,13 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
                 row.getAssetSymbol(),
                 row.getAssetType(),
                 row.getCreatedAt(),
+                meta.drawingCount(),
                 meta.drawingTypes(),
                 meta.drawingMarkers(),
+                meta.minAnchorTime(),
+                meta.maxAnchorTime(),
+                meta.minPrice(),
+                meta.maxPrice(),
                 drawings
         );
     }
@@ -204,7 +233,9 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
             }
         }
 
+        int drawingCount = drawings != null && drawings.isArray() ? drawings.size() : 0;
         return new DrawingMeta(
+                drawingCount,
                 List.copyOf(types),
                 List.copyOf(markers),
                 minTime,
@@ -280,6 +311,7 @@ public class ChartDrawingSaveServiceImpl implements ChartDrawingSaveService {
     }
 
     private record DrawingMeta(
+            int drawingCount,
             List<String> drawingTypes,
             List<DrawingMarkerDto> drawingMarkers,
             Long minAnchorTime,

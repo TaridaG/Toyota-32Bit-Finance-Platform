@@ -46,6 +46,56 @@ export async function changePortalPassword(currentPassword: string, newPassword:
   assertSuccessOnly(data)
 }
 
+export async function sendPortalPasswordResetCode(): Promise<{ expiresInSeconds: number; resendInSeconds: number }> {
+  const { data } = await apiClient.post<ApiEnvelope<{ expiresInSeconds: number; resendInSeconds: number }>>(
+    `${BASE}/password/send-reset-code`,
+  )
+  return assertSuccessData(data)
+}
+
+export async function resetPortalPasswordForgot(verificationCode: string, newPassword: string): Promise<void> {
+  const { data } = await apiClient.post<ApiEnvelope<unknown>>(`${BASE}/password/reset-forgot`, {
+    verificationCode,
+    newPassword,
+  })
+  assertSuccessOnly(data)
+}
+
+export async function sendPortalEmailChangeCode(newEmail: string): Promise<{
+  expiresInSeconds: number
+  resendInSeconds: number
+}> {
+  const { data } = await apiClient.post<ApiEnvelope<{ expiresInSeconds: number; resendInSeconds: number }>>(
+    `${BASE}/email/send-code`,
+    { newEmail },
+  )
+  return assertSuccessData(data)
+}
+
+export async function confirmPortalEmailChange(newEmail: string, verificationCode: string): Promise<PortalProfile> {
+  const { data } = await apiClient.post<ApiEnvelope<PortalProfile>>(`${BASE}/email/confirm`, {
+    newEmail,
+    verificationCode,
+  })
+  return assertSuccessData(data)
+}
+
+export async function checkPortalUsernameAvailability(username: string): Promise<{
+  normalizedUsername: string
+  available: boolean
+  suggestions: string[]
+}> {
+  const { data } = await apiClient.get<
+    ApiEnvelope<{ normalizedUsername: string; available: boolean; suggestions: string[] }>
+  >(`${BASE}/username-availability`, { params: { username } })
+  const result = assertSuccessData(data)
+  return {
+    normalizedUsername: result.normalizedUsername,
+    available: result.available,
+    suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+  }
+}
+
 export async function changePortalUsername(
   newUsername: string,
   currentPassword: string,

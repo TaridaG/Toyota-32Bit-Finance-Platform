@@ -46,6 +46,22 @@ public interface MarketPriceHistoryRepository extends JpaRepository<MarketPriceH
             select new com.company.marketdataservice.dto.HistoryPointDto(e.observedAt, e.price)
             from MarketPriceHistoryEntry e
             where e.instrumentSymbol = :instrumentSymbol
+              and e.priceType = :priceType
+              and e.observedAt >= :fromInclusive
+              and e.observedAt < :toExclusive
+            order by e.observedAt asc
+            """)
+    List<HistoryPointDto> findHistoryPointsByPriceType(
+            @Param("instrumentSymbol") String instrumentSymbol,
+            @Param("priceType") String priceType,
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toExclusive") Instant toExclusive
+    );
+
+    @Query("""
+            select new com.company.marketdataservice.dto.HistoryPointDto(e.observedAt, e.price)
+            from MarketPriceHistoryEntry e
+            where e.instrumentSymbol = :instrumentSymbol
             order by e.observedAt desc
             """)
     List<HistoryPointDto> findLatestHistoryPoint(

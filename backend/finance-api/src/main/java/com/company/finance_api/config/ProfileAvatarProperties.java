@@ -8,10 +8,9 @@ import java.nio.file.Paths;
 public class ProfileAvatarProperties {
 
     /**
-     * Root directory for persisted avatar JPEG files (one file per user id).
+     * Root directory for persisted avatar JPEG files ({@code photos/{userId}/avatar.jpg} under repo root by default).
      */
-    private String storageRoot = Paths.get(System.getProperty("java.io.tmpdir"), "finance-api", "profile-avatars")
-            .toString();
+    private String storageRoot = Paths.get("../../photos").toAbsolutePath().normalize().toString();
 
     /** Longest edge after resize (square bounding box, aspect ratio preserved). */
     private int maxEdgePixels = 512;

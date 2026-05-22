@@ -11,6 +11,8 @@
     "support247": "24/7 Support",
     "header": {
       "navPublic": {
+        "finansalOkuryazarlik": "Finanzielle Bildung",
+        "bankRates": "Bankkurse",
         "markets": "Märkte",
         "myPortfolio": "Mein Portfolio",
         "analysis": "Analyse",
@@ -63,6 +65,9 @@
         "empty": "Sie haben noch keine Benachrichtigungen.",
         "loadError": "Benachrichtigungen konnten nicht geladen werden."
       },
+      "alarms": {
+        "aria": "Kursalarme"
+      },
       "theme": {
         "label": "Thema",
         "light": "Hell",
@@ -99,8 +104,10 @@
       "cropError": "Bild konnte nicht vorbereitet werden. Bitte andere Datei.",
       "changePhoto": "Foto ändern",
       "emailReadonlyHint": "Wird im Identity Provider verwaltet.",
+      "emailEditHint": "E-Mail über die Karte unten mit Bestätigungscode aktualisieren.",
       "phoneNotSet": "Nicht hinterlegt",
       "passwordSummary": "Geschützte Anmeldedaten",
+      "kickerEmail": "E-Mail",
       "kickerUsername": "Benutzername",
       "kickerPhone": "Telefon",
       "kickerPassword": "Passwort",
@@ -111,7 +118,7 @@
       "sectionUsername": "Benutzername",
       "sectionContact": "Telefon",
       "sectionNotifications": "Benachrichtigungen",
-      "accountLead": "Diese Werte sind mit Ihrer Anmeldung verknüpft. E-Mail ist hier schreibgeschützt.",
+      "accountLead": "Diese Werte sind mit Ihrer Anmeldung verknüpft.",
       "accountEmail": "Geschäftliche E-Mail",
       "accountUsername": "Benutzername",
       "accountPhone": "Mobil / SMS",
@@ -121,8 +128,28 @@
       "passwordConfirm": "Neues Passwort (Wiederholung)",
       "passwordTooShort": "Neues Passwort muss mindestens 8 Zeichen haben.",
       "passwordMismatch": "Passwort und Wiederholung stimmen nicht überein.",
+      "passwordMatchOk": "Neue Passwörter stimmen überein.",
+      "passwordForgot": "Passwort vergessen",
+      "passwordRecoveryLead": "Bestätigungscode an {{email}} gesendet. Code eingeben und neues Passwort setzen.",
+      "passwordRecoveryHint": "Bestätigungscode wird an {{email}} gesendet.",
+      "passwordRecoveryCode": "E-Mail-Bestätigungscode",
+      "passwordRecoveryCodeRequired": "Bestätigungscode eingeben.",
+      "passwordResendCode": "Code erneut senden",
+      "passwordUseCurrent": "Mit aktuellem Passwort ändern",
       "passwordSubmit": "Passwort aktualisieren",
       "passwordSuccess": "Passwort wurde aktualisiert.",
+      "emailLead": "Bestätigungscode an die neue E-Mail. Nach Verifizierung werden App und Identity Provider aktualisiert.",
+      "emailNew": "Neue E-Mail",
+      "emailSendCode": "Code senden",
+      "emailResendCode": "Code erneut senden",
+      "emailResendWait": "In {{seconds}}s erneut versuchen",
+      "emailVerificationCode": "Bestätigungscode",
+      "emailSubmit": "E-Mail bestätigen und speichern",
+      "emailSuccess": "E-Mail aktualisiert.",
+      "emailInvalid": "Gültige E-Mail-Adresse eingeben.",
+      "emailUnchanged": "Andere E-Mail als die aktuelle eingeben.",
+      "emailSendCodeFirst": "Zuerst Bestätigungscode senden.",
+      "emailCodeRequired": "Bestätigungscode eingeben.",
       "usernameLead": "Der Benutzername wird in App und Identity Provider geändert; Ihre Sitzung bleibt mit neuem Token bestehen.",
       "usernameCurrent": "Aktueller Benutzername",
       "usernameNew": "Neuer Benutzername",
@@ -131,6 +158,11 @@
       "usernameSuccess": "Benutzername aktualisiert. Sitzungstoken wurde erneuert.",
       "usernameUnchanged": "Bitte einen anderen Benutzernamen wählen.",
       "usernamePatternHint": "3–36 Zeichen: Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich.",
+      "usernameChecking": "Wird geprüft…",
+      "usernameAvailable": "Verfügbar",
+      "usernameTaken": "Benutzername ist vergeben.",
+      "usernameSuggestionsTitle": "Vorschläge:",
+      "usernameNotAvailable": "Bitte einen verfügbaren Benutzernamen wählen.",
       "phoneLead": "Optionale Telefonnummer für Hinweise und künftige SMS-Funktionen.",
       "phoneLabel": "Telefonnummer",
       "phonePlaceholder": "+49 170 0000000",
@@ -395,8 +427,44 @@
     "bankRatesPage": {
       "titleDoc": "Bankkurse | Finanzplattform",
       "title": "Bankkurse",
-      "lead": "Hier erscheinen institutionelle Devisen-An- und Verkaufskurse. Tabelle und Filter folgen mit Datenanbindung.",
-      "placeholder": "Für diese Seite ist noch keine Datenanbindung aktiv."
+      "lead": "Bank- und Institutskurse mit Spread sowie bestem An- und Verkauf.",
+      "tabsAria": "Währung",
+      "tabs": {
+        "usd": "US-Dollar",
+        "eur": "Euro",
+        "gold": "Gold",
+        "gbp": "Pfund"
+      },
+      "sectionTitle": {
+        "usd": "US-Dollar Bankkurse",
+        "eur": "Euro Bankkurse",
+        "gold": "Grammgold Bankkurse",
+        "gbp": "Pfund Bankkurse"
+      },
+      "columns": {
+        "bank": "Bank",
+        "buy": "Ankauf",
+        "sell": "Verkauf",
+        "spread": "Spread",
+        "spreadPct": "Spread (%)"
+      },
+      "bestBuyHint": "Höchster Ankauf",
+      "bestSellHint": "Niedrigster Verkauf",
+      "bestSpreadMinHint": "Niedrigster Spread",
+      "bestSpreadMaxHint": "Höchster Spread",
+      "bestSpreadPctMinHint": "Niedrigster Spread (%)",
+      "bestSpreadPctMaxHint": "Höchster Spread (%)",
+      "sidePanelAria": "Beste An- und Verkaufskurse",
+      "sideBuyTitle": "Ankauf",
+      "sideSellTitle": "Verkauf",
+      "sideBuyEmpty": "Kein bester Ankauf gefunden.",
+      "sideSellEmpty": "Kein bester Verkauf gefunden.",
+      "refresh": "Kurse aktualisieren",
+      "updatedAt": "Zuletzt aktualisiert: {{time}}",
+      "loading": "Bankkurse werden geladen…",
+      "loadError": "Bankkurse konnten nicht geladen werden.",
+      "empty": "Keine Kurse verfügbar.",
+      "placeholder": "Bankkurse werden geladen…"
     },
     "faizVadeliPage": {
       "titleDoc": "Zinsen & Termingelder | Finanzplattform",
@@ -562,6 +630,25 @@
         "pastPickHintDate": "Klicken Sie auf einen Tag im Kurs- oder Rendite-Chart.",
         "pastPickHintPrice": "Klicken Sie auf einen Tag im Chart; Schlusskurs und Datum werden eingetragen.",
         "pastPickCancel": "Abbrechen"
+      },
+      "metalFutures": {
+        "cardTitle": "Metall-Futures",
+        "symbolSelectAria": "Kontrakt wählen",
+        "spotBasisSub": "Spot-Basis · {{spot}}: {{pct}}",
+        "exchangeSub": "{{exchange}}",
+        "liveNoData": "Keine Daten",
+        "liveNoDataHint": "Yahoo-Futureskurse erscheinen in wenigen Minuten.",
+        "liveLoadError": "Metall-Futures-Daten nicht verfügbar.",
+        "liveSkeletonAria": "Metall-Futures werden geladen",
+        "chartOpenHint": "Preisdiagramm für den gewählten Kontrakt im Hauptbereich anzeigen",
+        "chartTitle": "{{symbol}} — letzte 5 Jahre (Tageschluss, USD)",
+        "chartBackToYield": "Zurück zum Leitzins-Diagramm",
+        "chartAxisY": "Preis (USD)",
+        "chartLoading": "Diagramm wird geladen",
+        "chartError": "Verlauf konnte nicht geladen werden.",
+        "chartRetry": "Erneut versuchen",
+        "chartEmpty": "Keine Daten in diesem Zeitraum.",
+        "chartFoot": "Linie zeigt Yahoo-Futures-Tageschlüsse aus der Marktdaten-Historie (GC=F, SI=F, …)."
       }
     }
   },
@@ -787,7 +874,18 @@
       "change24h": "24h",
       "high24h": "24h Hoch",
       "low24h": "24h Tief",
-      "exchange": "Börse"
+      "exchange": "Börse",
+      "marketCap": "Marktkapitalisierung",
+      "futuresVolume": "Volumen",
+      "futuresOpenInterest": "Offenes Interesse",
+      "futuresSpotSpread": "Spot-Basis %",
+      "futuresDayRange": "Tagesrange",
+      "futuresExchange": "Börse",
+      "futuresUnderlying": "Basiswert",
+      "futuresExpiry": "Verfall",
+      "futuresLinkedSpot": "Verknüpfter Spot",
+      "futuresDayOpen": "Tageseröffnung",
+      "futuresSpotSpreadAbs": "Spot-Basis (TRY)"
     },
     "searchLabel": "Suchen",
     "searchPlaceholder": "Symbol oder Assetname",
@@ -795,6 +893,7 @@
     "favoritesLoginRequired": "Melden Sie sich an, um Ihre Favoriten anzuzeigen.",
     "favorite": "Zu Favoriten",
     "unfavorite": "Aus Favoriten entfernen",
+    "addToPortfolioSim": "{{symbol}} zur Portfolio-Simulation hinzufügen",
     "noMatches": "Keine Instrumente für diesen Filter gefunden.",
     "loadError": "Marktdaten konnten nicht geladen werden. Bitte erneut versuchen.",
     "loadErrorTimeout": "Zeitüberschreitung beim Laden der Marktdaten. Andere Kategorie wählen oder kurz warten.",
@@ -805,6 +904,17 @@
       "noGainers": "Keine Gewinner verfügbar.",
       "noLosers": "Keine Verlierer verfügbar.",
       "loadError": "Markteinblicke konnten nicht geladen werden."
+    },
+    "sidebar": {
+      "aria": "Markt-Champions",
+      "heading": "Champions",
+      "noChampion": "Keine Daten",
+      "champions": {
+        "day": "Champion des Tages",
+        "week": "Champion der Woche",
+        "month": "Champion des Monats",
+        "year": "Champion des Jahres"
+      }
     },
     "aiInsight": {
       "title": "Info von KI",
@@ -860,6 +970,31 @@
       "loadError": "Segmentmittelwerte konnten nicht aktualisiert werden."
     }
   },
+  "myNewsPage": {
+    "titleDoc": "Meine Nachrichten | Finanzplattform",
+    "title": "Meine Nachrichten",
+    "lead": "Hier siehst und verwaltest du deine favorisierten Nachrichten.",
+    "empty": "Noch keine Favoriten-Nachrichten.",
+    "loginRequired": "Melde dich an, um deine Favoriten zu sehen.",
+    "prev": "Zurück",
+    "next": "Weiter"
+  },
+  "myAnalysisPage": {
+    "title": "Meine Analyse",
+    "lead": "Gespeicherte Chart-Zeichnungen in sortierter Liste; beim Aufklappen werden Zeichnung und passende Kursdaten nachgeladen.",
+    "empty": "Noch keine gespeicherten Zeichnungen. Erstelle Zeichnungen auf der Analyse-Seite und speichere sie in der Toolbar.",
+    "loginRequired": "Melde dich an, um gespeicherte Zeichnungen zu sehen.",
+    "loadError": "Zeichnungen konnten nicht geladen werden.",
+    "drawingCount": "{{count}} Zeichnungen",
+    "expandAria": "Vorschau {{name}}",
+    "expandSymbol": "Asset: {{symbol}}",
+    "expandRange": "Zeitraum: {{range}}",
+    "expandLoadError": "Zeichnungsdetails konnten nicht geladen werden.",
+    "openInAnalysis": "In Analyse öffnen",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "paginationSummary": "Seite {{page}} / {{totalPages}} · {{count}} Einträge"
+  },
   "newsPage": {
     "titleDoc": "News | Finanzplattform",
     "kicker": "Live News Desk",
@@ -894,6 +1029,11 @@
     "noRelatedAssets": "Für diesen Artikel wurden keine Assets zugeordnet.",
     "noSearchResults": "Keine Nachrichten zu Ihrer Suche gefunden.",
     "paginationSummary": "Seite {{page}} / {{totalPages}} · {{count}} Artikel",
+    "favoritesOnly": "Favoriten",
+    "favorite": "Zu Favoriten",
+    "unfavorite": "Aus Favoriten entfernen",
+    "favoriteUpdateError": "Favorit konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+    "noFavoriteNews": "Keine Favoriten-Nachrichten gefunden.",
     "filterToggle": "Filter",
     "applyFilters": "Filter anwenden",
     "clearFilters": "Filter zurücksetzen",
@@ -928,6 +1068,25 @@
       "fx": "FX",
       "crypto": "Krypto",
       "macro": "Makro"
+    },
+    "sidebar": {
+      "aria": "Wöchentliche News-Übersicht",
+      "weeklyHeading": "Wöchentliche Agenda",
+      "weeklyPeriod": "Letzte 7 Tage",
+      "weeklyPeriodSummary": "Letzte 7 Tage · {{count}} Artikel",
+      "weeklyNewsCount": "{{count}} wöchentliche Artikel",
+      "categoryBreakdownTitle": "Kategorieverteilung",
+      "topAssetsTitle": "Meistgenannte Assets",
+      "portfolioTitle": "Zu meinem Portfolio",
+      "portfolioLead": "Wöchentliche News zu Ihren Positionen",
+      "portfolioAction": "Zugehörige News anzeigen",
+      "sourcesTitle": "Quellen",
+      "loginRequired": "Sie müssen sich anmelden",
+      "loginAction": "Anmelden",
+      "noWeeklyData": "Noch keine Wochenübersicht",
+      "portfolioFilterActive": "News zu Ihrem Portfolio werden angezeigt.",
+      "clearPortfolioFilter": "Filter entfernen",
+      "noPortfolioNewsOnPage": "Auf dieser Seite keine Portfolio-News. Nächste Seite versuchen."
     }
   },
   "analysis": {
@@ -973,6 +1132,12 @@
     "sort": {
       "byTime": "Nach Zeit",
       "byImpact": "Nach Einfluss"
+    },
+    "chartNews": {
+      "nextDayChange": "Nächster Tag: {{value}}%",
+      "matchAsset": "Asset: {{symbol}}",
+      "matchCategory": "Kategorie: {{category}}",
+      "matchFavorite": "Favoriten-Nachricht"
     },
     "controls": {
       "showNews": "News anzeigen",
@@ -1055,6 +1220,9 @@
       "compareEmpty": "Keine Vergleiche",
       "closeCompareAdd": "Schließen",
       "layerStripNews": "News",
+      "favoriteNews": "Nur Favoriten-Nachrichten im Chart",
+      "unfavoriteNews": "Nachrichten zum Asset anzeigen",
+      "showFavoriteNews": "Favoriten-Nachrichten im Chart",
       "layerStripMA20": "MA20",
       "layerStripMA50": "MA50",
       "layerStripRSI": "RSI",
@@ -1193,7 +1361,11 @@
       "currentValue": "Aktueller Wert",
       "pnl": "Gewinn / Verlust",
       "pnlPct": "Rendite %",
-      "disclaimer": "Schlusskurse und MDS-Historikkurse (Kauf- und aktueller Tag). Ohne Gebühren und Steuern."
+      "disclaimer": "Schlusskurse und MDS-Historikkurse (Kauf- und aktueller Tag). Ohne Gebühren und Steuern.",
+      "inputsSectionAria": "Simulationseingaben",
+      "breakdownSectionAria": "Kurs- und Stückdetails",
+      "resultSectionAria": "Zusammenfassung",
+      "breakdownEmpty": "Kurs- und Stückdetails erscheinen hier nach Betrag und Datum."
     }
   },
   "portfolio": {
@@ -1209,11 +1381,18 @@
     "txTypeBuy": "Kauf",
     "txTypeSell": "Verkauf",
     "insightTitle": "Markteinblick",
+    "favoriteNewsTitle": "Meine Favoriten-Nachrichten",
+    "favoriteNewsEmpty": "Noch keine Favoriten. Speichere Artikel auf der Nachrichtenseite mit dem Stern.",
     "fromLastYear": "gegenüber letztem Jahr",
     "sinceYesterday": "ggü. Vortag (UTC)",
     "valueChart": {
       "empty": "Der Verlauf erscheint, sobald einige Portfolio-Snapshots erfasst wurden.",
-      "rangeAria": "Zeitraum Portfoliowert"
+      "rangeAria": "Zeitraum Portfoliowert",
+      "periodChange": "{{pct}} · {{range}}",
+      "flatInRange": "Unverändert in {{range}}",
+      "periodRange": "{{from}} – {{to}}",
+      "points": "{{count}} Tageswerte",
+      "insufficient": "Für einen Trend werden einige Tageswerte benötigt"
     },
     "tradeFlow": {
       "buyLabel": "Käufe",
@@ -1303,7 +1482,7 @@
         "news": "Meine News",
         "analysis": "Meine Analyse",
         "targets": "Meine Ziele",
-        "watchlist": "Watchlist",
+        "watchlist": "Favoriten",
         "settings": "Einstellungen"
       },
       "historyPortfolioColumn": "Portfolio",
@@ -1332,10 +1511,13 @@
       "listingHintAll": "Alle kotierten Instrumente werden gelistet; die Zahlungswährung folgt dem gewählten Instrument."
     },
     "watchlist": {
-      "title": "Meine Watchlist",
-      "subtitle": "Hier werden nur Ihre favorisierten Instrumente angezeigt.",
-      "empty": "Noch keine Favoriten vorhanden. Fügen Sie Favoriten auf der Marktseite hinzu.",
-      "loadError": "Watchlist konnte nicht geladen werden.",
+      "title": "Favoriten",
+      "subtitle": "Hier erscheinen Instrumente, die du auf der Märkte-Seite mit dem Stern markiert hast.",
+      "empty": "Noch keine Favoriten. Markiere Instrumente auf der Märkte-Seite mit dem Stern.",
+      "loadError": "Favoriten konnten nicht geladen werden.",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "paginationSummary": "Seite {{page}} / {{totalPages}} · {{count}} Favoriten",
       "chartEmpty": "Keine Chartdaten für dieses Instrument gefunden.",
       "chartLoadError": "Chartdaten konnten nicht geladen werden.",
       "columns": {
@@ -1360,6 +1542,35 @@
           "metals": "Metalle/Futures",
           "funds": "Fonds"
         }
+      }
+    },
+    "goals": {
+      "pageTitle": "Meine Ziele",
+      "portfolioTitle": "Portfolioziel",
+      "profitTitle": "Gewinnziel",
+      "editPortfolio": "Portfolioziel bearbeiten",
+      "editProfit": "Gewinnziel bearbeiten",
+      "scopeUser": "Übersicht — alle Portfolios",
+      "scopePortfolio": "Für das gewählte Portfolio",
+      "setTargetHint": "Zum Festlegen bearbeiten",
+      "targetAmountLabel": "Ziel-Portfoliowert",
+      "profitAmountLabel": "Ziel-Gewinnbetrag",
+      "profitPercentLabel": "Ziel-Gewinnrate (%)",
+      "plannedTitleLabel": "Zieltitel",
+      "plannedDescLabel": "Beschreibung",
+      "profitModeLegend": "Gewinnziel-Typ",
+      "profitModeAbsolute": "Fester Gewinnbetrag",
+      "profitModePercent": "Portfolio-Gewinn in Prozent (%)",
+      "defaultPortfolioTitle": "Portfolioziel",
+      "defaultProfitTitle": "Gewinnziel",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "loadError": "Ziele konnten nicht geladen werden.",
+      "saveError": "Ziel konnte nicht gespeichert werden.",
+      "errors": {
+        "targetRequired": "Gültigen Zielbetrag eingeben.",
+        "percentRequired": "Gültigen Zielprozentsatz eingeben."
       }
     },
     "settingsPage": {

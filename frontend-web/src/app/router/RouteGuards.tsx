@@ -7,7 +7,7 @@ type GuardProps = {
 }
 
 export function PublicOnly({ children }: GuardProps) {
-  return isAuthenticated() ? <Navigate to="/app" replace /> : <>{children}</>
+  return isAuthenticated() ? <Navigate to="/markets" replace /> : <>{children}</>
 }
 
 export function RequireAuth({ children }: GuardProps) {

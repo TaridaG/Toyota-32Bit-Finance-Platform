@@ -9,6 +9,7 @@ import com.company.newsservice.service.NewsIngestionService;
 import com.company.newsservice.service.NewsInstrumentMatcher;
 import com.company.newsservice.service.NewsRelevanceEvaluator;
 import com.company.newsservice.service.NewsTopicTagger;
+import com.company.newsservice.image.NewsArticleImageService;
 import com.company.newsservice.service.translation.NewsTranslationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
     private final NewsRelevanceEvaluator newsRelevanceEvaluator;
     private final NewsTopicTagger newsTopicTagger;
     private final NewsTranslationService newsTranslationService;
+    private final NewsArticleImageService newsArticleImageService;
     private final KafkaTemplate<String, Object> newsKafkaTemplate;
 
     @Override
@@ -118,6 +120,10 @@ public class NewsIngestionServiceImpl implements NewsIngestionService {
                     try {
                         NewsArticle savedArticle = newsArticleRepository.save(article);
                         newsTranslationService.pretranslateForArticle(savedArticle);
+                        newsArticleImageService.scheduleResolveAfterIngest(
+                                savedArticle.getId(),
+                                item.summary()
+                        );
                         saved++;
                     } catch (DataIntegrityViolationException ex) {
                         duplicates++;

@@ -1,4 +1,9 @@
 import type { PortalPageKey } from '../types/infoCards'
+import {
+  PUBLIC_BANK_RATES_ROUTE,
+  PUBLIC_FINANCIAL_LITERACY_ROUTE,
+  PUBLIC_MARKETS_ROUTE,
+} from '../app/routes/publicCatalogRoutes'
 
 export type PortalPageDef = {
   key: PortalPageKey
@@ -13,25 +18,25 @@ const PORTAL_PAGE_DEFS: Record<PortalPageKey, PortalPageDef> = {
   TURKEY_ECONOMY: {
     key: 'TURKEY_ECONOMY',
     labelKey: 'bilgiKartlariPage.pages.TURKEY_ECONOMY',
-    route: '/app/turkiye-ekonomisi',
-    userVisible: true,
+    route: '/app/faiz-vadeli',
+    userVisible: false,
   },
   FINANCIAL_LITERACY: {
     key: 'FINANCIAL_LITERACY',
     labelKey: 'bilgiKartlariPage.pages.FINANCIAL_LITERACY',
-    route: '/app/finansal-okuryazarlik',
+    route: PUBLIC_FINANCIAL_LITERACY_ROUTE,
     userVisible: true,
   },
   BANK_RATES: {
     key: 'BANK_RATES',
     labelKey: 'bilgiKartlariPage.pages.BANK_RATES',
-    route: '/app/bank-rates',
+    route: PUBLIC_BANK_RATES_ROUTE,
     userVisible: true,
   },
   MARKETS: {
     key: 'MARKETS',
     labelKey: 'bilgiKartlariPage.pages.MARKETS',
-    route: '/app/markets',
+    route: PUBLIC_MARKETS_ROUTE,
     userVisible: true,
   },
   FAIZ_VADELI: {
@@ -149,7 +154,6 @@ const PORTAL_PAGE_DEFS: Record<PortalPageKey, PortalPageDef> = {
 
 /** Header nav order + secondary app routes. */
 const USER_PAGE_ORDER: PortalPageKey[] = [
-  'TURKEY_ECONOMY',
   'FINANCIAL_LITERACY',
   'BANK_RATES',
   'MARKETS',

@@ -7,6 +7,9 @@ export const MARKET_SORT_FIELDS = [
   'symbol',
   'price',
   'displayAmount',
+  'volume24h',
+  'openInterest',
+  'spotSpreadPct',
   'change1D',
   'change1M',
   'change3M',
@@ -21,7 +24,14 @@ const LEGACY_SORT_FIELD: Record<string, MarketSortField> = {
 }
 
 /** Sort keys that do not need 1D–1Y summary/history prefetch for the whole filtered list. */
-const FIELDS_WITHOUT_PERIOD_PREFETCH = new Set<MarketSortField>(['price', 'symbol', 'displayAmount'])
+const FIELDS_WITHOUT_PERIOD_PREFETCH = new Set<MarketSortField>([
+  'price',
+  'symbol',
+  'displayAmount',
+  'volume24h',
+  'openInterest',
+  'spotSpreadPct',
+])
 
 function isMarketSortField(value: string): value is MarketSortField {
   return (MARKET_SORT_FIELDS as readonly string[]).includes(value)
@@ -70,6 +80,9 @@ export type MarketSortableRow = {
   change6M?: number
   change1Y?: number
   trendScore?: number
+  volume24h?: number | null
+  openInterest?: number | null
+  spotSpreadPct?: number | null
   [SORT_DISPLAY_AMOUNT_KEY]?: number | null
 }
 
@@ -92,6 +105,12 @@ export function metricForSortField(row: MarketSortableRow, field: MarketSortFiel
       return row.change1Y ?? 0
     case 'trendScore':
       return row.trendScore ?? 0
+    case 'volume24h':
+      return row.volume24h ?? 0
+    case 'openInterest':
+      return row.openInterest ?? 0
+    case 'spotSpreadPct':
+      return row.spotSpreadPct ?? 0
     default:
       return 0
   }

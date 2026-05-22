@@ -11,6 +11,7 @@ import com.company.marketdataservice.history.FxRateHistoryRepository;
 import com.company.marketdataservice.history.MarketPriceHistoryRepository;
 import com.company.marketdataservice.history.MarketPriceHistoryRepository.LatestMarketPriceView;
 import com.company.marketdataservice.provider.tcmb.TcmbBondEvdsClient;
+import com.company.marketdataservice.market.MetalFuturesMarketEnricher;
 import com.company.marketdataservice.snapshot.MarketSnapshotStore;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
     private final FundNavHistoryRepository fundNavHistoryRepository;
     private final TcmbBondMarketProperties bondMarketProperties;
     private final TcmbBondEvdsClient tcmbBondEvdsClient;
+    private final MetalFuturesMarketEnricher metalFuturesMarketEnricher;
 
     /** Short TTL: fills catalog when DB history is empty but EVDS is configured. */
     private volatile List<MarketPriceDto> bondEvdsOverlayCache = List.of();
@@ -57,13 +59,13 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
         for (FundDto f : snapshotStore.listFunds()) {
             String sym = canonicalFundInstrumentSymbol(f.fundCode());
             if (!sym.isEmpty()) {
-                merged.put(sym, new MarketPriceDto(sym, f.nav(), f.source(), f.timestamp()));
+                merged.put(sym, MarketPriceDto.basic(sym, f.nav(), f.source(), f.timestamp()));
             }
         }
         for (FundNavHistoryEntry row : fundNavHistoryRepository.findLatestRowPerFundCode()) {
             String sym = canonicalFundInstrumentSymbol(row.getFundCode());
             if (!sym.isEmpty()) {
-                merged.putIfAbsent(sym, new MarketPriceDto(sym, row.getNav(), row.getProvider(), row.getObservedAt()));
+                merged.putIfAbsent(sym, MarketPriceDto.basic(sym, row.getNav(), row.getProvider(), row.getObservedAt()));
             }
         }
         /*
@@ -83,7 +85,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             }
         }
         mergeTrackedBondsFromEvdsIfAbsent(merged);
-        List<MarketPriceDto> sorted = sortBySymbol(merged);
+        List<MarketPriceDto> sorted = metalFuturesMarketEnricher.enrich(sortBySymbol(merged));
         if (!StringUtils.hasText(segment)) {
             return sorted;
         }
@@ -147,7 +149,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             String sym = norm(row.getSymbol());
             try {
                 BigDecimal price = tcmbBondEvdsClient.fetchLatestValue(row.getEvdsSeries());
-                out.add(new MarketPriceDto(sym, price, "TCMB_BOND", Instant.now()));
+                out.add(MarketPriceDto.basic(sym, price, "TCMB_BOND", Instant.now()));
             } catch (Exception ex) {
                 log.warn("EVDS_LIVE_BOND_SKIP symbol={} series={} reason={}", sym, row.getEvdsSeries(), ex.toString());
             }
@@ -160,7 +162,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             return List.of();
         }
         return rows.stream()
-                .map(row -> new MarketPriceDto(
+                .map(row -> MarketPriceDto.basic(
                         row.getSymbol(),
                         row.getPrice(),
                         row.getSource(),

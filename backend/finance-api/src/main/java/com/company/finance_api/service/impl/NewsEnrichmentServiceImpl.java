@@ -9,6 +9,8 @@ import com.company.finance_api.dto.NewsOriginalResponse;
 import com.company.finance_api.dto.NewsRelatedAssetPerformance;
 import com.company.finance_api.exception.ResourceNotFoundException;
 import com.company.finance_api.repository.InstrumentPriceRepository;
+import com.company.finance_api.repository.NewsFavoriteRepository;
+import com.company.finance_api.security.CurrentUserResolver;
 import com.company.finance_api.service.InstrumentService;
 import com.company.finance_api.service.NewsEnrichmentService;
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -39,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 
@@ -56,8 +59,12 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             "drop", "drops", "fall", "falls", "down", "bear", "sell", "negative", "miss", "loss"
     );
 
+    private static final int FAVORITE_NEWS_FETCH_CAP = 120;
+
     private final InstrumentService instrumentService;
     private final InstrumentPriceRepository instrumentPriceRepository;
+    private final NewsFavoriteRepository newsFavoriteRepository;
+    private final CurrentUserResolver currentUserResolver;
     private final ObjectMapper objectMapper;
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
     private final RestClient restClient = RestClient.create();
@@ -74,11 +81,15 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     public NewsEnrichmentServiceImpl(
             InstrumentService instrumentService,
             InstrumentPriceRepository instrumentPriceRepository,
+            NewsFavoriteRepository newsFavoriteRepository,
+            CurrentUserResolver currentUserResolver,
             ObjectMapper objectMapper,
             ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider
     ) {
         this.instrumentService = instrumentService;
         this.instrumentPriceRepository = instrumentPriceRepository;
+        this.newsFavoriteRepository = newsFavoriteRepository;
+        this.currentUserResolver = currentUserResolver;
         this.objectMapper = objectMapper;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
     }
@@ -100,7 +111,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         String resolvedSentiment = normalizeSentimentFilter(sentiment);
         Integer resolvedMaxAgeMinutes = normalizeMaxAge(maxAgeMinutes);
         String resolvedSearch = normalizeSearch(search);
-        String cacheKey = "news:enriched:lang:" + resolvedLang
+        String cacheKey = "news:enriched:v2:lang:" + resolvedLang
                 + ":page:" + resolvedPage
                 + ":size:" + resolvedSize
                 + ":category:" + resolvedCategory
@@ -124,7 +135,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
                         resolvedMaxAgeMinutes,
                         resolvedSearch
                 )
-                : fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, false, resolvedSearch);
+                : fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, true, resolvedSearch);
         List<String> symbols;
         try {
             symbols = instrumentService.getAllActive().stream()
@@ -172,7 +183,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
         while (upstreamPageIndex < upstreamTotalPages) {
             NewsServicePageResponse<NewsServiceNewsItem> upstreamPage =
-                    fetchNewsPage(upstreamPageIndex, scanPageSize, language, false, search);
+                    fetchNewsPage(upstreamPageIndex, scanPageSize, language, true, search);
             upstreamTotalPages = Math.max(upstreamPage.totalPages(), upstreamPageIndex + 1);
 
             for (NewsServiceNewsItem item : upstreamPage.content()) {
@@ -193,6 +204,111 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
         int totalPages = filteredTotal == 0 ? 0 : (int) Math.ceil((double) filteredTotal / size);
         return new NewsServicePageResponse<>(selectedPageItems, page, size, filteredTotal, totalPages);
+    }
+
+    @Override
+    public NewsEnrichedPageResponse getEnrichedFavoriteNews(
+            int page,
+            int size,
+            String language,
+            String category,
+            Integer maxAgeMinutes,
+            String search
+    ) {
+        int resolvedPage = Math.max(page, 0);
+        int resolvedSize = Math.max(size, 1);
+        String resolvedLang = normalizeLanguage(language);
+        String resolvedCategory = normalizeCategoryFilter(category);
+        Integer resolvedMaxAgeMinutes = normalizeMaxAge(maxAgeMinutes);
+        String resolvedSearch = normalizeSearch(search);
+        UUID userId = currentUserResolver.getCurrentUserId();
+        List<Long> favoriteIds = newsFavoriteRepository.findByUserIdAndActiveTrue(userId)
+                .stream()
+                .map(com.company.finance_api.domain.NewsFavorite::getNewsId)
+                .limit(FAVORITE_NEWS_FETCH_CAP)
+                .toList();
+
+        List<NewsServiceNewsItem> filteredItems = new ArrayList<>();
+        for (Long newsId : favoriteIds) {
+            NewsServiceNewsItem item = fetchFavoriteNewsItem(newsId, resolvedLang);
+            if (item == null) {
+                continue;
+            }
+            if (!matchesFilters(item, resolvedCategory, "all", resolvedMaxAgeMinutes)) {
+                continue;
+            }
+            if (!matchesSearch(item, resolvedSearch)) {
+                continue;
+            }
+            filteredItems.add(item);
+        }
+
+        long totalElements = filteredItems.size();
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / resolvedSize);
+        int fromIndex = Math.min(resolvedPage * resolvedSize, filteredItems.size());
+        int toIndex = Math.min(fromIndex + resolvedSize, filteredItems.size());
+        List<NewsServiceNewsItem> pageItems = filteredItems.subList(fromIndex, toIndex);
+
+        List<String> symbols;
+        try {
+            symbols = instrumentService.getAllActive().stream()
+                    .map(instrument -> instrument.getSymbol().toUpperCase(Locale.ROOT))
+                    .sorted(Comparator.comparingInt(String::length).reversed())
+                    .toList();
+        } catch (Exception ex) {
+            log.warn("NEWS_INSTRUMENT_CATALOG_LOAD_FAIL reason={}", ex.toString());
+            symbols = List.of();
+        }
+        final List<String> symbolsForEnrichment = symbols;
+        List<NewsEnrichedResponse> enrichedContent = pageItems.stream()
+                .map(item -> enrich(item, symbolsForEnrichment))
+                .toList();
+
+        return new NewsEnrichedPageResponse(
+                enrichedContent,
+                resolvedPage,
+                resolvedSize,
+                totalElements,
+                totalPages
+        );
+    }
+
+    private NewsServiceNewsItem fetchFavoriteNewsItem(Long newsId, String language) {
+        try {
+            NewsServiceNewsDetailItem detail = fetchNewsDetail(newsId, language);
+            return toNewsItem(detail);
+        } catch (ResourceNotFoundException ex) {
+            return null;
+        } catch (Exception ex) {
+            log.debug("NEWS_FAVORITE_FETCH_FAIL id={} reason={}", newsId, ex.toString());
+            return null;
+        }
+    }
+
+    private static NewsServiceNewsItem toNewsItem(NewsServiceNewsDetailItem detail) {
+        return new NewsServiceNewsItem(
+                detail.id(),
+                detail.title(),
+                detail.summary(),
+                detail.titleOriginal(),
+                detail.summaryOriginal(),
+                detail.translatedLanguage(),
+                detail.translated(),
+                detail.imageUrl(),
+                detail.sourceName(),
+                detail.category(),
+                detail.publishedAt(),
+                detail.relatedSymbols(),
+                detail.topicTags()
+        );
+    }
+
+    private boolean matchesSearch(NewsServiceNewsItem item, String search) {
+        if (!StringUtils.hasText(search)) {
+            return true;
+        }
+        String bag = (nz(item.title()) + " " + nz(item.summary())).toLowerCase(Locale.ROOT);
+        return bag.contains(search.toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -280,6 +396,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
                 item.translatedLanguage(),
                 item.translated(),
                 item.articleUrl(),
+                item.imageUrl(),
                 item.sourceName(),
                 item.category(),
                 categoryUi,
@@ -300,17 +417,24 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             return cached.get();
         }
         NewsServiceApiResponse<NewsServiceNewsDetailItem> body = restClient.get()
-                .uri(UriComponentsBuilder.fromHttpUrl(newsBaseUrl).path("/api/news/{id}").buildAndExpand(id).toUriString())
+                .uri(UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
+                        .path("/api/news/{id}")
+                        .queryParam("includeOriginal", true)
+                        .buildAndExpand(id)
+                        .toUriString())
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {
                 });
         if (body == null || body.data() == null) {
             return new NewsOriginalResponse(id, "", "");
         }
+        NewsServiceNewsDetailItem data = body.data();
+        String originalTitle = StringUtils.hasText(data.titleOriginal()) ? data.titleOriginal() : data.title();
+        String originalSummary = StringUtils.hasText(data.summaryOriginal()) ? data.summaryOriginal() : data.summary();
         NewsOriginalResponse response = new NewsOriginalResponse(
-                body.data().id(),
-                nz(body.data().title()),
-                nz(body.data().summary())
+                data.id(),
+                nz(originalTitle),
+                nz(originalSummary)
         );
         writeToCache(cacheKey, response, ORIGINAL_CACHE_TTL);
         return response;
@@ -335,6 +459,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
                 item.summaryOriginal(),
                 item.translatedLanguage(),
                 item.translated(),
+                item.imageUrl(),
                 item.sourceName(),
                 item.category(),
                 item.publishedAt(),
@@ -748,6 +873,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             String summaryOriginal,
             String translatedLanguage,
             boolean translated,
+            String imageUrl,
             String sourceName,
             String category,
             Instant publishedAt,
@@ -766,6 +892,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             String translatedLanguage,
             boolean translated,
             String articleUrl,
+            String imageUrl,
             String sourceName,
             String category,
             Instant publishedAt,

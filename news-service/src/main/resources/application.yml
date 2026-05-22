@@ -88,8 +88,26 @@ news:
         - microsoft
       NVDA:
         - nvidia
+      AMZN:
+        - amazon
+      GOOGL:
+        - alphabet
+        - google
+      META:
+        - meta
+        - facebook
       TSLA:
         - tesla
+      AVGO:
+        - broadcom
+      AMD:
+        - amd
+      NFLX:
+        - netflix
+      INTC:
+        - intel
+      CSCO:
+        - cisco
       QQQ:
         - nasdaq 100
         - qqq
@@ -248,6 +266,14 @@ news:
       - god took care of me
       - personal finance tip
       - life-changing money
+  image:
+    enabled: ${NEWS_IMAGE_ENABLED:true}
+    connect-timeout-ms: ${NEWS_IMAGE_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${NEWS_IMAGE_READ_TIMEOUT_MS:10000}
+    user-agent: ${NEWS_IMAGE_USER_AGENT:finance-news-service/1.0}
+    backfill-enabled: ${NEWS_IMAGE_BACKFILL_ENABLED:true}
+    backfill-batch-size: ${NEWS_IMAGE_BACKFILL_BATCH_SIZE:25}
+    backfill-delay-ms: ${NEWS_IMAGE_BACKFILL_DELAY_MS:120000}
   translation:
     enabled: true
     provider: mymemory

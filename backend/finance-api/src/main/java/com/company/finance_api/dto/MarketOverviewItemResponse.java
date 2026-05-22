@@ -22,6 +22,17 @@ public record MarketOverviewItemResponse(
         /** 0–100 style score derived from analytics trend momentum (nullable when unavailable). */
         BigDecimal trendScore,
         /** UI label: WEAK, NEUTRAL, STRONG, VERY_STRONG (nullable). */
-        String trendLabel
+        String trendLabel,
+        BigDecimal volume24h,
+        BigDecimal openInterest,
+        BigDecimal dayOpen,
+        BigDecimal dayHigh,
+        BigDecimal dayLow,
+        String exchangeName,
+        String underlyingSymbol,
+        java.time.Instant contractExpiry,
+        String linkedSpotSymbol,
+        BigDecimal spotSpreadPct,
+        BigDecimal spotSpreadAbs
 ) {
 }

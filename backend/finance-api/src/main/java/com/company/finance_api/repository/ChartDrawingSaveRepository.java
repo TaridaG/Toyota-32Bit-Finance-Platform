@@ -1,6 +1,8 @@
 package com.company.finance_api.repository;
 
 import com.company.finance_api.domain.ChartDrawingSave;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -10,6 +12,8 @@ import java.util.UUID;
 public interface ChartDrawingSaveRepository extends JpaRepository<ChartDrawingSave, Long> {
 
     List<ChartDrawingSave> findByUserIdAndAssetKeyOrderByCreatedAtDesc(UUID userId, String assetKey);
+
+    Page<ChartDrawingSave> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
     Optional<ChartDrawingSave> findByIdAndUserId(Long id, UUID userId);
 }

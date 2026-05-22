@@ -9,6 +9,9 @@ type ApiEnvelope<T> = {
 export type WatchlistItem = {
   instrumentId: number
   symbol: string
+  name?: string | null
+  type?: string | null
+  createdAt?: string | null
 }
 
 function assertSuccessData<T>(body: ApiEnvelope<T>): T {

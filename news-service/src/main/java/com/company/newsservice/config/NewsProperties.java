@@ -23,6 +23,7 @@ public class NewsProperties {
     private Relevance relevance = new Relevance();
     private TopicTags topicTags = new TopicTags();
     private Translation translation = new Translation();
+    private Image image = new Image();
     private List<Feed> feeds = new ArrayList<>();
 
     private Instrument instrument = new Instrument();
@@ -175,6 +176,21 @@ public class NewsProperties {
         private long backfillDelayMs = 60000L;
 
         private Mymemory mymemory = new Mymemory();
+    }
+
+    @Getter
+    @Setter
+    public static class Image {
+        /**
+         * When true, resolves {@code image_url} from RSS description and/or article page metadata after ingest.
+         */
+        private boolean enabled = true;
+        private int connectTimeoutMs = 5000;
+        private int readTimeoutMs = 10000;
+        private String userAgent = "finance-news-service/1.0";
+        private boolean backfillEnabled = true;
+        private int backfillBatchSize = 25;
+        private long backfillDelayMs = 120000L;
     }
 
     @Getter

@@ -2,10 +2,14 @@ package com.company.marketdataservice.scheduler;
 
 import com.company.marketdataservice.config.MarketDataProperties;
 import com.company.marketdataservice.config.FinnhubProperties;
+import com.company.marketdataservice.config.MetalFuturesSymbols;
+import com.company.marketdataservice.dto.MarketPriceDto;
+import com.company.marketdataservice.provider.yahoo.YahooSpotQuote;
 import com.company.marketdataservice.event.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.instrument.InstrumentMappingService;
 import com.company.marketdataservice.kafka.MarketEventPublisher;
 import com.company.marketdataservice.observation.MarketPriceObservation;
+import com.company.marketdataservice.snapshot.MarketSnapshotStore;
 import com.company.marketdataservice.provider.finnhub.FinnhubClient;
 import com.company.marketdataservice.provider.yahoo.YahooFinanceProvider;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,6 +41,7 @@ public class StockPriceScheduler {
     private final MarketEventPublisher publisher;
     private final InstrumentMappingService instrumentMappingService;
     private final MeterRegistry meterRegistry;
+    private final MarketSnapshotStore marketSnapshotStore;
 
     private final Set<String> mappingMissWarnFirstSeen = ConcurrentHashMap.newKeySet();
     private final Set<String> mappingHitCanonicalFirstSeen = ConcurrentHashMap.newKeySet();
@@ -51,10 +56,18 @@ public class StockPriceScheduler {
         for (String symbol : stocks) {
             try {
                 boolean finnhubOwned = isOwnedByFinnhub(symbol);
+                boolean metalFuture = !finnhubOwned && MetalFuturesSymbols.isFutures(symbol);
                 String source = finnhubOwned ? "FINNHUB" : yahooFinanceProvider.source();
-                BigDecimal price = finnhubOwned
-                        ? finnhubClient.fetchLiveQuotePrice(symbol)
-                        : yahooFinanceProvider.fetchPrice(symbol);
+                BigDecimal price;
+                if (finnhubOwned) {
+                    price = finnhubClient.fetchLiveQuotePrice(symbol);
+                } else if (metalFuture) {
+                    YahooSpotQuote quote = yahooFinanceProvider.fetchSpotQuote(symbol);
+                    price = quote.price();
+                    marketSnapshotStore.recordMarketPriceDto(toMarketPriceDto(quote));
+                } else {
+                    price = yahooFinanceProvider.fetchPrice(symbol);
+                }
 
                 var observation = new MarketPriceObservation(
                         source,
@@ -125,6 +138,26 @@ public class StockPriceScheduler {
                 log.error("STOCK_DATA_ERROR symbol={}, error={}", symbol, e.getMessage());
             }
         }
+    }
+
+    private static MarketPriceDto toMarketPriceDto(YahooSpotQuote quote) {
+        String linkedSpot = MetalFuturesSymbols.linkedSpotTry(quote.symbol());
+        return new MarketPriceDto(
+                quote.symbol(),
+                quote.price(),
+                quote.source(),
+                quote.timestamp(),
+                quote.volume24h(),
+                quote.openInterest(),
+                quote.dayOpen(),
+                quote.dayHigh(),
+                quote.dayLow(),
+                quote.exchangeName(),
+                quote.underlyingSymbol(),
+                quote.contractExpiry(),
+                linkedSpot,
+                null,
+                null);
     }
 
     private boolean isOwnedByFinnhub(String symbol) {

@@ -3,12 +3,19 @@ package com.company.finance_api.profile;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
+import com.company.finance_api.dto.PortalConfirmEmailChangeRequest;
 import com.company.finance_api.dto.PortalDeleteAccountRequest;
+import com.company.finance_api.dto.PortalEmailChangeRequest;
+import com.company.finance_api.dto.PortalForgotPasswordResetRequest;
 import com.company.finance_api.dto.PortalProfileResponse;
 import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
 import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
 import com.company.finance_api.dto.PortalUpdatePhoneRequest;
 import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
+import com.company.finance_api.registration.PortalRegistrationService;
+import com.company.finance_api.registration.RegistrationEmailVerificationService;
 import com.company.finance_api.event.UserDeletionRequestedEvent;
 import com.company.finance_api.event.kafka.KafkaTopics;
 import com.company.finance_api.exception.ResourceNotFoundException;
@@ -29,6 +36,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -44,6 +52,8 @@ public class PortalProfileService {
     private final ProfileAvatarStorage profileAvatarStorage;
     private final ProfileAvatarImageProcessor profileAvatarImageProcessor;
     private final OutboxService outboxService;
+    private final RegistrationEmailVerificationService registrationEmailVerificationService;
+    private final PortalRegistrationService portalRegistrationService;
 
     public PortalProfileService(
             CurrentUserResolver currentUserResolver,
@@ -52,7 +62,9 @@ public class PortalProfileService {
             KeycloakDirectGrantClient keycloakDirectGrantClient,
             ProfileAvatarStorage profileAvatarStorage,
             ProfileAvatarImageProcessor profileAvatarImageProcessor,
-            OutboxService outboxService
+            OutboxService outboxService,
+            RegistrationEmailVerificationService registrationEmailVerificationService,
+            PortalRegistrationService portalRegistrationService
     ) {
         this.currentUserResolver = currentUserResolver;
         this.userRepository = userRepository;
@@ -61,6 +73,8 @@ public class PortalProfileService {
         this.profileAvatarStorage = profileAvatarStorage;
         this.profileAvatarImageProcessor = profileAvatarImageProcessor;
         this.outboxService = outboxService;
+        this.registrationEmailVerificationService = registrationEmailVerificationService;
+        this.portalRegistrationService = portalRegistrationService;
     }
 
     @Transactional(readOnly = true)
@@ -132,9 +146,81 @@ public class PortalProfileService {
     public void changePassword(PortalChangePasswordRequest request) {
         User user = loadCurrentUser();
         verifyCurrentPassword(user.getUsername(), request.getCurrentPassword());
+        resetPasswordInKeycloak(user.getUsername(), request.getNewPassword());
+    }
+
+    public PublicSendVerificationCodeResponse sendPasswordResetCode() {
+        User user = loadCurrentUser();
+        if (!StringUtils.hasText(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account has no email for verification");
+        }
+        return registrationEmailVerificationService.sendCode(user.getEmail(), user.getPreferredLocale());
+    }
+
+    public void resetPasswordWithEmailVerification(PortalForgotPasswordResetRequest request) {
+        User user = loadCurrentUser();
+        if (!StringUtils.hasText(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account has no email for verification");
+        }
+        registrationEmailVerificationService.verifyCodeOrThrow(user.getEmail(), request.getVerificationCode());
+        resetPasswordInKeycloak(user.getUsername(), request.getNewPassword());
+    }
+
+    public PublicSendVerificationCodeResponse sendEmailChangeCode(PortalEmailChangeRequest request) {
+        User user = loadCurrentUser();
+        String newEmail = normalizeEmail(request.getNewEmail());
+        if (newEmail.equals(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email unchanged");
+        }
+        if (isEmailTakenByAnotherUser(newEmail, user.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
+        }
+        return registrationEmailVerificationService.sendCode(newEmail, user.getPreferredLocale());
+    }
+
+    @Transactional
+    public PortalProfileResponse confirmEmailChange(PortalConfirmEmailChangeRequest request) {
+        User user = loadCurrentUser();
+        String newEmail = normalizeEmail(request.getNewEmail());
+        if (newEmail.equals(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email unchanged");
+        }
+        registrationEmailVerificationService.verifyCodeOrThrow(newEmail, request.getVerificationCode());
+        if (isEmailTakenByAnotherUser(newEmail, user.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
+        }
+
         String kcId = keycloakRealmAdminClient.findUserIdByExactUsername(user.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("Identity account not found for user"));
-        keycloakRealmAdminClient.resetUserPassword(kcId, request.getNewPassword(), false);
+        String oldEmail = user.getEmail();
+        try {
+            keycloakRealmAdminClient.updateUserEmail(kcId, newEmail);
+            user.setEmail(newEmail);
+            userRepository.save(user);
+        } catch (RuntimeException ex) {
+            if (StringUtils.hasText(oldEmail)) {
+                try {
+                    keycloakRealmAdminClient.updateUserEmail(kcId, oldEmail);
+                } catch (RuntimeException ignored) {
+                    // best-effort rollback
+                }
+            }
+            if (ex instanceof ResponseStatusException rse) {
+                throw rse;
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email update failed", ex);
+        }
+        return mapProfile(user);
+    }
+
+    @Transactional(readOnly = true)
+    public PublicUsernameAvailabilityResponse checkUsernameAvailability(String usernameInput) {
+        User user = loadCurrentUser();
+        PublicUsernameAvailabilityResponse response = portalRegistrationService.checkUsernameAvailability(usernameInput);
+        if (!response.available() && response.normalizedUsername().equals(user.getUsername())) {
+            return new PublicUsernameAvailabilityResponse(response.normalizedUsername(), true, List.of());
+        }
+        return response;
     }
 
     public PublicLoginResponse changeUsername(PortalChangeUsernameRequest request) {
@@ -144,7 +230,8 @@ public class PortalProfileService {
         if (oldUsername.equals(newUsername)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username unchanged");
         }
-        if (userRepository.findByUsername(newUsername).isPresent()) {
+        PublicUsernameAvailabilityResponse availability = portalRegistrationService.checkUsernameAvailability(newUsername);
+        if (!availability.available()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already taken");
         }
         verifyCurrentPassword(oldUsername, request.getCurrentPassword());
@@ -235,6 +322,25 @@ public class PortalProfileService {
         UUID userId = currentUserResolver.getCurrentUserId();
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private void resetPasswordInKeycloak(String username, String newPassword) {
+        String kcId = keycloakRealmAdminClient.findUserIdByExactUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Identity account not found for user"));
+        keycloakRealmAdminClient.resetUserPassword(kcId, newPassword, false);
+    }
+
+    private boolean isEmailTakenByAnotherUser(String email, UUID currentUserId) {
+        return userRepository.findByEmail(email)
+                .filter(existing -> !existing.getId().equals(currentUserId))
+                .isPresent();
+    }
+
+    private static String normalizeEmail(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "email is required");
+        }
+        return raw.trim().toLowerCase(Locale.ROOT);
     }
 
     private void verifyCurrentPassword(String username, String currentPassword) {

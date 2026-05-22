@@ -23,7 +23,6 @@ import { ChartDrawingLoginPrompt } from './components/ChartDrawingLoginPrompt'
 import { ChartDrawingSaveModal } from './components/ChartDrawingSaveModal'
 import { ChartHoverInsightCard } from './components/ChartHoverInsightCard'
 import { AnalysisTickerBar } from './components/AnalysisTickerBar'
-import { AnalysisInflationDepositCard } from './components/AnalysisInflationDepositCard'
 import { AnalysisInvestmentSimulationCard } from './components/AnalysisInvestmentSimulationCard'
 import { utcTimestampToIsoDay } from './utils/investmentSimulation'
 import {
@@ -39,12 +38,13 @@ import { useIndicators } from '../../features/analysis/hooks/useIndicators'
 import { useAnalysisInstrumentCatalog } from './hooks/useAnalysisInstrumentCatalog'
 import { fetchMarketOverviewItemBySymbol } from '../../features/markets/api/marketService'
 import { fetchNewsForChart, type NewsApiItem } from '../../features/news/api/newsService'
+import { fetchFavoriteNewsEnriched } from '../../features/news/api/newsFavoritesApi'
 import {
   catalogRowToOverview,
   overviewRowToAsset,
   resolveAnalysisQuoteCurrency,
 } from './utils/analysisCatalog'
-import { mapNewsToChartItems, resolveChartNewsCategoryUi } from './utils/chartNews'
+import { mapFavoriteNewsToChartItems, mapNewsToChartItems, resolveChartNewsCategoryUi } from './utils/chartNews'
 import { computeHorizonReturns, trailingCalendarReturnPercent } from './utils/horizonReturns'
 import type { MarketCategory, MarketOverviewItem } from '../../shared/types/market'
 
@@ -68,6 +68,7 @@ export function AnalysisPage() {
   const [pickerSelectedId, setPickerSelectedId] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
   const [showNewsOnChart, setShowNewsOnChart] = useState(false)
+  const [chartNewsFavoritesOnly, setChartNewsFavoritesOnly] = useState(false)
   const [chartNewsFeed, setChartNewsFeed] = useState<NewsApiItem[]>([])
   const [chartNewsLoading, setChartNewsLoading] = useState(false)
   const [showMA20, setShowMA20] = useState(true)
@@ -95,6 +96,12 @@ export function AnalysisPage() {
   const [drawingHistoryLoadingId, setDrawingHistoryLoadingId] = useState<number | null>(null)
 
   const chartDrawingAuth = isAuthenticated()
+
+  useEffect(() => {
+    if (!chartDrawingAuth) {
+      setChartNewsFavoritesOnly(false)
+    }
+  }, [chartDrawingAuth])
 
   const { assets: catalogAssets, rows: catalogRows, loading: catalogLoading } =
     useAnalysisInstrumentCatalog(chartSegment)
@@ -382,16 +389,22 @@ export function AnalysisPage() {
     if (!showNewsOnChart || !selectedAsset || !candleWindow) {
       return
     }
-    const categoryUi = resolveChartNewsCategoryUi(selectedAsset)
+    if (chartNewsFavoritesOnly && !chartDrawingAuth) {
+      setChartNewsFeed([])
+      return
+    }
     let cancelled = false
     setChartNewsLoading(true)
-    void fetchNewsForChart({
-      symbol: selectedAsset.symbol,
-      categoryUi,
-      fromSec: Math.max(0, candleWindow.fromSec - 3_600),
-      toSec: candleWindow.toSec + 86_400,
-      language,
-    })
+    const load = chartNewsFavoritesOnly
+      ? fetchFavoriteNewsEnriched(0, 120, language).then((page) => page.content ?? [])
+      : fetchNewsForChart({
+          symbol: selectedAsset.symbol,
+          categoryUi: resolveChartNewsCategoryUi(selectedAsset),
+          fromSec: Math.max(0, candleWindow.fromSec - 3_600),
+          toSec: candleWindow.toSec + 86_400,
+          language,
+        })
+    void load
       .then((items) => {
         if (!cancelled) {
           setChartNewsFeed(items)
@@ -410,7 +423,7 @@ export function AnalysisPage() {
     return () => {
       cancelled = true
     }
-  }, [candleWindow, language, selectedAsset, showNewsOnChart])
+  }, [candleWindow, chartDrawingAuth, chartNewsFavoritesOnly, language, selectedAsset, showNewsOnChart])
 
   useEffect(() => {
     if (!selectedAsset?.id) return
@@ -494,9 +507,12 @@ export function AnalysisPage() {
     if (!showNewsOnChart || !selectedAsset || selectedWindowSeries.length === 0) {
       return []
     }
+    if (chartNewsFavoritesOnly && chartDrawingAuth) {
+      return mapFavoriteNewsToChartItems(chartNewsFeed, selectedWindowSeries, selectedAsset.id)
+    }
     const categoryUi = resolveChartNewsCategoryUi(selectedAsset)
     return mapNewsToChartItems(chartNewsFeed, selectedAsset, categoryUi, selectedWindowSeries)
-  }, [chartNewsFeed, selectedAsset, selectedWindowSeries, showNewsOnChart])
+  }, [chartDrawingAuth, chartNewsFavoritesOnly, chartNewsFeed, selectedAsset, selectedWindowSeries, showNewsOnChart])
 
   const comparisonLines = useMemo(() => {
     if (selectedAsset == null) return []
@@ -733,6 +749,9 @@ export function AnalysisPage() {
                   onRangeChange={handleRangeChange}
                   showNewsOnChart={showNewsOnChart}
                   chartNewsLoading={chartNewsLoading}
+                  chartNewsFavoritesOnly={chartNewsFavoritesOnly}
+                  showChartNewsFavoriteStar={chartDrawingAuth}
+                  onToggleChartNewsFavorites={() => setChartNewsFavoritesOnly((v) => !v)}
                   showMA20={showMA20}
                   showMA50={showMA50}
                   showRsi={showRsi}
@@ -852,7 +871,6 @@ export function AnalysisPage() {
           chartPickActive={simChartPickActive}
           onChartPickActiveChange={setSimChartPickActive}
         />
-        <AnalysisInflationDepositCard />
       </div>
 
       {drawingSaveModalOpen && selectedAsset ? (

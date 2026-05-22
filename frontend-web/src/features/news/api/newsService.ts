@@ -21,13 +21,15 @@ export type NewsApiItem = {
   summaryOriginal?: string | null
   translatedLanguage?: string | null
   translated?: boolean
+  imageUrl?: string | null
   sourceName: string
   category: string
   publishedAt: string
-  sentiment: 'positive' | 'negative' | 'neutral'
+  /** Present in API; not shown on news page UI. */
+  sentiment?: 'positive' | 'negative' | 'neutral'
   relatedSymbols: string[]
   topicTags?: string[]
-  reactionPercent1h: number | null
+  reactionPercent1h?: number | null
 }
 
 export type NewsOriginalResponse = {
@@ -39,7 +41,6 @@ export type NewsOriginalResponse = {
 export type NewsFetchFilters = {
   category: 'all' | 'bist' | 'viop' | 'fx' | 'crypto' | 'macro'
   range: 'all' | '1h' | '6h' | '24h'
-  sentiment: 'all' | 'positive' | 'negative' | 'neutral'
 }
 
 function maxAgeMinutesForRange(range: NewsFetchFilters['range']): number | undefined {
@@ -85,15 +86,15 @@ export async function fetchNews(
   language?: string,
   filters?: NewsFetchFilters,
   search?: string,
+  options?: { maxAgeMinutes?: number },
 ): Promise<PageResponse<NewsApiItem>> {
-  const maxAgeMinutes = maxAgeMinutesForRange(filters?.range ?? 'all')
+  const maxAgeMinutes = options?.maxAgeMinutes ?? maxAgeMinutesForRange(filters?.range ?? 'all')
   const normalizedSearch = search?.trim()
   const response = await apiClient.get<ApiResponse<PageResponse<NewsApiItem>>>('/api/news/enriched', {
     params: {
       page,
       size,
       category: filters?.category && filters.category !== 'all' ? filters.category : undefined,
-      sentiment: filters?.sentiment && filters.sentiment !== 'all' ? filters.sentiment : undefined,
       maxAgeMinutes,
       q: normalizedSearch || undefined,
     },
@@ -128,11 +129,12 @@ export type NewsDetailApi = {
   translatedLanguage?: string | null
   translated?: boolean
   articleUrl: string
+  imageUrl?: string | null
   sourceName: string
   category: string
   categoryUi: string
   publishedAt: string
-  sentiment: 'positive' | 'negative' | 'neutral'
+  sentiment?: 'positive' | 'negative' | 'neutral'
   relatedSymbols: string[]
   topicTags?: string[]
   relatedAssets: NewsRelatedAssetPerformance[]

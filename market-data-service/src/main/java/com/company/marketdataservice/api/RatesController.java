@@ -4,16 +4,20 @@ import com.company.marketdataservice.dto.CpiLatestDto;
 import com.company.marketdataservice.dto.PolicyRateHistoryResponseDto;
 import com.company.marketdataservice.dto.PolicyRateLatestDto;
 import com.company.marketdataservice.dto.TlDepositLatestDto;
+import com.company.marketdataservice.dto.BankRatesResponseDto;
 import com.company.marketdataservice.rates.CpiHistoryService;
 import com.company.marketdataservice.rates.CpiMetric;
 import com.company.marketdataservice.rates.PolicyRateHistoryService;
 import com.company.marketdataservice.rates.TlDepositHistoryService;
+import com.company.marketdataservice.rates.bank.BankRatesAsset;
+import com.company.marketdataservice.rates.bank.DovizBankRatesService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/rates")
@@ -22,15 +26,33 @@ public class RatesController {
     private final PolicyRateHistoryService policyRateHistoryService;
     private final TlDepositHistoryService tlDepositHistoryService;
     private final CpiHistoryService cpiHistoryService;
+    private final DovizBankRatesService dovizBankRatesService;
 
     public RatesController(
             PolicyRateHistoryService policyRateHistoryService,
             TlDepositHistoryService tlDepositHistoryService,
-            CpiHistoryService cpiHistoryService
+            CpiHistoryService cpiHistoryService,
+            DovizBankRatesService dovizBankRatesService
     ) {
         this.policyRateHistoryService = policyRateHistoryService;
         this.tlDepositHistoryService = tlDepositHistoryService;
         this.cpiHistoryService = cpiHistoryService;
+        this.dovizBankRatesService = dovizBankRatesService;
+    }
+
+    @GetMapping("/bank-rates")
+    public Mono<BankRatesResponseDto> bankRates(@RequestParam(defaultValue = "USD") String asset) {
+        final BankRatesAsset parsed;
+        try {
+            parsed = BankRatesAsset.parse(asset);
+        } catch (IllegalArgumentException ex) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage()));
+        }
+        return dovizBankRatesService
+                .load(parsed)
+                .onErrorMap(
+                        IllegalStateException.class,
+                        ex -> new ResponseStatusException(HttpStatus.BAD_GATEWAY, ex.getMessage(), ex));
     }
 
     @GetMapping("/policy-rate/latest")

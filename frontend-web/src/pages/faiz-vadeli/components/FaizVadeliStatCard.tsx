@@ -57,6 +57,17 @@ function IconBell({ className }: { className?: string }) {
   )
 }
 
+function IconMetal({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M12 2 4 7v2h16V7L12 2zm-6 9v9h12v-9H6zm2 2h2v5H8v-5zm4 0h2v5h-2v-5zm4 0h2v5h-2v-5z"
+      />
+    </svg>
+  )
+}
+
 function StatIcon({ id }: { id: StatIconId }) {
   const cls = 'fi-faiz-stat-icon-svg'
   switch (id) {
@@ -70,6 +81,8 @@ function StatIcon({ id }: { id: StatIconId }) {
       return <IconSpread className={cls} />
     case 'bell':
       return <IconBell className={cls} />
+    case 'metal':
+      return <IconMetal className={cls} />
     default:
       return null
   }

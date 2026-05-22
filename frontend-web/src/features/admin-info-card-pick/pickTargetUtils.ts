@@ -78,7 +78,12 @@ export function isAdminPickRouteAllowed(pathname: string): boolean {
   if (normalized === '/app/bilgi-kartlari' || normalized.startsWith('/app/bilgi-kartlari/')) {
     return false
   }
-  if (normalized === '/app/finansal-okuryazarlik' || normalized.startsWith('/app/finansal-okuryazarlik/')) {
+  if (
+    normalized === '/app/finansal-okuryazarlik' ||
+    normalized.startsWith('/app/finansal-okuryazarlik/') ||
+    normalized === '/finansal-okuryazarlik' ||
+    normalized.startsWith('/finansal-okuryazarlik/')
+  ) {
     return false
   }
   return normalized.startsWith('/app')

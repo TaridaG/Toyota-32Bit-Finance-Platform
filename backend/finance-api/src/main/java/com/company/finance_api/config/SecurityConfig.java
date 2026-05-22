@@ -24,12 +24,14 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 public class SecurityConfig {
 
     /**
-     * Public TCMB rates proxy ({@code /api/rates/...}). Kept separate from the OAuth2 chain so JWT filters never run
-     * here (avoids 401 + {@code WWW-Authenticate: Bearer} for guests and for invalid/expired tokens).
+     * Public catalog reads without JWT (rates, portal info-cards). Separate from the OAuth2 chain so guests and stale
+     * Bearer tokens never get {@code 401} + {@code WWW-Authenticate: Bearer}.
      */
-    private static final RequestMatcher PUBLIC_RATES_PATHS = new OrRequestMatcher(
+    private static final RequestMatcher PUBLIC_ANONYMOUS_READ_PATHS = new OrRequestMatcher(
             new AntPathRequestMatcher("/api/rates"),
-            new AntPathRequestMatcher("/api/rates/**"));
+            new AntPathRequestMatcher("/api/rates/**"),
+            new AntPathRequestMatcher("/api/portal/info-cards"),
+            new AntPathRequestMatcher("/api/portal/info-cards/**"));
 
     private final ObjectProvider<JwtDecoder> jwtDecoder;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
@@ -43,13 +45,12 @@ public class SecurityConfig {
     }
 
     /**
-     * TCMB policy rate is a public catalog read (proxied to MDS). This chain runs before the main OAuth2 chain so a
-     * stale {@code Authorization: Bearer} from the SPA does not trigger JWT validation and 401 for guests.
+     * Public catalog GETs (TCMB rates, Finansal Okuryazarlık info-cards). Runs before the OAuth2 chain.
      */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain publicRatesSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher(PUBLIC_RATES_PATHS)
+    public SecurityFilterChain publicAnonymousCatalogSecurityFilterChain(HttpSecurity http) throws Exception {
+        http.securityMatcher(PUBLIC_ANONYMOUS_READ_PATHS)
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
@@ -62,7 +63,7 @@ public class SecurityConfig {
         boolean oauth2Enabled = StringUtils.hasText(jwtIssuerUri) || jwtDecoder.getIfAvailable() != null;
 
         http
-                .securityMatcher(new NegatedRequestMatcher(PUBLIC_RATES_PATHS))
+                .securityMatcher(new NegatedRequestMatcher(PUBLIC_ANONYMOUS_READ_PATHS))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/health").permitAll()

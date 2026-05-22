@@ -1,6 +1,20 @@
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
 import { normalizeFxQuotePrice } from './fxTryHubConversion'
-import { BIST_TRY_QUOTED_SYMBOLS } from './bistTrySymbols'
+/** US equities on Finnhub in MDS {@code tracked-stocks}; fallback when overview rows omit exchange/source. */
+const US_LISTED_EQUITY_SYMBOLS = new Set([
+  'AAPL',
+  'AMZN',
+  'NVDA',
+  'MSFT',
+  'GOOGL',
+  'TSLA',
+  'META',
+  'AVGO',
+  'AMD',
+  'NFLX',
+  'INTC',
+  'CSCO',
+])
 
 /** Minimal FX row shape (matches `/api/market/fx` entries). */
 export type FxMidRow = {
@@ -104,7 +118,8 @@ export function inferNativeQuote(
     if (src === 'YAHOO') return 'TRY'
     if (src === 'FINNHUB') return 'USD'
     if (s.endsWith('.IS')) return 'TRY'
-    return BIST_TRY_QUOTED_SYMBOLS.has(s) ? 'TRY' : 'USD'
+    // Overview API omits source/exchange; default BIST (TRY), not USD.
+    return US_LISTED_EQUITY_SYMBOLS.has(s) ? 'USD' : 'TRY'
   }
   if (cat === 'METAL' && s.endsWith('TRY')) {
     return 'TRY'

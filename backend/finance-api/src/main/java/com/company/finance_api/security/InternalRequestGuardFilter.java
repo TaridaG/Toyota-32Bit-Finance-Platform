@@ -65,6 +65,11 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        // Finansal Okuryazarlık + contextual help cards (public portal catalog).
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/portal/info-cards")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         // Public market catalog pages (gateway forwards here; must not require X-USERNAME).
         if ("GET".equalsIgnoreCase(request.getMethod())
                 && (path.startsWith("/api/market/overview")
@@ -80,10 +85,11 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        // Public news stream endpoints are allowed for guest users (not admin metrics / ingest).
+        // Public news stream endpoints are allowed for guest users (not admin metrics / ingest / favorites).
         if ("GET".equalsIgnoreCase(request.getMethod())
                 && path.startsWith("/api/news")
-                && !path.startsWith("/api/news/admin")) {
+                && !path.startsWith("/api/news/admin")
+                && !path.startsWith("/api/news/favorites")) {
             filterChain.doFilter(request, response);
             return;
         }

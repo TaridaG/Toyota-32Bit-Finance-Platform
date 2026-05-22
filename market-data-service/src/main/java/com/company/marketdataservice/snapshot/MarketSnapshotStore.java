@@ -24,15 +24,18 @@ public class MarketSnapshotStore {
         if (event == null || event.instrumentSymbol() == null || event.instrumentSymbol().isBlank()) {
             return;
         }
-        latestPrices.put(
+        recordMarketPriceDto(MarketPriceDto.basic(
                 event.instrumentSymbol(),
-                new MarketPriceDto(
-                        event.instrumentSymbol(),
-                        event.price(),
-                        event.source(),
-                        event.occurredAt()
-                )
-        );
+                event.price(),
+                event.source(),
+                event.occurredAt()));
+    }
+
+    public void recordMarketPriceDto(MarketPriceDto dto) {
+        if (dto == null || dto.symbol() == null || dto.symbol().isBlank()) {
+            return;
+        }
+        latestPrices.put(dto.symbol(), dto);
     }
 
     public void recordFx(FxSnapshotUpdatedEvent event) {

@@ -13,6 +13,9 @@ type AnalysisChartFrameProps = {
   onRangeChange: (range: TimeRange) => void
   showNewsOnChart: boolean
   chartNewsLoading?: boolean
+  chartNewsFavoritesOnly?: boolean
+  showChartNewsFavoriteStar?: boolean
+  onToggleChartNewsFavorites?: () => void
   showMA20: boolean
   showMA50: boolean
   showRsi: boolean
@@ -90,6 +93,9 @@ export function AnalysisChartFrame({
   onRangeChange,
   showNewsOnChart,
   chartNewsLoading = false,
+  chartNewsFavoritesOnly = false,
+  showChartNewsFavoriteStar = false,
+  onToggleChartNewsFavorites,
   showMA20,
   showMA50,
   showRsi,
@@ -153,9 +159,10 @@ export function AnalysisChartFrame({
     {
       key: 'news',
       text: chartNewsLoading ? `${t('chartFrame.layerStripNews')}…` : t('chartFrame.layerStripNews'),
-      aria: t('controls.showNews'),
+      aria: chartNewsFavoritesOnly ? t('chartFrame.showFavoriteNews') : t('controls.showNews'),
       on: showNewsOnChart,
       toggle: onToggleNews,
+      favoriteStar: showChartNewsFavoriteStar,
     },
     { key: 'ma20', text: t('chartFrame.layerStripMA20'), aria: t('controls.showMA20'), on: showMA20, toggle: onToggleMA20 },
     { key: 'ma50', text: t('chartFrame.layerStripMA50'), aria: t('controls.showMA50'), on: showMA50, toggle: onToggleMA50 },
@@ -167,20 +174,55 @@ export function AnalysisChartFrame({
     <div className="fi-analysis-chart-workbench">
       <header className="fi-chart-frame-top">
         <div className="fi-chart-frame-layers-strip" role="toolbar" aria-label={t('deck.analysisLayers')}>
-          {layerStrip.map((layer) => (
-            <button
-              key={layer.key}
-              type="button"
-              role="switch"
-              aria-checked={layer.on}
-              title={layer.aria}
-              aria-label={layer.aria}
-              className={`fi-chart-layer-strip-btn${layer.on ? ' fi-chart-layer-strip-btn--on' : ''}`}
-              onClick={layer.toggle}
-            >
-              <span className="fi-chart-layer-strip-label">{layer.text}</span>
-            </button>
-          ))}
+          {layerStrip.map((layer) =>
+            layer.key === 'news' && layer.favoriteStar ? (
+              <div
+                key={layer.key}
+                className={`fi-chart-layer-news-combo${layer.on ? ' fi-chart-layer-news-combo--on' : ''}${
+                  chartNewsFavoritesOnly ? ' fi-chart-layer-news-combo--favorites' : ''
+                }`}
+              >
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={layer.on}
+                  title={layer.aria}
+                  aria-label={layer.aria}
+                  className="fi-chart-layer-news-combo-main"
+                  onClick={layer.toggle}
+                >
+                  <span className="fi-chart-layer-strip-label">{layer.text}</span>
+                </button>
+                <span className="fi-chart-layer-news-combo-divider" aria-hidden="true" />
+                <button
+                  type="button"
+                  aria-label={chartNewsFavoritesOnly ? t('chartFrame.unfavoriteNews') : t('chartFrame.favoriteNews')}
+                  aria-pressed={chartNewsFavoritesOnly}
+                  title={chartNewsFavoritesOnly ? t('chartFrame.unfavoriteNews') : t('chartFrame.favoriteNews')}
+                  className={`fi-chart-layer-news-combo-star${chartNewsFavoritesOnly ? ' fi-chart-layer-news-combo-star--on' : ''}`}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onToggleChartNewsFavorites?.()
+                  }}
+                >
+                  {chartNewsFavoritesOnly ? '★' : '☆'}
+                </button>
+              </div>
+            ) : (
+              <button
+                key={layer.key}
+                type="button"
+                role="switch"
+                aria-checked={layer.on}
+                title={layer.aria}
+                aria-label={layer.aria}
+                className={`fi-chart-layer-strip-btn${layer.on ? ' fi-chart-layer-strip-btn--on' : ''}`}
+                onClick={layer.toggle}
+              >
+                <span className="fi-chart-layer-strip-label">{layer.text}</span>
+              </button>
+            ),
+          )}
         </div>
 
         <div className="fi-chart-frame-chart-type" role="group" aria-label={t('chartFrame.chartTypeAria')}>

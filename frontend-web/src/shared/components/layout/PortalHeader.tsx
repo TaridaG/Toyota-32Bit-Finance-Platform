@@ -22,6 +22,7 @@ import { IconHelp } from '../../../features/literacy-help/IconHelp'
 import { useAdminInfoCardPick } from '../../../features/admin-info-card-pick/AdminInfoCardPickContext'
 import { IconHelpAdd } from '../../../features/admin-info-card-pick/IconHelpAdd'
 import { isAdminPickRouteAllowed } from '../../../features/admin-info-card-pick/pickTargetUtils'
+import { PUBLIC_CATALOG_NAV } from '../../../app/routes/publicCatalogRoutes'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -41,10 +42,7 @@ type PublicNavItem = {
 }
 
 const appNavItems: AppNavItem[] = [
-  { to: '/app/turkiye-ekonomisi', labelKey: 'header.navApp.turkiyeEkonomisi' },
-  { to: '/app/finansal-okuryazarlik', labelKey: 'header.navApp.finansalOkuryazarlik' },
-  { to: '/app/bank-rates', labelKey: 'header.navApp.bankRates' },
-  { to: '/app/markets', labelKey: 'header.navApp.markets' },
+  ...PUBLIC_CATALOG_NAV.map((item) => ({ to: item.to, labelKey: item.labelKey })),
   { to: '/app/faiz-vadeli', labelKey: 'header.navApp.faizVadeli' },
   { to: '/app/my-portfolio', labelKey: 'header.navApp.myPortfolio' },
   { to: '/app/analysis', labelKey: 'header.navApp.analysis' },
@@ -58,18 +56,13 @@ const appNavBilgiKartlariItem: AppNavItem = {
 const appNavAdminItem: AppNavItem = { to: '/admin', labelKey: 'header.navApp.admin' }
 
 const publicNavItems: PublicNavItem[] = [
-  { labelKey: 'header.navPublic.markets', to: '/markets' },
+  ...PUBLIC_CATALOG_NAV.map((item) => ({ labelKey: item.labelKey, to: item.to })),
   { labelKey: 'header.navPublic.myPortfolio', to: '/my-portfolio' },
   { labelKey: 'header.navPublic.analysis', to: '/analysis' },
   { labelKey: 'header.navPublic.news', to: '/news' },
 ]
 
-const mobileNavItems: PublicNavItem[] = [
-  { labelKey: 'header.navPublic.markets', to: '/markets' },
-  { labelKey: 'header.navPublic.myPortfolio', to: '/my-portfolio' },
-  { labelKey: 'header.navPublic.analysis', to: '/analysis' },
-  { labelKey: 'header.navPublic.news', to: '/news' },
-]
+const mobileNavItems: PublicNavItem[] = publicNavItems
 
 const CURRENCY_LABELS: Record<(typeof SUPPORTED_CURRENCIES)[number], string> = {
   USD: 'USD - $',
@@ -117,6 +110,18 @@ function IconBell() {
       <path d="M6 18h12" />
       <path d="M7.5 18V11a4.5 4.5 0 1 1 9 0v7" />
       <path d="M12 3.5v1" />
+    </svg>
+  )
+}
+
+function IconAlarmClock() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5.5 4.5 3 2" />
+      <path d="M18.5 4.5 21 2" />
+      <path d="M9 2.5h6" />
+      <circle cx="12" cy="13" r="7" />
+      <path d="M12 10v3.5l2.5 1.5" />
     </svg>
   )
 }
@@ -288,7 +293,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   return (
     <header className="portal-header">
       <div className="portal-header-inner">
-        <Link to={isAuthenticated ? '/app' : '/'} className="portal-logo">
+        <Link to={isAuthenticated ? '/markets' : '/'} className="portal-logo">
           <img src={siteLogo} className="portal-logo-mark" alt="32Bit logo" />
           <span>{t('appName')}</span>
         </Link>
@@ -313,17 +318,19 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               ))
             : publicNavItems.map((item) => (
                 item.to ? (
-                  <Link
+                  <NavLink
                     key={item.labelKey}
                     to={item.to}
-                    className="portal-nav-link"
                     onClick={() => {
                       closeMenu()
                       closeDesktopPanels()
                     }}
+                    className={({ isActive }) =>
+                      `portal-nav-link${isActive ? ' portal-nav-link-active' : ''}`
+                    }
                   >
                     {t(item.labelKey)}
-                  </Link>
+                  </NavLink>
                 ) : (
                   <a
                     key={item.labelKey}
@@ -433,6 +440,21 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               </div>
             ) : null}
           </div>
+
+          {isAuthenticated ? (
+            <button
+              type="button"
+              className="portal-icon-button"
+              aria-label={t('header.alarms.aria')}
+              title={t('header.alarms.aria')}
+              onClick={() => {
+                closeDesktopPanels()
+                setNotificationsOpen(false)
+              }}
+            >
+              <IconAlarmClock />
+            </button>
+          ) : null}
 
           {isAuthenticated ? (
             <div className="portal-popover-anchor" ref={profileAnchorRef}>
@@ -706,11 +728,18 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                   ))
                 : mobileNavItems.map((item) => (
                     item.to ? (
-                      <Link key={item.labelKey} to={item.to} onClick={closeMenu} className="portal-mobile-item">
+                      <NavLink
+                        key={item.labelKey}
+                        to={item.to}
+                        onClick={closeMenu}
+                        className={({ isActive }) =>
+                          `portal-mobile-item${isActive ? ' portal-mobile-item-active' : ''}`
+                        }
+                      >
                         <span className="portal-mobile-item-icon" />
                         <span>{t(item.labelKey)}</span>
                         <span className="portal-mobile-item-arrow">›</span>
-                      </Link>
+                      </NavLink>
                     ) : (
                       <a key={item.labelKey} href={item.href ?? '#'} onClick={closeMenu} className="portal-mobile-item">
                         <span className="portal-mobile-item-icon" />
