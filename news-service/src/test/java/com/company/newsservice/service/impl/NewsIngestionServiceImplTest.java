@@ -8,6 +8,7 @@ import com.company.newsservice.repository.NewsArticleRepository;
 import com.company.newsservice.service.NewsInstrumentMatcher;
 import com.company.newsservice.service.NewsRelevanceEvaluator;
 import com.company.newsservice.service.NewsTopicTagger;
+import com.company.newsservice.image.NewsArticleImageService;
 import com.company.newsservice.service.translation.NewsTranslationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,9 @@ class NewsIngestionServiceImplTest {
     @Mock
     private NewsTopicTagger newsTopicTagger;
 
+    @Mock
+    private NewsArticleImageService newsArticleImageService;
+
     private NewsIngestionServiceImpl ingestionService;
 
     @BeforeEach
@@ -68,6 +72,7 @@ class NewsIngestionServiceImplTest {
                         newsRelevanceEvaluator,
                         newsTopicTagger,
                         newsTranslationService,
+                        newsArticleImageService,
                         newsKafkaTemplate
                 );
     }

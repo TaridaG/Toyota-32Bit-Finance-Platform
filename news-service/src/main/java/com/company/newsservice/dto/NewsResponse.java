@@ -14,6 +14,7 @@ public record NewsResponse(
         String translatedLanguage,
         boolean translated,
         String articleUrl,
+        String imageUrl,
         String sourceName,
         NewsCategory category,
         Instant publishedAt,
