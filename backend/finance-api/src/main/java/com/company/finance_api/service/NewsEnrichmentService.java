@@ -29,4 +29,13 @@ public interface NewsEnrichmentService {
             Instant toInclusive,
             String language
     );
+
+    NewsEnrichedPageResponse getEnrichedFavoriteNews(
+            int page,
+            int size,
+            String language,
+            String category,
+            Integer maxAgeMinutes,
+            String search
+    );
 }

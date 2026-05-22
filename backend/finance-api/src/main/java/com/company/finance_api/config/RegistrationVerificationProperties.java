@@ -12,6 +12,8 @@ public class RegistrationVerificationProperties {
     private String hashSecret = "change-me";
     private String from = "";
     private String subject = "Your Finance Portal verification code";
+    /** Optional link shown in the email footer (e.g. https://portal.example.com). */
+    private String portalPublicUrl = "";
 
     public boolean isEnabled() {
         return enabled;
@@ -75,6 +77,14 @@ public class RegistrationVerificationProperties {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public String getPortalPublicUrl() {
+        return portalPublicUrl;
+    }
+
+    public void setPortalPublicUrl(String portalPublicUrl) {
+        this.portalPublicUrl = portalPublicUrl;
     }
 }
 

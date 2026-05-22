@@ -5,6 +5,7 @@ import org.springframework.util.StringUtils;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -17,6 +18,13 @@ public final class MarketOverviewCategoryRules {
     private static final Set<String> SPOT_METAL_SYMBOLS =
             Set.of("XAUTRY", "XAGTRY", "XPTTRY", "XPDTRY", "XCUTRY");
     private static final Set<String> METAL_FUTURES_SYMBOLS = Set.of("GC=F", "SI=F", "HG=F", "PA=F", "PL=F");
+
+    public static final Map<String, String> METAL_FUTURES_TO_SPOT_TRY = Map.of(
+            "GC=F", "XAUTRY",
+            "SI=F", "XAGTRY",
+            "PL=F", "XPTTRY",
+            "PA=F", "XPDTRY",
+            "HG=F", "XCUTRY");
     private static final Set<String> METAL_SYMBOLS;
 
     static {
@@ -26,6 +34,27 @@ public final class MarketOverviewCategoryRules {
     }
 
     private MarketOverviewCategoryRules() {}
+
+    /**
+     * Quote currency for {@code X-Currency} conversion on overview rows (symbol-only).
+     * Spot metals ({@code XAUTRY}, …) and {@code *TRY} FX crosses are quoted in TRY.
+     */
+    public static String listingCurrency(String symbol) {
+        if (!StringUtils.hasText(symbol)) {
+            return "USD";
+        }
+        String s = symbol.trim().toUpperCase(Locale.ROOT);
+        if (s.startsWith("FUND_")) {
+            return "TRY";
+        }
+        if (SPOT_METAL_SYMBOLS.contains(s)) {
+            return "TRY";
+        }
+        if (s.length() == 6 && s.endsWith("TRY")) {
+            return "TRY";
+        }
+        return "USD";
+    }
 
     public static String inferWireCategory(String symbol) {
         if (!StringUtils.hasText(symbol)) {

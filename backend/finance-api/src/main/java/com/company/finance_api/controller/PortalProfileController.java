@@ -3,12 +3,17 @@ package com.company.finance_api.controller;
 import com.company.finance_api.common.ApiResponse;
 import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
+import com.company.finance_api.dto.PortalConfirmEmailChangeRequest;
 import com.company.finance_api.dto.PortalDeleteAccountRequest;
+import com.company.finance_api.dto.PortalEmailChangeRequest;
+import com.company.finance_api.dto.PortalForgotPasswordResetRequest;
 import com.company.finance_api.dto.PortalProfileResponse;
 import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
 import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
 import com.company.finance_api.dto.PortalUpdatePhoneRequest;
 import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
 import com.company.finance_api.profile.PortalProfileService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -24,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,6 +58,38 @@ public class PortalProfileController {
     public ApiResponse<Void> changePassword(@Valid @RequestBody PortalChangePasswordRequest request) {
         portalProfileService.changePassword(request);
         return ApiResponse.success(null);
+    }
+
+    @PostMapping("/password/send-reset-code")
+    public ApiResponse<PublicSendVerificationCodeResponse> sendPasswordResetCode() {
+        return ApiResponse.success(portalProfileService.sendPasswordResetCode());
+    }
+
+    @PostMapping("/password/reset-forgot")
+    public ApiResponse<Void> resetPasswordForgot(@Valid @RequestBody PortalForgotPasswordResetRequest request) {
+        portalProfileService.resetPasswordWithEmailVerification(request);
+        return ApiResponse.success(null);
+    }
+
+    @PostMapping("/email/send-code")
+    public ApiResponse<PublicSendVerificationCodeResponse> sendEmailChangeCode(
+            @Valid @RequestBody PortalEmailChangeRequest request
+    ) {
+        return ApiResponse.success(portalProfileService.sendEmailChangeCode(request));
+    }
+
+    @PostMapping("/email/confirm")
+    public ApiResponse<PortalProfileResponse> confirmEmailChange(
+            @Valid @RequestBody PortalConfirmEmailChangeRequest request
+    ) {
+        return ApiResponse.success(portalProfileService.confirmEmailChange(request));
+    }
+
+    @GetMapping("/username-availability")
+    public ApiResponse<PublicUsernameAvailabilityResponse> checkUsernameAvailability(
+            @RequestParam("username") String username
+    ) {
+        return ApiResponse.success(portalProfileService.checkUsernameAvailability(username));
     }
 
     @PostMapping("/username")

@@ -27,6 +27,10 @@ public class YahooFinanceProvider implements PriceProvider {
 
     @Override
     public BigDecimal fetchPrice(String symbol) {
+        return fetchSpotQuote(symbol).price();
+    }
+
+    public YahooSpotQuote fetchSpotQuote(String symbol) {
         log.info("YAHOO FETCH START symbol={}", symbol);
         String normalized = normalizeSymbol(symbol);
         List<String> candidates = toCandidateSymbols(normalized);
@@ -34,15 +38,15 @@ public class YahooFinanceProvider implements PriceProvider {
         for (String candidate : candidates) {
             try {
                 YahooFinanceResponse response = yahooFinanceClient.fetchSpotChart(candidate);
-                YahooTick tick = mapSpot(response, normalized);
-                if (tick.price() != null) {
+                YahooSpotQuote quote = mapSpotQuote(response, normalized);
+                if (quote.price() != null) {
                     log.info(
                             "YAHOO FETCH RESULT symbol={} price={} timestamp={}",
-                            tick.symbol(),
-                            tick.price(),
-                            tick.timestamp()
+                            quote.symbol(),
+                            quote.price(),
+                            quote.timestamp()
                     );
-                    return tick.price();
+                    return quote;
                 }
             } catch (IllegalArgumentException ex) {
                 // 4xx: unsupported symbol candidate. continue to next candidate
@@ -56,17 +60,58 @@ public class YahooFinanceProvider implements PriceProvider {
         throw new IllegalArgumentException("Yahoo did not return price for symbol=" + normalized);
     }
 
-    private static YahooTick mapSpot(YahooFinanceResponse response, String fallbackSymbol) {
+    private static YahooSpotQuote mapSpotQuote(YahooFinanceResponse response, String fallbackSymbol) {
         YahooFinanceResponse.Result result = firstResult(response);
         if (result == null || result.meta() == null || result.meta().regularMarketPrice() == null) {
             throw new IllegalArgumentException("Yahoo spot payload has no market price for symbol=" + fallbackSymbol);
         }
-        String symbol = result.meta().symbol() == null ? fallbackSymbol : result.meta().symbol();
-        BigDecimal price = BigDecimal.valueOf(result.meta().regularMarketPrice());
-        Instant ts = result.meta().regularMarketTime() == null
+        YahooFinanceResponse.Meta meta = result.meta();
+        String symbol = meta.symbol() == null ? fallbackSymbol : meta.symbol();
+        BigDecimal price = BigDecimal.valueOf(meta.regularMarketPrice());
+        Instant ts = meta.regularMarketTime() == null
                 ? Instant.now()
-                : Instant.ofEpochSecond(result.meta().regularMarketTime());
-        return new YahooTick(symbol, price, ts, SOURCE);
+                : Instant.ofEpochSecond(meta.regularMarketTime());
+        return new YahooSpotQuote(
+                symbol,
+                price,
+                ts,
+                SOURCE,
+                toBigDecimal(meta.regularMarketVolume()),
+                toBigDecimal(meta.openInterest()),
+                toBigDecimal(meta.regularMarketOpen()),
+                toBigDecimal(meta.regularMarketDayHigh()),
+                toBigDecimal(meta.regularMarketDayLow()),
+                firstNonBlank(meta.exchangeName(), meta.fullExchangeName()),
+                meta.underlyingSymbol(),
+                meta.expireDate() == null || meta.expireDate() <= 0
+                        ? null
+                        : Instant.ofEpochSecond(meta.expireDate()));
+    }
+
+    private static BigDecimal toBigDecimal(Double value) {
+        if (value == null || !Double.isFinite(value) || value <= 0d) {
+            return null;
+        }
+        return BigDecimal.valueOf(value);
+    }
+
+    private static BigDecimal toBigDecimal(Long value) {
+        if (value == null || value <= 0L) {
+            return null;
+        }
+        return BigDecimal.valueOf(value);
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v.trim();
+            }
+        }
+        return null;
     }
 
     private static YahooFinanceResponse.Result firstResult(YahooFinanceResponse response) {
@@ -99,11 +144,4 @@ public class YahooFinanceProvider implements PriceProvider {
         return symbol.endsWith("USDT") || symbol.endsWith("USD");
     }
 
-    record YahooTick(
-            String symbol,
-            BigDecimal price,
-            Instant timestamp,
-            String source
-    ) {
-    }
 }

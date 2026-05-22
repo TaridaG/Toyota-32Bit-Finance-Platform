@@ -33,7 +33,7 @@ public class PublicRegistrationController {
 
     @PostMapping("/register/send-code")
     public ApiResponse<PublicSendVerificationCodeResponse> sendCode(@Valid @RequestBody PublicSendVerificationCodeRequest request) {
-        return ApiResponse.success(registrationEmailVerificationService.sendCode(request.getEmail()));
+        return ApiResponse.success(registrationEmailVerificationService.sendCode(request.getEmail(), request.getLocale()));
     }
 
     @PostMapping("/register")

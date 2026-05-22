@@ -23,7 +23,7 @@ public class MarketOverviewController {
     @GetMapping("/overview")
     public ApiResponse<MarketOverviewPageResponse> overview(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false, name = "q") String search,
             @RequestParam(required = false) String sort,

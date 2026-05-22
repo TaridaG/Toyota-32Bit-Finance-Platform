@@ -1,5 +1,13 @@
 # Used with Spring profile "docker" (see Docker Compose for finance-api).
 # JWT verified via in-cluster JWKS; token iss hostname may still be localhost:8080/8085 for browsers.
+
+spring:
+  datasource:
+    hikari:
+      # Kafka consumers + /api/market/overview (parallel enrich + history baselines) need more than default 10.
+      maximum-pool-size: ${FINANCE_DB_POOL_MAX:40}
+      minimum-idle: 5
+      connection-timeout: 20000
 #
 # TR USD Eurobond Yahoo ingest: GTUSDTR*:GOV is often 404 from container IPs; use liquid USD bond ETF proxies
 # plus normalize-chart-to-bond-price-window (94–106) so UI/coupon math stay bond-like. Not OTC ISIN prices.
@@ -27,8 +35,7 @@ app:
         admin-content: ${OPENAI_MODEL_ADMIN_CONTENT:gpt-4.1-mini}
         translation: ${OPENAI_MODEL_TRANSLATION:gpt-4.1-mini}
   profile-avatar:
-    # Persist across container restarts by mounting this path as a volume.
-    storage-root: ${PROFILE_AVATAR_STORAGE_ROOT:/data/profile-avatars}
+    storage-root: ${PROFILE_AVATAR_STORAGE_ROOT:/photos}
   security:
     jwt:
       jwk-set-uri: ${APP_SECURITY_JWT_JWK_SET_URI:http://keycloak:8080/realms/finance/protocol/openid-connect/certs}

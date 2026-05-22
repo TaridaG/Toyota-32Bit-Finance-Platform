@@ -6,6 +6,8 @@ import com.company.finance_api.infocards.dto.InfoCardInputDto;
 import com.company.finance_api.infocards.dto.InfoCardLocaleContentDto;
 import com.company.finance_api.infocards.dto.InfoCardsDashboardDto;
 import com.company.finance_api.infocards.dto.InfoCardsPageDto;
+import com.company.finance_api.infocards.dto.LiteracyCatalogPageDto;
+import com.company.finance_api.infocards.dto.LiteracyCatalogStatsDto;
 import com.company.finance_api.repository.InfoCardRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +36,9 @@ public class InfoCardService {
 
     private static final String ACTIVE = "ACTIVE";
     private static final String PASSIVE = "PASSIVE";
+    private static final String FINANCIAL_LITERACY = "FINANCIAL_LITERACY";
+    private static final int LITERACY_CATALOG_DEFAULT_SIZE = 30;
+    private static final int LITERACY_CATALOG_MAX_SIZE = 50;
 
     private final InfoCardRepository repository;
     private final ObjectMapper objectMapper;
@@ -51,6 +56,46 @@ public class InfoCardService {
                 .filter(card -> includeAdminOnly || !card.isAdminOnly())
                 .map(card -> InfoCardMapper.toPortalDto(card, resolvedLocale))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public LiteracyCatalogPageDto listLiteracyCatalog(
+            int page,
+            int size,
+            boolean includeAdminOnly,
+            String locale,
+            String query,
+            String category,
+            List<String> difficulties,
+            List<String> contentTypes,
+            List<String> portalPages
+    ) {
+        String resolvedLocale = InfoCardLocaleResolver.normalizeLocale(locale);
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(LITERACY_CATALOG_MAX_SIZE, Math.max(1, size > 0 ? size : LITERACY_CATALOG_DEFAULT_SIZE));
+
+        List<InfoCardEntity> filtered = repository.findByStatusOrderByUpdatedAtDesc(ACTIVE).stream()
+                .filter(card -> card.getPages().contains(FINANCIAL_LITERACY))
+                .filter(card -> includeAdminOnly || !card.isAdminOnly())
+                .filter(card -> matchesLiteracyCategory(card, category))
+                .filter(card -> matchesLiteracyList(card.getDifficulty(), difficulties))
+                .filter(card -> matchesLiteracyList(card.getCardType(), contentTypes))
+                .filter(card -> matchesLiteracyPortalPages(card, portalPages))
+                .filter(card -> matchesLiteracyQuery(card, query, resolvedLocale))
+                .sorted(Comparator.comparing(
+                        card -> InfoCardLocaleResolver.resolve(card, resolvedLocale).title().toLowerCase(Locale.ROOT)
+                ))
+                .toList();
+
+        LiteracyCatalogStatsDto stats = buildLiteracyStats(filtered);
+        int totalElements = filtered.size();
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / safeSize);
+        int from = Math.min(safePage * safeSize, totalElements);
+        int to = Math.min(from + safeSize, totalElements);
+        List<InfoCardDto> content = filtered.subList(from, to).stream()
+                .map(card -> InfoCardMapper.toPortalDto(card, resolvedLocale))
+                .toList();
+        return new LiteracyCatalogPageDto(content, safePage, safeSize, totalElements, totalPages, stats);
     }
 
     @Transactional(readOnly = true)
@@ -197,21 +242,71 @@ public class InfoCardService {
     }
 
     private boolean matchesQuery(InfoCardEntity card, String query) {
+        return matchesLiteracyQuery(card, query, "tr");
+    }
+
+    private boolean matchesLiteracyQuery(InfoCardEntity card, String query, String locale) {
         if (query == null || query.isBlank()) {
             return true;
         }
         String q = query.trim().toLowerCase(Locale.ROOT);
-        if (card.getTitle().toLowerCase(Locale.ROOT).contains(q)) {
+        InfoCardLocaleContentDto content = InfoCardLocaleResolver.resolve(card, locale);
+        if (content.title().toLowerCase(Locale.ROOT).contains(q)) {
             return true;
         }
-        if (card.getShortDescription().toLowerCase(Locale.ROOT).contains(q)) {
+        if (content.shortDescription().toLowerCase(Locale.ROOT).contains(q)) {
             return true;
         }
-        if (card.getDetailedDescription().toLowerCase(Locale.ROOT).contains(q)) {
+        String detailed = content.detailedDescription();
+        if (detailed != null && detailed.toLowerCase(Locale.ROOT).contains(q)) {
             return true;
         }
+        String howTo = content.howToInterpret();
+        if (howTo != null && howTo.toLowerCase(Locale.ROOT).contains(q)) {
+            return true;
+        }
+        String mistake = content.commonMistake();
+        if (mistake != null && mistake.toLowerCase(Locale.ROOT).contains(q)) {
+            return true;
+        }
+        String example = content.example();
+        if (example != null && example.toLowerCase(Locale.ROOT).contains(q)) {
+            return true;
+        }
+        List<String> related = content.relatedTerms() != null ? content.relatedTerms() : List.of();
         return card.getTargetTerms().stream().anyMatch(t -> t.toLowerCase(Locale.ROOT).contains(q))
-                || card.getRelatedTerms().stream().anyMatch(t -> t.toLowerCase(Locale.ROOT).contains(q));
+                || related.stream().anyMatch(t -> t.toLowerCase(Locale.ROOT).contains(q));
+    }
+
+    private boolean matchesLiteracyCategory(InfoCardEntity card, String category) {
+        if (category == null || category.isBlank() || "ALL".equalsIgnoreCase(category)) {
+            return true;
+        }
+        return category.equalsIgnoreCase(card.getCategory());
+    }
+
+    private boolean matchesLiteracyList(String value, List<String> allowed) {
+        if (allowed == null || allowed.isEmpty()) {
+            return true;
+        }
+        return allowed.stream().anyMatch(item -> item != null && item.equalsIgnoreCase(value));
+    }
+
+    private boolean matchesLiteracyPortalPages(InfoCardEntity card, List<String> portalPages) {
+        if (portalPages == null || portalPages.isEmpty()) {
+            return true;
+        }
+        return portalPages.stream()
+                .filter(page -> page != null && !page.isBlank())
+                .anyMatch(page -> card.getPages().contains(page.trim()));
+    }
+
+    private LiteracyCatalogStatsDto buildLiteracyStats(List<InfoCardEntity> cards) {
+        long terms = cards.stream().filter(c -> "TERM".equals(c.getCardType())).count();
+        long charts = cards.stream().filter(c -> "CHART".equals(c.getCardType())).count();
+        long analysisTools = cards.stream().filter(c -> "ANALYSIS_TOOL".equals(c.getCardType())).count();
+        long macro = cards.stream().filter(c -> "MACRO_INDICATOR".equals(c.getCardType())).count();
+        return new LiteracyCatalogStatsDto(cards.size(), terms, charts, analysisTools, macro);
     }
 
     private boolean matchesElement(InfoCardEntity card, String elementId) {

@@ -47,6 +47,9 @@ scheduler:
     delay-ms: 60000
 
 app:
+  profile-avatar:
+    # Repo root /photos (override with PROFILE_AVATAR_STORAGE_ROOT). Local run cwd: backend/finance-api.
+    storage-root: ${PROFILE_AVATAR_STORAGE_ROOT:../../photos}
   ai:
     enabled: ${AI_ENABLED:false}
     openai:
@@ -67,6 +70,7 @@ app:
       hash-secret: ${APP_REGISTRATION_VERIFICATION_HASH_SECRET:change-me}
       from: ${APP_REGISTRATION_VERIFICATION_FROM:${SPRING_MAIL_USERNAME:}}
       subject: ${APP_REGISTRATION_VERIFICATION_SUBJECT:Your Finance Portal verification code}
+      portal-public-url: ${APP_PORTAL_PUBLIC_URL:http://localhost:5173}
   keycloak:
     server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8085}
     realm: finance

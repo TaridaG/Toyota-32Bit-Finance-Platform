@@ -2,9 +2,11 @@ package com.company.finance_api.registration;
 
 import com.company.finance_api.config.RegistrationVerificationProperties;
 import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,23 +20,38 @@ import java.util.Locale;
 
 @Service
 public class RegistrationEmailVerificationService {
+
+    private static final String LOGO_RESOURCE = "email/site-logo.png";
+    private static final String LOGO_CONTENT_ID = "portalLogo";
+
     private final EmailVerificationCodeRepository repository;
     private final JavaMailSender mailSender;
     private final RegistrationVerificationProperties properties;
+    private final VerificationEmailTemplateService emailTemplateService;
+    private final VerificationEmailLocaleResolver localeResolver;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public RegistrationEmailVerificationService(
             EmailVerificationCodeRepository repository,
             JavaMailSender mailSender,
-            RegistrationVerificationProperties properties
+            RegistrationVerificationProperties properties,
+            VerificationEmailTemplateService emailTemplateService,
+            VerificationEmailLocaleResolver localeResolver
     ) {
         this.repository = repository;
         this.mailSender = mailSender;
         this.properties = properties;
+        this.emailTemplateService = emailTemplateService;
+        this.localeResolver = localeResolver;
     }
 
     @Transactional
     public PublicSendVerificationCodeResponse sendCode(String rawEmail) {
+        return sendCode(rawEmail, null);
+    }
+
+    @Transactional
+    public PublicSendVerificationCodeResponse sendCode(String rawEmail, String localeHint) {
         if (!properties.isEnabled()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Email verification is disabled");
         }
@@ -64,7 +81,9 @@ public class RegistrationEmailVerificationService {
             row.setCreatedAt(now);
         }
         repository.save(row);
-        sendEmail(email, code, properties.getTtlSeconds());
+
+        String locale = localeResolver.resolve(localeHint, email);
+        sendEmail(email, code, properties.getTtlSeconds(), locale);
         return new PublicSendVerificationCodeResponse(properties.getTtlSeconds(), properties.getResendCooldownSeconds());
     }
 
@@ -96,23 +115,24 @@ public class RegistrationEmailVerificationService {
         repository.delete(row);
     }
 
-    private void sendEmail(String to, String code, int ttlSeconds) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        if (properties.getFrom() != null && !properties.getFrom().isBlank()) {
-            message.setFrom(properties.getFrom());
-        }
-        message.setSubject(properties.getSubject());
-        message.setText("""
-                Your Finance Portal verification code is: %s
-
-                This code expires in %d seconds.
-                If you did not request this code, please ignore this email.
-                """.formatted(code, ttlSeconds));
+    private void sendEmail(String to, String code, int ttlSeconds, String locale) {
+        VerificationEmailContent content = emailTemplateService.build(locale, code, ttlSeconds);
         try {
-            mailSender.send(message);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name());
+            helper.setTo(to);
+            if (properties.getFrom() != null && !properties.getFrom().isBlank()) {
+                helper.setFrom(properties.getFrom());
+            }
+            helper.setSubject(content.subject());
+            helper.setText(content.plainBody(), content.htmlBody());
+            ClassPathResource logo = new ClassPathResource(LOGO_RESOURCE);
+            if (logo.exists()) {
+                helper.addInline(LOGO_CONTENT_ID, logo, "image/png");
+            }
+            mailSender.send(mimeMessage);
         } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Unable to send verification email");
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Unable to send verification email", ex);
         }
     }
 
@@ -150,4 +170,3 @@ public class RegistrationEmailVerificationService {
         return value.trim();
     }
 }
-

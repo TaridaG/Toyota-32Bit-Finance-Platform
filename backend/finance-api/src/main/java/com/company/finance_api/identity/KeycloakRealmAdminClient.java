@@ -223,6 +223,40 @@ public class KeycloakRealmAdminClient {
                 .toBodilessEntity();
     }
 
+    public void updateUserEmail(String keycloakUserId, String newEmail) {
+        String token = obtainAdminAccessToken();
+        String json = restClient.get()
+                .uri("/admin/realms/{realm}/users/{userId}", props.getRealm(), keycloakUserId)
+                .headers(h -> h.setBearerAuth(token))
+                .retrieve()
+                .body(String.class);
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            if (!root.isObject()) {
+                throw new IllegalStateException("Unexpected Keycloak user JSON shape");
+            }
+            ObjectNode objectNode = (ObjectNode) root;
+            objectNode.put("email", newEmail);
+            objectNode.put("emailVerified", true);
+            restClient.put()
+                    .uri("/admin/realms/{realm}/users/{userId}", props.getRealm(), keycloakUserId)
+                    .headers(h -> h.setBearerAuth(token))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(objectNode.toString())
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException ex) {
+            if (ex.getStatusCode().value() == 409) {
+                throw new IllegalStateException("Email is already registered in identity provider");
+            }
+            throw new IllegalStateException("Keycloak email update failed: HTTP " + ex.getStatusCode().value());
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Keycloak email update failed", e);
+        }
+    }
+
     public void updateRealmUsername(String keycloakUserId, String newUsername) {
         String token = obtainAdminAccessToken();
         String json = restClient.get()

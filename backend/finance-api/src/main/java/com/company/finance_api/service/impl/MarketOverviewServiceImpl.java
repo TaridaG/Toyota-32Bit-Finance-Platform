@@ -26,6 +26,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -46,6 +47,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
     private static final Logger log = LoggerFactory.getLogger(MarketOverviewServiceImpl.class);
     private static final Duration CACHE_TTL = Duration.ofSeconds(5);
+    private static final int MAX_OVERVIEW_PAGE_SIZE = 50;
     private static final String INSIGHTS_CACHE_KEY = "market:insights";
     private static final String USD = "USD";
     private static final String TRY = "TRY";
@@ -82,7 +84,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     @Override
     public MarketOverviewPageResponse getOverview(int page, int size, String category, String search, String targetCurrency, String sort) {
         int resolvedPage = Math.max(page, 0);
-        int resolvedSize = Math.max(size, 1);
+        int resolvedSize = Math.min(Math.max(size, 1), MAX_OVERVIEW_PAGE_SIZE);
         String normalizedCategory = normalize(category);
         String normalizedSearch = normalize(search);
         String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
@@ -110,8 +112,9 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                         MarketBaseItem::price,
                         (left, right) -> left
                 ));
+        // Overview table: MDS summary is authoritative for horizon %; skip 5× DB baseline scans per request.
         Map<String, HistoricalChanges> changesBySymbol = enrichHistoricalChangesWithMdsSummary(
-                fetchHistoricalChanges(pricesForChanges),
+                Map.of(),
                 new ArrayList<>(pricesForChanges.keySet())
         );
         List<String> allSymbols = merged.stream().map(MarketBaseItem::symbol).toList();
@@ -134,12 +137,12 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         List<MarketBaseItem> currentPage = sorted.subList(start, end);
 
         List<CompletableFuture<MarketOverviewItemResponse>> futures = currentPage.stream()
-                .map(item -> CompletableFuture.supplyAsync(() -> enrichWithAnalytics(
-                item,
-                normalizedCurrency,
-                changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty()),
-                contextualTrends.getOrDefault(item.symbol(), TrendEnrichment.empty())
-        )))
+                .map(item -> CompletableFuture.supplyAsync(() -> enrichOverviewRow(
+                        item,
+                        normalizedCurrency,
+                        changesBySymbol.getOrDefault(item.symbol(), HistoricalChanges.empty()),
+                        contextualTrends.getOrDefault(item.symbol(), TrendEnrichment.empty())
+                )))
                 .toList();
 
         List<MarketOverviewItemResponse> content = futures.stream()
@@ -242,10 +245,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                 .map(price -> {
                     String symbol = price.symbol().trim().toUpperCase(Locale.ROOT);
                     Instrument instrument = instrumentsBySymbol.get(symbol);
-                    return mergeBase(
-                            new MarketPriceDto(symbol, price.price(), price.source(), price.timestamp()),
-                            instrument
-                    );
+                    return mergeBase(price, instrument);
                 })
                 .toList();
         if (!filtered.isEmpty()) {
@@ -308,8 +308,18 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                         canonical,
                         mid,
                         StringUtils.hasText(fx.source()) ? fx.source() : "TCMB",
-                        fx.timestamp()
-                ));
+                        fx.timestamp(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null));
             }
             return out;
         } catch (Exception ex) {
@@ -320,24 +330,26 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
     private MarketBaseItem mergeBase(MarketPriceDto price, Instrument instrument) {
         String wireCategory = MarketOverviewCategoryRules.inferWireCategory(price.symbol());
-        if (instrument == null) {
-            return new MarketBaseItem(
-                    price.symbol(),
-                    price.symbol(),
-                    price.price(),
-                    wireCategory,
-                    null,
-                    price.source()
-            );
-        }
+        String name = instrument == null ? price.symbol() : instrument.getName();
+        Long instrumentId = instrument == null ? null : instrument.getId();
         return new MarketBaseItem(
                 price.symbol(),
-                instrument.getName(),
+                name,
                 price.price(),
                 wireCategory,
-                instrument.getId(),
-                price.source()
-        );
+                instrumentId,
+                price.source(),
+                price.volume24h(),
+                price.openInterest(),
+                price.dayOpen(),
+                price.dayHigh(),
+                price.dayLow(),
+                price.exchangeName(),
+                price.underlyingSymbol(),
+                price.contractExpiry(),
+                price.linkedSpotSymbol(),
+                price.spotSpreadPct(),
+                price.spotSpreadAbs());
     }
 
     private List<MarketBaseItem> fallbackMinimalItems(
@@ -349,24 +361,23 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                 .map(price -> {
                     String symbol = price.symbol().trim().toUpperCase(Locale.ROOT);
                     Instrument instrument = instrumentsBySymbol.get(symbol);
-                    if (instrument == null) {
-                        return new MarketBaseItem(
-                                symbol,
-                                symbol,
-                                BigDecimal.ZERO,
-                                MarketOverviewCategoryRules.inferWireCategory(symbol),
-                                null,
-                                price.source()
-                        );
-                    }
-                    return new MarketBaseItem(
+                    MarketPriceDto wire = new MarketPriceDto(
                             symbol,
-                            instrument.getName(),
                             BigDecimal.ZERO,
-                            MarketOverviewCategoryRules.inferWireCategory(symbol),
-                            instrument.getId(),
-                            price.source()
-                    );
+                            price.source(),
+                            price.timestamp(),
+                            price.volume24h(),
+                            price.openInterest(),
+                            price.dayOpen(),
+                            price.dayHigh(),
+                            price.dayLow(),
+                            price.exchangeName(),
+                            price.underlyingSymbol(),
+                            price.contractExpiry(),
+                            price.linkedSpotSymbol(),
+                            price.spotSpreadPct(),
+                            price.spotSpreadAbs());
+                    return mergeBase(wire, instrument);
                 })
                 .distinct()
                 .toList();
@@ -374,14 +385,24 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             return fromPriceSymbols;
         }
         return instrumentService.getAllActive().stream()
-                .map(instrument -> new MarketBaseItem(
-                        instrument.getSymbol(),
-                        instrument.getName(),
-                        BigDecimal.ZERO,
-                        MarketOverviewCategoryRules.inferWireCategory(instrument.getSymbol()),
-                        instrument.getId(),
-                        null
-                ))
+                .map(instrument -> mergeBase(
+                        new MarketPriceDto(
+                                instrument.getSymbol(),
+                                BigDecimal.ZERO,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null),
+                        instrument))
                 .toList();
     }
 
@@ -656,6 +677,35 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         public BigDecimal priceSlope;
     }
 
+    /**
+     * Fast path for paginated overview: no per-symbol analytics HTTP (candles/trend metrics).
+     * Uses MDS horizon % and universe-relative contextual trend scores already computed for sorting.
+     */
+    private MarketOverviewItemResponse enrichOverviewRow(
+            MarketBaseItem base,
+            String targetCurrency,
+            HistoricalChanges historicalChanges,
+            TrendEnrichment contextualTrend
+    ) {
+        TrendEnrichment trend = contextualTrend != null && contextualTrend.score() != null
+                ? contextualTrend
+                : TrendEnrichment.empty();
+        BigDecimal nativePx = base.price();
+        BigDecimal convertedPrice = applyPrecision(convertDisplayPrice(nativePx, base.symbol(), targetCurrency), base.category());
+        BigDecimal convertedHigh = applyPrecision(convertDisplayPrice(base.dayHigh(), base.symbol(), targetCurrency), base.category());
+        BigDecimal convertedLow = applyPrecision(convertDisplayPrice(base.dayLow(), base.symbol(), targetCurrency), base.category());
+        BigDecimal change24h = historicalChanges.change1D();
+        return mapToOverviewItem(
+                base,
+                nativePx,
+                convertedPrice,
+                change24h,
+                historicalChanges,
+                convertedHigh,
+                convertedLow,
+                trend);
+    }
+
     private MarketOverviewItemResponse enrichWithAnalytics(
             MarketBaseItem base,
             String targetCurrency,
@@ -671,48 +721,70 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal convertedHigh = applyPrecision(convertDisplayPrice(metrics.high24h(), base.symbol(), targetCurrency), base.category());
             BigDecimal convertedLow = applyPrecision(convertDisplayPrice(metrics.low24h(), base.symbol(), targetCurrency), base.category());
             BigDecimal change24h = metrics.change24h() == null ? historicalChanges.change1D() : metrics.change24h();
-            return new MarketOverviewItemResponse(
-                    base.symbol(),
-                    base.name(),
+            return mapToOverviewItem(
+                    base,
                     nativePx,
                     convertedPrice,
                     change24h,
-                    historicalChanges.change1D(),
-                    historicalChanges.change1M(),
-                    historicalChanges.change3M(),
-                    historicalChanges.change6M(),
-                    historicalChanges.change1Y(),
+                    historicalChanges,
                     convertedHigh,
                     convertedLow,
-                    base.category(),
-                    base.instrumentId(),
-                    trend.score(),
-                    trend.label()
-            );
+                    trend);
         } catch (Exception ex) {
             log.warn("MARKET_OVERVIEW_ANALYTICS_FALLBACK symbol={} reason={}", base.symbol(), ex.toString());
             BigDecimal nativePx = base.price();
             BigDecimal convertedPrice = applyPrecision(convertDisplayPrice(nativePx, base.symbol(), targetCurrency), base.category());
             TrendEnrichment trend = resolveTrendForItem(base.symbol(), contextualTrend);
-            return new MarketOverviewItemResponse(
-                    base.symbol(),
-                    base.name(),
+            return mapToOverviewItem(
+                    base,
                     nativePx,
                     convertedPrice,
                     historicalChanges.change1D(),
-                    historicalChanges.change1D(),
-                    historicalChanges.change1M(),
-                    historicalChanges.change3M(),
-                    historicalChanges.change6M(),
-                    historicalChanges.change1Y(),
+                    historicalChanges,
                     null,
                     null,
-                    base.category(),
-                    base.instrumentId(),
-                    trend.score(),
-                    trend.label()
-            );
+                    trend);
         }
+    }
+
+    private MarketOverviewItemResponse mapToOverviewItem(
+            MarketBaseItem base,
+            BigDecimal nativePx,
+            BigDecimal convertedPrice,
+            BigDecimal change24h,
+            HistoricalChanges historicalChanges,
+            BigDecimal high24h,
+            BigDecimal low24h,
+            TrendEnrichment trend
+    ) {
+        return new MarketOverviewItemResponse(
+                base.symbol(),
+                base.name(),
+                nativePx,
+                convertedPrice,
+                change24h,
+                historicalChanges.change1D(),
+                historicalChanges.change1M(),
+                historicalChanges.change3M(),
+                historicalChanges.change6M(),
+                historicalChanges.change1Y(),
+                high24h,
+                low24h,
+                base.category(),
+                base.instrumentId(),
+                trend.score(),
+                trend.label(),
+                base.volume24h(),
+                base.openInterest(),
+                base.dayOpen(),
+                base.dayHigh(),
+                base.dayLow(),
+                base.exchangeName(),
+                base.underlyingSymbol(),
+                base.contractExpiry(),
+                base.linkedSpotSymbol(),
+                base.spotSpreadPct(),
+                base.spotSpreadAbs());
     }
 
     private AnalyticsMetrics computeMetrics(BigDecimal latestPrice, List<AnalyticsCandleDto> candles) {
@@ -808,8 +880,18 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                             item.category(),
                             item.instrumentId(),
                             item.trendScore(),
-                            item.trendLabel()
-                    );
+                            item.trendLabel(),
+                            item.volume24h(),
+                            item.openInterest(),
+                            item.dayOpen(),
+                            item.dayHigh(),
+                            item.dayLow(),
+                            item.exchangeName(),
+                            item.underlyingSymbol(),
+                            item.contractExpiry(),
+                            item.linkedSpotSymbol(),
+                            item.spotSpreadPct(),
+                            item.spotSpreadAbs());
                 })
                 .toList();
     }
@@ -853,7 +935,16 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     }
 
     private static BigDecimal coalescePct(BigDecimal preferred, BigDecimal fallback) {
-        return preferred != null ? preferred : fallback;
+        if (preferred == null) {
+            return fallback;
+        }
+        // instrument_prices baselines can be missing for Yahoo futures while MDS history has horizons
+        if (preferred.compareTo(BigDecimal.ZERO) == 0
+                && fallback != null
+                && fallback.compareTo(BigDecimal.ZERO) != 0) {
+            return fallback;
+        }
+        return preferred;
     }
 
     private Map<String, HistoricalChanges> fetchHistoricalChanges(Map<String, BigDecimal> currentPricesBySymbol) {
@@ -909,20 +1000,77 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         if (symbols.isEmpty()) {
             return Map.of();
         }
-        String url = UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
+        // Yahoo futures symbols contain '='; must use encoded URI — raw toUriString() + RestClient
+        // drops or mis-parses GC=F,SI=F so MDS summary never merges into overview 1M–1Y.
+        URI uri = UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
                 .path("/api/market/prices/summary")
                 .queryParam("symbols", String.join(",", symbols))
-                .toUriString();
+                .encode()
+                .build()
+                .toUri();
         try {
-            Map<String, SummaryDto> body = restClient.get()
-                    .uri(url)
+            String payload = restClient.get()
+                    .uri(uri)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<>() {
-                    });
-            return body == null ? Map.of() : body;
+                    .body(String.class);
+            return parsePriceSummaryPayload(payload, symbols.size());
         } catch (Exception ex) {
-            log.warn("MARKET_SUMMARY_FALLBACK_FAILED reason={}", ex.toString());
+            log.warn("MARKET_SUMMARY_FALLBACK_FAILED symbols={} reason={}", symbols.size(), ex.toString());
             return Map.of();
+        }
+    }
+
+    private Map<String, SummaryDto> parsePriceSummaryPayload(String payload, int symbolsRequested) {
+        if (!StringUtils.hasText(payload)) {
+            return Map.of();
+        }
+        try {
+            Map<String, Map<String, Object>> raw = objectMapper.readValue(
+                    payload,
+                    new TypeReference<Map<String, Map<String, Object>>>() {}
+            );
+            if (raw == null || raw.isEmpty()) {
+                return Map.of();
+            }
+            Map<String, SummaryDto> out = new LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, Object>> entry : raw.entrySet()) {
+                Map<String, Object> row = entry.getValue();
+                if (row == null) {
+                    continue;
+                }
+                out.put(entry.getKey(), new SummaryDto(
+                        jsonNumberToBigDecimal(row.get("price")),
+                        jsonNumberToBigDecimal(row.get("change1D")),
+                        jsonNumberToBigDecimal(row.get("change1M")),
+                        jsonNumberToBigDecimal(row.get("change3M")),
+                        jsonNumberToBigDecimal(row.get("change6M")),
+                        jsonNumberToBigDecimal(row.get("change1Y"))
+                ));
+            }
+            if (out.size() < symbolsRequested) {
+                log.warn("MARKET_SUMMARY_PARTIAL symbolsRequested={} symbolsResolved={}", symbolsRequested, out.size());
+            }
+            return out;
+        } catch (Exception ex) {
+            log.warn("MARKET_SUMMARY_PARSE_FAILED reason={}", ex.toString());
+            return Map.of();
+        }
+    }
+
+    private static BigDecimal jsonNumberToBigDecimal(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof BigDecimal bd) {
+            return bd;
+        }
+        if (value instanceof Number number) {
+            return BigDecimal.valueOf(number.doubleValue());
+        }
+        try {
+            return new BigDecimal(value.toString());
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 
@@ -988,15 +1136,13 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     }
 
     /**
-     * TEFAS-backed instruments use {@code FUND_*} symbols with NAV quoted in TRY; US-listed ETFs in the
-     * funds strip remain USD-quoted tickers without the prefix.
+     * Converts native listing quote into {@code X-Currency}. Spot metals and {@code *TRY} feeds are TRY-denominated.
      */
     private BigDecimal convertDisplayPrice(BigDecimal value, String symbol, String targetCurrency) {
         if (value == null) {
             return null;
         }
-        String sym = symbol == null ? "" : symbol.trim().toUpperCase(Locale.ROOT);
-        String from = sym.startsWith("FUND_") ? TRY : USD;
+        String from = MarketOverviewCategoryRules.listingCurrency(symbol);
         return currencyConversionService.convert(value, from, targetCurrency);
     }
 
@@ -1010,11 +1156,23 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         return value.setScale(2, RoundingMode.HALF_UP);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record MarketPriceDto(
             String symbol,
             BigDecimal price,
             String source,
-            Instant timestamp
+            Instant timestamp,
+            BigDecimal volume24h,
+            BigDecimal openInterest,
+            BigDecimal dayOpen,
+            BigDecimal dayHigh,
+            BigDecimal dayLow,
+            String exchangeName,
+            String underlyingSymbol,
+            Instant contractExpiry,
+            String linkedSpotSymbol,
+            BigDecimal spotSpreadPct,
+            BigDecimal spotSpreadAbs
             ) {
 
     }
@@ -1072,7 +1230,18 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             BigDecimal price,
             String category,
             Long instrumentId,
-            String source
+            String source,
+            BigDecimal volume24h,
+            BigDecimal openInterest,
+            BigDecimal dayOpen,
+            BigDecimal dayHigh,
+            BigDecimal dayLow,
+            String exchangeName,
+            String underlyingSymbol,
+            Instant contractExpiry,
+            String linkedSpotSymbol,
+            BigDecimal spotSpreadPct,
+            BigDecimal spotSpreadAbs
     ) {}
 
     private record SummaryDto(
