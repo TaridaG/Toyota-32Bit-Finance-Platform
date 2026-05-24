@@ -3,6 +3,17 @@ The following was discovered as part of building this project:
 
 * The original package name 'com.company.finance-api' is invalid and this project uses 'com.company.finance_api' instead.
 
+# REST API versioning
+
+| | |
+|--|--|
+| **Canonical (use this)** | `/api/v1/**` via api-gateway |
+| **Legacy (deprecated)** | `/api/**` — responses include `Deprecation: true` and `Link` successor |
+
+The gateway rewrites `/api/v1/...` to downstream microservices as `/api/...` (no controller changes required). The React app prefixes all API calls to `/api/v1` automatically.
+
+Example: `GET /api/v1/portfolio/overview` → finance-api `GET /api/portfolio/overview`.
+
 # API documentation (OpenAPI / Swagger)
 
 All HTTP microservices expose **OpenAPI 3** at `/v3/api-docs` and **Swagger UI** at `/swagger-ui.html` via [springdoc-openapi](https://springdoc.org/).

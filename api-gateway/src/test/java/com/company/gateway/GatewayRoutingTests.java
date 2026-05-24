@@ -113,6 +113,46 @@ class GatewayRoutingTests {
     }
 
     @Test
+    void api_v1_should_rewrite_to_legacy_path_on_finance_upstream() throws Exception {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
+                .subject("jwt-sub-1")
+                .claim("preferred_username", "jwt-user")
+                .claim("realm_access", Map.of("roles", List.of("USER"))));
+
+        webTestClient.get()
+                .uri("/api/v1/portfolio/overview")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"ok\":true}");
+
+        RecordedRequest recorded = financeMock.takeRequest();
+        Assertions.assertEquals("/api/portfolio/overview", recorded.getPath());
+    }
+
+    @Test
+    void legacy_api_should_emit_deprecation_headers() throws Exception {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
+                .subject("jwt-sub-1")
+                .claim("preferred_username", "jwt-user")
+                .claim("realm_access", Map.of("roles", List.of("USER"))));
+
+        webTestClient.get()
+                .uri("/api/portfolio/overview")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Deprecation", "true")
+                .expectHeader().exists("Link");
+    }
+
+    @Test
     void market_fundamentals_should_route_to_market_service_not_finance() throws Exception {
         marketMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"symbol\":\"BTCUSDT\"}")
                 .addHeader("Content-Type", "application/json"));

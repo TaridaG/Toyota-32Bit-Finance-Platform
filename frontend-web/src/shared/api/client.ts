@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { API_VERSION_PREFIX, withApiVersion } from './apiVersion'
 import { isAccountFrozenApiError, isAccountRemovedApiError, logoutFrozenAccount, logoutRemovedAccount } from '../auth/accountFrozen'
 import {
   clearAuthSession,
@@ -20,6 +21,8 @@ export const normalizedBaseUrl =
   configuredBaseUrl && configuredBaseUrl.length > 0
     ? configuredBaseUrl.replace(/\/+$/, '')
     : DEFAULT_API_BASE_URL
+
+export { API_VERSION_PREFIX }
 
 export const apiClient = axios.create({
   baseURL: normalizedBaseUrl,
@@ -64,7 +67,10 @@ async function refreshAccessToken(): Promise<string | null> {
       if (!rt) {
         return null
       }
-      const { data } = await refreshClient.post<RefreshEnvelope>('/api/public/refresh', { refreshToken: rt })
+      const { data } = await refreshClient.post<RefreshEnvelope>(
+        `${API_VERSION_PREFIX}/public/refresh`,
+        { refreshToken: rt },
+      )
       if (!data.success || !data.data?.accessToken) {
         return null
       }
@@ -164,12 +170,17 @@ function requestPathForPublicRule(config: { baseURL?: string; url?: string }): s
   const raw = `${config.baseURL ?? ''}${config.url ?? ''}`
   try {
     if (/^https?:\/\//i.test(raw)) {
-      return new URL(raw).pathname
+      return normalizeApiPathForRules(new URL(raw).pathname)
     }
   } catch {
     /* ignore */
   }
-  return raw
+  return normalizeApiPathForRules(raw)
+}
+
+/** Align public-route rules with gateway rewrite (/api/v1 → /api). */
+function normalizeApiPathForRules(path: string): string {
+  return path.replace(/\/api\/v1\//g, '/api/').replace(/\/api\/v1$/g, '/api')
 }
 
 /** Public catalog GETs: never send Bearer (stale JWT breaks gateway/resource-server before permitAll). */
@@ -217,6 +228,9 @@ function attachLocaleHeaders(config: InternalAxiosRequestConfig) {
 }
 
 apiClient.interceptors.request.use((config) => {
+  if (config.url) {
+    config.url = withApiVersion(config.url)
+  }
   attachLocaleHeaders(config)
 
   if (isPublicAnonymousApiRequest(config)) {

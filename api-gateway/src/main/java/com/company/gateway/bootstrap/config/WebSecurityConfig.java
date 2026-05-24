@@ -43,7 +43,7 @@ public class WebSecurityConfig {
         if (path == null || path.isBlank()) {
             return false;
         }
-        String p = path;
+        String p = ApiVersionPathSupport.normalizeForSecurity(path);
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
@@ -96,7 +96,7 @@ public class WebSecurityConfig {
         if (path == null || path.isBlank()) {
             return false;
         }
-        String p = path;
+        String p = ApiVersionPathSupport.normalizeForSecurity(path);
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
@@ -136,7 +136,7 @@ public class WebSecurityConfig {
         if (path == null || path.isBlank()) {
             return false;
         }
-        String p = path;
+        String p = ApiVersionPathSupport.normalizeForSecurity(path);
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
@@ -156,7 +156,9 @@ public class WebSecurityConfig {
         return http
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
                         "/api/rates", "/api/rates/**",
-                        "/api/portal/info-cards", "/api/portal/info-cards/**"))
+                        "/api/portal/info-cards", "/api/portal/info-cards/**",
+                        "/api/v1/rates", "/api/v1/rates/**",
+                        "/api/v1/portal/info-cards", "/api/v1/portal/info-cards/**"))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex.anyExchange().permitAll())
                 .build();
@@ -179,7 +181,9 @@ public class WebSecurityConfig {
                 .securityMatcher(new NegatedServerWebExchangeMatcher(
                         ServerWebExchangeMatchers.pathMatchers(
                                 "/api/rates", "/api/rates/**",
-                                "/api/portal/info-cards", "/api/portal/info-cards/**")))
+                                "/api/portal/info-cards", "/api/portal/info-cards/**",
+                                "/api/v1/rates", "/api/v1/rates/**",
+                                "/api/v1/portal/info-cards", "/api/v1/portal/info-cards/**")))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .headers(h -> h
                         .contentTypeOptions(c -> {})
@@ -201,39 +205,24 @@ public class WebSecurityConfig {
                         .permitAll()
                         .pathMatchers("/", "/health").permitAll()
                         .pathMatchers("/actuator/health", "/actuator/prometheus").permitAll()
-                        .pathMatchers(HttpMethod.POST,
-                                "/api/public/register",
-                                "/api/public/register/",
-                                "/api/public/register/send-code",
-                                "/api/public/register/send-code/",
-                                "/api/public/login",
-                                "/api/public/login/",
-                                "/api/public/login/mfa",
-                                "/api/public/login/mfa/",
-                                "/api/public/refresh",
-                                "/api/public/refresh/")
-                                .permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/market/**", "/api/rates/**", "/market/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/public/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/news/favorites", "/api/news/favorites/**")
-                                .hasAnyRole("USER", "ADMIN")
-                        .pathMatchers(HttpMethod.POST, "/api/news/favorites", "/api/news/favorites/**")
-                                .hasAnyRole("USER", "ADMIN")
-                        .pathMatchers(HttpMethod.DELETE, "/api/news/favorites", "/api/news/favorites/**")
-                                .hasAnyRole("USER", "ADMIN")
-                        .pathMatchers(HttpMethod.GET, "/api/news/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/instruments", "/api/instruments/", "/api/instruments/**")
-                                .permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/portal/info-cards", "/api/portal/info-cards/**")
-                                .permitAll()
-                        .pathMatchers("/api/news/admin/**").hasRole("ADMIN")
-                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
-                        .pathMatchers("/api/users/me/**", "/api/profile/**").hasAnyRole("USER", "ADMIN")
-                        .pathMatchers("/api/portfolio/**", "/api/accounts/**", "/api/balances/**", "/api/transactions/**", "/api/trades/**", "/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.POST, GatewaySecurityPaths.publicAuthPosts()).permitAll()
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.publicAnonymousGets()).permitAll()
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.publicAuthGets()).permitAll()
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.newsFavorites()).hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.POST, GatewaySecurityPaths.newsFavorites()).hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, GatewaySecurityPaths.newsFavorites()).hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.publicNews()).permitAll()
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.instruments()).permitAll()
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.analytics()).permitAll()
+                        .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.portalInfoCards()).permitAll()
+                        .pathMatchers(GatewaySecurityPaths.newsAdmin()).hasRole("ADMIN")
+                        .pathMatchers(GatewaySecurityPaths.admin()).hasRole("ADMIN")
+                        .pathMatchers(GatewaySecurityPaths.userProfile()).hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(GatewaySecurityPaths.portfolioWrites()).hasAnyRole("USER", "ADMIN")
                         .pathMatchers("/public/**").permitAll()
                         .pathMatchers("/fallback/**").permitAll()
-                        .pathMatchers("/api/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(GatewaySecurityPaths.versionedApi()).hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(GatewaySecurityPaths.legacyApi()).hasAnyRole("USER", "ADMIN")
                         .pathMatchers("/actuator/**").authenticated()
                         .anyExchange().authenticated()
                 )

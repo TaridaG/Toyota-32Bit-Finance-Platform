@@ -5,6 +5,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,7 +21,10 @@ public class OpenApiConfig {
             new Info()
                 .title("finance-api")
                 .version("1.0")
-                .description("Portal, portfolio, auth, admin and market proxy endpoints"))
+                .description(
+                    "Portal, portfolio, auth, admin and market proxy endpoints. "
+                        + "Call via API gateway using the /api/v1 prefix (paths below are downstream /api)."))
+        .servers(List.of(new Server().url("/api/v1").description("API gateway (canonical)")))
         .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
         .components(
             new Components()
