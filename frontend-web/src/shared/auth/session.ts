@@ -1,7 +1,10 @@
 const TOKEN_KEYS = ['finance.authToken', 'authToken', 'token']
 const REFRESH_TOKEN_KEY = 'finance.refreshToken'
+const STORAGE_MODE_KEY = 'finance.authStorageMode'
 /** Legacy key (browser-only avatar); removed on logout / migration. */
 const LEGACY_PROFILE_AVATAR_KEY = 'finance.profileAvatarDataUrl'
+
+export type AuthStorageMode = 'local' | 'session'
 
 export type AuthClaims = {
   sub?: string
@@ -11,14 +14,38 @@ export type AuthClaims = {
   picture?: string
 }
 
-function getStoredToken(): string | null {
+function resolveStorage(mode: AuthStorageMode): Storage {
+  return mode === 'session' ? sessionStorage : localStorage
+}
+
+function readTokenFromStorage(storage: Storage): string | null {
   for (const key of TOKEN_KEYS) {
-    const value = window.localStorage.getItem(key)
+    const value = storage.getItem(key)
     if (typeof value === 'string' && value.trim().length > 0) {
       return value.trim()
     }
   }
   return null
+}
+
+function getStorageMode(): AuthStorageMode {
+  return localStorage.getItem(STORAGE_MODE_KEY) === 'session' ? 'session' : 'local'
+}
+
+function getStoredToken(): string | null {
+  const mode = getStorageMode()
+  const primary = resolveStorage(mode)
+  const found = readTokenFromStorage(primary)
+  if (found) {
+    return found
+  }
+  const fallback = resolveStorage(mode === 'session' ? 'local' : 'session')
+  return readTokenFromStorage(fallback)
+}
+
+/** True when tokens are stored in localStorage with refresh (remember-me session). */
+export function isRememberMeEnabled(): boolean {
+  return getStorageMode() === 'local'
 }
 
 /** JWT `exp` in milliseconds since epoch, or null if missing / not a JWT. */
@@ -171,44 +198,61 @@ export function notifyProfileAvatarChanged(detail?: ProfileAvatarChangeDetail) {
   window.dispatchEvent(new CustomEvent('finance-profile-avatar', { detail: payload }))
 }
 
+/** Current access JWT from the active storage (local or session per remember-me). */
+export function getAccessToken(): string | null {
+  return getStoredToken()
+}
+
 export function isAuthenticated() {
-  return TOKEN_KEYS.some((key) => {
-    const value = window.localStorage.getItem(key)
-    return typeof value === 'string' && value.trim().length > 0
-  })
+  return getStoredToken() != null
 }
 
 export function getRefreshToken(): string | null {
-  const v = window.localStorage.getItem(REFRESH_TOKEN_KEY)
+  if (!isRememberMeEnabled()) {
+    return null
+  }
+  const v = localStorage.getItem(REFRESH_TOKEN_KEY)
   return typeof v === 'string' && v.trim().length > 0 ? v.trim() : null
 }
 
 /** Updates access token only; leaves refresh token unchanged (e.g. partial token rotation). */
 export function persistAuthToken(accessToken: string) {
-  window.localStorage.setItem('finance.authToken', accessToken)
+  const storage = resolveStorage(getStorageMode())
+  storage.setItem('finance.authToken', accessToken)
 }
 
 /**
- * Persists access token and optionally refresh token from the identity provider.
- * When {@code refreshToken} is omitted, the stored refresh token is kept.
+ * Persists access token and optionally refresh token.
+ * {@code rememberMe: false} → sessionStorage only, no refresh (browser tab session).
  */
 export function persistAuthSession(tokens: {
   accessToken: string
   refreshToken?: string | null
+  rememberMe?: boolean
 }) {
-  window.localStorage.setItem('finance.authToken', tokens.accessToken)
-  if (tokens.refreshToken !== undefined && tokens.refreshToken !== null && tokens.refreshToken.trim().length > 0) {
-    window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken.trim())
+  clearAuthSession()
+  const remember = tokens.rememberMe === true
+  const mode: AuthStorageMode = remember ? 'local' : 'session'
+  localStorage.setItem(STORAGE_MODE_KEY, mode)
+  const storage = resolveStorage(mode)
+  storage.setItem('finance.authToken', tokens.accessToken)
+  if (remember) {
+    const refresh = tokens.refreshToken?.trim()
+    if (refresh) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refresh)
+    }
   }
 }
 
 export function clearAuthSession() {
-  TOKEN_KEYS.forEach((key) => window.localStorage.removeItem(key))
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
+  for (const storage of [localStorage, sessionStorage]) {
+    TOKEN_KEYS.forEach((key) => storage.removeItem(key))
+    storage.removeItem(REFRESH_TOKEN_KEY)
+  }
+  localStorage.removeItem(STORAGE_MODE_KEY)
   try {
-    window.localStorage.removeItem(LEGACY_PROFILE_AVATAR_KEY)
+    localStorage.removeItem(LEGACY_PROFILE_AVATAR_KEY)
   } catch {
     // ignore
   }
 }
-

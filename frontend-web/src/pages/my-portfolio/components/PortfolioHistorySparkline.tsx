@@ -1,31 +1,24 @@
 import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { PortfolioTradeFlowPoint, PortfolioValueSnapshot } from '../../../shared/types/portfolio'
 import {
-  VALUE_CHART_RANGES,
-  valueChartRangeLabel,
-  type ValueChartRange,
-} from './portfolioChartShared'
-import {
   buildPortfolioTrendSeries,
-  buildTradeFlowTrendSeries,
-  filterTrendByRange,
+  buildTradeFlowDailySeries,
+  fillDailyCalendarSeries,
   seriesToSparklinePath,
-  summarizePortfolioTrend,
+  type SparklineScaleMode,
 } from './portfolioTrendSeries'
 
-const CHART_W = 320
-const CHART_H = 64
+const CHART_W = 400
+const DEFAULT_CHART_H = 72
+const DASHBOARD_DAYS = 60
 
 type BaseProps = {
-  range: ValueChartRange
-  onRangeChange: (range: ValueChartRange) => void
   isDark: boolean
   locale: string
   maskAmounts?: boolean
   formatValue: (value: number) => string
   emptyLabel: string
-  rangeAriaLabel: string
+  chartHeight?: number
   variant: 'value' | 'tradeFlow'
 }
 
@@ -33,6 +26,7 @@ type ValueProps = BaseProps & {
   variant: 'value'
   snapshots: PortfolioValueSnapshot[]
   liveTotalValue: number | null
+  priorDayValue?: number | null
 }
 
 type TradeFlowProps = BaseProps & {
@@ -43,89 +37,58 @@ type TradeFlowProps = BaseProps & {
 export type PortfolioHistorySparklineProps = ValueProps | TradeFlowProps
 
 export function PortfolioHistorySparkline(props: PortfolioHistorySparklineProps) {
-  const { t } = useTranslation('portfolio')
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
-  const fullSeries = useMemo(() => {
-    if (props.variant === 'value') {
-      return buildPortfolioTrendSeries(props.snapshots, props.liveTotalValue)
-    }
-    return buildTradeFlowTrendSeries(props.tradeFlowPoints)
-  }, [
-    props.variant,
-    props.variant === 'value' ? props.snapshots : props.tradeFlowPoints,
-    props.variant === 'value' ? props.liveTotalValue : null,
-  ])
+  const scaleMode: SparklineScaleMode = props.variant === 'value' ? 'data' : 'zero'
 
-  const series = useMemo(
-    () => filterTrendByRange(fullSeries, props.range),
-    [fullSeries, props.range],
+  const series = useMemo(() => {
+    if (props.variant === 'value') {
+      const raw = buildPortfolioTrendSeries(
+        props.snapshots,
+        props.liveTotalValue,
+        props.priorDayValue,
+      )
+      return fillDailyCalendarSeries(raw, {
+        liveValue: props.liveTotalValue,
+        maxDays: DASHBOARD_DAYS,
+        fillMode: 'carry',
+      })
+    }
+    const raw = buildTradeFlowDailySeries(props.tradeFlowPoints)
+    return fillDailyCalendarSeries(raw, { maxDays: DASHBOARD_DAYS, fillMode: 'zero' })
+  }, [props])
+
+  const values = useMemo(() => series.map((p) => p.v), [series])
+  const chartH = props.chartHeight ?? DEFAULT_CHART_H
+  const paths = useMemo(
+    () => seriesToSparklinePath(values, CHART_W, chartH, 2, 4, scaleMode),
+    [values, scaleMode, chartH],
   )
 
-  const summary = useMemo(() => summarizePortfolioTrend(series), [series])
-  const values = useMemo(() => series.map((p) => p.v), [series])
-  const paths = useMemo(() => seriesToSparklinePath(values, CHART_W, CHART_H), [values])
-
-  const pctFormat = new Intl.NumberFormat(props.locale, {
-    maximumFractionDigits: 1,
-    signDisplay: 'exceptZero',
-  })
-  const dateFormat = new Intl.DateTimeFormat(props.locale, { day: 'numeric', month: 'short' })
-
-  const rangeLabel = valueChartRangeLabel(props.range)
-  const changeLabel =
-    summary?.changePct != null && Number.isFinite(summary.changePct)
-      ? t('valueChart.periodChange', {
-          pct: props.maskAmounts ? '•••' : pctFormat.format(summary.changePct),
-          range: rangeLabel,
-        })
-      : summary
-        ? t('valueChart.flatInRange', { range: rangeLabel })
-        : null
-
-  const rangeDates =
-    summary && series.length >= 2
-      ? t('valueChart.periodRange', {
-          from: dateFormat.format(new Date(summary.startMs)),
-          to: dateFormat.format(new Date(summary.endMs)),
-        })
-      : null
-
-  const tone =
-    summary?.changePct == null
-      ? 'neutral'
-      : summary.changePct > 0.05
-        ? 'up'
-        : summary.changePct < -0.05
-          ? 'down'
-          : 'neutral'
+  const dateFormat = useMemo(
+    () => new Intl.DateTimeFormat(props.locale, { day: 'numeric', month: 'short' }),
+    [props.locale],
+  )
 
   const hoverPoint =
     hoverIndex != null && hoverIndex >= 0 && hoverIndex < series.length ? series[hoverIndex] : null
 
   if (series.length === 0 || !paths.line) {
     return (
-      <div className="my-portfolio-history-chart">
-        <p className="my-portfolio-mini-trend-empty">{props.emptyLabel}</p>
-        <ChartRangeBar range={props.range} onRangeChange={props.onRangeChange} ariaLabel={props.rangeAriaLabel} />
+      <div className="my-portfolio-sparkline">
+        <p className="my-portfolio-sparkline-empty">{props.emptyLabel}</p>
       </div>
     )
   }
 
+  const ariaValue = props.maskAmounts
+    ? props.emptyLabel
+    : props.formatValue(series[series.length - 1]!.v)
+
   return (
-    <div className="my-portfolio-history-chart my-portfolio-mini-trend" data-tone={tone} data-variant={props.variant}>
-      <div className="my-portfolio-mini-trend-meta">
-        {changeLabel ? <span className="my-portfolio-mini-trend-change">{changeLabel}</span> : null}
-        {rangeDates ? <span className="my-portfolio-mini-trend-range">{rangeDates}</span> : null}
-        {hoverPoint ? (
-          <span className="my-portfolio-mini-trend-hover">
-            {props.maskAmounts ? '•••' : props.formatValue(hoverPoint.v)} ·{' '}
-            {dateFormat.format(new Date(hoverPoint.t * 1000))}
-          </span>
-        ) : null}
-      </div>
+    <div className="my-portfolio-sparkline" data-variant={props.variant}>
       <div
-        className="my-portfolio-history-chart-surface"
+        className="my-portfolio-sparkline-surface"
         onMouseLeave={() => setHoverIndex(null)}
         onMouseMove={(event) => {
           const rect = event.currentTarget.getBoundingClientRect()
@@ -135,51 +98,41 @@ export function PortfolioHistorySparkline(props: PortfolioHistorySparklineProps)
         }}
       >
         <svg
-          className={`my-portfolio-mini-trend-svg${props.isDark ? ' is-dark' : ''}`}
-          viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+          className={`my-portfolio-sparkline-svg${props.isDark ? ' is-dark' : ''}`}
+          viewBox={`0 0 ${CHART_W} ${chartH}`}
+          style={{ height: chartH }}
           preserveAspectRatio="none"
           role="img"
-          aria-label={changeLabel ?? props.emptyLabel}
+          aria-label={ariaValue}
         >
-          <path className="my-portfolio-mini-trend-area" d={paths.area} />
-          <path className="my-portfolio-mini-trend-line" d={paths.line} />
-          {hoverIndex != null && series.length > 0 ? (
+          {scaleMode === 'zero' ? (
             <line
-              className="my-portfolio-history-chart-crosshair"
+              className="my-portfolio-sparkline-zero"
+              x1={0}
+              x2={CHART_W}
+            y1={chartH - 4}
+            y2={chartH - 4}
+            />
+          ) : null}
+          <path className="my-portfolio-sparkline-area" d={paths.area} />
+          <path className="my-portfolio-sparkline-line" d={paths.line} />
+          {hoverIndex != null && series.length > 1 ? (
+            <line
+              className="my-portfolio-sparkline-crosshair"
               x1={(hoverIndex / Math.max(series.length - 1, 1)) * CHART_W}
               x2={(hoverIndex / Math.max(series.length - 1, 1)) * CHART_W}
               y1={0}
-              y2={CHART_H}
+              y2={chartH}
             />
           ) : null}
         </svg>
+        {hoverPoint ? (
+          <div className="my-portfolio-sparkline-tip" role="status">
+            <span>{props.maskAmounts ? '•••' : props.formatValue(hoverPoint.v)}</span>
+            <span>{dateFormat.format(new Date(hoverPoint.t * 1000))}</span>
+          </div>
+        ) : null}
       </div>
-      <ChartRangeBar range={props.range} onRangeChange={props.onRangeChange} ariaLabel={props.rangeAriaLabel} />
-    </div>
-  )
-}
-
-function ChartRangeBar({
-  range,
-  onRangeChange,
-  ariaLabel,
-}: {
-  range: ValueChartRange
-  onRangeChange: (range: ValueChartRange) => void
-  ariaLabel: string
-}) {
-  return (
-    <div className="my-portfolio-chart-range-below" role="group" aria-label={ariaLabel}>
-      {VALUE_CHART_RANGES.map((r) => (
-        <button
-          key={r}
-          type="button"
-          className={`my-portfolio-value-range-btn${range === r ? ' is-active' : ''}`}
-          onClick={() => onRangeChange(r)}
-        >
-          {valueChartRangeLabel(r)}
-        </button>
-      ))}
     </div>
   )
 }

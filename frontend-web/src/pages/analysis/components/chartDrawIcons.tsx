@@ -98,6 +98,18 @@ export function DrawIconPlus() {
   )
 }
 
+export function IconChartMeasure() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M5 19V5" strokeLinecap="round" strokeDasharray="3 2" />
+      <path d="M19 19V9" strokeLinecap="round" strokeDasharray="3 2" />
+      <path d="M5 12h14" strokeLinecap="round" strokeDasharray="4 3" />
+      <path d="M5 12l3-2.5M5 12l3 2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19 9l-3-2.5M19 9l-3 2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function DrawIconHistory() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

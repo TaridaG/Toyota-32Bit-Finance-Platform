@@ -6,7 +6,7 @@ export type StatIconId = 'bank' | 'coins' | 'doc' | 'spread' | 'bell' | 'metal'
 
 export type StatCardCopy = {
   /** When set, dashboard replaces mock value with live TCMB policy rate from `/api/rates/policy-rate/latest`. */
-  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'metal_futures' | 'inflation'
+  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'repo' | 'eurobond' | 'inflation'
   icon: StatIconId
   title: string
   value: string
@@ -50,12 +50,11 @@ const TR: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'repo',
       icon: 'doc',
       title: 'repo',
-      value: '%28,40',
-      sub1: '1G Değişim: -12 bp',
-      delta: '-0,12',
-      deltaTone: 'negative',
+      value: '—',
+      sub1: '',
     },
     {
       statSlot: 'eurobond',
@@ -65,13 +64,6 @@ const TR: FaizVadeliDashboardCopy = {
       sub1: 'Önceki: +11,15',
       delta: '+0,12',
       deltaTone: 'positive',
-    },
-    {
-      statSlot: 'metal_futures',
-      icon: 'metal',
-      title: 'vadeli maden',
-      value: '—',
-      sub1: '',
     },
     {
       statSlot: 'inflation',
@@ -114,12 +106,11 @@ const EN: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'repo',
       icon: 'doc',
       title: 'Repo',
-      value: '28.40%',
-      sub1: '1D change: −12 bp',
-      delta: '−0.12',
-      deltaTone: 'negative',
+      value: '—',
+      sub1: '',
     },
     {
       statSlot: 'eurobond',
@@ -129,13 +120,6 @@ const EN: FaizVadeliDashboardCopy = {
       sub1: 'Previous: +11.15',
       delta: '+0.12',
       deltaTone: 'positive',
-    },
-    {
-      statSlot: 'metal_futures',
-      icon: 'metal',
-      title: 'Metal futures',
-      value: '—',
-      sub1: '',
     },
     {
       statSlot: 'inflation',
@@ -178,12 +162,11 @@ const DE: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'repo',
       icon: 'doc',
       title: 'Repo',
-      value: '28,40 %',
-      sub1: '1T-Änderung: −12 bp',
-      delta: '−0,12',
-      deltaTone: 'negative',
+      value: '—',
+      sub1: '',
     },
     {
       statSlot: 'eurobond',
@@ -193,13 +176,6 @@ const DE: FaizVadeliDashboardCopy = {
       sub1: 'Zuvor: +11,15',
       delta: '+0,12',
       deltaTone: 'positive',
-    },
-    {
-      statSlot: 'metal_futures',
-      icon: 'metal',
-      title: 'Metall-Futures',
-      value: '—',
-      sub1: '',
     },
     {
       statSlot: 'inflation',

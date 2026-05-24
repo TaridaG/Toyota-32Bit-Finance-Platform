@@ -4,6 +4,8 @@ import { getFaizVadeliDashboardCopy } from './faizVadeliDashboardCopy'
 import { FaizVadeliStatCard } from './components/FaizVadeliStatCard'
 import { FaizVadeliPolicyRateStatCard } from './components/FaizVadeliPolicyRateStatCard'
 import { FaizVadeliPolicyRateChartPanel } from './components/FaizVadeliPolicyRateChartPanel'
+import { FaizVadeliRepoStatCard } from './components/FaizVadeliRepoStatCard'
+import { FaizVadeliRepoChartPanel } from './components/FaizVadeliRepoChartPanel'
 import { FaizVadeliInflationStatCard } from './components/FaizVadeliInflationStatCard'
 import { FaizVadeliInflationChartPanel } from './components/FaizVadeliInflationChartPanel'
 import type { CpiMetricCode } from './api/cpiApi'
@@ -13,17 +15,12 @@ import { FaizVadeliTahvilStatCard } from './components/FaizVadeliTahvilStatCard'
 import { FaizVadeliTahvilChartPanel } from './components/FaizVadeliTahvilChartPanel'
 import { FaizVadeliEurobondStatCard } from './components/FaizVadeliEurobondStatCard'
 import { FaizVadeliEurobondDetailPanel } from './components/FaizVadeliEurobondDetailPanel'
-import {
-  FaizVadeliMetalFuturesStatCard,
-  type MetalFuturesSymbol,
-} from './components/FaizVadeliMetalFuturesStatCard'
-import { FaizVadeliMetalFuturesChartPanel } from './components/FaizVadeliMetalFuturesChartPanel'
 import type { TlDepositMaturityCode } from './lib/tlDepositMaturity'
 import type { TahvilSymbol } from './lib/tahvilSymbol'
 import { TR_USD_EUROBOND_DEFAULT_ISIN } from './lib/trUsdEurobondIsins'
 import type { EurobondInstrumentWire } from './api/eurobondMarketApi'
 
-type MidPanel = 'policy' | 'tl_deposit' | 'tahvil' | 'eurobond' | 'metal_futures' | 'inflation'
+type MidPanel = 'policy' | 'tl_deposit' | 'tahvil' | 'repo' | 'eurobond' | 'inflation'
 
 export function FaizVadeliDashboard() {
   const { i18n } = useTranslation()
@@ -32,7 +29,6 @@ export function FaizVadeliDashboard() {
   const [tahvilSymbol, setTahvilSymbol] = useState<TahvilSymbol>('TRBOND1Y')
   const [eurobondInstruments, setEurobondInstruments] = useState<EurobondInstrumentWire[]>([])
   const [eurobondIsin, setEurobondIsin] = useState(TR_USD_EUROBOND_DEFAULT_ISIN)
-  const [metalFuturesSymbol, setMetalFuturesSymbol] = useState<MetalFuturesSymbol>('GC=F')
   const [cpiMetric, setCpiMetric] = useState<CpiMetricCode>('YEARLY_PCT')
   const copy = useMemo(() => getFaizVadeliDashboardCopy(i18n.resolvedLanguage ?? i18n.language), [i18n.language, i18n.resolvedLanguage])
 
@@ -40,7 +36,7 @@ export function FaizVadeliDashboard() {
 
   return (
     <div className="fi-faiz-dash">
-      <div className="fi-faiz-stat-grid fi-faiz-stat-grid--cols-7" role="list">
+      <div className="fi-faiz-stat-grid fi-faiz-stat-grid--cols-6" role="list">
         {copy.stats.map((stat) => (
           <div key={stat.statSlot ?? stat.title} role="listitem">
             {stat.statSlot === 'policy_rate' ? (
@@ -59,6 +55,12 @@ export function FaizVadeliDashboard() {
                 onSymbolChange={setTahvilSymbol}
                 onShowHistory={() => setMidChart('tahvil')}
               />
+            ) : stat.statSlot === 'repo' ? (
+              <FaizVadeliRepoStatCard
+                template={stat}
+                active={midChart === 'repo'}
+                onShowHistory={() => setMidChart('repo')}
+              />
             ) : stat.statSlot === 'eurobond' ? (
               <FaizVadeliEurobondStatCard
                 template={stat}
@@ -67,14 +69,6 @@ export function FaizVadeliDashboard() {
                 onInstrumentsLoaded={setEurobondInstruments}
                 onIsinChange={setEurobondIsin}
                 onShowHistory={() => setMidChart('eurobond')}
-              />
-            ) : stat.statSlot === 'metal_futures' ? (
-              <FaizVadeliMetalFuturesStatCard
-                template={stat}
-                symbol={metalFuturesSymbol}
-                active={midChart === 'metal_futures'}
-                onSymbolChange={setMetalFuturesSymbol}
-                onShowHistory={() => setMidChart('metal_futures')}
               />
             ) : stat.statSlot === 'inflation' ? (
               <FaizVadeliInflationStatCard
@@ -101,8 +95,8 @@ export function FaizVadeliDashboard() {
           <FaizVadeliTlDepositChartPanel maturity={tlDepositMaturity} onBack={goPolicy} />
         ) : midChart === 'tahvil' ? (
           <FaizVadeliTahvilChartPanel symbol={tahvilSymbol} onBack={goPolicy} />
-        ) : midChart === 'metal_futures' ? (
-          <FaizVadeliMetalFuturesChartPanel symbol={metalFuturesSymbol} onBack={goPolicy} />
+        ) : midChart === 'repo' ? (
+          <FaizVadeliRepoChartPanel onBack={goPolicy} />
         ) : midChart === 'eurobond' ? (
           <FaizVadeliEurobondDetailPanel
             instruments={eurobondInstruments}

@@ -35,9 +35,9 @@ import type {
 import type { MarketOverviewPageResponse } from '../../shared/types/market'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
 import { PnlSplitDonut } from './components/PnlSplitDonut'
+import { MyPortfolioAnalysisSection } from './components/MyPortfolioAnalysisSection'
 import { PortfolioHistorySparkline } from './components/PortfolioHistorySparkline'
-import type { ValueChartRange } from './components/portfolioChartShared'
-import { tradeFlowPeriodTotals } from './components/TradeFlowHistoryChart'
+import { tradeFlowTotals } from './components/TradeFlowHistoryChart'
 import { loadTradeFlowForPortfolio } from '../../features/portfolio/lib/loadTradeFlowForPortfolio'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { MyAnalysisPanel } from '../my-analysis/MyAnalysisPanel'
@@ -54,6 +54,32 @@ const CREATE_PORTFOLIO_SELECT_VALUE = '__create_portfolio__'
 /** Aggregate "Genel Bakış" in portfolio picker; not a real DB id. */
 const ALL_PORTFOLIOS_ID = -1
 const MASKED_MONEY_LABEL = '••••'
+
+/** Read selected portfolio from `?portfolio=` (numeric id or `all` / omitted = Genel Bakış). */
+function portfolioIdFromSearchParams(params: URLSearchParams): number {
+  const raw = params.get('portfolio')?.trim()
+  if (!raw || raw === 'all' || raw === 'overview') {
+    return ALL_PORTFOLIOS_ID
+  }
+  const id = Number(raw)
+  if (Number.isFinite(id) && id > 0) {
+    return Math.trunc(id)
+  }
+  return ALL_PORTFOLIOS_ID
+}
+
+function resolvePortfolioSelection(preferred: number | null, rows: Portfolio[]): number | null {
+  if (rows.length === 0) {
+    return null
+  }
+  if (preferred != null && preferred > 0 && rows.some((p) => p.id === preferred)) {
+    return preferred
+  }
+  if (preferred === ALL_PORTFOLIOS_ID) {
+    return ALL_PORTFOLIOS_ID
+  }
+  return ALL_PORTFOLIOS_ID
+}
 
 const EMPTY_MARKET_OVERVIEW: MarketOverviewPageResponse = {
   content: [],
@@ -160,6 +186,9 @@ type DistributionRow = {
   sharePct: number
   colorClass: string
   quantity: number
+  totalCost: number
+  avgBuyPrice: number
+  currentPrice: number
   pnlPercent: number
 }
 
@@ -169,7 +198,20 @@ function formatHoldingQuantity(q: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(q)
 }
 
-type AllocationSortKey = 'symbol' | 'quantity' | 'weight' | 'value' | 'pnl'
+function formatPreviewMoney(v: number, fmt: Intl.NumberFormat): string {
+  if (!Number.isFinite(v) || v <= 0) return '—'
+  return fmt.format(v)
+}
+
+type AllocationSortKey =
+  | 'symbol'
+  | 'quantity'
+  | 'cost'
+  | 'avgBuyPrice'
+  | 'currentPrice'
+  | 'weight'
+  | 'value'
+  | 'pnl'
 type AllocationSortDir = 'asc' | 'desc'
 
 function buildPortfolioDistribution(overview: PortfolioOverview | null): {
@@ -182,12 +224,21 @@ function buildPortfolioDistribution(overview: PortfolioOverview | null): {
   }
   const totalVal = Math.max(parseApiDecimal(overview.totalValue, 0), 1e-12)
   const rows = overview.items
-    .map((it) => ({
-      symbol: it.symbol,
-      value: Math.max(0, parseApiDecimal(it.value, 0)),
-      quantity: parseApiDecimal(it.quantity, 0),
-      pnlPercent: parseApiDecimal(it.pnlPercent, 0),
-    }))
+    .map((it) => {
+      const quantity = parseApiDecimal(it.quantity, 0)
+      const avgBuyPrice = parseApiDecimal(it.avgBuyPrice, 0)
+      const currentPrice = parseApiDecimal(it.currentPrice, 0)
+      const totalCost = Math.max(0, quantity * avgBuyPrice)
+      return {
+        symbol: it.symbol,
+        value: Math.max(0, parseApiDecimal(it.value, 0)),
+        quantity,
+        avgBuyPrice,
+        currentPrice,
+        totalCost,
+        pnlPercent: parseApiDecimal(it.pnlPercent, 0),
+      }
+    })
     .filter((r) => r.value > 0)
     .map((r) => ({ ...r, sharePct: (r.value / totalVal) * 100 }))
     .sort((a, b) => b.value - a.value)
@@ -225,6 +276,9 @@ function buildPortfolioDistribution(overview: PortfolioOverview | null): {
     value: r.value,
     sharePct: r.sharePct,
     quantity: r.quantity,
+    totalCost: r.totalCost,
+    avgBuyPrice: r.avgBuyPrice,
+    currentPrice: r.currentPrice,
     pnlPercent: r.pnlPercent,
     colorClass: DISTRIBUTION_BAR_COLORS[i % DISTRIBUTION_BAR_COLORS.length],
   }))
@@ -234,6 +288,9 @@ function buildPortfolioDistribution(overview: PortfolioOverview | null): {
     value: r.value,
     sharePct: r.sharePct,
     quantity: r.quantity,
+    totalCost: r.totalCost,
+    avgBuyPrice: r.avgBuyPrice,
+    currentPrice: r.currentPrice,
     pnlPercent: r.pnlPercent,
     colorClass: i < DISTRIBUTION_BAR_COLORS.length ? DISTRIBUTION_BAR_COLORS[i] : 'my-portfolio-dot-other',
   }))
@@ -355,7 +412,7 @@ function buildCategoryDonutRows(overview: PortfolioOverview | null, t: (key: str
   })
 }
 
-const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation'] as const
+const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation', 'portfolioAnalysis'] as const
 const sidebarSecondaryKeys = ['news', 'analysis', 'targets', 'watchlist', 'settings'] as const
 const PORTFOLIO_SECTIONS = new Set<string>([...sidebarMainKeys, ...sidebarSecondaryKeys])
 type MarketOption = {
@@ -475,6 +532,15 @@ function toUtcStartOfDay(input: string): string | undefined {
 }
 
 /** ISO instant (UTC) → GG.AA.YYYY for short notices. */
+/** Market overview may use Yahoo wire symbols (GARAN.IS) while catalog uses GARAN. */
+function marketOverviewSymbolMatches(overviewSymbol: string, catalogSymbol: string): boolean {
+  const o = overviewSymbol.trim().toUpperCase()
+  const c = catalogSymbol.trim().toUpperCase()
+  if (!o || !c) return false
+  if (o === c) return true
+  return o === `${c}.IS` || c === `${o}.IS`
+}
+
 function formatIsoDateUtcToTrLabel(iso: string): string {
   const day = iso.trim().slice(0, 10)
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day)
@@ -546,6 +612,16 @@ function SidebarItemIcon({ item }: { item: string }) {
           <rect x="3" y="6" width="18" height="14" rx="3" />
           <path d="M3 11h18" />
           <path d="M8 3h8" />
+        </svg>
+      )
+    case 'portfolioAnalysis':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <path d="M4 20h16" />
+          <path d="M6 17l3-5 3 3 4-7 3 3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="5" y="4" width="3" height="6" rx="0.8" opacity="0.55" />
+          <rect x="10" y="6" width="3" height="4" rx="0.8" opacity="0.7" />
+          <rect x="15" y="3" width="3" height="7" rx="0.8" opacity="0.85" />
         </svg>
       )
     case 'allocation':
@@ -686,9 +762,10 @@ export function MyPortfolioPage() {
   const [isDarkTheme, setIsDarkTheme] = useState(() =>
     typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark',
   )
-  const [dashboardChartRange, setDashboardChartRange] = useState<ValueChartRange>('1m')
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null)
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(() =>
+    portfolioIdFromSearchParams(searchParams),
+  )
   const [tradeTargetPortfolioId, setTradeTargetPortfolioId] = useState<number | null>(null)
   const [showCreatePortfolioModal, setShowCreatePortfolioModal] = useState(false)
   const [newPortfolioName, setNewPortfolioName] = useState('')
@@ -704,13 +781,39 @@ export function MyPortfolioPage() {
     sectionFromUrl && PORTFOLIO_SECTIONS.has(sectionFromUrl) ? sectionFromUrl : 'dashboard',
   )
 
+  const selectPortfolio = useCallback(
+    (id: number) => {
+      setSelectedPortfolioId(id)
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (id === ALL_PORTFOLIOS_ID) {
+            next.delete('portfolio')
+          } else {
+            next.set('portfolio', String(id))
+          }
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
+
   const selectPortfolioSection = (section: string) => {
     setActiveSection(section)
-    if (section === 'dashboard') {
-      setSearchParams({}, { replace: true })
-    } else {
-      setSearchParams({ section }, { replace: true })
-    }
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (section === 'dashboard') {
+          next.delete('section')
+        } else {
+          next.set('section', section)
+        }
+        return next
+      },
+      { replace: true },
+    )
   }
 
   useEffect(() => {
@@ -940,6 +1043,12 @@ export function MyPortfolioPage() {
           return mul * a.symbol.localeCompare(b.symbol, undefined, { sensitivity: 'base', numeric: true })
         case 'quantity':
           return mul * (a.quantity - b.quantity)
+        case 'cost':
+          return mul * (a.totalCost - b.totalCost)
+        case 'avgBuyPrice':
+          return mul * (a.avgBuyPrice - b.avgBuyPrice)
+        case 'currentPrice':
+          return mul * (a.currentPrice - b.currentPrice)
         case 'weight':
           return mul * (a.sharePct - b.sharePct)
         case 'value':
@@ -968,27 +1077,19 @@ export function MyPortfolioPage() {
 
   const categoryDonutRows = useMemo(() => buildCategoryDonutRows(overview, t), [overview, t])
 
-  const tradeFlowTotals = useMemo(
-    () => tradeFlowPeriodTotals(tradeFlow?.points ?? [], dashboardChartRange),
-    [tradeFlow, dashboardChartRange],
-  )
+  const tradeFlowStats = useMemo(() => tradeFlowTotals(tradeFlow?.points ?? []), [tradeFlow])
 
-  /** Satım − alım oranı (alım bazlı). Satım fazlaysa pozitif (+, yeşil); alım fazlaysa negatif (kırmızı). */
   const tradeFlowFark = useMemo(() => {
-    const { buy, sell } = tradeFlowTotals
+    const { buy, sell } = tradeFlowStats
     if (!tradeFlowHydrated) return { kind: 'loading' as const }
     if (buy <= DOD_EPS && sell <= DOD_EPS) return { kind: 'empty' as const }
-    const delta = sell - buy
+    if (buy > DOD_EPS && sell <= DOD_EPS) return { kind: 'empty' as const }
     if (buy > DOD_EPS) {
       const pct = ((sell - buy) / buy) * 100
-      return {
-        kind: 'pct' as const,
-        pct,
-        tone: delta > DOD_EPS ? ('pos' as const) : delta < -DOD_EPS ? ('neg' as const) : ('neutral' as const),
-      }
+      return { kind: 'pct' as const, pct }
     }
-    return { kind: 'infinity' as const, tone: 'pos' as const }
-  }, [tradeFlowTotals, tradeFlowHydrated])
+    return { kind: 'infinity' as const }
+  }, [tradeFlowStats, tradeFlowHydrated])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -1008,16 +1109,17 @@ export function MyPortfolioPage() {
       setShowCreatePortfolioModal(true)
       return
     }
-    setSelectedPortfolioId((prev) => {
-      if (prev != null && prev > 0 && rows.some((p) => p.id === prev)) {
-        return prev
-      }
-      if (prev === ALL_PORTFOLIOS_ID) {
-        return ALL_PORTFOLIOS_ID
-      }
-      return ALL_PORTFOLIOS_ID
-    })
-  }, [])
+    const urlPreferred = portfolioIdFromSearchParams(searchParams)
+    setSelectedPortfolioId((prev) => resolvePortfolioSelection(prev ?? urlPreferred, rows))
+  }, [searchParams])
+
+  useEffect(() => {
+    if (portfolios.length === 0) {
+      return
+    }
+    const resolved = resolvePortfolioSelection(portfolioIdFromSearchParams(searchParams), portfolios)
+    setSelectedPortfolioId((prev) => (prev === resolved ? prev : resolved))
+  }, [searchParams, portfolios])
 
   useEffect(() => {
     if (!isAggregatePortfolioView) {
@@ -1288,7 +1390,12 @@ export function MyPortfolioPage() {
       setOverview(null)
       return
     }
-    if (activeSection !== 'dashboard' && activeSection !== 'markets' && activeSection !== 'allocation') {
+    if (
+      activeSection !== 'dashboard' &&
+      activeSection !== 'markets' &&
+      activeSection !== 'allocation' &&
+      activeSection !== 'portfolioAnalysis'
+    ) {
       return
     }
     void getMyPortfolioOverview(overviewApiPortfolioId, valuationCurrency).then((data) => setOverview(data)).catch(() => setOverview(null))
@@ -1300,7 +1407,7 @@ export function MyPortfolioPage() {
       setTradeFlowHydrated(false)
       return
     }
-    if (activeSection !== 'dashboard') {
+    if (activeSection !== 'dashboard' && activeSection !== 'portfolioAnalysis') {
       setTradeFlow(null)
       setTradeFlowHydrated(false)
       return
@@ -1320,7 +1427,10 @@ export function MyPortfolioPage() {
   }, [activeSection, overviewApiPortfolioId, valuationCurrency, selectedPortfolioId])
 
   useEffect(() => {
-    if (selectedPortfolioId == null || activeSection !== 'dashboard') {
+    if (
+      selectedPortfolioId == null ||
+      (activeSection !== 'dashboard' && activeSection !== 'portfolioAnalysis')
+    ) {
       setValueSnapshots([])
       return
     }
@@ -1376,7 +1486,11 @@ export function MyPortfolioPage() {
       displayCurrency: valuationCurrency,
     })
       .then((page) => {
-        const row = page.content.find((item) => item.symbol === selected.symbol)
+        const row = page.content.find(
+          (item) =>
+            item.instrumentId === selectedInstrumentId ||
+            marketOverviewSymbolMatches(item.symbol, selected.symbol),
+        )
         setInstrumentPerformance({
           change1D: row?.change1D ?? null,
           change1M: row?.change1M ?? null,
@@ -1645,7 +1759,7 @@ export function MyPortfolioPage() {
     try {
       const created = await createPortfolio({ name })
       await refreshPortfolios()
-      setSelectedPortfolioId(created.id)
+      selectPortfolio(created.id)
       setShowCreatePortfolioModal(false)
     } catch (error) {
       setPortfolioActionError(extractApiErrorMessage(error) || 'Portfoy olusturulamadi.')
@@ -1745,7 +1859,7 @@ export function MyPortfolioPage() {
                         openCreatePortfolioModal()
                         return
                       }
-                      setSelectedPortfolioId(Number(value))
+                      selectPortfolio(Number(value))
                     }}
                   >
                     {portfolios.length > 0 ? (
@@ -2115,11 +2229,6 @@ export function MyPortfolioPage() {
                     >
                       {tradeSaving ? 'Kaydediliyor...' : isPreviewStep ? 'Onayla ve Ekle' : 'Devam Et'}
                     </button>
-                    {purchaseMode === 'PAST' ? (
-                      <span className="my-portfolio-trade-warning-inline">
-                        Toplulukta gecmis alimlariniz portfoyunuzde gozukmez.
-                      </span>
-                    ) : null}
                   </div>
                 </div>
 
@@ -2326,6 +2435,40 @@ export function MyPortfolioPage() {
             </article>
           ) : null}
 
+          {activeSection === 'portfolioAnalysis' ? (
+            <MyPortfolioAnalysisSection
+              selectedPortfolioId={selectedPortfolioId}
+              overview={overview}
+              valueSnapshots={valueSnapshots}
+              tradeFlow={tradeFlow}
+              tradeFlowHydrated={tradeFlowHydrated}
+              instrumentDonutRows={instrumentDonutRows}
+              categoryDonutRows={categoryDonutRows}
+              distribution={distribution}
+              hideMoney={hideMoney}
+              isDarkTheme={isDarkTheme}
+              locale={i18n.language}
+              moneyFormat={displayDashboardCurrencyFormat}
+              dayChangeFormat={displayDashboardDayChangeFormat}
+              pctFormat={dashboardPctFormat}
+              sharePctDisplay={sharePctDisplay}
+              parseTotal={(ov) => {
+                const totalValue = parseApiDecimal(ov.totalValue, 0)
+                const dayOverDay = parseApiDecimal(ov.dayOverDayChange, 0)
+                return {
+                  totalValue,
+                  totalCost: parseApiDecimal(ov.totalCost, 0),
+                  totalPnl: parseApiDecimal(ov.totalPnl, 0),
+                  totalPnlPercent: parseApiDecimal(ov.totalPnlPercent, 0),
+                  dayOverDay,
+                  priorDayValue:
+                    ov.dayOverDayChange != null ? totalValue - dayOverDay : null,
+                }
+              }}
+              onOpenAllocation={() => selectPortfolioSection('allocation')}
+            />
+          ) : null}
+
           {activeSection === 'allocation' ? (
             <article className={`card my-portfolio-trade-card my-portfolio-allocation-detail${isDarkTheme ? ' is-dark' : ' is-light'}`}>
               <header className="my-portfolio-allocation-head">
@@ -2339,9 +2482,35 @@ export function MyPortfolioPage() {
                 <h2 className="my-portfolio-allocation-detail-title">{t('allocation.detailTitle')}</h2>
               </header>
               {portfolios.length === 0 ? (
-                <p className="my-portfolio-trade-note">{t('allocation.empty')}</p>
-              ) : distribution.fullList.length === 0 ? (
-                <p className="my-portfolio-trade-note">{t('allocation.empty')}</p>
+                <div className="my-portfolio-allocation-detail-content">
+                  <div className="my-portfolio-allocation-chart-row">
+                    <div className="my-portfolio-allocation-dual">
+                      <section className="my-portfolio-allocation-panel">
+                        <header className="my-portfolio-allocation-panel-head">
+                          <h3 className="my-portfolio-allocation-panel-title">{t('allocation.byInstrumentTitle')}</h3>
+                        </header>
+                        <AllocationDonut
+                          rows={[]}
+                          sharePctDisplay={sharePctDisplay}
+                          currencyFormat={displayDashboardCurrencyFormat}
+                          ariaLabel={`${t('allocation.byInstrumentTitle')} — ${t('distributionTitle')}`}
+                        />
+                      </section>
+                      <section className="my-portfolio-allocation-panel">
+                        <header className="my-portfolio-allocation-panel-head">
+                          <h3 className="my-portfolio-allocation-panel-title">{t('allocation.byCategoryTitle')}</h3>
+                        </header>
+                        <AllocationDonut
+                          rows={[]}
+                          sharePctDisplay={sharePctDisplay}
+                          currencyFormat={displayDashboardCurrencyFormat}
+                          ariaLabel={`${t('allocation.byCategoryTitle')} — ${t('distributionTitle')}`}
+                          donutVariant="category"
+                        />
+                      </section>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="my-portfolio-allocation-detail-content">
                   <div className="my-portfolio-allocation-chart-row">
@@ -2371,11 +2540,17 @@ export function MyPortfolioPage() {
                       </section>
                     </div>
                   </div>
+                  {distribution.fullList.length === 0 ? (
+                    <p className="my-portfolio-trade-note">{t('allocation.empty')}</p>
+                  ) : (
                   <div className="my-portfolio-allocation-table-wrap">
                     <table className="my-portfolio-allocation-table">
                       <colgroup>
                         <col className="my-portfolio-alloc-col-sym" />
                         <col className="my-portfolio-alloc-col-qty" />
+                        <col className="my-portfolio-alloc-col-cost" />
+                        <col className="my-portfolio-alloc-col-avg" />
+                        <col className="my-portfolio-alloc-col-cur" />
                         <col className="my-portfolio-alloc-col-w" />
                         <col className="my-portfolio-alloc-col-val" />
                         <col className="my-portfolio-alloc-col-pnl" />
@@ -2415,6 +2590,9 @@ export function MyPortfolioPage() {
                           {(
                             [
                               ['quantity', t('allocation.quantity')],
+                              ['cost', t('allocation.cost')],
+                              ['avgBuyPrice', t('allocation.avgBuyPrice')],
+                              ['currentPrice', t('allocation.currentPrice')],
                               ['weight', t('allocation.weight')],
                               ['value', t('allocation.value')],
                               ['pnl', t('allocation.pnlPctShort')],
@@ -2469,6 +2647,19 @@ export function MyPortfolioPage() {
                             <td className="my-portfolio-allocation-num my-portfolio-allocation-muted">
                               {formatHoldingQuantity(row.quantity, i18n.language)}
                             </td>
+                            <td className="my-portfolio-allocation-num">
+                              {displayDashboardCurrencyFormat.format(row.totalCost)}
+                            </td>
+                            <td className="my-portfolio-allocation-num my-portfolio-allocation-muted">
+                              {row.avgBuyPrice > 0
+                                ? displayDashboardCurrencyFormat.format(row.avgBuyPrice)
+                                : '—'}
+                            </td>
+                            <td className="my-portfolio-allocation-num my-portfolio-allocation-muted">
+                              {row.currentPrice > 0
+                                ? displayDashboardCurrencyFormat.format(row.currentPrice)
+                                : '—'}
+                            </td>
                             <td className="my-portfolio-allocation-num">{sharePctDisplay.format(row.sharePct)}%</td>
                             <td className="my-portfolio-allocation-num">{displayDashboardCurrencyFormat.format(row.value)}</td>
                             <td
@@ -2481,6 +2672,7 @@ export function MyPortfolioPage() {
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </div>
               )}
             </article>
@@ -2597,10 +2789,11 @@ export function MyPortfolioPage() {
           activeSection !== 'markets' &&
           activeSection !== 'portfolio' &&
           activeSection !== 'allocation' &&
+          activeSection !== 'portfolioAnalysis' &&
           activeSection !== 'settings' ? (
             <>
-              <div className="my-portfolio-grid">
-            <article className="card my-portfolio-card">
+              <div className="my-portfolio-grid my-portfolio-grid--dashboard">
+            <article className="card my-portfolio-card my-portfolio-card--dashboard-value">
               <div className="my-portfolio-card-head">
                 <h3>{t('valueTitle')}</h3>
               </div>
@@ -2654,44 +2847,35 @@ export function MyPortfolioPage() {
                   variant="value"
                   snapshots={valueSnapshots}
                   liveTotalValue={overview ? parseApiDecimal(overview.totalValue, 0) : null}
-                  range={dashboardChartRange}
-                  onRangeChange={setDashboardChartRange}
+                  priorDayValue={
+                    overview && overview.dayOverDayChange != null
+                      ? parseApiDecimal(overview.totalValue, 0) - parseApiDecimal(overview.dayOverDayChange, 0)
+                      : null
+                  }
                   isDark={isDarkTheme}
                   locale={i18n.language}
                   maskAmounts={hideMoney}
                   formatValue={(v) => displayDashboardCurrencyFormat.format(v)}
                   emptyLabel={t('valueChart.empty')}
-                  rangeAriaLabel={t('valueChart.rangeAria')}
                 />
               )}
             </article>
 
-            <article className="card my-portfolio-card" aria-labelledby="portfolio-change-heading">
+            <article
+              className="card my-portfolio-card my-portfolio-card--dashboard-trade"
+              aria-labelledby="portfolio-change-heading"
+            >
               <div className="my-portfolio-card-head">
                 <h3 id="portfolio-change-heading">{t('changeTitle')}</h3>
               </div>
-              <div
-                className={`my-portfolio-trade-flow-net${
-                  selectedPortfolioId != null &&
-                  tradeFlowHydrated &&
-                  tradeFlowTotals.net > DOD_EPS
-                    ? ' my-portfolio-trade-flow-net--buy-heavy'
-                    : selectedPortfolioId != null &&
-                        tradeFlowHydrated &&
-                        tradeFlowTotals.net < -DOD_EPS
-                      ? ' my-portfolio-trade-flow-net--sell-heavy'
-                      : selectedPortfolioId != null && tradeFlowHydrated
-                        ? ' my-portfolio-trade-flow-net--balanced'
-                        : ''
-                }`}
-              >
+              <div className="my-portfolio-trade-flow-net">
                 {selectedPortfolioId == null
                   ? '—'
                   : !tradeFlowHydrated
                     ? t('tradeFlow.loading')
                     : hideMoney
                       ? '•••'
-                      : displayDashboardCurrencyFormat.format(tradeFlowTotals.net)}
+                      : displayDashboardCurrencyFormat.format(tradeFlowStats.net)}
               </div>
               <div className="my-portfolio-trade-flow-totals">
                 <div>
@@ -2701,22 +2885,12 @@ export function MyPortfolioPage() {
                       ? '—'
                       : !tradeFlowHydrated
                         ? t('tradeFlow.loading')
-                        : displayDashboardCurrencyFormat.format(tradeFlowTotals.buy)}
+                        : displayDashboardCurrencyFormat.format(tradeFlowStats.buy)}
                   </strong>
                 </div>
                 <div>
                   <span className="trade-flow-stat-label">{t('tradeFlow.diffLabel')}</span>
-                  <strong
-                    className={`trade-flow-fark-val${
-                      tradeFlowFark.kind === 'pct' || tradeFlowFark.kind === 'infinity'
-                        ? tradeFlowFark.tone === 'pos'
-                          ? ' my-portfolio-dod-pos'
-                          : tradeFlowFark.tone === 'neg'
-                            ? ' my-portfolio-dod-neg'
-                            : ' my-portfolio-dod-neutral'
-                        : ' my-portfolio-dod-neutral'
-                    }`}
-                  >
+                  <strong className="trade-flow-fark-val">
                     {selectedPortfolioId == null
                       ? '—'
                       : tradeFlowFark.kind === 'loading'
@@ -2737,7 +2911,7 @@ export function MyPortfolioPage() {
                       ? '—'
                       : !tradeFlowHydrated
                         ? t('tradeFlow.loading')
-                        : displayDashboardCurrencyFormat.format(tradeFlowTotals.sell)}
+                        : displayDashboardCurrencyFormat.format(tradeFlowStats.sell)}
                   </strong>
                 </div>
               </div>
@@ -2745,20 +2919,16 @@ export function MyPortfolioPage() {
                 <PortfolioHistorySparkline
                   variant="tradeFlow"
                   tradeFlowPoints={tradeFlow?.points ?? []}
-                  range={dashboardChartRange}
-                  onRangeChange={setDashboardChartRange}
                   isDark={isDarkTheme}
                   locale={i18n.language}
                   maskAmounts={hideMoney}
                   formatValue={(v) => displayDashboardCurrencyFormat.format(v)}
                   emptyLabel={t('tradeFlow.empty')}
-                  rangeAriaLabel={t('tradeFlow.rangeAria')}
                 />
               )}
-              <p className="my-portfolio-sub-value my-portfolio-trade-flow-net-caption">{t('tradeFlow.netLabel')}</p>
             </article>
 
-            <article className="card my-portfolio-card">
+            <article className="card my-portfolio-card my-portfolio-card--dashboard-profit">
               <div className="my-portfolio-card-head">
                 <h3>{t('profitTitle')}</h3>
               </div>
@@ -2779,56 +2949,69 @@ export function MyPortfolioPage() {
               )}
             </article>
 
-            <article className="card my-portfolio-card" aria-labelledby="portfolio-distribution-heading">
+            <article
+              className="card my-portfolio-card my-portfolio-card-dist-preview my-portfolio-card--dashboard-allocation"
+              aria-labelledby="portfolio-distribution-heading"
+            >
               <div className="my-portfolio-card-head">
                 <h3 id="portfolio-distribution-heading">{t('distributionTitle')}</h3>
                 <button
                   type="button"
-                  disabled={selectedPortfolioId == null || distribution.fullList.length === 0}
+                  disabled={selectedPortfolioId == null}
                   onClick={() => setActiveSection('allocation')}
                 >
                   {t('actions.viewAll')}
                 </button>
               </div>
-              {selectedPortfolioId == null || distribution.bar.length === 0 ? (
-                <p className="my-portfolio-distribution-empty">{t('allocation.empty')}</p>
-              ) : (
-                <>
-                  <div
-                    className="my-portfolio-distribution-bar"
-                    role="img"
-                    aria-label={t('distributionTitle')}
-                  >
-                    {distribution.bar.map((seg) => (
-                      <span
-                        key={seg.key}
-                        className={seg.colorClass}
-                        style={{
-                          width: `${seg.widthPct}%`,
-                          minWidth: seg.widthPct > 0 ? '4px' : 0,
-                        }}
-                        title={seg.key === '__other__' ? t('allocation.other') : seg.key}
-                      />
-                    ))}
+              <div className="my-portfolio-dashboard-preview-body">
+                {selectedPortfolioId == null || distribution.bar.length === 0 ? (
+                  <div className="my-portfolio-dist-preview my-portfolio-dist-preview--empty">
+                    <AllocationDonut
+                      rows={[]}
+                      currencyFormat={displayDashboardCurrencyFormat}
+                      sharePctDisplay={sharePctDisplay}
+                      ariaLabel={`${t('allocation.byInstrumentTitle')} — ${t('distributionTitle')}`}
+                    />
+                    <p className="my-portfolio-dashboard-preview-empty">{t('allocation.empty')}</p>
                   </div>
-                  <ul className="my-portfolio-asset-list">
-                    {distribution.topList.map((row) => (
-                      <li key={row.symbol}>
-                        <div>
-                          <span className={`my-portfolio-dot ${row.colorClass}`} />
-                          <strong>{row.symbol}</strong>
-                          <small>{sharePctDisplay.format(row.sharePct)}%</small>
-                        </div>
-                        <span>{displayDashboardCurrencyFormat.format(row.value)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
+                ) : (
+                  <div className="my-portfolio-dist-preview my-portfolio-dist-dashboard">
+                    <AllocationDonut
+                      rows={instrumentDonutRows}
+                      currencyFormat={displayDashboardCurrencyFormat}
+                      sharePctDisplay={sharePctDisplay}
+                      ariaLabel={`${t('allocation.byInstrumentTitle')} — ${t('distributionTitle')}`}
+                    />
+                    <div className="my-portfolio-dist-list" role="table" aria-label={t('distributionTitle')}>
+                      <div className="my-portfolio-dist-list-head" role="row">
+                        <span role="columnheader">{t('allocation.symbol')}</span>
+                        <span role="columnheader">{t('allocation.weight')}</span>
+                        <span role="columnheader">{t('allocation.value')}</span>
+                      </div>
+                      <ul className="my-portfolio-asset-list my-portfolio-asset-list--dist-preview" role="rowgroup">
+                        {distribution.topList.map((row) => (
+                          <li key={row.symbol} role="row">
+                            <span className="my-portfolio-dist-list-symbol" role="cell">
+                              <span className={`my-portfolio-dot ${row.colorClass}`} aria-hidden />
+                              <strong>{row.symbol}</strong>
+                            </span>
+                            <span className="my-portfolio-dist-list-weight" role="cell">
+                              {sharePctDisplay.format(row.sharePct)}%
+                            </span>
+                            <span className="my-portfolio-dist-list-value" role="cell">
+                              {displayDashboardCurrencyFormat.format(row.value)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
             </article>
 
             <article
-              className="card my-portfolio-card my-portfolio-card-tx-preview"
+              className="card my-portfolio-card my-portfolio-card-tx-preview my-portfolio-card--dashboard-tx"
               aria-labelledby="portfolio-recent-tx-heading"
             >
               <div className="my-portfolio-card-head">
@@ -2841,57 +3024,78 @@ export function MyPortfolioPage() {
                   {t('actions.viewAll')}
                 </button>
               </div>
-              {recentTxLoading ? (
-                <div className="markets-skeleton-row" aria-hidden />
-              ) : (
-                <ul className="my-portfolio-recent-tx">
-                  {recentTxPreview.length === 0 ? (
-                    <li className="my-portfolio-recent-tx-empty">{t('transactionHistoryEmpty')}</li>
-                  ) : (
-                    recentTxPreview.map((row) => {
-                      const isBuy = String(row.type).toUpperCase() === 'BUY'
-                      const qty = Number(row.quantity)
-                      const qtyStr = Number.isFinite(qty)
-                        ? Math.abs(qty - Math.round(qty)) < 1e-9
-                          ? String(Math.round(qty))
-                          : new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 }).format(qty)
-                        : '—'
-                      const fxLabel = formatTxFxLegLabel(row, i18n.language)
-                      return (
-                        <li key={row.transactionId} className="my-portfolio-recent-tx-row">
-                          <div className="my-portfolio-recent-tx-left">
-                            <span className="my-portfolio-recent-tx-symbol">{row.instrumentSymbol}</span>
-                            <span className="my-portfolio-recent-tx-qty">
-                              <span className="my-portfolio-recent-tx-qty-label">×</span>
-                              {qtyStr}
-                            </span>
-                          </div>
-                          <div className="my-portfolio-recent-tx-right">
-                            <div className="my-portfolio-recent-tx-amt-stack">
-                              <span className="my-portfolio-recent-tx-amt">{formatTxMoney(row)}</span>
-                              {fxLabel !== '—' ? (
-                                <span className="my-portfolio-recent-tx-fx">{fxLabel}</span>
-                              ) : null}
-                            </div>
-                            <span
-                              className={`my-portfolio-recent-tx-badge${isBuy ? ' is-buy' : ' is-sell'}`}
-                            >
-                              <svg className="my-portfolio-recent-tx-badge-ico" viewBox="0 0 12 12" aria-hidden>
-                                {isBuy ? (
-                                  <path fill="currentColor" d="M6 2.2 10.2 8.8H1.8z" />
-                                ) : (
-                                  <path fill="currentColor" d="M6 9.8 1.8 3.2h8.4z" />
-                                )}
-                              </svg>
-                              {isBuy ? t('txTypeBuy') : t('txTypeSell')}
-                            </span>
-                          </div>
-                        </li>
-                      )
-                    })
-                  )}
-                </ul>
-              )}
+              <div className="my-portfolio-dashboard-preview-body">
+                {recentTxLoading ? (
+                  <div className="markets-skeleton-row" aria-hidden />
+                ) : (
+                  <div className="my-portfolio-tx-preview">
+                    <div className="my-portfolio-dashboard-mini-table-wrap">
+                      <table className="my-portfolio-dashboard-mini-table my-portfolio-dashboard-mini-table--tx">
+                        <thead>
+                          <tr>
+                            <th scope="col">{t('allocation.symbol')}</th>
+                            <th scope="col" className="is-num">
+                              {t('allocation.quantity')}
+                            </th>
+                            <th scope="col" className="is-num">
+                              {t('allocation.value')}
+                            </th>
+                            <th scope="col" className="is-tx-type">
+                              {t('transactionHistorySide')}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recentTxPreview.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="my-portfolio-dashboard-preview-slot-empty">
+                                {t('transactionHistoryEmpty')}
+                              </td>
+                            </tr>
+                          ) : (
+                            recentTxPreview.map((row) => {
+                            const isBuy = String(row.type).toUpperCase() === 'BUY'
+                            const qty = Number(row.quantity)
+                            const qtyStr = Number.isFinite(qty)
+                              ? Math.abs(qty - Math.round(qty)) < 1e-9
+                                ? String(Math.round(qty))
+                                : new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 }).format(qty)
+                              : '—'
+                            const fxLabel = formatTxFxLegLabel(row, i18n.language)
+                            return (
+                              <tr key={row.transactionId}>
+                                <td>
+                                  <span className="my-portfolio-dashboard-mini-symbol">{row.instrumentSymbol}</span>
+                                </td>
+                                <td className="is-num is-muted">× {qtyStr}</td>
+                                <td className="is-num">
+                                  <span className="my-portfolio-tx-preview-amt">{formatTxMoney(row)}</span>
+                                  {fxLabel !== '—' ? (
+                                    <span className="my-portfolio-tx-preview-fx">{fxLabel}</span>
+                                  ) : null}
+                                </td>
+                                <td className="is-tx-type">
+                                  <span className={`my-portfolio-recent-tx-badge${isBuy ? ' is-buy' : ' is-sell'}`}>
+                                    <svg className="my-portfolio-recent-tx-badge-ico" viewBox="0 0 12 12" aria-hidden>
+                                      {isBuy ? (
+                                        <path fill="currentColor" d="M6 2.2 10.2 8.8H1.8z" />
+                                      ) : (
+                                        <path fill="currentColor" d="M6 9.8 1.8 3.2h8.4z" />
+                                      )}
+                                    </svg>
+                                    {isBuy ? t('txTypeBuy') : t('txTypeSell')}
+                                  </span>
+                                </td>
+                              </tr>
+                            )
+                          })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
             </article>
 
             <FavoriteNewsInsightCard />

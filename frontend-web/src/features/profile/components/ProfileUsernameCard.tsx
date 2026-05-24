@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isAxiosError } from 'axios'
 import { useTranslation } from 'react-i18next'
 import {
   changePortalUsername,
@@ -6,8 +7,15 @@ import {
   readApiErrorMessage,
 } from '../api/portalProfileApi'
 import type { PortalProfile } from '../types'
-import { persistAuthSession } from '../../../shared/auth/session'
+import { isRememberMeEnabled, persistAuthSession } from '../../../shared/auth/session'
+import {
+  isUsernameFormatValid,
+  normalizeUsernameInput,
+  USERNAME_AVAILABILITY_DEBOUNCE_MS,
+} from '../../../shared/validation/username'
 import { ProfileSettingsPanel } from './ProfileSettingsPanel'
+
+type UsernameCheckState = 'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'unchanged' | 'error'
 
 type Props = {
   profile: PortalProfile
@@ -22,7 +30,7 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [usernameCheckState, setUsernameCheckState] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
+  const [usernameCheckState, setUsernameCheckState] = useState<UsernameCheckState>('idle')
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([])
 
   const summary = `@${profile.username}`
@@ -31,34 +39,34 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
     if (!expanded) {
       return
     }
-    const trimmed = newUsername.trim().toLowerCase()
+    const trimmed = normalizeUsernameInput(newUsername)
     if (!trimmed) {
       setUsernameCheckState('idle')
       setUsernameSuggestions([])
       return
     }
-    if (!/^[a-zA-Z0-9._-]{3,36}$/.test(trimmed)) {
-      setUsernameCheckState('idle')
+    if (trimmed === profile.username) {
+      setUsernameCheckState('unchanged')
       setUsernameSuggestions([])
       return
     }
-    if (trimmed === profile.username) {
-      setUsernameCheckState('idle')
+    if (!isUsernameFormatValid(trimmed)) {
+      setUsernameCheckState('invalid')
       setUsernameSuggestions([])
       return
     }
     setUsernameCheckState('checking')
     const timer = window.setTimeout(() => {
-      void checkPortalUsernameAvailability(trimmed)
+      void checkPortalUsernameAvailability(trimmed, profile.username)
         .then((result) => {
           setUsernameCheckState(result.available ? 'available' : 'taken')
           setUsernameSuggestions(result.available ? [] : result.suggestions.slice(0, 3))
         })
         .catch(() => {
-          setUsernameCheckState('idle')
+          setUsernameCheckState('error')
           setUsernameSuggestions([])
         })
-    }, 600)
+    }, USERNAME_AVAILABILITY_DEBOUNCE_MS)
     return () => window.clearTimeout(timer)
   }, [newUsername, expanded, profile.username])
 
@@ -66,9 +74,25 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
     e.preventDefault()
     setError(null)
     setSuccess(false)
-    const next = newUsername.trim().toLowerCase()
+    const next = normalizeUsernameInput(newUsername)
+    if (!next) {
+      setError(t('profileSettings.usernameRequired'))
+      return
+    }
+    if (!isUsernameFormatValid(next)) {
+      setError(t('profileSettings.usernameInvalid'))
+      return
+    }
     if (next === profile.username) {
       setError(t('profileSettings.usernameUnchanged'))
+      return
+    }
+    if (usernameCheckState === 'checking') {
+      setError(t('profileSettings.usernameChecking'))
+      return
+    }
+    if (usernameCheckState === 'taken') {
+      setError(t('profileSettings.usernameTaken'))
       return
     }
     if (usernameCheckState !== 'available') {
@@ -81,6 +105,7 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
       persistAuthSession({
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
+        rememberMe: isRememberMeEnabled(),
       })
       setNewUsername('')
       setCurrentPassword('')
@@ -89,7 +114,18 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
       window.setTimeout(() => setSuccess(false), 4000)
       setExpanded(false)
     } catch (err) {
-      setError(readApiErrorMessage(err))
+      if (isAxiosError(err) && err.response?.status === 409) {
+        setUsernameCheckState('taken')
+        setError(t('profileSettings.usernameTaken'))
+        try {
+          const result = await checkPortalUsernameAvailability(next, profile.username)
+          setUsernameSuggestions(result.suggestions.slice(0, 3))
+        } catch {
+          setUsernameSuggestions([])
+        }
+      } else {
+        setError(readApiErrorMessage(err))
+      }
     } finally {
       setBusy(false)
     }
@@ -103,7 +139,7 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
       onToggle={setExpanded}
     >
       <p className="profile-settings-panel-hint">{t('profileSettings.usernameLead')}</p>
-      <form className="profile-settings-form" onSubmit={(ev) => void handleSubmit(ev)}>
+      <form className="profile-settings-form" noValidate onSubmit={(ev) => void handleSubmit(ev)}>
         <label className="profile-settings-label" htmlFor="profile-un-new">
           {t('profileSettings.usernameNew')}
         </label>
@@ -115,9 +151,9 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
             className="profile-settings-input"
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
-            pattern="^[a-zA-Z0-9._-]{3,36}$"
-            title={t('profileSettings.usernamePatternHint')}
-            required
+            placeholder={t('profileSettings.usernamePatternHint')}
+            aria-invalid={usernameCheckState === 'taken' || usernameCheckState === 'invalid'}
+            aria-describedby="profile-un-new-hint"
           />
           {usernameCheckState === 'checking' ? (
             <span
@@ -126,18 +162,36 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
             />
           ) : null}
           {usernameCheckState === 'available' ? (
-            <span className="profile-settings-input-status profile-settings-input-status-ok" aria-label={t('profileSettings.usernameAvailable')}>
+            <span
+              className="profile-settings-input-status profile-settings-input-status-ok"
+              aria-label={t('profileSettings.usernameAvailable')}
+            >
               ✓
             </span>
           ) : null}
           {usernameCheckState === 'taken' ? (
-            <span className="profile-settings-input-status profile-settings-input-status-bad" aria-label={t('profileSettings.usernameTaken')}>
+            <span
+              className="profile-settings-input-status profile-settings-input-status-bad"
+              aria-label={t('profileSettings.usernameTaken')}
+            >
               ✕
             </span>
           ) : null}
         </div>
+        <p id="profile-un-new-hint" className="profile-settings-hint">
+          {t('profileSettings.usernamePatternHint')}
+        </p>
+        {usernameCheckState === 'unchanged' ? (
+          <p className="profile-settings-hint">{t('profileSettings.usernameUnchangedHint')}</p>
+        ) : null}
+        {usernameCheckState === 'invalid' ? (
+          <p className="profile-settings-hint profile-settings-hint-warning">{t('profileSettings.usernameInvalid')}</p>
+        ) : null}
         {usernameCheckState === 'taken' ? (
           <p className="profile-settings-hint profile-settings-hint-warning">{t('profileSettings.usernameTaken')}</p>
+        ) : null}
+        {usernameCheckState === 'error' ? (
+          <p className="profile-settings-hint profile-settings-hint-warning">{t('profileSettings.usernameCheckError')}</p>
         ) : null}
         {usernameSuggestions.length > 0 ? (
           <div className="profile-settings-username-suggestions">

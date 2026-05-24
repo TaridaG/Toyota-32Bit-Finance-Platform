@@ -14,5 +14,7 @@ target/
 # OS
 .DS_Store
 
-backend/.idea/
+# Portal profile photos (JPEG per user under photos/{userId}/)
+photos/*
+!photos/.gitkeep
 

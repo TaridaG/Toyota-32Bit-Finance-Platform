@@ -11,6 +11,7 @@ export type AdminUserListItem = {
   createdAt: string
   hasProfileAvatar: boolean
   portfolioCount: number
+  frozen: boolean
 }
 
 export type AdminUserDirectoryPage = {
@@ -52,6 +53,7 @@ export type AdminUserDirectoryQuery = {
   registeredToExclusive?: string
   emailVerified?: boolean
   portfolioCount?: number
+  search?: string
 }
 
 function describeFailure(e: unknown): string {
@@ -80,6 +82,7 @@ export async function fetchAdminUserDirectory(q: AdminUserDirectoryQuery): Promi
   if (q.registeredToExclusive) params.set('registeredToExclusive', q.registeredToExclusive)
   if (q.emailVerified !== undefined) params.set('emailVerified', String(q.emailVerified))
   if (q.portfolioCount !== undefined) params.set('portfolioCount', String(q.portfolioCount))
+  if (q.search?.trim()) params.set('search', q.search.trim())
   try {
     const { data } = await apiClient.get<AdminEnvelope<AdminUserDirectoryPage>>(
       `${USER_DIRECTORY_BASE}?${params.toString()}`,

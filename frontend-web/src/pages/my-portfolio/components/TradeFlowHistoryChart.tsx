@@ -88,6 +88,17 @@ export function TradeFlowHistoryChart({
   )
 }
 
+/** Kart üstündeki alım / satım / net — tüm işlem geçmişi. */
+export function tradeFlowTotals(points: PortfolioTradeFlowPoint[]): { buy: number; sell: number; net: number } {
+  let buy = 0
+  let sell = 0
+  for (const p of points) {
+    if (p.signedAmount > 0) buy += p.signedAmount
+    else sell += -p.signedAmount
+  }
+  return { buy, sell, net: buy - sell }
+}
+
 export function tradeFlowPeriodTotals(
   points: PortfolioTradeFlowPoint[],
   range: ValueChartRange,

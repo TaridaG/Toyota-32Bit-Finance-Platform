@@ -15,10 +15,6 @@ const SEGMENT_TITLE_KEYS: Record<MarketCategory, { winners: string; losers: stri
   crypto: { winners: 'winnersLosers.titles.winners.crypto', losers: 'winnersLosers.titles.losers.crypto' },
   forex: { winners: 'winnersLosers.titles.winners.forex', losers: 'winnersLosers.titles.losers.forex' },
   metals: { winners: 'winnersLosers.titles.winners.metals', losers: 'winnersLosers.titles.losers.metals' },
-  globalFutures: {
-    winners: 'winnersLosers.titles.winners.globalFutures',
-    losers: 'winnersLosers.titles.losers.globalFutures',
-  },
   funds: { winners: 'winnersLosers.titles.winners.funds', losers: 'winnersLosers.titles.losers.funds' },
   bonds: { winners: 'winnersLosers.titles.winners.bonds', losers: 'winnersLosers.titles.losers.bonds' },
   eurobond: { winners: 'winnersLosers.titles.winners.eurobond', losers: 'winnersLosers.titles.losers.eurobond' },

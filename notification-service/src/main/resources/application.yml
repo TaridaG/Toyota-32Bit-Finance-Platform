@@ -52,6 +52,8 @@ services:
     base-url: ${FINANCE_API_BASE_URL:http://localhost:8080}
 
 notification:
+  mail:
+    from: ${NOTIFICATION_MAIL_FROM:${SMTP_USERNAME:}}
+    portal-public-url: ${APP_PORTAL_PUBLIC_URL:http://localhost:5173}
   insight:
-    threshold: ${NOTIFICATION_INSIGHT_THRESHOLD:0.08}
     aggregation-interval-ms: ${NOTIFICATION_INSIGHT_AGGREGATION_INTERVAL_MS:21600000}

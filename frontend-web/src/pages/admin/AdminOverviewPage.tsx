@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { adminKpiSectionPath } from '../../features/admin/adminSectionRoutes'
 import { getAdminOverviewMock } from '../../features/admin/mock/adminMockData'
-import type { AdminDashboardKpi, AdminDataFlowPoint } from '../../features/admin/types'
+import type { AdminDashboardKpi } from '../../features/admin/types'
 import { type AdminLatencyKpi, useAdminLatencyKpi } from '../../features/admin/hooks/useAdminLatencyKpi'
 import {
   type StreamsKpiLive,
@@ -13,30 +13,6 @@ import {
 import { useAdminNewsKpi, type NewsKpiLive } from '../../features/admin/hooks/useAdminNewsKpi'
 import { latencyHealthSegmentColor, latencyHealthStatusKey } from '../../features/admin/adminLatencyHealth'
 import { KpiSparkline } from './AdminOverviewKpiSparkline'
-
-function conicFromPercents(segments: { percent: number; color: string }[]): string {
-  let acc = 0
-  const stops = segments.map((s) => {
-    const a = acc
-    acc += s.percent
-    return `${s.color} ${a}% ${acc}%`
-  })
-  return `conic-gradient(${stops.join(', ')})`
-}
-
-function buildFlowChartPoints(series: AdminDataFlowPoint[], key: 'success' | 'error' | 'warn'): string {
-  if (series.length === 0) return ''
-  const n = series.length
-  const denom = Math.max(1, n - 1)
-  return series
-    .map((p, i) => {
-      const x = (i / denom) * 100
-      const v = p[key]
-      const y = 42 - (v / 100) * 38
-      return `${x},${y}`
-    })
-    .join(' ')
-}
 
 function IconRefresh() {
   return (
@@ -133,25 +109,6 @@ export function AdminOverviewPage() {
     void latencyKpi.reloadSnapshot()
   }, [latencyKpi, refetchNews, refetchPortalDashboard])
 
-  const donutStyle = useMemo(
-    () => ({
-      background: conicFromPercents(data.latencyBands.map((b) => ({ percent: b.percent, color: b.color }))),
-    }),
-    [data.latencyBands],
-  )
-
-  const flowPts = useMemo(
-    () => ({
-      success: buildFlowChartPoints(data.dataFlowSeries, 'success'),
-      error: buildFlowChartPoints(data.dataFlowSeries, 'error'),
-      warn: buildFlowChartPoints(data.dataFlowSeries, 'warn'),
-    }),
-    [data.dataFlowSeries],
-  )
-
-  const fmtTime = (iso: string) =>
-    new Date(iso).toLocaleString(i18n.language, { dateStyle: 'short', timeStyle: 'medium' })
-
   return (
     <div className="fi-admin-page fi-admin-dash">
       <header className="fi-admin-dash-head">
@@ -160,7 +117,6 @@ export function AdminOverviewPage() {
           <p className="fi-admin-dash-lead">{t('dashboard.lead')}</p>
         </div>
         <div className="fi-admin-dash-head-actions">
-          <span className="fi-admin-dash-mock">{t('dashboard.mockTag')}</span>
           <time className="fi-admin-dash-clock" dateTime={refreshedAt.toISOString()}>
             {refreshedAt.toLocaleString(i18n.language, {
               day: 'numeric',
@@ -194,149 +150,6 @@ export function AdminOverviewPage() {
           />
         ))}
       </section>
-
-      <div className="fi-admin-dash-main">
-        <div className="fi-admin-dash-charts-col">
-          <section className="fi-admin-dash-card fi-admin-dash-card--chart">
-            <div className="fi-admin-dash-card-head">
-              <h2 className="fi-admin-dash-h2">{t('dashboard.dataFlow.title')}</h2>
-              <p className="fi-admin-dash-card-desc">{t('dashboard.dataFlow.subtitle')}</p>
-            </div>
-            <div className="fi-admin-dash-legend">
-              <span className="fi-admin-dash-legend-item fi-admin-dash-legend--ok">
-                <i /> {t('dashboard.dataFlow.legendSuccess')} ({data.dataFlowSummary.successPct}%)
-              </span>
-              <span className="fi-admin-dash-legend-item fi-admin-dash-legend--err">
-                <i /> {t('dashboard.dataFlow.legendError')} ({data.dataFlowSummary.errorPct}%)
-              </span>
-              <span className="fi-admin-dash-legend-item fi-admin-dash-legend--warn">
-                <i /> {t('dashboard.dataFlow.legendWarn')} ({data.dataFlowSummary.warnPct}%)
-              </span>
-            </div>
-            <div className="fi-admin-dash-chart-svg-wrap" role="img" aria-label={t('dashboard.dataFlow.title')}>
-              <svg className="fi-admin-dash-chart-svg" viewBox="0 0 100 44" preserveAspectRatio="none">
-                <line x1="0" y1="42" x2="100" y2="42" className="fi-admin-dash-chart-axis" />
-                <polyline className="fi-admin-dash-line fi-admin-dash-line--success" points={flowPts.success} fill="none" />
-                <polyline className="fi-admin-dash-line fi-admin-dash-line--error" points={flowPts.error} fill="none" />
-                <polyline className="fi-admin-dash-line fi-admin-dash-line--warn" points={flowPts.warn} fill="none" />
-              </svg>
-              <div className="fi-admin-dash-chart-x">
-                {data.dataFlowSeries.map((p) => (
-                  <span key={p.label}>{p.label}</span>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="fi-admin-dash-card fi-admin-dash-card--donut">
-            <div className="fi-admin-dash-card-head">
-              <h2 className="fi-admin-dash-h2">{t('dashboard.latency.title')}</h2>
-              <p className="fi-admin-dash-card-desc">{t('dashboard.latency.subtitle')}</p>
-            </div>
-            <div className="fi-admin-dash-donut-row">
-              <div className="fi-admin-dash-donut-visual">
-                <div className="fi-admin-dash-donut-ring" style={donutStyle} />
-                <div className="fi-admin-dash-donut-hole">
-                  <strong>{data.latencyAverageSec.toFixed(2)}s</strong>
-                  <span>{t('dashboard.latency.avgLabel')}</span>
-                </div>
-              </div>
-              <ul className="fi-admin-dash-donut-legend">
-                {data.latencyBands.map((b) => (
-                  <li key={b.bandKey}>
-                    <span className="fi-admin-dash-dot" style={{ background: b.color }} />
-                    <span className="fi-admin-dash-donut-label">{t(`dashboard.latency.band.${b.bandKey}`)}</span>
-                    <span className="fi-admin-dash-donut-meta">
-                      {b.count} ({b.percent}%)
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        </div>
-
-        <div className="fi-admin-dash-tables-col">
-          <section className="fi-admin-dash-card">
-            <h2 className="fi-admin-dash-h2">{t('dashboard.tables.streamsTitle')}</h2>
-            <div className="fi-admin-table-wrap">
-              <table className="fi-admin-table fi-admin-dash-table">
-                <thead>
-                  <tr>
-                    <th>{t('dashboard.tables.colSource')}</th>
-                    <th>{t('dashboard.tables.colType')}</th>
-                    <th>{t('dashboard.tables.colStatus')}</th>
-                    <th>{t('dashboard.tables.colLatency')}</th>
-                    <th>{t('dashboard.tables.colLastUpdate')}</th>
-                    <th>{t('dashboard.tables.colSuccess')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.streamRows.map((row) => (
-                    <tr key={row.name}>
-                      <td><strong>{row.name}</strong></td>
-                      <td>{t(row.categoryKey)}</td>
-                      <td>
-                        <span className={`fi-admin-dash-pill fi-admin-dash-pill--${row.status}`}>
-                          {t(`dashboard.status.${row.status}`)}
-                        </span>
-                      </td>
-                      <td>{row.latencyMs} ms</td>
-                      <td>{fmtTime(row.lastUpdate)}</td>
-                      <td>
-                        <div className="fi-admin-dash-barcell">
-                          <span>{row.successRate.toFixed(2)}%</span>
-                          <span className="fi-admin-dash-bartrack">
-                            <span className="fi-admin-dash-barfill" style={{ width: `${Math.min(100, row.successRate)}%` }} />
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button type="button" className="fi-admin-dash-footer-link">
-              {t('dashboard.tables.viewAllStreams')} →
-            </button>
-          </section>
-
-          <section className="fi-admin-dash-card">
-            <h2 className="fi-admin-dash-h2">{t('dashboard.tables.newsTitle')}</h2>
-            <div className="fi-admin-table-wrap">
-              <table className="fi-admin-table fi-admin-dash-table">
-                <thead>
-                  <tr>
-                    <th>{t('dashboard.tables.colSource')}</th>
-                    <th>{t('dashboard.tables.colStatus')}</th>
-                    <th>{t('dashboard.tables.colLatency')}</th>
-                    <th>{t('dashboard.tables.colLastNews')}</th>
-                    <th>{t('dashboard.tables.colNewsCount')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.newsStreamRows.map((row) => (
-                    <tr key={row.name}>
-                      <td><strong>{row.name}</strong></td>
-                      <td>
-                        <span className={`fi-admin-dash-pill fi-admin-dash-pill--${row.status}`}>
-                          {t(`dashboard.newsStatus.${row.status}`)}
-                        </span>
-                      </td>
-                      <td>{row.latencyLabel}</td>
-                      <td>{fmtTime(row.lastNews)}</td>
-                      <td>{row.newsCount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button type="button" className="fi-admin-dash-footer-link">
-              {t('dashboard.tables.viewAllNews')} →
-            </button>
-          </section>
-        </div>
-      </div>
     </div>
   )
 }

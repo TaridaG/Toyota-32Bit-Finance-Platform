@@ -6,10 +6,29 @@ import {
   CrosshairMode,
   LineSeries,
   type LineData,
+  type MouseEventParams,
   type Time,
 } from 'lightweight-charts'
 import { useTheme } from '../../../shared/theme/ThemeProvider'
 import { fetchCpiHistory, type CpiHistoryPoint, type CpiMetricCode } from '../api/cpiApi'
+import { InflationSimulator } from './simulators/InflationSimulator'
+
+function timeToIsoDay(t: Time): string | null {
+  if (t == null) return null
+  if (typeof t === 'string') {
+    return t.length >= 10 ? t.slice(0, 10) : t
+  }
+  if (typeof t === 'number') {
+    return new Date(t * 1000).toISOString().slice(0, 10)
+  }
+  if (typeof t === 'object' && 'year' in t && 'month' in t && 'day' in t) {
+    const o = t as { year: number; month: number; day: number }
+    const mm = String(o.month).padStart(2, '0')
+    const dd = String(o.day).padStart(2, '0')
+    return `${o.year}-${mm}-${dd}`
+  }
+  return null
+}
 
 function toLineData(points: CpiHistoryPoint[]): LineData<Time>[] {
   const rows = (points ?? [])
@@ -43,6 +62,8 @@ export function FaizVadeliInflationChartPanel({
   const [loadState, setLoadState] = useState<'loading' | 'error' | 'ready'>('loading')
   const [points, setPoints] = useState<CpiHistoryPoint[]>([])
   const [retryNonce, setRetryNonce] = useState(0)
+  const [pickStartDateActive, setPickStartDateActive] = useState(false)
+  const [chartPickIso, setChartPickIso] = useState<string | null>(null)
 
   const isIndex = metric === 'INDEX'
   const lineData = useMemo(() => toLineData(points), [points])
@@ -68,6 +89,19 @@ export function FaizVadeliInflationChartPanel({
 
   const outerRef = useRef<HTMLDivElement | null>(null)
   const mountRef = useRef<HTMLDivElement | null>(null)
+  const pickActiveRef = useRef(false)
+  const onPickRef = useRef<(iso: string) => void>(() => {})
+
+  useEffect(() => {
+    pickActiveRef.current = pickStartDateActive
+  }, [pickStartDateActive])
+
+  useEffect(() => {
+    onPickRef.current = (iso: string) => {
+      setChartPickIso(iso)
+      setPickStartDateActive(false)
+    }
+  }, [])
 
   useLayoutEffect(() => {
     if (loadState !== 'ready' || lineData.length === 0) {
@@ -141,6 +175,13 @@ export function FaizVadeliInflationChartPanel({
     series.setData(lineData)
     chart.timeScale().fitContent()
 
+    const clickHandler = (param: MouseEventParams<Time>) => {
+      if (!pickActiveRef.current || !param.point) return
+      const day = timeToIsoDay(param.time as Time)
+      if (day) onPickRef.current(day)
+    }
+    chart.subscribeClick(clickHandler)
+
     let disposed = false
     const ro = new ResizeObserver(() => {
       if (disposed || !outer.isConnected) return
@@ -158,6 +199,11 @@ export function FaizVadeliInflationChartPanel({
       disposed = true
       ro.disconnect()
       try {
+        chart.unsubscribeClick(clickHandler)
+      } catch {
+        /* noop */
+      }
+      try {
         chart.remove()
       } catch {
         /* race */
@@ -171,65 +217,88 @@ export function FaizVadeliInflationChartPanel({
 
   return (
     <div className="fi-faiz-panel fi-faiz-panel--chart fi-faiz-panel--policy-chart fi-faiz-panel--inflation-chart">
-        <div className="fi-faiz-inflation-chart-head">
-          <h3 className="fi-faiz-panel-title">{t('faizVadeliPage.inflation.chartTitle')}</h3>
-          <div
-            className="fi-faiz-inflation-metric-tabs"
-            role="tablist"
-            aria-label={t('faizVadeliPage.inflation.metricTabsAria')}
+      <div className="fi-faiz-inflation-chart-head">
+        <h3 className="fi-faiz-panel-title">{t('faizVadeliPage.inflation.chartTitle')}</h3>
+        <div
+          className="fi-faiz-inflation-metric-tabs"
+          role="tablist"
+          aria-label={t('faizVadeliPage.inflation.metricTabsAria')}
+        >
+          {METRICS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={metric === m}
+              className={`fi-faiz-inflation-metric-tab${metric === m ? ' fi-faiz-inflation-metric-tab--active' : ''}`}
+              onClick={() => onMetricChange(m)}
+            >
+              {t(`faizVadeliPage.inflation.metric.${m}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {pickStartDateActive ? (
+        <div className="fi-faiz-eurobond-pick-banner" role="status">
+          <span>{t('faizVadeliPage.simulator.inflation.pickHint')}</span>
+          <button
+            type="button"
+            className="fi-faiz-eurobond-pick-cancel"
+            onClick={() => setPickStartDateActive(false)}
           >
-            {METRICS.map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={metric === m}
-                className={`fi-faiz-inflation-metric-tab${metric === m ? ' fi-faiz-inflation-metric-tab--active' : ''}`}
-                onClick={() => onMetricChange(m)}
-              >
-                {t(`faizVadeliPage.inflation.metric.${m}`)}
-              </button>
-            ))}
+            {t('faizVadeliPage.simulator.inflation.pickCancel')}
+          </button>
+        </div>
+      ) : null}
+
+      <div className="fi-faiz-simulator-layout">
+        <div className="fi-faiz-simulator-layout-charts">
+          <div className="fi-faiz-policy-chart-y-wrap">
+            <span className="fi-faiz-policy-chart-y-label">{axisLabel}</span>
+            <div className="fi-faiz-chart-wrap fi-faiz-policy-panel-chart-wrap">
+              {loadState === 'loading' ? (
+                <div
+                  className="fi-faiz-policy-panel-chart-outer markets-skeleton-row"
+                  aria-busy="true"
+                  aria-label={t('faizVadeliPage.inflation.chartLoading')}
+                />
+              ) : null}
+
+              {loadState === 'error' ? (
+                <div className="fi-faiz-policy-panel-state">
+                  <p>{t('faizVadeliPage.inflation.chartError')}</p>
+                  <button
+                    type="button"
+                    className="profile-settings-btn-secondary"
+                    onClick={() => setRetryNonce((n) => n + 1)}
+                  >
+                    {t('faizVadeliPage.inflation.chartRetry')}
+                  </button>
+                </div>
+              ) : null}
+
+              {loadState === 'ready' && lineData.length === 0 ? (
+                <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.inflation.chartEmpty')}</p>
+              ) : null}
+
+              {loadState === 'ready' && lineData.length > 0 ? (
+                <div ref={outerRef} className="fi-faiz-policy-panel-chart-outer">
+                  <div ref={mountRef} className="fi-faiz-policy-panel-chart-mount" />
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        <div className="fi-faiz-policy-chart-y-wrap">
-          <span className="fi-faiz-policy-chart-y-label">{axisLabel}</span>
-          <div className="fi-faiz-chart-wrap fi-faiz-policy-panel-chart-wrap">
-            {loadState === 'loading' ? (
-              <div
-                className="fi-faiz-policy-panel-chart-outer markets-skeleton-row"
-                aria-busy="true"
-                aria-label={t('faizVadeliPage.inflation.chartLoading')}
-              />
-            ) : null}
+        <InflationSimulator
+          chartStartDate={chartPickIso}
+          pickStartDateActive={pickStartDateActive}
+          onRequestPickStartDate={() => setPickStartDateActive(true)}
+        />
+      </div>
 
-            {loadState === 'error' ? (
-              <div className="fi-faiz-policy-panel-state">
-                <p>{t('faizVadeliPage.inflation.chartError')}</p>
-                <button
-                  type="button"
-                  className="profile-settings-btn-secondary"
-                  onClick={() => setRetryNonce((n) => n + 1)}
-                >
-                  {t('faizVadeliPage.inflation.chartRetry')}
-                </button>
-              </div>
-            ) : null}
-
-            {loadState === 'ready' && lineData.length === 0 ? (
-              <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.inflation.chartEmpty')}</p>
-            ) : null}
-
-            {loadState === 'ready' && lineData.length > 0 ? (
-              <div ref={outerRef} className="fi-faiz-policy-panel-chart-outer">
-                <div ref={mountRef} className="fi-faiz-policy-panel-chart-mount" />
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <p className="fi-faiz-chart-foot">{t('faizVadeliPage.inflation.chartFoot')}</p>
+      <p className="fi-faiz-chart-foot">{t('faizVadeliPage.inflation.chartFoot')}</p>
     </div>
   )
 }

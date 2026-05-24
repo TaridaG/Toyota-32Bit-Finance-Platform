@@ -20,6 +20,8 @@ type AnalysisInvestmentSimulationCardProps = {
   onPurchaseDateChange: (isoDay: string) => void
   chartPickActive: boolean
   onChartPickActiveChange: (active: boolean) => void
+  /** Defer 5y history + FX until chart is ready (avoids blocking first paint). */
+  enabled?: boolean
 }
 
 function parseAmount(raw: string): number | null {
@@ -41,6 +43,7 @@ export function AnalysisInvestmentSimulationCard({
   onPurchaseDateChange,
   chartPickActive,
   onChartPickActiveChange,
+  enabled = true,
 }: AnalysisInvestmentSimulationCardProps) {
   const { t, i18n } = useTranslation('analysis')
   const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en'
@@ -55,7 +58,7 @@ export function AnalysisInvestmentSimulationCard({
   const { candles: historySeries, loading: historyLoading } = useCandles(
     asset?.symbol ?? '',
     '5y',
-    { wireCategory: asset?.wireCategory ?? null },
+    { wireCategory: asset?.wireCategory ?? null, enabled: enabled && asset != null },
   )
 
   const series = historySeries.length > 0 ? historySeries : fallbackSeries
@@ -66,7 +69,7 @@ export function AnalysisInvestmentSimulationCard({
   )
 
   const { loading: fxLoading, error: fxError, rateMapAtDay } = useFxTryHubHistory(
-    asset != null,
+    enabled && asset != null,
     purchaseDate,
     exitDayForFx,
   )

@@ -11,12 +11,19 @@ type UseAnalysisInstrumentCatalogResult = {
   error: string | null
 }
 
-export function useAnalysisInstrumentCatalog(category: MarketCategory): UseAnalysisInstrumentCatalogResult {
+export function useAnalysisInstrumentCatalog(
+  category: MarketCategory,
+  enabled = true,
+): UseAnalysisInstrumentCatalogResult {
   const [rows, setRows] = useState<CatalogRow[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
     let cancelled = false
     setLoading(true)
     setError(null)
@@ -42,7 +49,7 @@ export function useAnalysisInstrumentCatalog(category: MarketCategory): UseAnaly
     return () => {
       cancelled = true
     }
-  }, [category])
+  }, [category, enabled])
 
   const assets = useMemo(
     () => rows.map((row) => catalogRowToAsset(row, category === 'all' ? 'all' : category)),

@@ -90,6 +90,8 @@ const resources: Record<
     auth: object
     markets: object
     newsPage: object
+    notificationsPage: object
+    alarmsPage: object
     myNewsPage: object
     myAnalysisPage: object
     analysis: object
@@ -103,6 +105,8 @@ const resources: Record<
     auth: (en as { auth?: object }).auth ?? {},
     markets: (en as { markets?: object }).markets ?? {},
     newsPage: (en as { newsPage?: object }).newsPage ?? {},
+    notificationsPage: (en as { notificationsPage?: object }).notificationsPage ?? {},
+    alarmsPage: (en as { alarmsPage?: object }).alarmsPage ?? {},
     myNewsPage: (en as { myNewsPage?: object }).myNewsPage ?? {},
     myAnalysisPage: (en as { myAnalysisPage?: object }).myAnalysisPage ?? {},
     analysis: (en as { analysis?: object }).analysis ?? {},
@@ -115,6 +119,8 @@ const resources: Record<
     auth: (tr as { auth?: object }).auth ?? {},
     markets: (tr as { markets?: object }).markets ?? {},
     newsPage: (tr as { newsPage?: object }).newsPage ?? {},
+    notificationsPage: (tr as { notificationsPage?: object }).notificationsPage ?? {},
+    alarmsPage: (tr as { alarmsPage?: object }).alarmsPage ?? {},
     myNewsPage: (tr as { myNewsPage?: object }).myNewsPage ?? {},
     myAnalysisPage: (tr as { myAnalysisPage?: object }).myAnalysisPage ?? {},
     analysis: (tr as { analysis?: object }).analysis ?? {},
@@ -127,6 +133,8 @@ const resources: Record<
     auth: (de as { auth?: object }).auth ?? {},
     markets: (de as { markets?: object }).markets ?? {},
     newsPage: (de as { newsPage?: object }).newsPage ?? {},
+    notificationsPage: (de as { notificationsPage?: object }).notificationsPage ?? {},
+    alarmsPage: (de as { alarmsPage?: object }).alarmsPage ?? {},
     myNewsPage: (de as { myNewsPage?: object }).myNewsPage ?? {},
     myAnalysisPage: (de as { myAnalysisPage?: object }).myAnalysisPage ?? {},
     analysis: (de as { analysis?: object }).analysis ?? {},
@@ -139,7 +147,7 @@ void i18n.use(initReactI18next).init({
   resources,
   lng: initialLocale,
   defaultNS: 'common',
-  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'myNewsPage', 'myAnalysisPage', 'analysis', 'portfolio', 'admin'],
+  ns: ['common', 'landing', 'auth', 'markets', 'newsPage', 'notificationsPage', 'alarmsPage', 'myNewsPage', 'myAnalysisPage', 'analysis', 'portfolio', 'admin'],
   fallbackNS: 'common',
   fallbackLng: DEFAULT_LOCALE,
   interpolation: {

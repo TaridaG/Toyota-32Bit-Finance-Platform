@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AssetDefinition, ChartDisplayType, DrawTool, TimeRange } from '../types'
 import type { DrawableTool } from '../chart/drawing/drawColors'
-import { CHART_DRAW_TOOLS, DrawIconHistory, DrawIconPlus, DrawIconTrash } from './chartDrawIcons'
+import { CHART_DRAW_TOOLS, DrawIconHistory, DrawIconPlus, DrawIconTrash, IconChartMeasure } from './chartDrawIcons'
 import { DrawToolColorPicker } from './DrawToolColorPicker'
 
 const rangeButtons: TimeRange[] = ['1h', '6h', '24h', '7d', '30d', '90d', '1y', '5y']
@@ -43,6 +43,8 @@ type AnalysisChartFrameProps = {
   onCompareSlotSet: (slotIndex: number, assetId: string | null) => void
   chartType: ChartDisplayType
   onChartTypeChange: (type: ChartDisplayType) => void
+  measureToolActive: boolean
+  onMeasureToolToggle: () => void
 }
 
 function IconCandles() {
@@ -123,6 +125,8 @@ export function AnalysisChartFrame({
   onCompareSlotSet,
   chartType,
   onChartTypeChange,
+  measureToolActive,
+  onMeasureToolToggle,
 }: AnalysisChartFrameProps) {
   const { t } = useTranslation('analysis')
   const [pickerSlot, setPickerSlot] = useState<number | null>(null)
@@ -225,7 +229,20 @@ export function AnalysisChartFrame({
           )}
         </div>
 
-        <div className="fi-chart-frame-chart-type" role="group" aria-label={t('chartFrame.chartTypeAria')}>
+        <div className="fi-chart-frame-center-tools">
+          <button
+            type="button"
+            className={`fi-chart-measure-btn${measureToolActive ? ' fi-chart-measure-btn--active' : ''}`}
+            aria-pressed={measureToolActive}
+            title={t('chartFrame.measureTool')}
+            aria-label={t('chartFrame.measureTool')}
+            onClick={onMeasureToolToggle}
+          >
+            <IconChartMeasure />
+            <span className="fi-chart-type-btn-label">{t('chartFrame.measureToolShort')}</span>
+          </button>
+          <span className="fi-chart-frame-tools-divider" aria-hidden="true" />
+          <div className="fi-chart-frame-chart-type" role="group" aria-label={t('chartFrame.chartTypeAria')}>
           <button
             type="button"
             className={`fi-chart-type-btn${chartType === 'candle' ? ' fi-chart-type-btn--active' : ''}`}
@@ -246,6 +263,7 @@ export function AnalysisChartFrame({
             <IconLineChart />
             <span className="fi-chart-type-btn-label">{t('chartFrame.chartTypeLineShort')}</span>
           </button>
+          </div>
         </div>
 
         <div className="fi-chart-frame-top-right" ref={topRightRef}>

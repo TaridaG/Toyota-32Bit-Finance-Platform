@@ -1,0 +1,10 @@
+spring:
+  kafka:
+    bootstrap-servers: 127.0.0.1:9092
+    listener:
+      auto-startup: false
+
+opensearch:
+  host: localhost
+  port: 9200
+  scheme: http

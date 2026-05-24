@@ -41,7 +41,7 @@ export function FavoriteNewsInsightCard() {
   }, [i18n.language, t])
 
   return (
-    <article className="card my-portfolio-card">
+    <article className="card my-portfolio-card my-portfolio-card--dashboard-news">
       <div className="my-portfolio-card-head">
         <h3>{t('portfolio:favoriteNewsTitle')}</h3>
         <Link to="/app/my-portfolio?section=news" className="my-portfolio-card-link">

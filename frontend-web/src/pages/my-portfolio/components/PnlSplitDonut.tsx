@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type MouseEvent } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PortfolioOverviewItem } from '../../../shared/types/portfolio'
 
@@ -39,6 +39,8 @@ function midAnchor(cx: number, cy: number, rOut: number, rIn: number, a0: number
   return { ox: cx + r * Math.cos(mid), oy: cy + r * Math.sin(mid) }
 }
 
+const LEGEND_ASSET_PREVIEW = 2
+
 type Segment = {
   key: 'win' | 'lose'
   sharePct: number
@@ -46,6 +48,8 @@ type Segment = {
   /** Σpnl / Σ(alım maliyeti) × 100; zarar tarafı negatif */
   returnOnCostPct: number | null
   label: string
+  previewSymbols: string[]
+  hasMoreAssets: boolean
 }
 
 type Props = {
@@ -68,8 +72,9 @@ export function PnlSplitDonut({
   hideAmounts = false,
 }: Props) {
   const { t } = useTranslation('portfolio')
+  const visualRef = useRef<HTMLDivElement>(null)
   const [hovered, setHovered] = useState<number | null>(null)
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+  const [tooltipAnchor, setTooltipAnchor] = useState<{ x: number; y: number } | null>(null)
 
   const { segments, hasData } = useMemo(() => {
     const eps = 1e-9
@@ -77,20 +82,27 @@ export function PnlSplitDonut({
     let losePnl = 0
     let winCost = 0
     let loseCost = 0
+    const winRows: { symbol: string; pnl: number }[] = []
+    const loseRows: { symbol: string; pnl: number }[] = []
     for (const it of items) {
       const p = parseItemValue(it.pnl)
       if (Math.abs(p) <= eps) continue
       const qty = parseItemValue(it.quantity)
       const avg = parseItemValue(it.avgBuyPrice)
       const cost = Math.max(avg * qty, 0)
+      const symbol = (it.symbol || it.name || '').trim()
       if (p > eps) {
         winPnl += p
         winCost += cost
+        if (symbol) winRows.push({ symbol, pnl: p })
       } else {
         losePnl += p
         loseCost += cost
+        if (symbol) loseRows.push({ symbol, pnl: p })
       }
     }
+    winRows.sort((a, b) => b.pnl - a.pnl)
+    loseRows.sort((a, b) => a.pnl - b.pnl)
     const winMag = Math.max(winPnl, 0)
     const loseMag = Math.max(-losePnl, 0)
     /** Kar/zarar oranı büyüklükleri (maliyete göre); halka bunlara göre bölünür — varlık değeri ağırlığı değil */
@@ -126,6 +138,8 @@ export function PnlSplitDonut({
         fill: WIN_COLOR,
         returnOnCostPct: winRate,
         label: t('pnlDonut.winners'),
+        previewSymbols: winRows.slice(0, LEGEND_ASSET_PREVIEW).map((r) => r.symbol),
+        hasMoreAssets: winRows.length > LEGEND_ASSET_PREVIEW,
       })
     }
     if (losePct > 0 && loseMag > eps) {
@@ -135,6 +149,8 @@ export function PnlSplitDonut({
         fill: LOSE_COLOR,
         returnOnCostPct: loseRate,
         label: t('pnlDonut.losers'),
+        previewSymbols: loseRows.slice(0, LEGEND_ASSET_PREVIEW).map((r) => r.symbol),
+        hasMoreAssets: loseRows.length > LEGEND_ASSET_PREVIEW,
       })
     }
     return { segments: segs, hasData: segs.length > 0 }
@@ -155,11 +171,39 @@ export function PnlSplitDonut({
   /** One logical slice at 100%: SVG arc path degenerates; draw a stroke ring instead (no 12/6 seam). */
   const isSingleFullRing = segments.length === 1
 
-  const handleMove = useCallback((e: MouseEvent) => {
-    setTooltipPos({ x: e.clientX, y: e.clientY })
-  }, [])
+  const updateTooltipAnchor = useCallback(
+    (index: number) => {
+      const wrap = visualRef.current
+      if (!wrap || index < 0 || index >= angles.length) {
+        setTooltipAnchor(null)
+        return
+      }
+      const { start, end } = angles[index]
+      const mid = (start + end) / 2
+      const scale = wrap.offsetWidth / 100
+      const cx = wrap.offsetWidth / 2
+      const cy = wrap.offsetHeight / 2
+      const r = ((R_IN + R_OUT) / 2) * scale
+      setTooltipAnchor({
+        x: cx + r * Math.cos(mid),
+        y: cy + r * Math.sin(mid),
+      })
+    },
+    [angles],
+  )
 
-  const clearHover = useCallback(() => setHovered(null), [])
+  const focusSegment = useCallback(
+    (index: number) => {
+      setHovered(index)
+      updateTooltipAnchor(index)
+    },
+    [updateTooltipAnchor],
+  )
+
+  const clearHover = useCallback(() => {
+    setHovered(null)
+    setTooltipAnchor(null)
+  }, [])
 
   const active = hovered != null ? segments[hovered] : null
 
@@ -168,7 +212,7 @@ export function PnlSplitDonut({
     const trackW = R_OUT - R_IN
     return (
       <div className="my-portfolio-pnl-donut-shell my-portfolio-pnl-donut-shell--empty">
-        <div className="my-portfolio-pnl-donut-visual-wrap">
+        <div className="my-portfolio-pnl-donut-visual-wrap" ref={visualRef}>
           <svg className="my-portfolio-pnl-donut-svg" viewBox="0 0 100 100" aria-hidden>
             <circle
               cx={CX}
@@ -189,7 +233,7 @@ export function PnlSplitDonut({
 
   return (
     <div className="my-portfolio-pnl-donut-shell" onMouseLeave={clearHover}>
-      <div className="my-portfolio-pnl-donut-visual-wrap">
+      <div className="my-portfolio-pnl-donut-visual-wrap" ref={visualRef}>
         <svg
           className="my-portfolio-pnl-donut-svg"
           viewBox="0 0 100 100"
@@ -210,11 +254,8 @@ export function PnlSplitDonut({
                 stroke={segments[0].fill}
                 strokeWidth={R_OUT - R_IN}
                 className="my-portfolio-allocation-donut-path"
-                onMouseEnter={(e) => {
-                  setHovered(0)
-                  handleMove(e)
-                }}
-                onMouseMove={handleMove}
+                onMouseEnter={() => focusSegment(0)}
+                onFocus={() => focusSegment(0)}
               />
             </g>
           ) : (
@@ -233,11 +274,8 @@ export function PnlSplitDonut({
                     stroke="rgba(15, 23, 42, 0.35)"
                     strokeWidth={0.28}
                     className="my-portfolio-allocation-donut-path"
-                    onMouseEnter={(e) => {
-                      setHovered(i)
-                      handleMove(e)
-                    }}
-                    onMouseMove={handleMove}
+                    onMouseEnter={() => focusSegment(i)}
+                    onFocus={() => focusSegment(i)}
                   />
                 </g>
               )
@@ -260,46 +298,74 @@ export function PnlSplitDonut({
             </>
           )}
         </div>
+
+        {active != null && hovered != null && tooltipAnchor != null && !hideAmounts ? (
+          <div
+            className="my-portfolio-allocation-tooltip my-portfolio-pnl-donut-tooltip my-portfolio-pnl-donut-tooltip--anchored"
+            style={{ left: tooltipAnchor.x, top: tooltipAnchor.y }}
+            role="tooltip"
+          >
+            <p className="my-portfolio-pnl-donut-tooltip-title">{active.label}</p>
+            <p
+              className="my-portfolio-pnl-donut-tooltip-pct"
+              style={{ color: active.key === 'win' ? WIN_COLOR : LOSE_COLOR }}
+            >
+              {active.returnOnCostPct != null && Number.isFinite(active.returnOnCostPct)
+                ? `${pctFormat.format(active.returnOnCostPct)}%`
+                : '—'}
+            </p>
+            <p className="my-portfolio-pnl-donut-tooltip-share">
+              {t('pnlDonut.ringShare', { pct: sharePctDisplay.format(active.sharePct) })}
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      <ul className="my-portfolio-pnl-donut-legend" aria-label={t('pnlDonut.legendAria')}>
+      <div
+        className={`my-portfolio-pnl-donut-legend${segments.length === 1 ? ' my-portfolio-pnl-donut-legend--single' : ''}`}
+        role="group"
+        aria-label={t('pnlDonut.legendAria')}
+      >
         {segments.map((seg, i) => (
-          <li
+          <div
             key={seg.key}
-            className={hovered === i ? 'is-active' : undefined}
-            onMouseEnter={(e) => {
-              setHovered(i)
-              handleMove(e)
-            }}
-            onMouseMove={handleMove}
+            className={`my-portfolio-pnl-donut-legend-col${hovered === i ? ' is-active' : ''}`}
+            onMouseEnter={() => focusSegment(i)}
+            onFocus={() => focusSegment(i)}
+            tabIndex={0}
           >
-            <span
-              className="my-portfolio-pnl-donut-legend-dot"
-              style={{ background: seg.fill }}
-              aria-hidden
-            />
-            <span className="my-portfolio-pnl-donut-legend-label">{seg.label}</span>
-            <span className="my-portfolio-pnl-donut-legend-pct">{sharePctDisplay.format(seg.sharePct)}%</span>
-          </li>
+            <div className="my-portfolio-pnl-donut-legend-head">
+              <span className="my-portfolio-pnl-donut-legend-left">
+                <span
+                  className="my-portfolio-pnl-donut-legend-dot"
+                  style={{ background: seg.fill }}
+                  aria-hidden
+                />
+                <span className="my-portfolio-pnl-donut-legend-label">{seg.label}</span>
+              </span>
+              <span className="my-portfolio-pnl-donut-legend-pct">{sharePctDisplay.format(seg.sharePct)}%</span>
+            </div>
+            {seg.previewSymbols.length > 0 || seg.hasMoreAssets ? (
+              <ul className="my-portfolio-pnl-donut-legend-assets" aria-label={seg.label}>
+                {hideAmounts
+                  ? seg.previewSymbols.map((_, idx) => (
+                      <li key={`mask-${seg.key}-${idx}`} className="my-portfolio-pnl-donut-legend-asset">
+                        •••
+                      </li>
+                    ))
+                  : seg.previewSymbols.map((symbol) => (
+                      <li key={`${seg.key}-${symbol}`} className="my-portfolio-pnl-donut-legend-asset">
+                        {symbol}
+                      </li>
+                    ))}
+                {seg.hasMoreAssets ? (
+                  <li className="my-portfolio-pnl-donut-legend-asset my-portfolio-pnl-donut-legend-more">++</li>
+                ) : null}
+              </ul>
+            ) : null}
+          </div>
         ))}
-      </ul>
-
-      {active != null && hovered != null && !hideAmounts ? (
-        <div
-          className="my-portfolio-allocation-tooltip my-portfolio-pnl-donut-tooltip"
-          style={{ left: tooltipPos.x + 16, top: tooltipPos.y + 16 }}
-          role="tooltip"
-        >
-          <p
-            className="my-portfolio-pnl-donut-tooltip-pct"
-            style={{ color: active.key === 'win' ? WIN_COLOR : LOSE_COLOR }}
-          >
-            {active.returnOnCostPct != null && Number.isFinite(active.returnOnCostPct)
-              ? `${pctFormat.format(active.returnOnCostPct)}%`
-              : '—'}
-          </p>
-        </div>
-      ) : null}
+      </div>
     </div>
   )
 }

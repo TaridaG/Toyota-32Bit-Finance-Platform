@@ -52,44 +52,6 @@ export type AdminDashboardKpi =
       accent: AdminKpiAccent
     }
 
-export type AdminDataFlowPoint = {
-  label: string
-  success: number
-  error: number
-  warn: number
-}
-
-export type AdminLatencyBand = {
-  bandKey: 'live' | 'good' | 'medium' | 'bad'
-  count: number
-  percent: number
-  color: string
-}
-
-export type AdminStreamTableRow = {
-  name: string
-  categoryKey: string
-  status: 'live' | 'good' | 'medium' | 'bad'
-  latencyMs: number
-  lastUpdate: string
-  successRate: number
-}
-
-export type AdminNewsStreamRow = {
-  name: string
-  status: 'live' | 'degraded' | 'error'
-  latencyLabel: string
-  lastNews: string
-  newsCount: number
-}
-
 export type AdminOverviewMock = {
-  generatedAt: string
-  dataFlowSummary: { successPct: number; errorPct: number; warnPct: number }
   dashboardKpis: AdminDashboardKpi[]
-  dataFlowSeries: AdminDataFlowPoint[]
-  latencyBands: AdminLatencyBand[]
-  latencyAverageSec: number
-  streamRows: AdminStreamTableRow[]
-  newsStreamRows: AdminNewsStreamRow[]
 }

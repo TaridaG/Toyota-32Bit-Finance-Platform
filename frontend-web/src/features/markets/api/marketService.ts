@@ -42,7 +42,6 @@ const categoryToQueryParam: Record<Exclude<MarketCategory, 'all'>, string> = {
   nasdaq: 'STOCK',
   forex: 'FX',
   metals: 'FX',
-  globalFutures: 'STOCK',
   funds: 'FUND',
   bonds: 'BOND',
   eurobond: 'BOND',
@@ -110,8 +109,7 @@ type ParsedHistoryPoint = {
  */
 export const US_LISTED_ETF_TICKERS_AS_FUNDS = new Set(['VOO', 'VTI', 'QQQ', 'IVV', 'SPY'])
 const SPOT_METAL_SYMBOLS = new Set(['XAUTRY', 'XAGTRY', 'XPTTRY', 'XPDTRY', 'XCUTRY'])
-const METAL_FUTURES_SYMBOLS = new Set(['GC=F', 'SI=F', 'HG=F', 'PA=F', 'PL=F'])
-const METAL_SYMBOLS = new Set([...SPOT_METAL_SYMBOLS, ...METAL_FUTURES_SYMBOLS])
+const METAL_SYMBOLS = SPOT_METAL_SYMBOLS
 type InstrumentMetadata = {
   id: number
   name: string | null
@@ -346,9 +344,6 @@ function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): Ca
   }
   if (category === 'metals') {
     return rows.filter((row) => SPOT_METAL_SYMBOLS.has(row.symbol))
-  }
-  if (category === 'globalFutures') {
-    return rows.filter((row) => METAL_FUTURES_SYMBOLS.has(row.symbol))
   }
   if (category === 'bonds') {
     return rows.filter((row) => {
@@ -623,7 +618,7 @@ export async function fetchMarketPricesSummary(
     const chunk = symbols.slice(i, i + SUMMARY_REQUEST_CHUNK)
     try {
       const response = await apiClient.get<Record<string, SummaryItem>>('/api/market/prices/summary', {
-        // Encode '=' in Yahoo futures (GC=F) — raw query strings split on '=' otherwise.
+        // Encode '=' in symbols (e.g. BRK.B) — raw query strings split on '=' otherwise.
         params: { symbols: chunk.join(',') },
         paramsSerializer: (params) => {
           const search = new URLSearchParams()
@@ -770,7 +765,6 @@ const overviewCategoryQuery: Record<MarketCategory, string> = {
   nasdaq: 'NASDAQ',
   forex: 'FOREX',
   metals: 'METALS',
-  globalFutures: 'GLOBALFUTURES',
   funds: 'FUNDS',
   bonds: 'BONDS',
   eurobond: 'BONDS',
@@ -817,7 +811,29 @@ export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promi
 }
 
 /** Fetches `/api/market/prices` + `/api/market/fx` and applies the same filters as the overview table. */
+const catalogSnapshotInflight = new Map<string, Promise<MarketCatalogSnapshot>>()
+
+function catalogSnapshotKey(category?: MarketCategory, query?: string): string {
+  return `${category ?? 'all'}|${query?.trim().toLowerCase() ?? ''}`
+}
+
 export async function fetchMarketCatalogSnapshot(params: {
+  category?: MarketCategory
+  query?: string
+}): Promise<MarketCatalogSnapshot> {
+  const key = catalogSnapshotKey(params.category, params.query)
+  const inflight = catalogSnapshotInflight.get(key)
+  if (inflight) {
+    return inflight
+  }
+  const promise = fetchMarketCatalogSnapshotImpl(params).finally(() => {
+    catalogSnapshotInflight.delete(key)
+  })
+  catalogSnapshotInflight.set(key, promise)
+  return promise
+}
+
+async function fetchMarketCatalogSnapshotImpl(params: {
   category?: MarketCategory
   query?: string
 }): Promise<MarketCatalogSnapshot> {
@@ -1149,7 +1165,6 @@ export const MARKETS_PULSE_CATEGORIES: Exclude<MarketCategory, 'all'>[] = [
   'nasdaq',
   'forex',
   'metals',
-  'globalFutures',
   'funds',
 ]
 

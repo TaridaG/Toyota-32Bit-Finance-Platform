@@ -129,7 +129,6 @@ export const PORTAL_PAGE_ELEMENTS: PortalPageElement[] = [
   el('ADMIN_KPI_PORTFOLIOS', 'active-portfolios', 'Aktif portföyler', 'STAT', 'KPI'),
   el('ADMIN_KPI_MARKETS', 'market-streams', 'Piyasa akışları', 'STAT', 'KPI'),
   el('ADMIN_KPI_NEWS', 'news-sources', 'Haber kaynakları', 'STAT', 'KPI'),
-  el('ADMIN_KPI_SYSTEM', 'system-status', 'Sistem durumu', 'STAT', 'KPI'),
   el('ADMIN_KPI_LATENCY', 'avg-latency', 'Ortalama gecikme', 'STAT', 'KPI'),
   el('INFO_CARDS', 'list', 'Bilgi kartı listesi', 'LABEL', 'Bilgi kartları'),
 ]

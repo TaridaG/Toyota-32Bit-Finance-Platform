@@ -10,7 +10,6 @@ export const ANALYSIS_MARKET_CATEGORIES: MarketCategory[] = [
   'nasdaq',
   'forex',
   'metals',
-  'globalFutures',
   'funds',
   'bonds',
 ]
@@ -45,7 +44,6 @@ export function marketCategoryToNewsUi(category: MarketCategory): string {
       return 'bist'
     case 'funds':
     case 'bonds':
-    case 'globalFutures':
     case 'eurobond':
     default:
       return 'macro'

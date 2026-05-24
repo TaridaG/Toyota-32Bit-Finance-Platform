@@ -145,7 +145,7 @@ services:
   # -----------------------------
   finance-api:
     build:
-      context: ../backend/finance-api
+      context: ../finance-api
       dockerfile: Dockerfile
     container_name: finance-api
     env_file:
@@ -184,6 +184,10 @@ services:
       - APP_REGISTRATION_VERIFICATION_FROM=32bitdemofinanceplatformmm@gmail.com
       - APP_PORTAL_PUBLIC_URL=http://localhost:5173
       - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
+      - APP_MFA_ENCRYPTION_SECRET=${APP_MFA_ENCRYPTION_SECRET:-finance-mfa-dev-encryption-secret}
+      - APP_MFA_ISSUER=${APP_MFA_ISSUER:-Finance Portal}
+      - APP_TRUSTED_DEVICE_ENABLED=${APP_TRUSTED_DEVICE_ENABLED:-true}
+      - APP_TRUSTED_DEVICE_SIGNING_SECRET=${APP_TRUSTED_DEVICE_SIGNING_SECRET:-finance-trusted-device-dev-secret}
       - MARKET_TR_USD_EUROBOND_YAHOO_ENABLED=${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:-true}
       - AI_ENABLED=true
       - PROFILE_AVATAR_STORAGE_ROOT=/photos
@@ -222,7 +226,6 @@ services:
       - FINNHUB_API_KEY=d7r26q9r01qtpsm0phfgd7r26q9r01qtpsm0phg0
       - MARKET_HISTORY_BACKFILL_ENABLED=true
       - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=false
-      - MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_ENABLED=true
       - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_ENABLED=true
       - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_DELAY_MS=90000
       - MARKET_FUND_NAV_HISTORY_LOOKBACK_DAYS=365
@@ -307,6 +310,15 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
+      - SPRING_DATASOURCE_USERNAME=finance
+      - SPRING_DATASOURCE_PASSWORD=123456
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
+      - SMTP_USERNAME=${SMTP_USERNAME:-32bitdemofinanceplatformmm@gmail.com}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-mpxnlgmbyehkiqwm}
+      - NOTIFICATION_MAIL_FROM=${NOTIFICATION_MAIL_FROM:-32bitdemofinanceplatformmm@gmail.com}
+      - APP_PORTAL_PUBLIC_URL=${APP_PORTAL_PUBLIC_URL:-http://localhost:5173}
       - MANAGEMENT_HEALTH_MAIL_ENABLED=false
     networks:
       - finance-net

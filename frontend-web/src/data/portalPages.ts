@@ -116,13 +116,6 @@ const PORTAL_PAGE_DEFS: Record<PortalPageKey, PortalPageDef> = {
     userVisible: false,
     adminOnly: true,
   },
-  ADMIN_KPI_SYSTEM: {
-    key: 'ADMIN_KPI_SYSTEM',
-    labelKey: 'bilgiKartlariPage.pages.ADMIN_KPI_SYSTEM',
-    route: '/admin/kpi/system-status',
-    userVisible: false,
-    adminOnly: true,
-  },
   ADMIN_KPI_LATENCY: {
     key: 'ADMIN_KPI_LATENCY',
     labelKey: 'bilgiKartlariPage.pages.ADMIN_KPI_LATENCY',
@@ -177,6 +170,9 @@ export function isUserPortalPageKey(key: PortalPageKey): boolean {
   return USER_PORTAL_PAGE_KEYS.has(key)
 }
 
+/** Legacy portal page keys stored on older info cards (no dedicated route). */
+const LEGACY_PORTAL_PAGE_KEYS = ['ADMIN_KPI_SYSTEM'] as const
+
 const LEGACY_PAGE_ALIASES: Partial<Record<PortalPageKey, PortalPageKey[]>> = {
   PROFILE: ['NOTIFICATIONS'],
   ADMIN: ['AUDIT_LOGS'],
@@ -184,10 +180,13 @@ const LEGACY_PAGE_ALIASES: Partial<Record<PortalPageKey, PortalPageKey[]>> = {
 
 /** Count cards for sidebar, including legacy page keys. */
 export function countCardsForPortalPage(
-  cards: { pages: PortalPageKey[] }[],
+  cards: { pages: (PortalPageKey | string)[] }[],
   pageKey: PortalPageKey,
 ): number {
-  const keys = new Set<PortalPageKey>([pageKey, ...(LEGACY_PAGE_ALIASES[pageKey] ?? [])])
+  const keys = new Set<string>([pageKey, ...(LEGACY_PAGE_ALIASES[pageKey] ?? [])])
+  if (pageKey === 'ADMIN') {
+    for (const legacy of LEGACY_PORTAL_PAGE_KEYS) keys.add(legacy)
+  }
   return cards.filter((card) => card.pages.some((p) => keys.has(p))).length
 }
 

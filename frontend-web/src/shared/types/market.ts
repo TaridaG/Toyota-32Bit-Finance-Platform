@@ -5,7 +5,6 @@ export type MarketCategory =
   | 'nasdaq'
   | 'forex'
   | 'metals'
-  | 'globalFutures'
   | 'funds'
   | 'bonds'
   | 'eurobond'

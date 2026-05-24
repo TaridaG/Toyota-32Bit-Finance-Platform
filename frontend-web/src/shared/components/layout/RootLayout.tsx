@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { PortalHeader } from './PortalHeader'
+import { logoutPortalSession } from '../../../features/profile/api/portalProfileApi'
 import { clearAuthSession, isAuthenticated } from '../../auth/session'
+import { logoutTerminatedPortalAccount } from '../../auth/accountFrozen'
+import { useFrozenAccountGuard } from '../../hooks/useFrozenAccountGuard'
 import { normalizeLocale } from '../../i18n'
 import { useAppPreferences } from '../../preferences/useAppPreferences'
 import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
@@ -10,11 +13,15 @@ import { LiteracyHelpLayer } from '../../../features/literacy-help/LiteracyHelpL
 import { AdminInfoCardPickLayer } from '../../../features/admin-info-card-pick/AdminInfoCardPickLayer'
 import { AdminInfoCardPickEditor } from '../../../features/admin-info-card-pick/AdminInfoCardPickEditor'
 import { AdminInfoCardPickRouteSync } from '../../../features/admin-info-card-pick/AdminInfoCardPickRouteSync'
+import { AlarmUiProvider } from '../../../features/alarms/AlarmUiContext'
+import { CreateAlarmModal } from '../../../features/alarms/components/CreateAlarmModal'
 
 export function RootLayout() {
   const navigate = useNavigate()
   const authenticated = isAuthenticated()
   const { setLanguage, setCurrency } = useAppPreferences()
+
+  useFrozenAccountGuard(authenticated)
 
   useEffect(() => {
     let cancelled = false
@@ -41,7 +48,10 @@ export function RootLayout() {
         ) {
           setCurrency(normalizedCurrency as (typeof SUPPORTED_CURRENCIES)[number])
         }
-      } catch {
+      } catch (error) {
+        if (!cancelled && logoutTerminatedPortalAccount(error)) {
+          return
+        }
         if (!cancelled) {
           retryTimer = window.setTimeout(() => {
             void hydrateFromProfile()
@@ -61,19 +71,25 @@ export function RootLayout() {
   }, [authenticated, setCurrency, setLanguage])
 
   const handleLogout = () => {
-    clearAuthSession()
-    navigate('/', { replace: true })
+    void (async () => {
+      if (authenticated) {
+        await logoutPortalSession()
+      }
+      clearAuthSession()
+      navigate('/', { replace: true })
+    })()
   }
 
   return (
-    <>
+    <AlarmUiProvider>
       <AdminInfoCardPickRouteSync />
       <PortalHeader isAuthenticated={authenticated} onLogout={handleLogout} />
       <LiteracyHelpLayer />
       <AdminInfoCardPickLayer />
       <AdminInfoCardPickEditor />
+      <CreateAlarmModal />
       <Outlet />
-    </>
+    </AlarmUiProvider>
   )
 }
 

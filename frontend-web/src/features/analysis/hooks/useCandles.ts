@@ -5,6 +5,8 @@ import type { CandlePoint } from '../../../pages/analysis/types'
 type UseCandlesOpts = {
   currencyKey?: string
   wireCategory?: string | null
+  /** When false, skip fetch until enabled (lazy load). */
+  enabled?: boolean
 }
 
 type UseCandlesResult = {
@@ -20,8 +22,12 @@ export function useCandles(symbol: string, interval: AnalysisRange, opts?: UseCa
   const [error, setError] = useState<string | null>(null)
   const wireCategory = opts?.wireCategory ?? null
   const currencyKey = opts?.currencyKey
+  const enabled = opts?.enabled ?? true
 
   const refetch = useCallback(async () => {
+    if (!enabled) {
+      return
+    }
     if (!normalizeAnalysisInstrumentSymbol(symbol)) {
       setCandles([])
       setError(null)
@@ -38,11 +44,15 @@ export function useCandles(symbol: string, interval: AnalysisRange, opts?: UseCa
     } finally {
       setLoading(false)
     }
-  }, [interval, symbol, wireCategory])
+  }, [enabled, interval, symbol, wireCategory])
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
     void refetch()
-  }, [currencyKey, refetch])
+  }, [currencyKey, enabled, refetch])
 
   return { candles, loading, error, refetch }
 }
