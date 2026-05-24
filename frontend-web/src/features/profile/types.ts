@@ -8,10 +8,11 @@ export type PortalProfile = {
   avatarUpdatedAt: string | null
   preferredLocale: string
   preferredCurrency: string
+  totpEnabled: boolean
 }
 
 export type ApiEnvelope<T> = {
   success: boolean
   data?: T
-  error?: { code?: string; message?: string }
+  error?: { code?: string; message?: string; suggestions?: string[] }
 }

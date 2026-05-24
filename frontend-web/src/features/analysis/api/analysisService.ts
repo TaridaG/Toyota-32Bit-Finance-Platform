@@ -78,7 +78,7 @@ export function normalizeAnalysisInstrumentSymbol(symbol: string): string {
 }
 
 /**
- * Symbol as stored in market-data history tables / catalog (keeps Yahoo-style "=" and "." e.g. GC=F, BRK.B).
+ * Symbol as stored in market-data history tables / catalog (keeps Yahoo-style "." e.g. BRK.B).
  * Using this for `/api/market/prices/history` is required — stripping "=" breaks futures lookups.
  */
 function wireCatalogSymbol(symbol: string): string {
@@ -267,7 +267,10 @@ async function fetchAnalyticsCandlesForRange(
   analyticsCandidates: string[],
   interval: string,
   fromTs: number,
+  toTs: number = Date.now(),
 ): Promise<CandlePoint[]> {
+  const from = toDateParamUTC(fromTs)
+  const to = toDateParamUTC(toTs)
   for (const sym of analyticsCandidates) {
     if (!sym) {
       continue
@@ -275,7 +278,7 @@ async function fetchAnalyticsCandlesForRange(
     const pathSeg = encodeURIComponent(sym)
     try {
       const response = await apiClient.get<ApiResponse<AnalyticsCandleDto[]>>(`/api/analytics/instruments/${pathSeg}/candles`, {
-        params: { interval },
+        params: { interval, from, to },
       })
       const points = (response.data.data ?? [])
         .map(mapCandle)
@@ -317,7 +320,7 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
     }
   }
 
-  const points = await fetchAnalyticsCandlesForRange(analyticsCandidates, interval, fromTs)
+  const points = await fetchAnalyticsCandlesForRange(analyticsCandidates, interval, fromTs, Date.now())
   const windowed = points.filter((point) => point.time * 1000 >= fromTs)
   if (windowed.length > 0 && !shouldUseHistoryFallback(windowed, range)) {
     return finalizeFxCandles(historySym, kind, windowed)

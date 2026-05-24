@@ -3,11 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { fetchPortalProfile, readApiErrorMessage } from '../../features/profile/api/portalProfileApi'
 import { ProfileEmailCard } from '../../features/profile/components/ProfileEmailCard'
 import { ProfileNotificationsCard } from '../../features/profile/components/ProfileNotificationsCard'
+import { ProfileMfaCard } from '../../features/profile/components/ProfileMfaCard'
 import { ProfileOverviewCard } from '../../features/profile/components/ProfileOverviewCard'
 import { ProfilePasswordCard } from '../../features/profile/components/ProfilePasswordCard'
+import { ProfileTrustedDevicesCard } from '../../features/profile/components/ProfileTrustedDevicesCard'
 import { ProfilePhoneCard } from '../../features/profile/components/ProfilePhoneCard'
 import { ProfileUsernameCard } from '../../features/profile/components/ProfileUsernameCard'
 import type { PortalProfile } from '../../features/profile/types'
+import { PortalAlert } from '../../shared/components/PortalAlert'
 
 export function ProfileSettingsPage() {
   const { t } = useTranslation('common')
@@ -48,7 +51,9 @@ export function ProfileSettingsPage() {
 
       {!loading && loadError ? (
         <div className="profile-settings-load-error">
-          <p className="profile-settings-error">{loadError}</p>
+          <PortalAlert variant="error" title={t('profileSettings.alertErrorTitle')}>
+            {loadError}
+          </PortalAlert>
           <button type="button" className="profile-settings-btn-secondary" onClick={() => void load()}>
             {t('profileSettings.retry')}
           </button>
@@ -57,12 +62,19 @@ export function ProfileSettingsPage() {
 
       {!loading && !loadError && profile ? (
         <div className="profile-settings-shell">
-          <ProfileOverviewCard profile={profile} onProfileUpdated={setProfile} />
+          <div className="profile-overview-row">
+            <ProfileOverviewCard profile={profile} onProfileUpdated={setProfile} />
+            <ProfileMfaCard
+              totpEnabled={profile.totpEnabled}
+              onTotpEnabledChange={(enabled) => setProfile((p) => (p ? { ...p, totpEnabled: enabled } : p))}
+            />
+          </div>
           <div className="profile-settings-stack">
             <ProfileUsernameCard profile={profile} onUsernameChanged={setProfile} />
             <ProfileEmailCard profile={profile} onEmailChanged={setProfile} />
             <ProfilePhoneCard profile={profile} onUpdated={setProfile} />
             <ProfilePasswordCard accountEmail={profile.email} />
+            <ProfileTrustedDevicesCard totpEnabled={profile.totpEnabled} />
             <ProfileNotificationsCard profile={profile} onUpdated={setProfile} />
           </div>
         </div>

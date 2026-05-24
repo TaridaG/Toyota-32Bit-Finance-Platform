@@ -6,11 +6,30 @@ import {
   CrosshairMode,
   LineSeries,
   type LineData,
+  type MouseEventParams,
   type Time,
 } from 'lightweight-charts'
 import { useTheme } from '../../../shared/theme/ThemeProvider'
 import { fetchTlDepositHistory, type TlDepositHistoryPoint } from '../api/tlDepositApi'
 import type { TlDepositMaturityCode } from '../lib/tlDepositMaturity'
+import { TlDepositSimulator } from './simulators/TlDepositSimulator'
+
+function timeToIsoDay(t: Time): string | null {
+  if (t == null) return null
+  if (typeof t === 'string') {
+    return t.length >= 10 ? t.slice(0, 10) : t
+  }
+  if (typeof t === 'number') {
+    return new Date(t * 1000).toISOString().slice(0, 10)
+  }
+  if (typeof t === 'object' && 'year' in t && 'month' in t && 'day' in t) {
+    const o = t as { year: number; month: number; day: number }
+    const mm = String(o.month).padStart(2, '0')
+    const dd = String(o.day).padStart(2, '0')
+    return `${o.year}-${mm}-${dd}`
+  }
+  return null
+}
 
 function toLineData(points: TlDepositHistoryPoint[]): LineData<Time>[] {
   const rows = (points ?? [])
@@ -42,6 +61,8 @@ export function FaizVadeliTlDepositChartPanel({
   const [loadState, setLoadState] = useState<'loading' | 'error' | 'ready'>('loading')
   const [points, setPoints] = useState<TlDepositHistoryPoint[]>([])
   const [retryNonce, setRetryNonce] = useState(0)
+  const [pickDepositDateActive, setPickDepositDateActive] = useState(false)
+  const [chartPickIso, setChartPickIso] = useState<string | null>(null)
 
   const lineData = useMemo(() => toLineData(points), [points])
 
@@ -67,15 +88,33 @@ export function FaizVadeliTlDepositChartPanel({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (pickDepositDateActive) {
+          setPickDepositDateActive(false)
+          e.preventDefault()
+          return
+        }
         onBack()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onBack])
+  }, [onBack, pickDepositDateActive])
 
   const outerRef = useRef<HTMLDivElement | null>(null)
   const mountRef = useRef<HTMLDivElement | null>(null)
+  const pickActiveRef = useRef(false)
+  const onPickRef = useRef<(iso: string) => void>(() => {})
+
+  useEffect(() => {
+    pickActiveRef.current = pickDepositDateActive
+  }, [pickDepositDateActive])
+
+  useEffect(() => {
+    onPickRef.current = (iso: string) => {
+      setChartPickIso(iso)
+      setPickDepositDateActive(false)
+    }
+  }, [])
 
   useLayoutEffect(() => {
     if (loadState !== 'ready' || lineData.length === 0) {
@@ -145,6 +184,13 @@ export function FaizVadeliTlDepositChartPanel({
 
     chart.timeScale().fitContent()
 
+    const clickHandler = (param: MouseEventParams<Time>) => {
+      if (!pickActiveRef.current || !param.point) return
+      const day = timeToIsoDay(param.time as Time)
+      if (day) onPickRef.current(day)
+    }
+    chart.subscribeClick(clickHandler)
+
     let disposed = false
     const ro = new ResizeObserver(() => {
       if (disposed || !outer.isConnected) return
@@ -161,6 +207,11 @@ export function FaizVadeliTlDepositChartPanel({
     return () => {
       disposed = true
       ro.disconnect()
+      try {
+        chart.unsubscribeClick(clickHandler)
+      } catch {
+        /* noop */
+      }
       try {
         chart.remove()
       } catch {
@@ -182,36 +233,60 @@ export function FaizVadeliTlDepositChartPanel({
         </button>
       </div>
 
-      <div className="fi-faiz-policy-chart-y-wrap">
-        <span className="fi-faiz-policy-chart-y-label">{t('faizVadeliPage.tlDeposit.chartAxisY')}</span>
-        <div className="fi-faiz-chart-wrap fi-faiz-policy-panel-chart-wrap">
-          {loadState === 'loading' ? (
-            <div
-              className="fi-faiz-policy-panel-chart-outer markets-skeleton-row"
-              aria-busy="true"
-              aria-label={t('faizVadeliPage.tlDeposit.chartLoading')}
-            />
-          ) : null}
-
-          {loadState === 'error' ? (
-            <div className="fi-faiz-policy-panel-state">
-              <p>{t('faizVadeliPage.tlDeposit.chartError')}</p>
-              <button type="button" className="profile-settings-btn-secondary" onClick={() => setRetryNonce((n) => n + 1)}>
-                {t('faizVadeliPage.tlDeposit.chartRetry')}
-              </button>
-            </div>
-          ) : null}
-
-          {loadState === 'ready' && lineData.length === 0 ? (
-            <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.tlDeposit.chartEmpty')}</p>
-          ) : null}
-
-          {loadState === 'ready' && lineData.length > 0 ? (
-            <div ref={outerRef} className="fi-faiz-policy-panel-chart-outer">
-              <div ref={mountRef} className="fi-faiz-policy-panel-chart-mount" />
-            </div>
-          ) : null}
+      {pickDepositDateActive ? (
+        <div className="fi-faiz-eurobond-pick-banner" role="status">
+          <span>{t('faizVadeliPage.simulator.deposit.pickHint')}</span>
+          <button type="button" className="fi-faiz-eurobond-pick-cancel" onClick={() => setPickDepositDateActive(false)}>
+            {t('faizVadeliPage.simulator.deposit.pickCancel')}
+          </button>
         </div>
+      ) : null}
+
+      <div className="fi-faiz-simulator-layout">
+        <div className="fi-faiz-simulator-layout-charts">
+          <div className="fi-faiz-policy-chart-y-wrap">
+            <span className="fi-faiz-policy-chart-y-label">{t('faizVadeliPage.tlDeposit.chartAxisY')}</span>
+            <div className="fi-faiz-chart-wrap fi-faiz-policy-panel-chart-wrap">
+              {loadState === 'loading' ? (
+                <div
+                  className="fi-faiz-policy-panel-chart-outer markets-skeleton-row"
+                  aria-busy="true"
+                  aria-label={t('faizVadeliPage.tlDeposit.chartLoading')}
+                />
+              ) : null}
+
+              {loadState === 'error' ? (
+                <div className="fi-faiz-policy-panel-state">
+                  <p>{t('faizVadeliPage.tlDeposit.chartError')}</p>
+                  <button
+                    type="button"
+                    className="profile-settings-btn-secondary"
+                    onClick={() => setRetryNonce((n) => n + 1)}
+                  >
+                    {t('faizVadeliPage.tlDeposit.chartRetry')}
+                  </button>
+                </div>
+              ) : null}
+
+              {loadState === 'ready' && lineData.length === 0 ? (
+                <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.tlDeposit.chartEmpty')}</p>
+              ) : null}
+
+              {loadState === 'ready' && lineData.length > 0 ? (
+                <div ref={outerRef} className="fi-faiz-policy-panel-chart-outer">
+                  <div ref={mountRef} className="fi-faiz-policy-panel-chart-mount" />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <TlDepositSimulator
+          maturity={maturity}
+          chartEndDate={chartPickIso}
+          pickDepositDateActive={pickDepositDateActive}
+          onRequestPickDepositDate={() => setPickDepositDateActive(true)}
+        />
       </div>
 
       <p className="fi-faiz-chart-foot">{t('faizVadeliPage.tlDeposit.chartFoot')}</p>

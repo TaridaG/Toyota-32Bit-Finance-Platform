@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import siteLogo from '../../../assets/site-logo.png'
@@ -16,13 +16,35 @@ import {
 import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
 import { usePortalAvatarObjectUrl } from '../../../features/profile/hooks/usePortalAvatarObjectUrl'
 import { updatePortalPreferences } from '../../../features/profile/api/portalProfileApi'
-import { fetchMyNotifications, type NotificationItem } from '../../../features/notifications/api/notificationApi'
+import {
+  fetchNotificationPreview,
+  type PortalNotification,
+} from '../../../features/notifications/api/notificationApi'
+import { formatNotificationType } from '../../../features/notifications/lib/notificationUi'
+import {
+  deactivateAlarm,
+  fetchActiveAlarms,
+  type AlarmItem,
+} from '../../../features/alarms/api/alarmApi'
+import { fetchMarketPricesSummary } from '../../../features/markets/api/marketService'
+import { formatAlarmCondition, formatAlarmPricePair } from '../../../features/alarms/lib/alarmUi'
+import { notifyAlarmsChanged } from '../../../features/alarms/api/alarmApi'
+import {
+  ALARM_HEADER_PREVIEW,
+  formatExtraAlarmCount,
+  sortAlarmsNewestFirst,
+} from '../../../features/alarms/lib/alarmListHelpers'
+import { useAlarmUi } from '../../../features/alarms/AlarmUiContext'
 import { useLiteracyHelpMode } from '../../../features/literacy-help/LiteracyHelpModeContext'
 import { IconHelp } from '../../../features/literacy-help/IconHelp'
 import { useAdminInfoCardPick } from '../../../features/admin-info-card-pick/AdminInfoCardPickContext'
 import { IconHelpAdd } from '../../../features/admin-info-card-pick/IconHelpAdd'
 import { isAdminPickRouteAllowed } from '../../../features/admin-info-card-pick/pickTargetUtils'
-import { PUBLIC_CATALOG_NAV } from '../../../app/routes/publicCatalogRoutes'
+import {
+  PUBLIC_BANK_RATES_ROUTE,
+  PUBLIC_FINANCIAL_LITERACY_ROUTE,
+  PUBLIC_MARKETS_ROUTE,
+} from '../../../app/routes/publicCatalogRoutes'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -41,12 +63,18 @@ type PublicNavItem = {
   href?: string
 }
 
-const appNavItems: AppNavItem[] = [
-  ...PUBLIC_CATALOG_NAV.map((item) => ({ to: item.to, labelKey: item.labelKey })),
+const appNavPortfolioItem: AppNavItem = {
+  to: '/app/my-portfolio',
+  labelKey: 'header.navApp.myPortfolio',
+}
+
+const appNavItemsWithoutPortfolio: AppNavItem[] = [
+  { to: PUBLIC_MARKETS_ROUTE, labelKey: 'header.navPublic.markets' },
   { to: '/app/faiz-vadeli', labelKey: 'header.navApp.faizVadeli' },
-  { to: '/app/my-portfolio', labelKey: 'header.navApp.myPortfolio' },
   { to: '/app/analysis', labelKey: 'header.navApp.analysis' },
   { to: '/app/news', labelKey: 'header.navPublic.news' },
+  { to: PUBLIC_BANK_RATES_ROUTE, labelKey: 'header.navPublic.bankRates' },
+  { to: PUBLIC_FINANCIAL_LITERACY_ROUTE, labelKey: 'header.navPublic.finansalOkuryazarlik' },
 ]
 
 const appNavBilgiKartlariItem: AppNavItem = {
@@ -56,10 +84,11 @@ const appNavBilgiKartlariItem: AppNavItem = {
 const appNavAdminItem: AppNavItem = { to: '/admin', labelKey: 'header.navApp.admin' }
 
 const publicNavItems: PublicNavItem[] = [
-  ...PUBLIC_CATALOG_NAV.map((item) => ({ labelKey: item.labelKey, to: item.to })),
-  { labelKey: 'header.navPublic.myPortfolio', to: '/my-portfolio' },
+  { labelKey: 'header.navPublic.markets', to: PUBLIC_MARKETS_ROUTE },
   { labelKey: 'header.navPublic.analysis', to: '/analysis' },
   { labelKey: 'header.navPublic.news', to: '/news' },
+  { labelKey: 'header.navPublic.bankRates', to: PUBLIC_BANK_RATES_ROUTE },
+  { labelKey: 'header.navPublic.finansalOkuryazarlik', to: PUBLIC_FINANCIAL_LITERACY_ROUTE },
 ]
 
 const mobileNavItems: PublicNavItem[] = publicNavItems
@@ -150,6 +179,16 @@ function IconMoon() {
   )
 }
 
+const NOTIFICATION_HEADER_PREVIEW = 3
+
+function formatExtraNotificationCount(total: number): string | null {
+  const extra = total - NOTIFICATION_HEADER_PREVIEW
+  if (extra <= 0) {
+    return null
+  }
+  return extra > 99 ? '99+' : String(extra)
+}
+
 export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [downloadOpen, setDownloadOpen] = useState(false)
@@ -157,13 +196,24 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [notifications, setNotifications] = useState<PortalNotification[]>([])
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0)
+  const [notificationTotalCount, setNotificationTotalCount] = useState(0)
   const [notificationsError, setNotificationsError] = useState<string | null>(null)
+  const [alarmsOpen, setAlarmsOpen] = useState(false)
+  const [alarmsLoading, setAlarmsLoading] = useState(false)
+  const [activeAlarms, setActiveAlarms] = useState<AlarmItem[]>([])
+  const [alarmTotalCount, setAlarmTotalCount] = useState(0)
+  const [alarmsError, setAlarmsError] = useState<string | null>(null)
+  const [alarmPendingIds, setAlarmPendingIds] = useState<number[]>([])
+  const [alarmPricesBySymbol, setAlarmPricesBySymbol] = useState<Record<string, number>>({})
+  const { refreshKey: alarmsRefreshKey, bumpAlarmsRefresh } = useAlarmUi()
   const [serverAvatarUpdatedAt, setServerAvatarUpdatedAt] = useState<string | null>(null)
   const [profileImgBroken, setProfileImgBroken] = useState(false)
   const profileAnchorRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation()
+  const { t: tNotifications } = useTranslation('notificationsPage')
   const { currency, setLanguage, setCurrency } = useAppPreferences()
   const { pathname } = useLocation()
   const { active: literacyHelpActive, toggle: toggleLiteracyHelp, deactivate: deactivateLiteracyHelp } =
@@ -235,27 +285,134 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [profileOpen])
 
+  const loadNotificationsPreview = useCallback(
+    async (opts?: { showLoading?: boolean }) => {
+      if (!isAuthenticated) {
+        setNotifications([])
+        setNotificationUnreadCount(0)
+        setNotificationTotalCount(0)
+        return
+      }
+      if (opts?.showLoading) {
+        setNotificationsLoading(true)
+      }
+      setNotificationsError(null)
+      try {
+        const page = await fetchNotificationPreview(NOTIFICATION_HEADER_PREVIEW)
+        setNotifications(page.content)
+        setNotificationUnreadCount(page.unreadCount)
+        setNotificationTotalCount(page.totalElements)
+      } catch {
+        setNotificationsError(t('header.notifications.loadError'))
+      } finally {
+        if (opts?.showLoading) {
+          setNotificationsLoading(false)
+        }
+      }
+    },
+    [isAuthenticated, t],
+  )
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([])
+      setNotificationUnreadCount(0)
+      setNotificationTotalCount(0)
+      return
+    }
+    void loadNotificationsPreview()
+  }, [isAuthenticated, loadNotificationsPreview])
+
   useEffect(() => {
     if (!notificationsOpen || !isAuthenticated) {
       return
     }
-    setNotificationsLoading(true)
-    setNotificationsError(null)
-    void fetchMyNotifications()
-      .then((items) => {
-        setNotifications(
-          [...items].sort(
-            (a, b) => Date.parse(b.triggeredAt ?? '') - Date.parse(a.triggeredAt ?? ''),
-          ),
-        )
-      })
-      .catch(() => {
-        setNotificationsError(t('header.notifications.loadError'))
-      })
-      .finally(() => {
-        setNotificationsLoading(false)
-      })
-  }, [isAuthenticated, notificationsOpen, t])
+    void loadNotificationsPreview({ showLoading: true })
+  }, [notificationsOpen, isAuthenticated, loadNotificationsPreview])
+
+  useEffect(() => {
+    const onChanged = () => {
+      void loadNotificationsPreview()
+    }
+    window.addEventListener('finance-notifications-changed', onChanged)
+    return () => window.removeEventListener('finance-notifications-changed', onChanged)
+  }, [loadNotificationsPreview])
+
+  const notificationMoreBadge = useMemo(
+    () => formatExtraNotificationCount(notificationTotalCount),
+    [notificationTotalCount],
+  )
+
+  const hasUnreadNotifications = notificationUnreadCount > 0
+
+  const loadAlarmsPreview = useCallback(
+    async (opts?: { showLoading?: boolean }) => {
+      if (!isAuthenticated) {
+        setActiveAlarms([])
+        setAlarmTotalCount(0)
+        setAlarmPricesBySymbol({})
+        return
+      }
+      if (opts?.showLoading) {
+        setAlarmsLoading(true)
+      }
+      setAlarmsError(null)
+      try {
+        const sorted = sortAlarmsNewestFirst(await fetchActiveAlarms())
+        setAlarmTotalCount(sorted.length)
+        const preview = sorted.slice(0, ALARM_HEADER_PREVIEW)
+        setActiveAlarms(preview)
+        const symbols = [...new Set(preview.map((a) => a.instrumentSymbol).filter(Boolean))]
+        if (symbols.length === 0) {
+          setAlarmPricesBySymbol({})
+          return
+        }
+        const summary = await fetchMarketPricesSummary(symbols)
+        const prices: Record<string, number> = {}
+        for (const symbol of symbols) {
+          const p = summary[symbol]?.price
+          if (p != null && Number.isFinite(p)) {
+            prices[symbol] = p
+          }
+        }
+        setAlarmPricesBySymbol(prices)
+      } catch {
+        setAlarmsError(t('header.alarms.loadError'))
+      } finally {
+        if (opts?.showLoading) {
+          setAlarmsLoading(false)
+        }
+      }
+    },
+    [isAuthenticated, t],
+  )
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setActiveAlarms([])
+      setAlarmTotalCount(0)
+      setAlarmPricesBySymbol({})
+      return
+    }
+    void loadAlarmsPreview()
+  }, [isAuthenticated, alarmsRefreshKey, loadAlarmsPreview])
+
+  useEffect(() => {
+    if (!alarmsOpen || !isAuthenticated) {
+      return
+    }
+    void loadAlarmsPreview({ showLoading: true })
+  }, [alarmsOpen, isAuthenticated, loadAlarmsPreview])
+
+  useEffect(() => {
+    const onChanged = () => {
+      void loadAlarmsPreview()
+    }
+    window.addEventListener('finance-alarms-changed', onChanged)
+    return () => window.removeEventListener('finance-alarms-changed', onChanged)
+  }, [loadAlarmsPreview])
+
+  const alarmMoreBadge = useMemo(() => formatExtraAlarmCount(alarmTotalCount), [alarmTotalCount])
 
   const closeMenu = () => setMenuOpen(false)
   const closeDesktopPanels = () => {
@@ -263,6 +420,24 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     setLocaleOpen(false)
     setProfileOpen(false)
     setNotificationsOpen(false)
+    setAlarmsOpen(false)
+  }
+
+  const handleRemoveAlarm = async (alarmId: number) => {
+    if (alarmPendingIds.includes(alarmId)) {
+      return
+    }
+    setAlarmPendingIds((prev) => [...prev, alarmId])
+    try {
+      await deactivateAlarm(alarmId)
+      setActiveAlarms((prev) => prev.filter((a) => a.id !== alarmId))
+      bumpAlarmsRefresh()
+      notifyAlarmsChanged()
+    } catch {
+      setAlarmsError(t('header.alarms.loadError'))
+    } finally {
+      setAlarmPendingIds((prev) => prev.filter((id) => id !== alarmId))
+    }
   }
 
   const handleThemeToggle = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -285,10 +460,13 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     setLocaleOpen(false)
   }
 
-  const appNavForSession =
-    isAuthenticated && isAdminUser()
-      ? [...appNavItems, appNavBilgiKartlariItem, appNavAdminItem]
-      : appNavItems
+  const appNavForSession = useMemo(() => {
+    const core = [appNavPortfolioItem, ...appNavItemsWithoutPortfolio]
+    if (isAuthenticated && isAdminUser()) {
+      return [...core, appNavBilgiKartlariItem, appNavAdminItem]
+    }
+    return core
+  }, [isAuthenticated])
 
   return (
     <header className="portal-header">
@@ -396,8 +574,12 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
           <div className="portal-popover-anchor">
             <button
               type="button"
-              className={`portal-icon-button${notificationsOpen ? ' portal-icon-button-active' : ''}`}
-              aria-label={t('header.notifications.aria')}
+              className={`portal-icon-button portal-icon-button--bell${notificationsOpen ? ' portal-icon-button-active' : ''}${hasUnreadNotifications ? ' portal-icon-button--has-unread' : ''}`}
+              aria-label={
+                hasUnreadNotifications
+                  ? `${t('header.notifications.aria')} (${notificationUnreadCount})`
+                  : t('header.notifications.aria')
+              }
               aria-expanded={notificationsOpen}
               onClick={() => {
                 setNotificationsOpen((prev) => !prev)
@@ -407,10 +589,21 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               }}
             >
               <IconBell />
+              {hasUnreadNotifications ? (
+                <span className="portal-notification-unread-dot" aria-hidden />
+              ) : null}
             </button>
             {notificationsOpen ? (
               <div className="portal-popover portal-notifications-popover">
-                <div className="portal-notifications-header">{t('header.notifications.title')}</div>
+                <div className="portal-notifications-header">
+                  <Link
+                    to="/app/notifications"
+                    className="portal-notifications-header-link"
+                    onClick={() => setNotificationsOpen(false)}
+                  >
+                    {t('header.notifications.title')}
+                  </Link>
+                </div>
                 {!isAuthenticated ? (
                   <div className="portal-notifications-empty">
                     {t('header.notifications.loginRequired')}
@@ -423,37 +616,141 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                   <div className="portal-notifications-empty">{t('header.notifications.empty')}</div>
                 ) : (
                   <ul className="portal-notifications-list">
-                    {notifications.map((item, idx) => (
+                    {notifications.map((item) => (
                       <li
-                        key={`${item.instrumentSymbol}-${item.triggeredAt}-${idx}`}
-                        className="portal-notifications-item"
+                        key={item.id}
+                        className={`portal-notifications-item${item.read ? ' portal-notifications-item-read' : ' portal-notifications-item-unread'}`}
                       >
-                        <div className="portal-notifications-symbol">{item.instrumentSymbol}</div>
-                        <div className="portal-notifications-meta">
-                          <span>{item.condition}</span>
-                          <span>{new Date(item.triggeredAt).toLocaleString()}</span>
-                        </div>
+                        <Link
+                          to="/app/notifications"
+                          className="portal-notifications-item-link"
+                          onClick={() => setNotificationsOpen(false)}
+                        >
+                          <div className="portal-notifications-symbol">{item.instrumentSymbol}</div>
+                          <div className="portal-notifications-meta">
+                            <span className="portal-notifications-type">
+                              {formatNotificationType(item.type, tNotifications)}
+                            </span>
+                            <time dateTime={item.triggeredAt}>
+                              {new Date(item.triggeredAt).toLocaleString()}
+                            </time>
+                          </div>
+                        </Link>
                       </li>
                     ))}
                   </ul>
                 )}
+                {isAuthenticated && notificationMoreBadge ? (
+                  <div className="portal-notifications-more">
+                    <Link
+                      to="/app/notifications"
+                      className="portal-notifications-more-link"
+                      onClick={() => setNotificationsOpen(false)}
+                    >
+                      {t('header.notifications.moreNew', { count: `+${notificationMoreBadge}` })}
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
 
           {isAuthenticated ? (
-            <button
-              type="button"
-              className="portal-icon-button"
-              aria-label={t('header.alarms.aria')}
-              title={t('header.alarms.aria')}
-              onClick={() => {
-                closeDesktopPanels()
-                setNotificationsOpen(false)
-              }}
-            >
-              <IconAlarmClock />
-            </button>
+            <div className="portal-popover-anchor">
+              <button
+                type="button"
+                className={`portal-icon-button${alarmsOpen ? ' portal-icon-button-active' : ''}`}
+                aria-label={t('header.alarms.aria')}
+                title={t('header.alarms.aria')}
+                aria-expanded={alarmsOpen}
+                onClick={() => {
+                  setAlarmsOpen((prev) => !prev)
+                  setNotificationsOpen(false)
+                  setDownloadOpen(false)
+                  setLocaleOpen(false)
+                  setProfileOpen(false)
+                }}
+              >
+                <IconAlarmClock />
+              </button>
+              {alarmsOpen ? (
+                <div className="portal-popover portal-notifications-popover portal-alarms-popover">
+                  <div className="portal-notifications-header">
+                    <Link
+                      to="/app/alarms"
+                      className="portal-notifications-header-link"
+                      onClick={() => setAlarmsOpen(false)}
+                    >
+                      {t('header.alarms.title')}
+                    </Link>
+                  </div>
+                  {alarmsLoading ? (
+                    <div className="portal-notifications-empty">{t('loading')}</div>
+                  ) : alarmsError ? (
+                    <div className="portal-notifications-empty">{alarmsError}</div>
+                  ) : activeAlarms.length === 0 ? (
+                    <div className="portal-notifications-empty">
+                      <p>{t('header.alarms.empty')}</p>
+                      <p className="portal-alarms-hint">{t('header.alarms.createOnMarkets')}</p>
+                    </div>
+                  ) : (
+                    <ul className="portal-notifications-list">
+                      {activeAlarms.map((alarm) => {
+                        const live = alarmPricesBySymbol[alarm.instrumentSymbol]
+                        const prices = formatAlarmPricePair(
+                          alarm.condition,
+                          alarm.threshold,
+                          live,
+                          (key, opts) => t(key, { ns: 'markets', ...opts }),
+                        )
+                        return (
+                        <li key={alarm.id} className="portal-notifications-item portal-alarms-item">
+                          <div className="portal-alarms-item-main">
+                            <div className="portal-notifications-symbol">{alarm.instrumentSymbol}</div>
+                            <div className="portal-notifications-meta">
+                              <span>
+                                {formatAlarmCondition(alarm.condition, alarm.threshold, (key, opts) =>
+                                  t(key, { ns: 'markets', ...opts }),
+                                )}
+                              </span>
+                            </div>
+                            <div className="portal-alarms-prices">
+                              <span>
+                                {t('header.alarms.now', { ns: 'common' })}: <strong>{prices.current}</strong>
+                              </span>
+                              <span>
+                                {t('header.alarms.target', { ns: 'common' })}: <strong>{prices.target}</strong>
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="portal-alarms-remove"
+                            aria-label={t('header.alarms.remove')}
+                            disabled={alarmPendingIds.includes(alarm.id)}
+                            onClick={() => void handleRemoveAlarm(alarm.id)}
+                          >
+                            ×
+                          </button>
+                        </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  {alarmMoreBadge ? (
+                    <div className="portal-notifications-more">
+                      <Link
+                        to="/app/alarms"
+                        className="portal-notifications-more-link"
+                        onClick={() => setAlarmsOpen(false)}
+                      >
+                        {t('header.alarms.moreNew', { count: `+${alarmMoreBadge}` })}
+                      </Link>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {isAuthenticated ? (

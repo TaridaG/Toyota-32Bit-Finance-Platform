@@ -13,6 +13,8 @@ import { BankRatesPage } from '../../pages/bank-rates/BankRatesPage'
 import { FinansalOkuryazarlikPage } from '../../pages/finansal-okuryazarlik/FinansalOkuryazarlikPage'
 import { BilgiKartlariPage } from '../../pages/bilgi-kartlari/BilgiKartlariPage'
 import { ProfileSettingsPage } from '../../pages/profile/ProfileSettingsPage'
+import { AlarmsPage } from '../../pages/alarms/AlarmsPage'
+import { NotificationsPage } from '../../pages/notifications/NotificationsPage'
 import { LandingPage } from '../../pages/public/LandingPage'
 import { LoginPage } from '../../pages/public/LoginPage'
 import { RegisterPage } from '../../pages/public/RegisterPage'
@@ -29,6 +31,8 @@ import { ADMIN_KPI_TOTAL_USERS_PATH, ADMIN_SECTION_ROUTES } from '../../features
 import { AdminAvgLatencyPage } from '../../pages/admin/AdminAvgLatencyPage'
 import { AdminTotalNewsPage } from '../../pages/admin/AdminTotalNewsPage'
 import { AdminTotalPortfoliosPage } from '../../pages/admin/AdminTotalPortfoliosPage'
+import { AdminMarketAssetsPage } from '../../pages/admin/AdminMarketAssetsPage'
+import { AdminBlockedEmailsPage } from '../../pages/admin/AdminBlockedEmailsPage'
 import { AdminTotalUsersPage } from '../../pages/admin/AdminTotalUsersPage'
 
 export const appRouter = createBrowserRouter([
@@ -109,6 +113,8 @@ export const appRouter = createBrowserRouter([
                 <AdminTotalNewsPage />
               ) : r.path === 'kpi/active-portfolios' ? (
                 <AdminTotalPortfoliosPage />
+              ) : r.path === 'kpi/market-streams' ? (
+                <AdminMarketAssetsPage />
               ) : (
                 <AdminPlaceholderPage titleKey={r.titleKey} leadKey={r.leadKey} />
               ),
@@ -117,7 +123,9 @@ export const appRouter = createBrowserRouter([
           { path: 'portfolios', element: <Navigate to="/admin/kpi/active-portfolios" replace /> },
           { path: 'market-data', element: <Navigate to="/admin/kpi/market-streams" replace /> },
           { path: 'news', element: <Navigate to="/admin/kpi/news-sources" replace /> },
-          { path: 'system', element: <Navigate to="/admin/kpi/system-status" replace /> },
+          { path: 'system', element: <Navigate to="/admin" replace /> },
+          { path: 'kpi/system-status', element: <Navigate to="/admin" replace /> },
+          { path: 'blocked-emails', element: <AdminBlockedEmailsPage /> },
         ],
       },
       {
@@ -145,6 +153,8 @@ export const appRouter = createBrowserRouter([
           { path: 'portfolio', element: <ExternalPortfolioPage /> },
           { path: 'simulation', element: <SimulationPage /> },
           { path: 'profile', element: <ProfileSettingsPage /> },
+          { path: 'notifications', element: <NotificationsPage /> },
+          { path: 'alarms', element: <AlarmsPage /> },
           {
             path: 'bilgi-kartlari',
             element: (

@@ -23,10 +23,72 @@ function parseSnapshotValue(raw: unknown): number | null {
   return null
 }
 
-/** Günlük son değer + canlı toplam; 5 yıllık sıfır doldurma yok. */
+function utcDayKey(sec: number): string {
+  return new Date(sec * 1000).toISOString().slice(0, 10)
+}
+
+function secFromUtcDay(day: string): number {
+  return Math.floor(Date.parse(`${day}T12:00:00Z`) / 1000)
+}
+
+function addUtcDays(day: string, delta: number): string {
+  const d = new Date(`${day}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + delta)
+  return d.toISOString().slice(0, 10)
+}
+
+export type DailyFillMode = 'carry' | 'zero'
+
+/** İlk günden bugüne her takvim günü (portföy: taşı, işlem: 0). */
+export function fillDailyCalendarSeries(
+  points: PortfolioTrendPoint[],
+  opts?: {
+    liveValue?: number | null
+    maxDays?: number
+    fillMode?: DailyFillMode
+  },
+): PortfolioTrendPoint[] {
+  const maxDays = opts?.maxDays ?? 60
+  const fillMode = opts?.fillMode ?? 'carry'
+  const byDay = new Map<string, number>()
+  for (const p of points) {
+    const day = utcDayKey(p.t)
+    byDay.set(day, p.v)
+  }
+
+  const today = new Date().toISOString().slice(0, 10)
+  if (opts?.liveValue != null && Number.isFinite(opts.liveValue)) {
+    byDay.set(today, opts.liveValue)
+  }
+
+  const knownDays = [...byDay.keys()].sort()
+  if (knownDays.length === 0) return []
+
+  const endDay = today >= knownDays[knownDays.length - 1]! ? today : knownDays[knownDays.length - 1]!
+  const windowStart = addUtcDays(endDay, -(maxDays - 1))
+  const firstDay = knownDays[0]!
+  const startDay = windowStart > firstDay ? windowStart : firstDay
+
+  const out: PortfolioTrendPoint[] = []
+  let lastV = byDay.get(startDay) ?? (fillMode === 'carry' ? byDay.get(firstDay) ?? 0 : 0)
+
+  for (let day = startDay; day <= endDay; day = addUtcDays(day, 1)) {
+    if (byDay.has(day)) {
+      lastV = byDay.get(day)!
+    } else if (fillMode === 'zero') {
+      lastV = 0
+    }
+    out.push({ t: secFromUtcDay(day), v: lastV })
+  }
+
+  return out
+}
+
+/** Günlük son değer + canlı toplam; dünkü kapanış overview’dan eklenebilir. */
 export function buildPortfolioTrendSeries(
   snapshots: PortfolioValueSnapshot[],
   liveTotalValue: number | null,
+  priorDayValue?: number | null,
 ): PortfolioTrendPoint[] {
   const byDay = new Map<string, number>()
   for (const s of snapshots) {
@@ -35,6 +97,17 @@ export function buildPortfolioTrendSeries(
     const day = s.createdAt.slice(0, 10)
     if (!day) continue
     byDay.set(day, v)
+  }
+
+  const today = new Date().toISOString().slice(0, 10)
+  const yesterday = addUtcDays(today, -1)
+  if (
+    priorDayValue != null &&
+    Number.isFinite(priorDayValue) &&
+    Math.abs(priorDayValue) >= 1e-6 &&
+    !byDay.has(yesterday)
+  ) {
+    byDay.set(yesterday, priorDayValue)
   }
 
   const points: PortfolioTrendPoint[] = [...byDay.entries()]
@@ -103,7 +176,7 @@ export function filterTrendByRange(
   ]
 }
 
-/** İşlem bazlı kümülatif net nakit akışı (tüm geçmiş). */
+/** İşlem bazlı kümülatif net nakit akışı (detay grafikleri). */
 export function buildTradeFlowTrendSeries(points: PortfolioTradeFlowPoint[]): PortfolioTrendPoint[] {
   const sorted = [...points]
     .filter((p) => Number.isFinite(Date.parse(p.createdAt)))
@@ -127,6 +200,20 @@ export function buildTradeFlowTrendSeries(points: PortfolioTradeFlowPoint[]): Po
     }
   }
   return out
+}
+
+/** Dashboard: günlük net alım/satım (o günkü işlemlerin toplamı). */
+export function buildTradeFlowDailySeries(points: PortfolioTradeFlowPoint[]): PortfolioTrendPoint[] {
+  const byDay = new Map<string, number>()
+  for (const p of points) {
+    if (!Number.isFinite(Date.parse(p.createdAt))) continue
+    const day = p.createdAt.slice(0, 10)
+    if (!day) continue
+    byDay.set(day, (byDay.get(day) ?? 0) + p.signedAmount)
+  }
+  return [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, v]) => ({ t: secFromUtcDay(day), v }))
 }
 
 export function summarizePortfolioTrend(series: PortfolioTrendPoint[]): PortfolioTrendSummary | null {
@@ -153,37 +240,76 @@ export function summarizePortfolioTrend(series: PortfolioTrendPoint[]): Portfoli
   }
 }
 
+export type SparklineScaleMode = 'zero' | 'data'
+
+/** Portföy: veri aralığı; işlem: 0 tabanı. */
+function sparklineYDomain(values: number[], scaleMode: SparklineScaleMode): { min: number; max: number } {
+  const dataMin = Math.min(...values)
+  const dataMax = Math.max(...values)
+  if (scaleMode === 'data') {
+    const span = dataMax - dataMin
+    if (span < Math.max(Math.abs(dataMax) * 0.001, 1)) {
+      const mid = dataMax
+      const pad = Math.max(Math.abs(mid) * 0.015, 50)
+      return { min: mid - pad, max: mid + pad }
+    }
+    const pad = span * 0.1
+    return { min: dataMin - pad, max: dataMax + pad }
+  }
+  const min = Math.min(0, dataMin)
+  let max = Math.max(0, dataMax)
+  if (max > min) max += (max - min) * 0.1
+  else if (max > 0) max *= 1.1
+  return { min, max }
+}
+
+function sparklineYRange(min: number, max: number): number {
+  return Math.max(max - min, Math.max(Math.abs(max), Math.abs(min)) * 0.02, 1e-6)
+}
+
+function sparklineYCoord(
+  value: number,
+  min: number,
+  range: number,
+  height: number,
+  padY: number,
+): number {
+  const yn = (value - min) / range
+  return height - padY - yn * (height - 2 * padY)
+}
+
 export function seriesToSparklinePath(
   values: number[],
   width: number,
   height: number,
   padX = 2,
   padY = 4,
+  scaleMode: SparklineScaleMode = 'zero',
 ): { line: string; area: string } {
   if (values.length === 0) {
     return { line: '', area: '' }
   }
+
+  const { min, max } = sparklineYDomain(values, scaleMode)
+  const range = sparklineYRange(min, max)
+  const baseY = height - padY
+
   if (values.length === 1) {
-    const y = height / 2
+    const v = values[0]!
+    const y = sparklineYCoord(v, min, range, height, padY)
     const x0 = padX
     const x1 = width - padX
-    const line = `M${x0},${y} L${x1},${y}`
-    return { line, area: `${line} L${x1},${height - padY} L${x0},${height - padY} Z` }
+    const line = `M${x0},${y.toFixed(2)} L${x1},${y.toFixed(2)}`
+    return { line, area: `${line} L${x1},${baseY} L${x0},${baseY} Z` }
   }
-
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const range = Math.max(max - min, Math.max(Math.abs(max), Math.abs(min)) * 0.02, 1e-6)
 
   const coords = values.map((v, i) => {
     const x = padX + (i / (values.length - 1)) * (width - 2 * padX)
-    const yn = (v - min) / range
-    const y = height - padY - yn * (height - 2 * padY)
+    const y = sparklineYCoord(v, min, range, height, padY)
     return { x, y }
   })
 
   const line = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(2)},${c.y.toFixed(2)}`).join(' ')
-  const baseY = height - padY
   const area = `${line} L${coords[coords.length - 1].x.toFixed(2)},${baseY} L${coords[0].x.toFixed(2)},${baseY} Z`
   return { line, area }
 }

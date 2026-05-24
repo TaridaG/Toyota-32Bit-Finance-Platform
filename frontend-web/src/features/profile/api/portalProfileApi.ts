@@ -5,6 +5,15 @@ import type { ApiEnvelope, PortalProfile } from '../types'
 
 const BASE = '/api/portal/profile'
 
+/** Revokes trusted-device cookie server-side (httpOnly); call before clearAuthSession on logout. */
+export async function logoutPortalSession(): Promise<void> {
+  try {
+    await apiClient.post<ApiEnvelope<unknown>>(`${BASE}/logout`)
+  } catch {
+    // Local session is cleared regardless
+  }
+}
+
 export function readApiErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
     const body = error.response?.data as ApiEnvelope<unknown> | undefined
@@ -80,19 +89,62 @@ export async function confirmPortalEmailChange(newEmail: string, verificationCod
   return assertSuccessData(data)
 }
 
-export async function checkPortalUsernameAvailability(username: string): Promise<{
+export type UsernameAvailabilityResult = {
   normalizedUsername: string
   available: boolean
   suggestions: string[]
-}> {
+}
+
+export type EmailAvailabilityResult = {
+  normalizedEmail: string
+  available: boolean
+  blocked: boolean
+  suggestions: string[]
+}
+
+export async function checkPortalEmailAvailability(
+  email: string,
+  currentEmail?: string,
+): Promise<EmailAvailabilityResult> {
   const { data } = await apiClient.get<
-    ApiEnvelope<{ normalizedUsername: string; available: boolean; suggestions: string[] }>
-  >(`${BASE}/username-availability`, { params: { username } })
+    ApiEnvelope<{ normalizedEmail: string; available: boolean; blocked: boolean; suggestions: string[] }>
+  >(`${BASE}/email-availability`, { params: { email } })
   const result = assertSuccessData(data)
+  const normalized = result.normalizedEmail || email.trim().toLowerCase()
+  const isCurrent = currentEmail != null && normalized === currentEmail.trim().toLowerCase()
   return {
-    normalizedUsername: result.normalizedUsername,
-    available: result.available,
-    suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+    normalizedEmail: normalized,
+    available: result.available || isCurrent,
+    blocked: result.blocked,
+    suggestions: isCurrent ? [] : Array.isArray(result.suggestions) ? result.suggestions : [],
+  }
+}
+
+export async function checkPortalUsernameAvailability(
+  username: string,
+  currentUsername?: string,
+): Promise<UsernameAvailabilityResult> {
+  try {
+    const { data } = await apiClient.get<
+      ApiEnvelope<{ normalizedUsername: string; available: boolean; suggestions: string[] }>
+    >(`${BASE}/username-availability`, { params: { username } })
+    const result = assertSuccessData(data)
+    return {
+      normalizedUsername: result.normalizedUsername,
+      available: result.available,
+      suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+    }
+  } catch {
+    const { checkUsernameAvailability } = await import('../../../shared/api/publicRegistration')
+    const pub = await checkUsernameAvailability(username)
+    const normalized = pub.normalizedUsername || username.trim().toLowerCase()
+    const isCurrent =
+      currentUsername != null && normalized === currentUsername.trim().toLowerCase()
+    return {
+      normalizedUsername: normalized,
+      available: pub.available || isCurrent,
+      suggestions: isCurrent ? [] : pub.suggestions,
+    }
   }
 }
 

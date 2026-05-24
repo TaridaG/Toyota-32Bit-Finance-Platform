@@ -10,6 +10,7 @@ import type {
   DrawingItem,
 } from '../types'
 import { DrawingToolsLayer } from '../components/DrawingToolsLayer'
+import { ChartMeasureLayer } from '../components/ChartMeasureLayer'
 import { useChart } from './hooks/useChart'
 import { useCrosshairTooltip, type OhlcTooltipState } from './hooks/useCrosshairTooltip'
 import { useCompareSeries, type ComparisonLine } from './hooks/useCompare'
@@ -55,6 +56,7 @@ type AnalysisChartProps = {
   currency: string
   assetType: AssetType
   chartType?: ChartDisplayType
+  measureToolActive?: boolean
   /** Inside chart workbench: fills plot cell, no outer card chrome. */
   embedded?: boolean
 }
@@ -89,6 +91,7 @@ export function AnalysisChart({
   currency,
   assetType,
   chartType = 'candle',
+  measureToolActive = false,
   embedded = false,
 }: AnalysisChartProps) {
   const { t } = useTranslation('analysis')
@@ -167,12 +170,14 @@ export function AnalysisChart({
 
   const drawToolRef = useRef(drawTool)
   drawToolRef.current = drawTool
+  const measureActiveRef = useRef(measureToolActive)
+  measureActiveRef.current = measureToolActive
 
   useEffect(() => {
     if (!chart) return
 
     const handler = (param: MouseEventParams<Time>) => {
-      if (drawToolRef.current !== 'none') return
+      if (drawToolRef.current !== 'none' || measureActiveRef.current) return
       if (param.point === undefined) return
 
       const oid = param.hoveredObjectId
@@ -235,6 +240,16 @@ export function AnalysisChart({
           onAddDrawing={onAddDrawing}
           onSelectDrawing={onSelectDrawing}
           onDrawComplete={onDrawComplete}
+        />
+        <ChartMeasureLayer
+          chart={chart}
+          priceSeries={seriesBundle?.main ?? null}
+          mountRef={chartMountRef}
+          candles={candles}
+          active={measureToolActive}
+          locale={locale}
+          currency={currency}
+          assetType={assetType}
         />
         {newsTooltip ? (
           <div

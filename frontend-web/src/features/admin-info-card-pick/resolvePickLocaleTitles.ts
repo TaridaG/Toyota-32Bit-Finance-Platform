@@ -11,7 +11,6 @@ const MARKET_CATEGORY_KEYS = [
   'stocks',
   'forex',
   'metals',
-  'globalFutures',
   'funds',
   'bonds',
   'eurobond',

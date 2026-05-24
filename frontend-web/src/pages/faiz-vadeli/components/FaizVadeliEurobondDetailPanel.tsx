@@ -12,13 +12,16 @@ import {
 } from 'lightweight-charts'
 import { useTheme } from '../../../shared/theme/ThemeProvider'
 import {
-  fetchTrEurobondCashflow,
   fetchTrEurobondHistory,
   toNum,
-  type EurobondCashflowWire,
   type EurobondHistoryPointWire,
   type EurobondInstrumentWire,
 } from '../api/eurobondMarketApi'
+import {
+  EurobondSimulator,
+  type EurobondChartPickMode,
+  type EurobondSimulatorHandle,
+} from './simulators/EurobondSimulator'
 
 const EM = '—'
 
@@ -70,27 +73,6 @@ function toYieldSeries(points: EurobondHistoryPointWire[]): LineData<Time>[] {
     raw.push({ time: d as Time, value: v })
   }
   return dedupeByDay(raw)
-}
-
-function findHistPoint(points: EurobondHistoryPointWire[], isoDay: string): EurobondHistoryPointWire | undefined {
-  return points.find((p) => {
-    const d = p.date
-    if (!d) return false
-    const n = d.length >= 10 ? d.slice(0, 10) : d
-    return n === isoDay
-  })
-}
-
-function parseNumLoose(raw: string): number | null {
-  const n = Number(String(raw).replace(/\s/g, '').replace(',', '.'))
-  return Number.isFinite(n) ? n : null
-}
-
-function daysBetweenIso(a: string, b: string): number {
-  const d0 = Date.parse(`${a}T12:00:00Z`)
-  const d1 = Date.parse(`${b}T12:00:00Z`)
-  if (!Number.isFinite(d0) || !Number.isFinite(d1)) return 0
-  return Math.max(0, Math.floor((d1 - d0) / 86400000))
 }
 
 function EurobondLwChart({
@@ -268,18 +250,8 @@ export function FaizVadeliEurobondDetailPanel({
   const [histPoints, setHistPoints] = useState<EurobondHistoryPointWire[]>([])
   const [retryNonce, setRetryNonce] = useState(0)
 
-  const [nominal, setNominal] = useState('10000')
-  const [cf, setCf] = useState<EurobondCashflowWire | null>(null)
-  const [cfErr, setCfErr] = useState(false)
-
-  type ChartPickMode = 'purchaseDate' | 'purchasePrice' | 'saleDate' | 'salePrice' | 'maturityDate' | null
-  const [chartPickMode, setChartPickMode] = useState<ChartPickMode>(null)
-  const [purchaseDate, setPurchaseDate] = useState('')
-  const [purchasePrice, setPurchasePrice] = useState('')
-  const [saleUseLast, setSaleUseLast] = useState(true)
-  const [saleDateStr, setSaleDateStr] = useState('')
-  const [salePriceStr, setSalePriceStr] = useState('')
-  const [maturityDateStr, setMaturityDateStr] = useState('')
+  const [chartPickMode, setChartPickMode] = useState<EurobondChartPickMode>(null)
+  const simRef = useRef<EurobondSimulatorHandle>(null)
 
   const priceLine = useMemo(() => toPriceSeries(histPoints), [histPoints])
   const yieldLine = useMemo(() => toYieldSeries(histPoints), [histPoints])
@@ -317,157 +289,38 @@ export function FaizVadeliEurobondDetailPanel({
     return () => window.removeEventListener('keydown', onKey)
   }, [onBack, chartPickMode])
 
-  useEffect(() => {
-    const n = Number(String(nominal).replace(/\s/g, '').replace(',', '.'))
-    if (!Number.isFinite(n) || n <= 0) {
-      setCf(null)
-      setCfErr(false)
-      return
-    }
-    const tmr = window.setTimeout(() => {
-      fetchTrEurobondCashflow(selectedIsin, n)
-        .then((r) => {
-          setCf(r)
-          setCfErr(false)
-        })
-        .catch(() => {
-          setCf(null)
-          setCfErr(true)
-        })
-    }, 400)
-    return () => window.clearTimeout(tmr)
-  }, [nominal, selectedIsin])
-
-  useEffect(() => {
-    const mat = instruments.find((x) => (x.isin ?? '').toUpperCase() === selectedIsin.toUpperCase())?.maturityDate
-    setPurchaseDate('')
-    setPurchasePrice('')
-    setSaleUseLast(true)
-    setSaleDateStr('')
-    setSalePriceStr('')
-    setMaturityDateStr((mat ?? '').slice(0, 10))
-    setChartPickMode(null)
-  }, [selectedIsin, instruments])
-
-  useEffect(() => {
-    if (!saleUseLast || histPoints.length === 0) return
-    const sorted = [...histPoints]
-      .filter((x) => x.date)
-      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-    const last = sorted[sorted.length - 1]
-    const d = last?.date ? String(last.date).slice(0, 10) : ''
-    if (d) setSaleDateStr(d)
-    const px = toNum(last?.closePrice)
-    if (px != null) setSalePriceStr(String(Math.round(px * 100) / 100))
-  }, [histPoints, saleUseLast])
-
   const fmtPrice = (v: number | null) =>
     v == null
       ? EM
       : new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
   const fmtPct = (v: number | null) =>
     v == null ? EM : `${new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}%`
-  const fmtUsd = (v: number | null) =>
-    v == null
-      ? EM
-      : new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(v)
-
-  const selected = useMemo(
-    () => instruments.find((x) => (x.isin ?? '').toUpperCase() === selectedIsin.toUpperCase()),
-    [instruments, selectedIsin],
-  )
-
   const handleChartTimePick = (iso: string) => {
-    const mode = chartPickMode
-    if (!mode) return
-    if (mode === 'purchaseDate') setPurchaseDate(iso)
-    if (mode === 'saleDate') setSaleDateStr(iso)
-    if (mode === 'maturityDate') setMaturityDateStr(iso)
-    if (mode === 'purchasePrice') {
-      const pt = findHistPoint(histPoints, iso)
-      const px = toNum(pt?.closePrice)
-      if (px != null) setPurchasePrice(String(Math.round(px * 100) / 100))
-      setPurchaseDate(iso)
-    }
-    if (mode === 'salePrice') {
-      const pt = findHistPoint(histPoints, iso)
-      const px = toNum(pt?.closePrice)
-      if (px != null) setSalePriceStr(String(Math.round(px * 100) / 100))
-      setSaleDateStr(iso)
-    }
-    setChartPickMode(null)
+    simRef.current?.handleChartPick(iso)
   }
-
-  const pastPnl = useMemo(() => {
-    const N = parseNumLoose(nominal)
-    const pBuy = parseNumLoose(purchasePrice)
-    const coupon = toNum(selected?.couponPercent)
-    if (N == null || N <= 0 || pBuy == null || pBuy <= 0 || !purchaseDate || coupon == null || coupon < 0) return null
-    const sorted = [...histPoints]
-      .filter((x) => x.date)
-      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-    const last = sorted[sorted.length - 1]
-    const lastDay = last?.date ? String(last.date).slice(0, 10) : null
-    const lastPx = toNum(last?.closePrice)
-    let saleDay: string | null
-    let salePx: number | null
-    if (saleUseLast) {
-      saleDay = lastDay
-      salePx = lastPx
-    } else {
-      saleDay = saleDateStr.length >= 10 ? saleDateStr.slice(0, 10) : null
-      const manualPx = parseNumLoose(salePriceStr)
-      salePx =
-        manualPx != null && manualPx > 0
-          ? manualPx
-          : saleDay
-            ? toNum(findHistPoint(histPoints, saleDay)?.closePrice)
-            : null
-    }
-    if (!saleDay || salePx == null) return null
-    if (purchaseDate > saleDay) return null
-    const cost = (N * pBuy) / 100
-    const proceeds = (N * salePx) / 100
-    const matD = (maturityDateStr || selected?.maturityDate || '').slice(0, 10)
-    const couponEnd = matD && saleDay > matD ? matD : saleDay
-    const days = daysBetweenIso(purchaseDate, couponEnd)
-    const semiPeriods = Math.floor(days / 182)
-    const couponCash = semiPeriods * ((N * coupon) / 200)
-    const pnl = proceeds - cost + couponCash
-    const pct = cost > 0 ? (pnl / cost) * 100 : null
-    return { cost, proceeds, couponCash, pnl, pct, saleDay, salePx }
-  }, [
-    nominal,
-    purchaseDate,
-    purchasePrice,
-    saleUseLast,
-    saleDateStr,
-    salePriceStr,
-    maturityDateStr,
-    histPoints,
-    selected,
-  ])
 
   return (
     <div className="fi-faiz-panel fi-faiz-panel--chart fi-faiz-panel--policy-chart fi-faiz-eurobond-detail">
-      <div className="fi-faiz-panel-head-row">
+      <div className="fi-faiz-eurobond-head">
         <h3 className="fi-faiz-panel-title">{t('faizVadeliPage.eurobond.detailTitle')}</h3>
         <button type="button" className="fi-faiz-panel-back" onClick={onBack}>
           {t('faizVadeliPage.eurobond.chartBackToYield')}
         </button>
       </div>
 
-      <div className="fi-faiz-eurobond-edu" role="note">
-        <ul>
-          <li>{t('faizVadeliPage.eurobond.edu1')}</li>
-          <li>{t('faizVadeliPage.eurobond.edu2')}</li>
-          <li>{t('faizVadeliPage.eurobond.edu3')}</li>
-          <li>{t('faizVadeliPage.eurobond.edu4')}</li>
-        </ul>
-      </div>
+      <div className="fi-faiz-eurobond-layout">
+        <div className="fi-faiz-eurobond-main">
+          <div className="fi-faiz-eurobond-edu" role="note">
+            <ul>
+              <li>{t('faizVadeliPage.eurobond.edu1')}</li>
+              <li>{t('faizVadeliPage.eurobond.edu2')}</li>
+              <li>{t('faizVadeliPage.eurobond.edu3')}</li>
+              <li>{t('faizVadeliPage.eurobond.edu4')}</li>
+            </ul>
+          </div>
 
-      <div className="fi-faiz-eurobond-table-wrap">
-        <table className="fi-faiz-eurobond-table">
+          <div className="fi-faiz-eurobond-table-wrap">
+            <table className="fi-faiz-eurobond-table">
           <thead>
             <tr>
               <th>{t('faizVadeliPage.eurobond.colBond')}</th>
@@ -519,293 +372,117 @@ export function FaizVadeliEurobondDetailPanel({
               )
             })}
           </tbody>
-        </table>
-      </div>
-
-      <div className="fi-faiz-eurobond-controls">
-        <span className="fi-faiz-eurobond-controls-label">{t('faizVadeliPage.eurobond.range')}</span>
-        {(['1Y', '5Y', 'ALL'] as const).map((r) => (
-          <button
-            key={r}
-            type="button"
-            className={`fi-faiz-eurobond-pill${range === r ? ' fi-faiz-eurobond-pill--on' : ''}`}
-            onClick={() => setRange(r)}
-          >
-            {r === '1Y'
-              ? t('faizVadeliPage.eurobond.range1Y')
-              : r === '5Y'
-                ? t('faizVadeliPage.eurobond.range5Y')
-                : t('faizVadeliPage.eurobond.rangeAll')}
-          </button>
-        ))}
-        <span className="fi-faiz-eurobond-controls-label">{t('faizVadeliPage.eurobond.frequency')}</span>
-        {(['DAILY', 'WEEKLY', 'MONTHLY'] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            className={`fi-faiz-eurobond-pill${frequency === f ? ' fi-faiz-eurobond-pill--on' : ''}`}
-            onClick={() => setFrequency(f)}
-          >
-            {f === 'DAILY'
-              ? t('faizVadeliPage.eurobond.freqDaily')
-              : f === 'WEEKLY'
-                ? t('faizVadeliPage.eurobond.freqWeekly')
-                : t('faizVadeliPage.eurobond.freqMonthly')}
-          </button>
-        ))}
-      </div>
-
-      {chartPickMode ? (
-        <div className="fi-faiz-eurobond-pick-banner" role="status">
-          <span>
-            {chartPickMode === 'purchasePrice' || chartPickMode === 'salePrice'
-              ? t('faizVadeliPage.eurobond.pastPickHintPrice')
-              : t('faizVadeliPage.eurobond.pastPickHintDate')}
-          </span>
-          <button type="button" className="fi-faiz-eurobond-pick-cancel" onClick={() => setChartPickMode(null)}>
-            {t('faizVadeliPage.eurobond.pastPickCancel')}
-          </button>
-        </div>
-      ) : null}
-
-      {histState === 'error' ? (
-        <div className="fi-faiz-policy-panel-state">
-          <p>{t('faizVadeliPage.eurobond.chartError')}</p>
-          <button type="button" className="profile-settings-btn-secondary" onClick={() => setRetryNonce((n) => n + 1)}>
-            {t('faizVadeliPage.eurobond.chartRetry')}
-          </button>
-        </div>
-      ) : null}
-
-      <div className="fi-faiz-eurobond-split">
-        <div className="fi-faiz-eurobond-split-main">
-          <div className="fi-faiz-eurobond-chart-block">
-            <h4 className="fi-faiz-eurobond-subtitle">{t('faizVadeliPage.eurobond.priceChartTitle')}</h4>
-            <p className="fi-faiz-eurobond-hint">{t('faizVadeliPage.eurobond.priceChartHint')}</p>
-            <div className="fi-faiz-policy-chart-y-wrap">
-              <span className="fi-faiz-policy-chart-y-label">{t('faizVadeliPage.eurobond.axisPrice')}</span>
-              <EurobondLwChart
-                lineData={priceLine}
-                loadState={histState}
-                color="#22c55e"
-                locale={locale}
-                isDark={isDark}
-                chartPickActive={chartPickMode !== null}
-                onTimePicked={handleChartTimePick}
-              />
-            </div>
-            {histState === 'ready' && priceLine.length === 0 ? (
-              <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.eurobond.priceChartEmpty')}</p>
-            ) : null}
+            </table>
           </div>
 
-          <div className="fi-faiz-eurobond-chart-block">
-            <h4 className="fi-faiz-eurobond-subtitle">{t('faizVadeliPage.eurobond.yieldChartTitle')}</h4>
-            <p className="fi-faiz-eurobond-hint">{t('faizVadeliPage.eurobond.yieldChartHint')}</p>
-            <div className="fi-faiz-policy-chart-y-wrap">
-              <span className="fi-faiz-policy-chart-y-label">{t('faizVadeliPage.eurobond.axisYield')}</span>
-              <EurobondLwChart
-                lineData={yieldLine}
-                loadState={histState}
-                color="#6366f1"
-                locale={locale}
-                isDark={isDark}
-                chartPickActive={chartPickMode !== null}
-                onTimePicked={handleChartTimePick}
-              />
+          {chartPickMode ? (
+            <div className="fi-faiz-eurobond-pick-banner" role="status">
+              <span>
+                {chartPickMode === 'purchasePrice' || chartPickMode === 'salePrice'
+                  ? t('faizVadeliPage.eurobond.pastPickHintPrice')
+                  : t('faizVadeliPage.eurobond.pastPickHintDate')}
+              </span>
+              <button type="button" className="fi-faiz-eurobond-pick-cancel" onClick={() => setChartPickMode(null)}>
+                {t('faizVadeliPage.eurobond.pastPickCancel')}
+              </button>
             </div>
-            {histState === 'ready' && yieldLine.length === 0 ? (
-              <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.eurobond.yieldChartEmpty')}</p>
-            ) : null}
+          ) : null}
+
+          <div className="fi-faiz-eurobond-controls">
+            <span className="fi-faiz-eurobond-controls-label">{t('faizVadeliPage.eurobond.range')}</span>
+            {(['1Y', '5Y', 'ALL'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={`fi-faiz-eurobond-pill${range === r ? ' fi-faiz-eurobond-pill--on' : ''}`}
+                onClick={() => setRange(r)}
+              >
+                {r === '1Y'
+                  ? t('faizVadeliPage.eurobond.range1Y')
+                  : r === '5Y'
+                    ? t('faizVadeliPage.eurobond.range5Y')
+                    : t('faizVadeliPage.eurobond.rangeAll')}
+              </button>
+            ))}
+            <span className="fi-faiz-eurobond-controls-label">{t('faizVadeliPage.eurobond.frequency')}</span>
+            {(['DAILY', 'WEEKLY', 'MONTHLY'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`fi-faiz-eurobond-pill${frequency === f ? ' fi-faiz-eurobond-pill--on' : ''}`}
+                onClick={() => setFrequency(f)}
+              >
+                {f === 'DAILY'
+                  ? t('faizVadeliPage.eurobond.freqDaily')
+                  : f === 'WEEKLY'
+                    ? t('faizVadeliPage.eurobond.freqWeekly')
+                    : t('faizVadeliPage.eurobond.freqMonthly')}
+              </button>
+            ))}
+          </div>
+
+          {histState === 'error' ? (
+            <div className="fi-faiz-policy-panel-state">
+              <p>{t('faizVadeliPage.eurobond.chartError')}</p>
+              <button type="button" className="profile-settings-btn-secondary" onClick={() => setRetryNonce((n) => n + 1)}>
+                {t('faizVadeliPage.eurobond.chartRetry')}
+              </button>
+            </div>
+          ) : null}
+
+          <div className="fi-faiz-eurobond-charts">
+            <div className="fi-faiz-eurobond-chart-block">
+              <h4 className="fi-faiz-eurobond-subtitle">{t('faizVadeliPage.eurobond.priceChartTitle')}</h4>
+              <p className="fi-faiz-eurobond-hint">{t('faizVadeliPage.eurobond.priceChartHint')}</p>
+              <div className="fi-faiz-policy-chart-y-wrap">
+                <span className="fi-faiz-policy-chart-y-label">{t('faizVadeliPage.eurobond.axisPrice')}</span>
+                <EurobondLwChart
+                  lineData={priceLine}
+                  loadState={histState}
+                  color="#22c55e"
+                  locale={locale}
+                  isDark={isDark}
+                  chartPickActive={chartPickMode !== null}
+                  onTimePicked={handleChartTimePick}
+                />
+              </div>
+              {histState === 'ready' && priceLine.length === 0 ? (
+                <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.eurobond.priceChartEmpty')}</p>
+              ) : null}
+            </div>
+
+            <div className="fi-faiz-eurobond-chart-block">
+              <h4 className="fi-faiz-eurobond-subtitle">{t('faizVadeliPage.eurobond.yieldChartTitle')}</h4>
+              <p className="fi-faiz-eurobond-hint">{t('faizVadeliPage.eurobond.yieldChartHint')}</p>
+              <div className="fi-faiz-policy-chart-y-wrap">
+                <span className="fi-faiz-policy-chart-y-label">{t('faizVadeliPage.eurobond.axisYield')}</span>
+                <EurobondLwChart
+                  lineData={yieldLine}
+                  loadState={histState}
+                  color="#6366f1"
+                  locale={locale}
+                  isDark={isDark}
+                  chartPickActive={chartPickMode !== null}
+                  onTimePicked={handleChartTimePick}
+                />
+              </div>
+              {histState === 'ready' && yieldLine.length === 0 ? (
+                <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.eurobond.yieldChartEmpty')}</p>
+              ) : null}
+            </div>
           </div>
         </div>
 
-        <aside className="fi-faiz-eurobond-sim-col">
-          <div className="fi-faiz-eurobond-sim fi-faiz-eurobond-sim--combined">
-            <h4 className="fi-faiz-eurobond-subtitle">{t('faizVadeliPage.eurobond.simTitle')}</h4>
-            <label className="fi-faiz-eurobond-sim-label">
-              {t('faizVadeliPage.eurobond.simNominal')}
-              <input
-                className="fi-faiz-eurobond-sim-input"
-                inputMode="decimal"
-                value={nominal}
-                onChange={(e) => setNominal(e.target.value)}
-              />
-            </label>
-            <p className="fi-faiz-eurobond-sim-nominal-hint">{t('faizVadeliPage.eurobond.simNominalSharedHint')}</p>
-            <dl className="fi-faiz-eurobond-sim-dl">
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.simAnnual')}</dt>
-                <dd>{cfErr ? EM : fmtUsd(toNum(cf?.annualCouponUsd))}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.simSemi')}</dt>
-                <dd>{cfErr ? EM : fmtUsd(toNum(cf?.semiAnnualCouponUsd))}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.simPurchase')}</dt>
-                <dd>{cfErr ? EM : fmtUsd(toNum(cf?.approximatePurchaseAmountUsd))}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.simPrincipal')}</dt>
-                <dd>{cfErr ? EM : fmtUsd(toNum(cf?.maturityPrincipalUsd))}</dd>
-              </div>
-            </dl>
-            <p className="fi-faiz-eurobond-sim-foot">{t('faizVadeliPage.eurobond.simDisclaimer')}</p>
-
-            <div className="fi-faiz-eurobond-sim-divider" role="separator" />
-
-            <h5 className="fi-faiz-eurobond-sim-sec-title">{t('faizVadeliPage.eurobond.pastTitle')}</h5>
-            <div className="fi-faiz-eurobond-sim-section fi-faiz-eurobond-sim-section--past">
-            <label className="fi-faiz-eurobond-sim-label">
-              {t('faizVadeliPage.eurobond.pastBuyPrice')}
-              <div className="fi-faiz-eurobond-past-row">
-                <input
-                  className="fi-faiz-eurobond-sim-input"
-                  inputMode="decimal"
-                  value={purchasePrice}
-                  onChange={(e) => setPurchasePrice(e.target.value)}
-                  placeholder="100.00"
-                />
-                <button
-                  type="button"
-                  className="fi-faiz-eurobond-pick-btn"
-                  title={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                  aria-label={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                  onClick={() => setChartPickMode('purchasePrice')}
-                >
-                  ◎
-                </button>
-              </div>
-            </label>
-            <label className="fi-faiz-eurobond-sim-label">
-              {t('faizVadeliPage.eurobond.pastBuyDate')}
-              <div className="fi-faiz-eurobond-past-row">
-                <input
-                  className="fi-faiz-eurobond-sim-input"
-                  type="date"
-                  value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="fi-faiz-eurobond-pick-btn"
-                  title={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                  aria-label={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                  onClick={() => setChartPickMode('purchaseDate')}
-                >
-                  ◎
-                </button>
-              </div>
-            </label>
-            <label className="fi-faiz-eurobond-sim-label fi-faiz-eurobond-past-check">
-              <input
-                type="checkbox"
-                checked={saleUseLast}
-                onChange={(e) => {
-                  setSaleUseLast(e.target.checked)
-                  if (e.target.checked) setSalePriceStr('')
-                }}
-              />
-              <span>{t('faizVadeliPage.eurobond.pastSaleUseLast')}</span>
-            </label>
-            {!saleUseLast ? (
-              <>
-                <label className="fi-faiz-eurobond-sim-label">
-                  {t('faizVadeliPage.eurobond.pastSaleDate')}
-                  <div className="fi-faiz-eurobond-past-row">
-                    <input
-                      className="fi-faiz-eurobond-sim-input"
-                      type="date"
-                      value={saleDateStr}
-                      onChange={(e) => setSaleDateStr(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="fi-faiz-eurobond-pick-btn"
-                      title={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                      aria-label={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                      onClick={() => setChartPickMode('saleDate')}
-                    >
-                      ◎
-                    </button>
-                  </div>
-                </label>
-                <label className="fi-faiz-eurobond-sim-label">
-                  {t('faizVadeliPage.eurobond.pastSalePrice')}
-                  <div className="fi-faiz-eurobond-past-row">
-                    <input
-                      className="fi-faiz-eurobond-sim-input"
-                      inputMode="decimal"
-                      value={salePriceStr}
-                      onChange={(e) => setSalePriceStr(e.target.value)}
-                      placeholder={t('faizVadeliPage.eurobond.pastSalePricePlaceholder')}
-                    />
-                    <button
-                      type="button"
-                      className="fi-faiz-eurobond-pick-btn"
-                      title={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                      aria-label={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                      onClick={() => setChartPickMode('salePrice')}
-                    >
-                      ◎
-                    </button>
-                  </div>
-                </label>
-              </>
-            ) : null}
-            <label className="fi-faiz-eurobond-sim-label">
-              {t('faizVadeliPage.eurobond.pastMaturityRef')}
-              <div className="fi-faiz-eurobond-past-row">
-                <input
-                  className="fi-faiz-eurobond-sim-input"
-                  type="date"
-                  value={maturityDateStr}
-                  onChange={(e) => setMaturityDateStr(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="fi-faiz-eurobond-pick-btn"
-                  title={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                  aria-label={t('faizVadeliPage.eurobond.pastPickFromChart')}
-                  onClick={() => setChartPickMode('maturityDate')}
-                >
-                  ◎
-                </button>
-              </div>
-            </label>
-            <dl className="fi-faiz-eurobond-sim-dl">
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.pastCost')}</dt>
-                <dd>{pastPnl ? fmtUsd(pastPnl.cost) : EM}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.pastProceeds')}</dt>
-                <dd>{pastPnl ? fmtUsd(pastPnl.proceeds) : EM}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.pastCoupons')}</dt>
-                <dd>{pastPnl ? fmtUsd(pastPnl.couponCash) : EM}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.pastPnl')}</dt>
-                <dd>{pastPnl ? fmtUsd(pastPnl.pnl) : EM}</dd>
-              </div>
-              <div>
-                <dt>{t('faizVadeliPage.eurobond.pastPnlPct')}</dt>
-                <dd>{pastPnl && pastPnl.pct != null ? fmtPct(pastPnl.pct) : EM}</dd>
-              </div>
-            </dl>
-            <p className="fi-faiz-eurobond-sim-foot">{t('faizVadeliPage.eurobond.pastDisclaimer')}</p>
-            </div>
-
-            {selected?.lastUpdatedAt ? (
-              <p className="fi-faiz-eurobond-meta">
-                {t('faizVadeliPage.eurobond.lastUpdated')}: {new Date(selected.lastUpdatedAt).toLocaleString(locale)}
-              </p>
-            ) : null}
-          </div>
-        </aside>
+        <div className="fi-faiz-eurobond-side">
+          <EurobondSimulator
+            ref={simRef}
+            selectedIsin={selectedIsin}
+            instruments={instruments}
+            histPoints={histPoints}
+            pickMode={chartPickMode}
+            onPickModeChange={setChartPickMode}
+          />
+        </div>
       </div>
 
       <p className="fi-faiz-chart-foot">{t('faizVadeliPage.eurobond.detailFoot')}</p>

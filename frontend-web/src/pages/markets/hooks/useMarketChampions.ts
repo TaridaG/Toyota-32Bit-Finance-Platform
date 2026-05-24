@@ -6,9 +6,13 @@ import type { MarketChampionsSnapshot } from '../lib/marketChampions'
 
 const REFRESH_MS = 60_000
 
-export function useMarketChampions(displayCurrency: SupportedCurrency, category: MarketCategory) {
+export function useMarketChampions(
+  displayCurrency: SupportedCurrency,
+  category: MarketCategory,
+  enabled = true,
+) {
   const [champions, setChampions] = useState<MarketChampionsSnapshot | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -23,12 +27,15 @@ export function useMarketChampions(displayCurrency: SupportedCurrency, category:
   }, [category, displayCurrency])
 
   useEffect(() => {
+    if (!enabled) {
+      return
+    }
     void load()
     const intervalId = window.setInterval(() => {
       void load()
     }, REFRESH_MS)
     return () => window.clearInterval(intervalId)
-  }, [load])
+  }, [enabled, load])
 
   return { champions, loading, reload: load }
 }

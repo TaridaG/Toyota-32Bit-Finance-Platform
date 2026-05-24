@@ -1,0 +1,24 @@
+spring:
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  task:
+    scheduling:
+      enabled: false
+
+market:
+  scheduler:
+    enabled: false
+  fx:
+    scheduler-enabled: false
+  stock:
+    scheduler:
+      enabled: false
+
+providers:
+  finnhub:
+    enabled: false
+  fmp:
+    enabled: false

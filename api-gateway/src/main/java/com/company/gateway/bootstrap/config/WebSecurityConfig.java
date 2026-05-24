@@ -1,0 +1,212 @@
+package com.company.gateway.bootstrap.config;
+
+import com.company.gateway.security.infrastructure.KeycloakJwtGrantedAuthoritiesExtractor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.server.authentication.ServerBearerTokenAuthenticationConverter;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.header.XFrameOptionsServerHttpHeadersWriter;
+import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * Spring Security WebFlux filter chain'leri: public catalog route'ları, JWT resource server ve role tabanlı authorization.
+ */
+@Configuration
+public class WebSecurityConfig {
+
+    /**
+     * Public GET routes listed as {@code permitAll} must still ignore a stale Bearer token;
+     * otherwise the JWT authentication filter runs first and returns 401 before authorization.
+     */
+    private static boolean isPublicAnonymousGet(ServerWebExchange exchange) {
+        if (!HttpMethod.GET.equals(exchange.getRequest().getMethod())) {
+            return false;
+        }
+        String path = exchange.getRequest().getPath().value();
+        if (matchesPublicAnonymousGetPath(path)) {
+            return true;
+        }
+        String uriPath = exchange.getRequest().getURI().getPath();
+        return uriPath != null && matchesPublicAnonymousGetPath(uriPath);
+    }
+
+    private static boolean matchesPublicAnonymousGetPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        String p = path;
+        if (p.endsWith("/") && p.length() > 1) {
+            p = p.substring(0, p.length() - 1);
+        }
+        return p.equals("/api/market") || p.startsWith("/api/market/")
+                || p.equals("/api/rates") || p.startsWith("/api/rates/")
+                || p.equals("/market") || p.startsWith("/market/")
+                || isPublicGuestNewsPath(p)
+                || p.equals("/api/instruments") || p.startsWith("/api/instruments/")
+                || p.equals("/api/analytics") || p.startsWith("/api/analytics/")
+                || p.equals("/api/portal/info-cards") || p.startsWith("/api/portal/info-cards/");
+    }
+
+    /** Public news feed/chart/enriched — not authenticated favorites. */
+    private static boolean isPublicGuestNewsPath(String p) {
+        if (!p.equals("/api/news") && !p.startsWith("/api/news/")) {
+            return false;
+        }
+        return !p.startsWith("/api/news/favorites");
+    }
+
+    /**
+     * Public POST routes must not fail when a stale {@code Authorization: Bearer} is present:
+     * the resource server would validate JWT before {@code permitAll} and return 401.
+     */
+    private static boolean isPublicUnauthenticatedPost(ServerWebExchange exchange) {
+        if (!HttpMethod.POST.equals(exchange.getRequest().getMethod())) {
+            return false;
+        }
+        String path = exchange.getRequest().getPath().value();
+        if (matchesPublicAuthPostPath(path)) {
+            return true;
+        }
+        String uriPath = exchange.getRequest().getURI().getPath();
+        return uriPath != null && matchesPublicAuthPostPath(uriPath);
+    }
+
+    private static boolean isPublicUnauthenticatedGet(ServerWebExchange exchange) {
+        if (!HttpMethod.GET.equals(exchange.getRequest().getMethod())) {
+            return false;
+        }
+        String path = exchange.getRequest().getPath().value();
+        if (matchesPublicAuthGetPath(path)) {
+            return true;
+        }
+        String uriPath = exchange.getRequest().getURI().getPath();
+        return uriPath != null && matchesPublicAuthGetPath(uriPath);
+    }
+
+    private static boolean matchesPublicAuthGetPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        String p = path;
+        if (p.endsWith("/") && p.length() > 1) {
+            p = p.substring(0, p.length() - 1);
+        }
+        return p.startsWith("/api/public/");
+    }
+
+    private static boolean matchesPublicAuthPostPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        String p = path;
+        if (p.endsWith("/") && p.length() > 1) {
+            p = p.substring(0, p.length() - 1);
+        }
+        return "/api/public/register".equals(p)
+                || "/api/public/register/send-code".equals(p)
+                || "/api/public/login".equals(p)
+                || "/api/public/login/mfa".equals(p)
+                || "/api/public/refresh".equals(p);
+    }
+
+    /**
+     * Public catalog GET route'ları (TCMB rates, portal info-cards). OAuth2/JWT filter'ları devre dışı; stale Bearer 401 üretmez.
+     */
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public SecurityWebFilterChain publicAnonymousCatalogSecurityWebFilterChain(ServerHttpSecurity http) {
+        return http
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
+                        "/api/rates", "/api/rates/**",
+                        "/api/portal/info-cards", "/api/portal/info-cards/**"))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(ex -> ex.anyExchange().permitAll())
+                .build();
+    }
+
+    /**
+     * Ana JWT resource server filter chain: role kuralları, security header'ları ve akıllı Bearer bypass.
+     */
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    @Bean
+    @Order(100)
+    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+        ReactiveJwtAuthenticationConverter jwtConverter = new ReactiveJwtAuthenticationConverter();
+        jwtConverter.setJwtGrantedAuthoritiesConverter(jwt ->
+                Flux.fromIterable(KeycloakJwtGrantedAuthoritiesExtractor.extract(jwt)));
+
+        ServerBearerTokenAuthenticationConverter defaultBearer = new ServerBearerTokenAuthenticationConverter();
+
+        return http
+                .securityMatcher(new NegatedServerWebExchangeMatcher(
+                        ServerWebExchangeMatchers.pathMatchers(
+                                "/api/rates", "/api/rates/**",
+                                "/api/portal/info-cards", "/api/portal/info-cards/**")))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .headers(h -> h
+                        .contentTypeOptions(c -> {})
+                        .frameOptions(f -> f.mode(XFrameOptionsServerHttpHeadersWriter.Mode.DENY))
+                        .referrerPolicy(r -> r.policy(org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter.ReferrerPolicy.NO_REFERRER))
+                        .xssProtection(x -> x.disable())
+                        .hsts(hsts -> hsts.includeSubdomains(true).preload(true).maxAge(java.time.Duration.ofDays(365)))
+                )
+                .authorizeExchange(ex -> ex
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers("/", "/health").permitAll()
+                        .pathMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                        .pathMatchers(HttpMethod.POST,
+                                "/api/public/register",
+                                "/api/public/register/",
+                                "/api/public/register/send-code",
+                                "/api/public/register/send-code/",
+                                "/api/public/login",
+                                "/api/public/login/",
+                                "/api/public/login/mfa",
+                                "/api/public/login/mfa/",
+                                "/api/public/refresh",
+                                "/api/public/refresh/")
+                                .permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/market/**", "/api/rates/**", "/market/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/news/favorites", "/api/news/favorites/**")
+                                .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.POST, "/api/news/favorites", "/api/news/favorites/**")
+                                .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.DELETE, "/api/news/favorites", "/api/news/favorites/**")
+                                .hasAnyRole("USER", "ADMIN")
+                        .pathMatchers(HttpMethod.GET, "/api/news/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/instruments", "/api/instruments/", "/api/instruments/**")
+                                .permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/portal/info-cards", "/api/portal/info-cards/**")
+                                .permitAll()
+                        .pathMatchers("/api/news/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/api/users/me/**", "/api/profile/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers("/api/portfolio/**", "/api/accounts/**", "/api/balances/**", "/api/transactions/**", "/api/trades/**", "/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers("/public/**").permitAll()
+                        .pathMatchers("/fallback/**").permitAll()
+                        .pathMatchers("/api/**").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers("/actuator/**").authenticated()
+                        .anyExchange().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .bearerTokenConverter(exchange -> isPublicUnauthenticatedPost(exchange)
+                                        || isPublicUnauthenticatedGet(exchange)
+                                        || isPublicAnonymousGet(exchange)
+                                ? Mono.empty()
+                                : defaultBearer.convert(exchange))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
+                )
+                .build();
+    }
+}

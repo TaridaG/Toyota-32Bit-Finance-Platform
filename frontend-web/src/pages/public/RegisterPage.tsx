@@ -5,10 +5,22 @@ import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import {
+  checkEmailAvailability,
   checkUsernameAvailability,
   registerPortalUser,
   sendRegistrationVerificationCode,
 } from '../../shared/api/publicRegistration'
+import {
+  EMAIL_BLOCKED_CODE,
+  EMAIL_IN_USE_CODE,
+  parseRegistrationEmailApiError,
+} from '../../shared/api/registrationEmailErrors'
+import {
+  isUsernameFormatValid,
+  normalizeUsernameInput,
+  USERNAME_AVAILABILITY_DEBOUNCE_MS,
+} from '../../shared/validation/username'
+import { PortalAlert } from '../../shared/components/PortalAlert'
 
 export function RegisterPage() {
   const { t, i18n } = useTranslation('auth')
@@ -30,6 +42,10 @@ export function RegisterPage() {
   const [sendingCode, setSendingCode] = useState(false)
   const [usernameCheckState, setUsernameCheckState] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([])
+  const [emailCheckState, setEmailCheckState] = useState<'idle' | 'checking' | 'available' | 'taken' | 'blocked'>(
+    'idle',
+  )
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([])
 
   useEffect(() => {
     if (!verificationStep) {
@@ -46,13 +62,13 @@ export function RegisterPage() {
     if (verificationStep) {
       return
     }
-    const trimmed = username.trim().toLowerCase()
+    const trimmed = normalizeUsernameInput(username)
     if (!trimmed) {
       setUsernameCheckState('idle')
       setUsernameSuggestions([])
       return
     }
-    if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) {
+    if (!isUsernameFormatValid(trimmed)) {
       setUsernameCheckState('idle')
       setUsernameSuggestions([])
       return
@@ -68,9 +84,55 @@ export function RegisterPage() {
           setUsernameCheckState('idle')
           setUsernameSuggestions([])
         })
-    }, 2000)
+    }, USERNAME_AVAILABILITY_DEBOUNCE_MS)
     return () => window.clearTimeout(timer)
   }, [username, verificationStep])
+
+  useEffect(() => {
+    if (verificationStep) {
+      return
+    }
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed || !trimmed.includes('@')) {
+      setEmailCheckState('idle')
+      setEmailSuggestions([])
+      return
+    }
+    setEmailCheckState('checking')
+    const timer = window.setTimeout(() => {
+      void checkEmailAvailability(trimmed)
+        .then((result) => {
+          if (result.blocked) {
+            setEmailCheckState('blocked')
+            setEmailSuggestions([])
+            return
+          }
+          setEmailCheckState(result.available ? 'available' : 'taken')
+          setEmailSuggestions(result.available ? [] : result.suggestions.slice(0, 3))
+        })
+        .catch(() => {
+          setEmailCheckState('idle')
+          setEmailSuggestions([])
+        })
+    }, USERNAME_AVAILABILITY_DEBOUNCE_MS)
+    return () => window.clearTimeout(timer)
+  }, [email, verificationStep])
+
+  const applyEmailApiError = (e: unknown) => {
+    const parsed = parseRegistrationEmailApiError(e)
+    if (parsed) {
+      setError(parsed.message)
+      if (parsed.code === EMAIL_IN_USE_CODE) {
+        setEmailCheckState('taken')
+        setEmailSuggestions(parsed.suggestions.slice(0, 3))
+      } else if (parsed.code === EMAIL_BLOCKED_CODE) {
+        setEmailCheckState('blocked')
+        setEmailSuggestions([])
+      }
+      return true
+    }
+    return false
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -120,6 +182,18 @@ export function RegisterPage() {
         setError(t('register.usernameTaken'))
         return
       }
+      if (emailCheckState === 'checking') {
+        setError(t('register.emailChecking'))
+        return
+      }
+      if (emailCheckState === 'blocked') {
+        setError(t('register.emailBlocked'))
+        return
+      }
+      if (emailCheckState === 'taken') {
+        setError(t('register.emailTaken'))
+        return
+      }
       setSendingCode(true)
       try {
         const sent = await sendRegistrationVerificationCode(email.trim().toLowerCase(), i18n.language)
@@ -128,6 +202,9 @@ export function RegisterPage() {
         setVerificationStep(true)
         return
       } catch (e) {
+        if (applyEmailApiError(e)) {
+          return
+        }
         if (e instanceof Error && e.message) {
           setError(e.message)
           return
@@ -154,6 +231,9 @@ export function RegisterPage() {
       })
       navigate('/login?registered=1', { replace: true })
     } catch (e) {
+      if (applyEmailApiError(e)) {
+        return
+      }
       if (axios.isAxiosError(e) && e.response?.data && typeof e.response.data === 'object') {
         const body = e.response.data as { error?: { message?: string } }
         const msg = body.error?.message
@@ -183,6 +263,9 @@ export function RegisterPage() {
       setVerifyCountdown(sent.expiresInSeconds)
       setResendCountdown(sent.resendInSeconds)
     } catch (e) {
+      if (applyEmailApiError(e)) {
+        return
+      }
       if (e instanceof Error && e.message) {
         setError(e.message)
         return
@@ -218,16 +301,54 @@ export function RegisterPage() {
             <label className="auth-label" htmlFor="email">
               {t('register.emailLabel')}
             </label>
-            <input
-              id="email"
-              className="auth-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('register.emailPlaceholder')}
-              autoComplete="email"
-              disabled={verificationStep}
-            />
+            <div className="auth-input-wrap">
+              <input
+                id="email"
+                className="auth-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t('register.emailPlaceholder')}
+                autoComplete="email"
+                disabled={verificationStep}
+              />
+              {emailCheckState === 'checking' ? (
+                <span className="auth-input-status auth-input-status-spinner" aria-label={t('register.emailChecking')} />
+              ) : null}
+              {emailCheckState === 'available' ? (
+                <span className="auth-input-status auth-input-status-ok" aria-label={t('register.emailAvailable')}>✓</span>
+              ) : null}
+              {emailCheckState === 'taken' ? (
+                <span className="auth-input-status auth-input-status-bad" aria-label={t('register.emailTaken')}>✕</span>
+              ) : null}
+              {emailCheckState === 'blocked' ? (
+                <span className="auth-input-status auth-input-status-bad" aria-label={t('register.emailBlocked')}>✕</span>
+              ) : null}
+            </div>
+            {emailCheckState === 'blocked' ? (
+              <p className="auth-help auth-help-warning">{t('register.emailBlocked')}</p>
+            ) : null}
+            {emailCheckState === 'taken' ? (
+              <p className="auth-help auth-help-warning">{t('register.emailTaken')}</p>
+            ) : null}
+            {emailSuggestions.length > 0 ? (
+              <div className="auth-username-suggestions">
+                <span>{t('register.emailSuggestionsTitle')}</span>
+                <div>
+                  {emailSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      className="auth-username-suggestion"
+                      onClick={() => setEmail(suggestion)}
+                      disabled={verificationStep}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <label className="auth-label" htmlFor="username">
               {t('register.usernameLabel')}
@@ -344,7 +465,11 @@ export function RegisterPage() {
               </>
             ) : null}
 
-            {error ? <p className="auth-error">{error}</p> : null}
+            {error ? (
+              <PortalAlert variant="error" title={t('login.alerts.errorTitle')}>
+                {error}
+              </PortalAlert>
+            ) : null}
 
             <button type="submit" className="auth-submit" disabled={submitting}>
               {verificationStep

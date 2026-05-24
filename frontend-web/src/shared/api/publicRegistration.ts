@@ -17,6 +17,21 @@ type RegisterEnvelope = {
   error?: {
     code?: string
     message?: string
+    suggestions?: string[]
+  }
+}
+
+type EmailAvailabilityEnvelope = {
+  success: boolean
+  data?: {
+    normalizedEmail: string
+    available: boolean
+    blocked: boolean
+    suggestions: string[]
+  }
+  error?: {
+    code?: string
+    message?: string
   }
 }
 
@@ -37,6 +52,7 @@ type SendCodeEnvelope = {
   error?: {
     code?: string
     message?: string
+    suggestions?: string[]
   }
 }
 
@@ -50,6 +66,7 @@ type UsernameAvailabilityEnvelope = {
   error?: {
     code?: string
     message?: string
+    suggestions?: string[]
   }
 }
 
@@ -67,6 +84,26 @@ export async function sendRegistrationVerificationCode(
   return {
     expiresInSeconds: data.data.expiresInSeconds,
     resendInSeconds: data.data.resendInSeconds,
+  }
+}
+
+export async function checkEmailAvailability(email: string): Promise<{
+  normalizedEmail: string
+  available: boolean
+  blocked: boolean
+  suggestions: string[]
+}> {
+  const { data } = await apiClient.get<EmailAvailabilityEnvelope>('/api/public/register/email-availability', {
+    params: { email },
+  })
+  if (!data.success || !data.data) {
+    throw new Error(data.error?.message ?? 'Email availability check failed')
+  }
+  return {
+    normalizedEmail: data.data.normalizedEmail,
+    available: data.data.available,
+    blocked: data.data.blocked,
+    suggestions: Array.isArray(data.data.suggestions) ? data.data.suggestions : [],
   }
 }
 

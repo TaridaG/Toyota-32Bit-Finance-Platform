@@ -62,6 +62,8 @@ export type AdminUserAnalyticsSummary = {
   newUsersPreviousCalendarMonthUtc: number
   /** Approx. roster day-over-day % (see API docs). */
   totalUsersVsPriorDayPercentApprox: number
+  deletedAccountsTotal: number
+  frozenAccountsNow: number
 }
 
 export type AdminUserAnalyticsDashboard = {
@@ -137,6 +139,8 @@ function normalizeDashboard(d: AdminUserAnalyticsDashboard): AdminUserAnalyticsD
       newUsersPreviousIsoWeekUtc: Number(d.summary.newUsersPreviousIsoWeekUtc ?? 0),
       newUsersPreviousCalendarMonthUtc: Number(d.summary.newUsersPreviousCalendarMonthUtc ?? 0),
       totalUsersVsPriorDayPercentApprox: Number(d.summary.totalUsersVsPriorDayPercentApprox ?? 0),
+      deletedAccountsTotal: Number(d.summary.deletedAccountsTotal ?? 0),
+      frozenAccountsNow: Number(d.summary.frozenAccountsNow ?? 0),
     },
     dailyRegistrations: (d.dailyRegistrations ?? []).map((row) => ({
       ...row,

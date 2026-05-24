@@ -1,9 +1,8 @@
-ALTER TABLE mds_backfill_state
-    ADD COLUMN IF NOT EXISTS attempt_count BIGINT NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS error_code VARCHAR(128),
-    ADD COLUMN IF NOT EXISTS error_message TEXT,
-    ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMP WITH TIME ZONE,
-    ADD COLUMN IF NOT EXISTS run_id VARCHAR(64);
+ALTER TABLE mds_backfill_state ADD COLUMN IF NOT EXISTS attempt_count BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE mds_backfill_state ADD COLUMN IF NOT EXISTS error_code VARCHAR(128);
+ALTER TABLE mds_backfill_state ADD COLUMN IF NOT EXISTS error_message TEXT;
+ALTER TABLE mds_backfill_state ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE mds_backfill_state ADD COLUMN IF NOT EXISTS run_id VARCHAR(64);
 
 UPDATE mds_backfill_state
 SET status = 'NOT_STARTED'

@@ -124,6 +124,9 @@ market:
     # TÜFE genel endeks (2003=100); aylık/yıllık % değişimler DB'de türetilir
     cpi-index-series: ${MARKET_EVDS_CPI_INDEX_SERIES:TP.FG.J0}
     cpi-evds-frequency: ${MARKET_EVDS_CPI_FREQUENCY:5}
+    # 1 hafta vadeli repo kartı (Investing.com repo göstergesi ile uyumlu)
+    repo-rate-series: ${MARKET_EVDS_REPO_RATE_SERIES:TP_BISPOLFAIZ_TUR}
+    repo-rate-evds-frequency: ${MARKET_EVDS_REPO_RATE_FREQUENCY:5}
   cpi:
     monthly-sync:
       enabled: ${MARKET_CPI_MONTHLY_SYNC_ENABLED:true}
@@ -134,6 +137,11 @@ market:
       enabled: ${MARKET_POLICY_RATE_WEEKLY_SYNC_ENABLED:true}
       startup-delay-ms: ${MARKET_POLICY_RATE_WEEKLY_SYNC_STARTUP_DELAY_MS:45000}
       weekly-cron: ${MARKET_POLICY_RATE_WEEKLY_SYNC_CRON:0 20 7 * * MON}
+  repo-rate:
+    sync:
+      enabled: ${MARKET_REPO_RATE_SYNC_ENABLED:true}
+      startup-delay-ms: ${MARKET_REPO_RATE_SYNC_STARTUP_DELAY_MS:50000}
+      weekly-cron: ${MARKET_REPO_RATE_SYNC_CRON:0 22 7 * * MON}
   tl-deposit:
     weekly-sync:
       enabled: ${MARKET_TL_DEPOSIT_WEEKLY_SYNC_ENABLED:true}

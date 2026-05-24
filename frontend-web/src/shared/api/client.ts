@@ -1,9 +1,12 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { isAccountFrozenApiError, isAccountRemovedApiError, logoutFrozenAccount, logoutRemovedAccount } from '../auth/accountFrozen'
 import {
   clearAuthSession,
+  getAccessToken,
   getAccessTokenExpiryMs,
   getRefreshToken,
   isAuthenticated,
+  isRememberMeEnabled,
   persistAuthSession,
 } from '../auth/session'
 
@@ -21,6 +24,7 @@ export const normalizedBaseUrl =
 export const apiClient = axios.create({
   baseURL: normalizedBaseUrl,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,6 +34,7 @@ export const apiClient = axios.create({
 const refreshClient = axios.create({
   baseURL: normalizedBaseUrl,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -66,6 +71,7 @@ async function refreshAccessToken(): Promise<string | null> {
       persistAuthSession({
         accessToken: data.data.accessToken,
         refreshToken: data.data.refreshToken,
+        rememberMe: isRememberMeEnabled(),
       })
       return data.data.accessToken
     } catch {
@@ -223,11 +229,9 @@ apiClient.interceptors.request.use((config) => {
     return config
   }
 
-  if (isAuthenticated()) {
-    const token = window.localStorage.getItem('finance.authToken')
-    if (token && token.trim().length > 0) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+  const token = getAccessToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
@@ -243,6 +247,19 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as AuthRetryConfig | undefined
     const status = error.response?.status
+    if (status === 403 && original) {
+      const url = `${original.baseURL ?? ''}${original.url ?? ''}`
+      if (!url.includes('/api/admin/')) {
+        if (isAccountFrozenApiError(error)) {
+          logoutFrozenAccount()
+          return Promise.reject(error)
+        }
+        if (isAccountRemovedApiError(error)) {
+          logoutRemovedAccount()
+          return Promise.reject(error)
+        }
+      }
+    }
     if (status !== 401 || !original) {
       return Promise.reject(error)
     }

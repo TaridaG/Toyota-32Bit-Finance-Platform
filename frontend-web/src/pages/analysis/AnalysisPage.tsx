@@ -81,6 +81,7 @@ export function AnalysisPage() {
   const [selectedDrawingId, setSelectedDrawingId] = useState<string | null>(null)
   const [showVolume, setShowVolume] = useState(true)
   const [chartDisplayType, setChartDisplayType] = useState<ChartDisplayType>('candle')
+  const [measureToolActive, setMeasureToolActive] = useState(false)
   const [chartHoverReadout, setChartHoverReadout] = useState<OhlcTooltipState>(null)
   const tickerShellRef = useRef<HTMLDivElement>(null)
   const [instrumentPickerOpen, setInstrumentPickerOpen] = useState(false)
@@ -109,7 +110,13 @@ export function AnalysisPage() {
   const {
     assets: pickerCatalogAssets,
     loading: pickerCatalogLoading,
-  } = useAnalysisInstrumentCatalog(pickerCategory)
+  } = useAnalysisInstrumentCatalog(
+    pickerCategory,
+    instrumentPickerOpen && pickerCategory !== chartSegment,
+  )
+
+  const effectivePickerAssets = pickerCategory === chartSegment ? catalogAssets : pickerCatalogAssets
+  const effectivePickerLoading = pickerCategory === chartSegment ? catalogLoading : pickerCatalogLoading
 
   const [deepLinkedRow, setDeepLinkedRow] = useState<MarketOverviewItem | null>(null)
   const [deepLinkedAsset, setDeepLinkedAsset] = useState<AssetDefinition | null>(null)
@@ -240,6 +247,8 @@ export function AnalysisPage() {
     { wireCategory: selectedAsset?.wireCategory ?? null },
   )
 
+  const chartDataReady = !candlesLoading && selectedWindowSeries.length > 0
+
   const {
     indicators,
     loading: indicatorsLoading,
@@ -254,7 +263,26 @@ export function AnalysisPage() {
     setDrawings([])
     setSelectedDrawingId(null)
     setDrawTool('none')
+    setMeasureToolActive(false)
   }, [selectedAsset?.id, timeRange])
+
+  const handleDrawToolChange = (tool: DrawTool) => {
+    setDrawTool(tool)
+    if (tool !== 'none') {
+      setMeasureToolActive(false)
+    }
+  }
+
+  const handleMeasureToolToggle = () => {
+    setMeasureToolActive((active) => {
+      const next = !active
+      if (next) {
+        setDrawTool('none')
+        setSelectedDrawingId(null)
+      }
+      return next
+    })
+  }
 
   const handleDeleteSelectedDrawing = () => {
     const targetId = selectedDrawingId ?? drawings[drawings.length - 1]?.id ?? null
@@ -577,7 +605,7 @@ export function AnalysisPage() {
   }
 
   const handlePickAssetFromPopover = (id: string) => {
-    handleAssetChange(id, pickerCatalogAssets)
+    handleAssetChange(id, effectivePickerAssets)
     setInstrumentPickerOpen(false)
   }
 
@@ -606,16 +634,16 @@ export function AnalysisPage() {
   }, [chartSegment, instrumentPickerOpen, selectedAsset?.id])
 
   useEffect(() => {
-    if (!instrumentPickerOpen || pickerCatalogLoading || !selectedAsset) {
+    if (!instrumentPickerOpen || effectivePickerLoading || !selectedAsset) {
       return
     }
     setPickerSelectedId((prev) => {
-      if (prev && pickerCatalogAssets.some((a) => a.id === prev)) {
+      if (prev && effectivePickerAssets.some((a) => a.id === prev)) {
         return prev
       }
-      return pickerCatalogAssets.some((a) => a.id === selectedAsset.id) ? selectedAsset.id : null
+      return effectivePickerAssets.some((a) => a.id === selectedAsset.id) ? selectedAsset.id : null
     })
-  }, [instrumentPickerOpen, pickerCatalogAssets, pickerCatalogLoading, selectedAsset])
+  }, [effectivePickerAssets, effectivePickerLoading, instrumentPickerOpen, selectedAsset])
 
   useEffect(() => {
     if (deepLinkedAsset?.marketSegment && deepLinkedAsset.marketSegment !== 'all') {
@@ -727,12 +755,12 @@ export function AnalysisPage() {
                     </div>
                     <AssetSelector
                       variant="popover"
-                      assets={pickerCatalogAssets}
+                      assets={effectivePickerAssets}
                       selectedAssetId={pickerSelectedId ?? ''}
                       instrumentCategory={pickerCategory}
                       onInstrumentCategoryChange={handlePickerCategoryChange}
                       onAssetChange={handlePickAssetFromPopover}
-                      catalogLoading={pickerCatalogLoading}
+                      catalogLoading={effectivePickerLoading}
                       retainOffListSelection={false}
                     />
                   </div>
@@ -762,7 +790,9 @@ export function AnalysisPage() {
                   onToggleRsi={() => setShowRsi((v) => !v)}
                   onToggleVolume={() => setShowVolume((v) => !v)}
                   drawTool={drawTool}
-                  onDrawToolChange={setDrawTool}
+                  onDrawToolChange={handleDrawToolChange}
+                  measureToolActive={measureToolActive}
+                  onMeasureToolToggle={handleMeasureToolToggle}
                   drawColorsByTool={drawColorsByTool}
                   onDrawColorChange={handleDrawColorChange}
                   selectedDrawingId={selectedDrawingId}
@@ -783,6 +813,7 @@ export function AnalysisPage() {
                     embedded
                     candles={selectedWindowSeries}
                     chartType={chartDisplayType}
+                    measureToolActive={measureToolActive}
                     fitContentKey={`${selectedAsset?.id ?? 'none'}-${timeRange}-${chartDisplayType}`}
                     comparisonLines={comparisonLines}
                     showCompare={comparisonLines.length > 0}
@@ -870,6 +901,7 @@ export function AnalysisPage() {
           onPurchaseDateChange={setSimPurchaseDate}
           chartPickActive={simChartPickActive}
           onChartPickActiveChange={setSimChartPickActive}
+          enabled={chartDataReady}
         />
       </div>
 

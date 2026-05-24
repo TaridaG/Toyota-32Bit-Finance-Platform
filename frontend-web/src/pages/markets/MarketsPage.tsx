@@ -16,6 +16,7 @@ import { isAuthenticated } from '../../shared/auth/session'
 import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../features/markets/api/watchlistApi'
 import { instrumentHelpRowProps } from '../../components/help/instrumentHelpAttrs'
 import { resolveInstrumentDisplayLabel } from '../../features/markets/lib/tefasFundDisplay'
+import { useAlarmUi } from '../../features/alarms/AlarmUiContext'
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
@@ -26,6 +27,18 @@ const PRICE_ANIMATION_MS = 300
 const SPARKLINE_WIDTH = 64
 const SPARKLINE_HEIGHT = 22
 const SPARKLINE_PADDING = 2
+
+function IconAlarmClock() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5.5 4.5 3 2" />
+      <path d="M18.5 4.5 21 2" />
+      <path d="M9 2.5h6" />
+      <circle cx="12" cy="13" r="7" />
+      <path d="M12 10v3.5l2.5 1.5" />
+    </svg>
+  )
+}
 
 type GlobalMarketStatus = 'LIVE' | 'DELAYED' | 'EMPTY'
 
@@ -46,7 +59,7 @@ function normalizeMarketCategory(raw: string | null): MarketCategory {
     case 'globalfutures':
     case 'global_futures':
     case 'global-futures':
-      return 'globalFutures'
+      return 'all'
     case 'funds':
       return 'funds'
     case 'bond':
@@ -150,6 +163,7 @@ function trendLabelText(label: MarketOverviewItem['trendLabel']): string {
 export function MarketsPage() {
   const { t, i18n } = useTranslation('markets')
   const { currency } = useAppPreferences()
+  const { openCreateAlarm } = useAlarmUi()
   const authenticated = isAuthenticated()
   const [searchParams, setSearchParams] = useSearchParams()
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
@@ -173,7 +187,6 @@ export function MarketsPage() {
   const page = Math.max(Number(searchParams.get('page') ?? DEFAULT_PAGE), 0)
   const size = Math.max(Number(searchParams.get('size') ?? DEFAULT_SIZE), 1)
   const selectedCategory = normalizeMarketCategory(searchParams.get('category') ?? DEFAULT_CATEGORY)
-  const isGlobalFutures = selectedCategory === 'globalFutures'
   const tableColCount = 10
   const searchTerm = searchParams.get('q') ?? ''
 
@@ -221,7 +234,12 @@ export function MarketsPage() {
     sort: sortQuery,
     displayCurrency: currency,
   })
-  const { champions: sidebarChampions, loading: championsLoading } = useMarketChampions(currency, selectedCategory)
+  const championsEnabled = !loading && !error
+  const { champions: sidebarChampions, loading: championsLoading } = useMarketChampions(
+    currency,
+    selectedCategory,
+    championsEnabled,
+  )
   /** Header-selected currency (converted line). */
   const selectedCurrencyFormat = useMemo(
     () =>
@@ -440,9 +458,6 @@ export function MarketsPage() {
   }
 
   useEffect(() => {
-    if (isGlobalFutures) {
-      return
-    }
     const targets = visibleRows
       .map((row) => row.symbol)
       .filter(
@@ -469,7 +484,7 @@ export function MarketsPage() {
     ).catch(() => {
       // no-op
     })
-  }, [fundamentalsBySymbol, fundamentalsPrefetchingSymbols, visibleRows, isGlobalFutures])
+  }, [fundamentalsBySymbol, fundamentalsPrefetchingSymbols, visibleRows])
 
   const toggleFundamentals = (symbol: string) => {
     if (expandedSymbol === symbol) {
@@ -477,9 +492,7 @@ export function MarketsPage() {
       return
     }
     setExpandedSymbol(symbol)
-    if (!isGlobalFutures) {
-      void loadFundamentals(symbol)
-    }
+    void loadFundamentals(symbol)
   }
 
   const formatMetric = (value: number | null | undefined, suffix = '') => {
@@ -648,7 +661,6 @@ export function MarketsPage() {
                   'nasdaq',
                   'forex',
                   'metals',
-                  'globalFutures',
                   'funds',
                 ] as const
               ).map((category) => (
@@ -729,33 +741,23 @@ export function MarketsPage() {
               <thead>
                 <tr>
                   <th className="markets-th-symbol-lead">
-                    <button type="button" className="markets-sort-button" onClick={() => handleSort('symbol')}>
-                      {t('table.symbol')}
-                      {sortIndicator('symbol')}
-                    </button>
+                    <div className="markets-symbol-lead markets-symbol-lead-header">
+                      <span className="markets-symbol-lead-actions-spacer" aria-hidden="true" />
+                      <button type="button" className="markets-sort-button" onClick={() => handleSort('symbol')}>
+                        {t('table.symbol')}
+                        {sortIndicator('symbol')}
+                      </button>
+                    </div>
                   </th>
                   <th className="markets-col-numeric">
                     <button
                       type="button"
                       className="markets-sort-button markets-sort-button-end"
-                      onClick={isGlobalFutures ? () => handleSort('volume24h') : undefined}
+                      onClick={undefined}
                     >
-                      {isGlobalFutures ? t('table.futuresVolume') : t('table.marketCap', { defaultValue: 'Piyasa Degeri' })}
-                      {isGlobalFutures ? sortIndicator('volume24h') : null}
+                      {t('table.marketCap', { defaultValue: 'Piyasa Degeri' })}
                     </button>
                   </th>
-                  {isGlobalFutures ? (
-                    <th className="markets-col-numeric">
-                      <button
-                        type="button"
-                        className="markets-sort-button markets-sort-button-end"
-                        onClick={() => handleSort('openInterest')}
-                      >
-                        {t('table.futuresOpenInterest')}
-                        {sortIndicator('openInterest')}
-                      </button>
-                    </th>
-                  ) : null}
                   <th className="markets-col-numeric">
                     <button
                       type="button"
@@ -781,18 +783,6 @@ export function MarketsPage() {
                       {sortIndicator('displayAmount')}
                     </button>
                   </th>
-                  {isGlobalFutures ? (
-                    <th className="markets-col-numeric">
-                      <button
-                        type="button"
-                        className="markets-sort-button markets-sort-button-end"
-                        onClick={() => handleSort('spotSpreadPct')}
-                      >
-                        {t('table.futuresSpotSpread')}
-                        {sortIndicator('spotSpreadPct')}
-                      </button>
-                    </th>
-                  ) : null}
                   <th className="markets-col-numeric">
                     <button
                       type="button"
@@ -823,10 +813,7 @@ export function MarketsPage() {
                       {sortIndicator('change3M')}
                     </button>
                   </th>
-                  {isGlobalFutures ? (
-                    <th className="markets-col-numeric">{t('table.futuresDayRange')}</th>
-                  ) : (
-                    <>
+                  <>
                       <th className="markets-col-numeric">
                         <button
                           type="button"
@@ -854,7 +841,6 @@ export function MarketsPage() {
                         </button>
                       </th>
                     </>
-                  )}
                 </tr>
               </thead>
               <tbody>
@@ -930,6 +916,7 @@ export function MarketsPage() {
                         >
                           <td className="markets-symbol-lead-cell">
                             <div className="markets-symbol-lead">
+                              <div className="markets-symbol-lead-actions">
                               <button
                                 type="button"
                                 aria-label={expandedSymbol === row.symbol ? 'Detayları kapat' : 'Detayları aç'}
@@ -956,6 +943,32 @@ export function MarketsPage() {
                               </button>
                               <button
                                 type="button"
+                                className="markets-row-alarm"
+                                aria-label={t('setAlarm', { symbol: displayLabel.symbol })}
+                                title={t('setAlarm', { symbol: displayLabel.symbol })}
+                                onMouseDown={(event) => event.stopPropagation()}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  if (!authenticated) {
+                                    showFavoriteLoginNotice()
+                                    return
+                                  }
+                                  if (row.instrumentId == null) {
+                                    return
+                                  }
+                                  openCreateAlarm({
+                                    instrumentId: row.instrumentId,
+                                    symbol: displayLabel.symbol,
+                                    name: displayLabel.name,
+                                    currentPrice: row.price,
+                                  })
+                                }}
+                                disabled={row.instrumentId == null}
+                              >
+                                <IconAlarmClock />
+                              </button>
+                              <button
+                                type="button"
                                 aria-label={isRowFavorite(row) ? t('unfavorite') : t('favorite')}
                                 className={`markets-star${isRowFavorite(row) ? ' markets-star-active' : ''}`}
                                 onMouseDown={(event) => event.stopPropagation()}
@@ -964,6 +977,7 @@ export function MarketsPage() {
                               >
                                 {isRowFavorite(row) ? '★' : '☆'}
                               </button>
+                              </div>
                               <div className="markets-symbol-cell">
                                 <strong>
                                   {displayLabel.symbol}
@@ -979,18 +993,11 @@ export function MarketsPage() {
                             </div>
                           </td>
                         <td className={`markets-col-numeric markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
-                          {isGlobalFutures
-                            ? formatContractCount(row.volume24h, compactIntegerFormat)
-                            : formatMarketCap(
-                                fundamentalsBySymbol[row.symbol]?.marketCapitalization,
-                                fundamentalsBySymbol[row.symbol]?.currency ?? row.nativeQuote,
-                              )}
+                          {formatMarketCap(
+                            fundamentalsBySymbol[row.symbol]?.marketCapitalization,
+                            fundamentalsBySymbol[row.symbol]?.currency ?? row.nativeQuote,
+                          )}
                         </td>
-                        {isGlobalFutures ? (
-                          <td className="markets-col-numeric">
-                            {formatContractCount(row.openInterest, compactIntegerFormat)}
-                          </td>
-                        ) : null}
                         <td className={`markets-col-numeric markets-price-native-cell${flashClass ? ` ${flashClass}` : ''}`}>
                           {isBond
                             ? `%${bondYieldNumberFormat.format(animatedNat)}`
@@ -1014,17 +1021,6 @@ export function MarketsPage() {
                             <span className="markets-price-converted-missing">—</span>
                           )}
                         </td>
-                        {isGlobalFutures ? (
-                          <td
-                            className={`markets-col-numeric ${
-                              (row.spotSpreadPct ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'
-                            }`}
-                          >
-                            {row.spotSpreadPct != null && Number.isFinite(row.spotSpreadPct)
-                              ? percentDisplay.format(row.spotSpreadPct)
-                              : '—'}
-                          </td>
-                        ) : null}
                         <td className={`markets-col-numeric ${isPositive ? 'markets-positive' : 'markets-negative'}`}>
                           {percentDisplay.format(row.change1D ?? 0)}
                         </td>
@@ -1038,10 +1034,7 @@ export function MarketsPage() {
                         >
                           {percentDisplay.format(row.change3M ?? 0)}
                         </td>
-                        {isGlobalFutures ? (
-                          <td className="markets-col-numeric">{formatFuturesDayRange(row, usdNativeFormat)}</td>
-                        ) : (
-                          <>
+                        <>
                             <td
                               className={`markets-col-numeric ${(row.change6M ?? 0) >= 0 ? 'markets-positive' : 'markets-negative'}`}
                             >
@@ -1091,48 +1084,12 @@ export function MarketsPage() {
                           })()}
                           </td>
                           </>
-                        )}
                         </tr>
                         {expandedSymbol === row.symbol ? (
                           <tr className="markets-fundamentals-row">
                             <td colSpan={tableColCount}>
                               <div className="markets-fundamentals-panel">
-                                {isGlobalFutures ? (
-                                  <div className="markets-fundamentals-grid">
-                                    <div>
-                                      <span>{t('table.futuresExchange')}</span>
-                                      <strong>{row.exchangeName ?? row.exchange ?? '—'}</strong>
-                                    </div>
-                                    <div>
-                                      <span>{t('table.futuresUnderlying')}</span>
-                                      <strong>{row.underlyingSymbol ?? '—'}</strong>
-                                    </div>
-                                    <div>
-                                      <span>{t('table.futuresExpiry')}</span>
-                                      <strong>{formatContractExpiry(row.contractExpiry, i18n.language)}</strong>
-                                    </div>
-                                    <div>
-                                      <span>{t('table.futuresLinkedSpot')}</span>
-                                      <strong>{row.linkedSpotSymbol ?? '—'}</strong>
-                                    </div>
-                                    <div>
-                                      <span>{t('table.futuresDayOpen')}</span>
-                                      <strong>
-                                        {row.dayOpen != null && Number.isFinite(row.dayOpen)
-                                          ? usdNativeFormat.format(row.dayOpen)
-                                          : '—'}
-                                      </strong>
-                                    </div>
-                                    <div>
-                                      <span>{t('table.futuresSpotSpreadAbs')}</span>
-                                      <strong>
-                                        {row.spotSpreadAbs != null && Number.isFinite(row.spotSpreadAbs)
-                                          ? tryNativeFormat.format(row.spotSpreadAbs)
-                                          : '—'}
-                                      </strong>
-                                    </div>
-                                  </div>
-                                ) : fundamentalsLoadingSymbol === row.symbol ? (
+                                {fundamentalsLoadingSymbol === row.symbol ? (
                                   <div className="markets-skeleton-row" />
                                 ) : fundamentalsErrorBySymbol[row.symbol] ? (
                                   <p className="markets-insights-empty">{fundamentalsErrorBySymbol[row.symbol]}</p>

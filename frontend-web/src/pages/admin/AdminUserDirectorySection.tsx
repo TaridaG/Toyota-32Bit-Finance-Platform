@@ -8,6 +8,8 @@ import {
   type AdminUserPortfolioTree,
 } from '../../features/admin/api/adminUserDirectoryApi'
 import { useAdminUserDirectory } from '../../features/admin/hooks/useAdminUserDirectory'
+import { AdminUserDirectoryModals } from './AdminUserDirectoryModals'
+import { PortalAlert } from '../../shared/components/PortalAlert'
 
 type SortColumn = 'createdAt' | 'username' | 'email' | 'emailVerified' | 'portfolioCount'
 
@@ -95,8 +97,12 @@ function SortCaret({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
 export function AdminUserDirectorySection() {
   const { t, i18n } = useTranslation('admin')
   const [page, setPage] = useState(0)
-  const [size, setSize] = useState<10 | 20 | 50>(10)
+  const size = 10 as const
   const [sort, setSort] = useState('createdAt,desc')
+  const [searchDraft, setSearchDraft] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [modalUser, setModalUser] = useState<AdminUserListItem | null>(null)
+  const [modalKind, setModalKind] = useState<'message' | 'freeze' | 'unfreeze' | 'delete' | null>(null)
 
   const [draftFrom, setDraftFrom] = useState('')
   const [draftTo, setDraftTo] = useState('')
@@ -173,8 +179,17 @@ export function AdminUserDirectorySection() {
     if (appliedEmail === 'yes') q.emailVerified = true
     if (appliedEmail === 'no') q.emailVerified = false
     if (appliedPortfolio !== 'all') q.portfolioCount = Number(appliedPortfolio)
+    if (appliedSearch) q.search = appliedSearch
     return q
-  }, [page, size, sort, appliedFrom, appliedToExclusive, appliedEmail, appliedPortfolio])
+  }, [page, size, sort, appliedFrom, appliedToExclusive, appliedEmail, appliedPortfolio, appliedSearch])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setAppliedSearch(searchDraft.trim())
+      setPage(0)
+    }, 350)
+    return () => window.clearTimeout(timer)
+  }, [searchDraft])
 
   const { state, refetch } = useAdminUserDirectory(query)
   const { col: sortCol, dir: sortDir } = parseSort(sort)
@@ -279,19 +294,16 @@ export function AdminUserDirectorySection() {
           )}
         </div>
         <div className="fi-admin-dir-toolbar">
-          <label className="fi-admin-dir-page-size">
-            <span className="fi-admin-dir-page-size-label">{t('totalUsersPage.directory.pageSize')}</span>
-            <select
-              value={size}
-              onChange={(e) => {
-                setSize(Number(e.target.value) as 10 | 20 | 50)
-                setPage(0)
-              }}
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
+          <label className="fi-admin-dir-search">
+            <span className="fi-admin-dir-search-label">{t('totalUsersPage.directory.search')}</span>
+            <input
+              type="search"
+              className="fi-admin-dir-search-input"
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              placeholder={t('totalUsersPage.directory.searchPlaceholder')}
+              autoComplete="off"
+            />
           </label>
           <div className="fi-admin-dir-toolbar-actions">
             <button
@@ -351,7 +363,7 @@ export function AdminUserDirectorySection() {
             </label>
             </div>
             <p className="fi-admin-dir-filters-hint">{t('totalUsersPage.directory.utcHint')}</p>
-            {filterError && <p className="fi-admin-dir-filter-error">{filterError}</p>}
+            {filterError ? <PortalAlert variant="error">{filterError}</PortalAlert> : null}
             <div className="fi-admin-dir-filters-actions">
               <button type="button" className="fi-admin-dir-btn fi-admin-dir-btn--primary" onClick={applyFilters}>
                 {t('totalUsersPage.directory.apply')}
@@ -383,6 +395,16 @@ export function AdminUserDirectorySection() {
         <>
           <div className="fi-admin-dir-table-wrap">
             <table className="fi-admin-dir-table">
+              <colgroup>
+                <col className="fi-admin-dir-col fi-admin-dir-col--expand" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--avatar" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--user" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--email" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--verified" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--registered" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--portfolios" />
+                <col className="fi-admin-dir-col fi-admin-dir-col--actions" />
+              </colgroup>
               <thead>
                 <tr>
                   <th className="fi-admin-dir-th fi-admin-dir-th--expand" scope="col">
@@ -391,27 +413,30 @@ export function AdminUserDirectorySection() {
                   <th className="fi-admin-dir-th fi-admin-dir-th--avatar" scope="col">
                     {t('totalUsersPage.directory.colAvatar')}
                   </th>
-                  <th className="fi-admin-dir-th" scope="col">
+                  <th className="fi-admin-dir-th fi-admin-dir-th--user" scope="col">
                     {headerButton('username', t('totalUsersPage.directory.colUsername'))}
                   </th>
-                  <th className="fi-admin-dir-th" scope="col">
+                  <th className="fi-admin-dir-th fi-admin-dir-th--email" scope="col">
                     {headerButton('email', t('totalUsersPage.directory.colEmail'))}
                   </th>
-                  <th className="fi-admin-dir-th" scope="col">
+                  <th className="fi-admin-dir-th fi-admin-dir-th--verified" scope="col">
                     {headerButton('emailVerified', t('totalUsersPage.directory.colVerified'))}
                   </th>
-                  <th className="fi-admin-dir-th" scope="col">
+                  <th className="fi-admin-dir-th fi-admin-dir-th--registered" scope="col">
                     {headerButton('createdAt', t('totalUsersPage.directory.colRegistered'))}
                   </th>
-                  <th className="fi-admin-dir-th fi-admin-dir-th--num" scope="col">
+                  <th className="fi-admin-dir-th fi-admin-dir-th--num fi-admin-dir-th--portfolios" scope="col">
                     {headerButton('portfolioCount', t('totalUsersPage.directory.colPortfolios'))}
+                  </th>
+                  <th className="fi-admin-dir-th fi-admin-dir-th--actions" scope="col">
+                    {t('totalUsersPage.directory.colActions')}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="fi-admin-dir-empty">
+                    <td colSpan={8} className="fi-admin-dir-empty">
                       {t('totalUsersPage.directory.empty')}
                     </td>
                   </tr>
@@ -447,9 +472,16 @@ export function AdminUserDirectorySection() {
                               initials={u.username || u.email || '?'}
                             />
                           </td>
-                          <td className="fi-admin-dir-td">{u.username}</td>
-                          <td className="fi-admin-dir-td fi-admin-dir-td--mono">{u.email}</td>
-                          <td className="fi-admin-dir-td">
+                          <td className="fi-admin-dir-td fi-admin-dir-td--user">
+                            <span>{u.username}</span>
+                            {u.frozen ? (
+                              <span className="fi-admin-dir-pill fi-admin-dir-pill--frozen">
+                                {t('totalUsersPage.directory.frozenBadge')}
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className="fi-admin-dir-td fi-admin-dir-td--mono fi-admin-dir-td--email">{u.email}</td>
+                          <td className="fi-admin-dir-td fi-admin-dir-td--verified">
                             <span
                               className={
                                 u.emailVerified
@@ -464,10 +496,57 @@ export function AdminUserDirectorySection() {
                           </td>
                           <td className="fi-admin-dir-td fi-admin-dir-td--muted">{fmtRegistered(u.createdAt)}</td>
                           <td className="fi-admin-dir-td fi-admin-dir-td--num">{u.portfolioCount}</td>
+                          <td className="fi-admin-dir-td fi-admin-dir-td--actions">
+                            <div className="fi-admin-dir-row-actions">
+                              <button
+                                type="button"
+                                className="fi-admin-dir-action-btn"
+                                onClick={() => {
+                                  setModalUser(u)
+                                  setModalKind('message')
+                                }}
+                              >
+                                {t('totalUsersPage.directory.actionMessage')}
+                              </button>
+                              {u.frozen ? (
+                                <button
+                                  type="button"
+                                  className="fi-admin-dir-action-btn"
+                                  onClick={() => {
+                                    setModalUser(u)
+                                    setModalKind('unfreeze')
+                                  }}
+                                >
+                                  {t('totalUsersPage.directory.actionUnfreeze')}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="fi-admin-dir-action-btn fi-admin-dir-action-btn--warn"
+                                  onClick={() => {
+                                    setModalUser(u)
+                                    setModalKind('freeze')
+                                  }}
+                                >
+                                  {t('totalUsersPage.directory.actionFreeze')}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="fi-admin-dir-action-btn fi-admin-dir-action-btn--danger"
+                                onClick={() => {
+                                  setModalUser(u)
+                                  setModalKind('delete')
+                                }}
+                              >
+                                {t('totalUsersPage.directory.actionDelete')}
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                         {expanded && (
                           <tr className="fi-admin-dir-detail-tr" id={`fi-admin-dir-detail-${u.id}`}>
-                            <td colSpan={7} className="fi-admin-dir-detail-td">
+                            <td colSpan={8} className="fi-admin-dir-detail-td">
                               {pLoading && (
                                 <div className="fi-admin-dir-detail-loading">
                                   {t('totalUsersPage.directory.portfoliosLoading')}
@@ -578,6 +657,16 @@ export function AdminUserDirectorySection() {
           </nav>
         </>
       )}
+
+      <AdminUserDirectoryModals
+        user={modalUser}
+        kind={modalKind}
+        onClose={() => {
+          setModalUser(null)
+          setModalKind(null)
+        }}
+        onSuccess={() => void refetch()}
+      />
     </section>
   )
 }

@@ -25,11 +25,6 @@ export const ADMIN_SECTION_ROUTES = [
     leadKey: 'sectionPages.kpiNewsSources',
   },
   {
-    path: 'kpi/system-status',
-    titleKey: 'dashboard.kpi.systemStatus',
-    leadKey: 'sectionPages.kpiSystemStatus',
-  },
-  {
     path: 'kpi/avg-latency',
     titleKey: 'dashboard.kpi.avgLatency',
     leadKey: 'sectionPages.kpiAvgLatency',
@@ -38,12 +33,15 @@ export const ADMIN_SECTION_ROUTES = [
 
 export type AdminSectionRoute = (typeof ADMIN_SECTION_ROUTES)[number]
 
+export const ADMIN_BLOCKED_EMAILS_PATH = 'blocked-emails'
+
 export const ADMIN_SIDEBAR_LINKS: { to: string; labelKey: string; end?: boolean }[] = [
   { to: '/admin', labelKey: 'dashboard.title', end: true },
   ...ADMIN_SECTION_ROUTES.map((r) => ({
     to: `/admin/${r.path}`,
     labelKey: r.titleKey,
   })),
+  { to: `/admin/${ADMIN_BLOCKED_EMAILS_PATH}`, labelKey: 'blockedEmailsPage.nav' },
 ]
 
 const KPI_PATH_BY_ID: Record<string, string> = {
@@ -51,7 +49,6 @@ const KPI_PATH_BY_ID: Record<string, string> = {
   portfolios: '/admin/kpi/active-portfolios',
   marketStreams: '/admin/kpi/market-streams',
   news: '/admin/kpi/news-sources',
-  system: '/admin/kpi/system-status',
   latency: '/admin/kpi/avg-latency',
 }
 

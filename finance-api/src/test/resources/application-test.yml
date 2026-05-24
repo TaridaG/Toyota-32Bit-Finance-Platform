@@ -1,0 +1,55 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:finance_api_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost/realms/finance
+          jwk-set-uri: http://localhost/realms/finance/protocol/openid-connect/certs
+
+app:
+  ai:
+    enabled: false
+    openai:
+      api-key: ""
+  security:
+    jwt:
+      jwk-set-uri: http://localhost/realms/finance/protocol/openid-connect/certs
+  mfa:
+    encryption-secret: test-mfa-secret-32-chars-minimum!!
+  trusted-device:
+    signing-secret: test-trusted-device-secret!!
+  registration:
+    enabled: true
+    verification:
+      enabled: false
+      hash-secret: test-hash-secret
+
+keycloak:
+  server-url: http://localhost:8080
+  admin:
+    username: admin
+    password: admin
+  portal:
+    client-secret: test-portal-secret
+
+management:
+  tracing:
+    enabled: false

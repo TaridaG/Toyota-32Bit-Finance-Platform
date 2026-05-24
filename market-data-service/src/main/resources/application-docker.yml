@@ -15,6 +15,10 @@ spring:
     enabled: true
     table: mds_flyway_schema_history
     locations: classpath:db/migration
+    # Legacy JDBC migrations removed from classpath but still in DB history (repair marks them DELETE).
+    ignore-missing-migrations: true
+    ignore-ignored-migrations: true
+    validate-on-migrate: false
 
 market:
   fund:

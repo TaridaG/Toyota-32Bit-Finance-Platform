@@ -133,17 +133,21 @@ export function AdminUserAnalyticsEnterprise({
                 {formatAdminInteger(analytics.data.summary.newUsersPreviousCalendarMonthUtc, locale)}
               </p>
             </section>
-            <section className="fi-admin-card fi-admin-ua-kpi fi-admin-ua-kpi--placeholder">
+            <section className="fi-admin-card fi-admin-ua-kpi">
               <div className="fi-admin-ua-kpi-head">
                 <span className="fi-admin-ua-kpi-title">{t('totalUsersPage.analytics.kpiDeleted')}</span>
               </div>
-              <p className="fi-admin-ua-kpi-value fi-admin-ua-kpi-value--muted">—</p>
+              <p className="fi-admin-ua-kpi-value">
+                {formatAdminInteger(analytics.data.summary.deletedAccountsTotal, locale)}
+              </p>
             </section>
-            <section className="fi-admin-card fi-admin-ua-kpi fi-admin-ua-kpi--placeholder">
+            <section className="fi-admin-card fi-admin-ua-kpi">
               <div className="fi-admin-ua-kpi-head">
                 <span className="fi-admin-ua-kpi-title">{t('totalUsersPage.analytics.kpiFrozen')}</span>
               </div>
-              <p className="fi-admin-ua-kpi-value fi-admin-ua-kpi-value--muted">—</p>
+              <p className="fi-admin-ua-kpi-value">
+                {formatAdminInteger(analytics.data.summary.frozenAccountsNow, locale)}
+              </p>
             </section>
           </div>
 

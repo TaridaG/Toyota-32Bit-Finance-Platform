@@ -116,6 +116,8 @@ export function AllocationDonut({
     [],
   )
 
+  const hasData = rows.length > 0 && rows.some((r) => r.sharePct > 0 && r.value > 0)
+
   const angles = useMemo(() => {
     let acc = 0
     return rows.map((row, i) => {
@@ -127,6 +129,8 @@ export function AllocationDonut({
       return { start, end, row }
     })
   }, [rows])
+
+  const isSingleFullRing = hasData && rows.length === 1
 
   useEffect(() => {
     if (donutVariant === 'category') {
@@ -192,6 +196,28 @@ export function AllocationDonut({
       ? `${ppFmt.format(activeRow.categoryWeightChangePp1d)} pp`
       : '—'
 
+  if (!hasData) {
+    const trackR = (R_OUT + R_IN) / 2
+    const trackW = R_OUT - R_IN
+    return (
+      <div className="my-portfolio-allocation-donut-shell my-portfolio-allocation-donut-shell--empty">
+        <div className="my-portfolio-allocation-donut-visual">
+          <svg className="my-portfolio-allocation-donut-svg" viewBox="0 0 100 100" aria-hidden>
+            <circle
+              cx={CX}
+              cy={CY}
+              r={trackR}
+              fill="none"
+              stroke="rgba(148, 163, 184, 0.22)"
+              strokeWidth={trackW}
+            />
+          </svg>
+        </div>
+        <p className="my-portfolio-allocation-donut-empty-caption">{t('allocation.empty')}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="my-portfolio-allocation-donut-shell" onMouseLeave={clearHover}>
       <div className="my-portfolio-allocation-donut-visual">
@@ -202,31 +228,53 @@ export function AllocationDonut({
           aria-label={ariaLabel}
         >
           <title>{ariaLabel}</title>
-          {angles.map(({ start, end, row }, i) => {
-            const { ox, oy } = midAnchor(CX, CY, R_OUT, R_IN, start, end)
-            const scale = hovered === i ? 1.075 : 1
-            const fill = colorClassToCssColor(row.colorClass)
-            return (
-              <g
-                key={row.rowKey ?? row.symbol}
-                className="my-portfolio-allocation-donut-seg"
-                transform={`translate(${ox},${oy}) scale(${scale}) translate(${-ox},${-oy})`}
-              >
-                <path
-                  d={slicePath(CX, CY, R_OUT, R_IN, start, end)}
-                  fill={fill}
-                  stroke="rgba(15, 23, 42, 0.35)"
-                  strokeWidth={0.28}
-                  className="my-portfolio-allocation-donut-path"
-                  onMouseEnter={(e) => {
-                    setHovered(i)
-                    handleMove(e)
-                  }}
-                  onMouseMove={handleMove}
-                />
-              </g>
-            )
-          })}
+          {isSingleFullRing ? (
+            <g
+              transform={`translate(${CX},${CY}) scale(${hovered === 0 ? 1.075 : 1}) translate(${-CX},${-CY})`}
+              className="my-portfolio-allocation-donut-seg"
+            >
+              <circle
+                cx={CX}
+                cy={CY}
+                r={(R_OUT + R_IN) / 2}
+                fill="none"
+                stroke={colorClassToCssColor(rows[0].colorClass)}
+                strokeWidth={R_OUT - R_IN}
+                className="my-portfolio-allocation-donut-path"
+                onMouseEnter={(e) => {
+                  setHovered(0)
+                  handleMove(e)
+                }}
+                onMouseMove={handleMove}
+              />
+            </g>
+          ) : (
+            angles.map(({ start, end, row }, i) => {
+              const { ox, oy } = midAnchor(CX, CY, R_OUT, R_IN, start, end)
+              const scale = hovered === i ? 1.075 : 1
+              const fill = colorClassToCssColor(row.colorClass)
+              return (
+                <g
+                  key={row.rowKey ?? row.symbol}
+                  className="my-portfolio-allocation-donut-seg"
+                  transform={`translate(${ox},${oy}) scale(${scale}) translate(${-ox},${-oy})`}
+                >
+                  <path
+                    d={slicePath(CX, CY, R_OUT, R_IN, start, end)}
+                    fill={fill}
+                    stroke="rgba(15, 23, 42, 0.35)"
+                    strokeWidth={0.28}
+                    className="my-portfolio-allocation-donut-path"
+                    onMouseEnter={(e) => {
+                      setHovered(i)
+                      handleMove(e)
+                    }}
+                    onMouseMove={handleMove}
+                  />
+                </g>
+              )
+            })
+          )}
         </svg>
       </div>
 

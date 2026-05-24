@@ -51,7 +51,6 @@ export type PortalPageKey =
   | 'ADMIN_KPI_PORTFOLIOS'
   | 'ADMIN_KPI_MARKETS'
   | 'ADMIN_KPI_NEWS'
-  | 'ADMIN_KPI_SYSTEM'
   | 'ADMIN_KPI_LATENCY'
   | 'INFO_CARDS'
   /** @deprecated Legacy key — treated as PROFILE in filters */

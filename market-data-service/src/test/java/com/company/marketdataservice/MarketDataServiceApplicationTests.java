@@ -2,16 +2,18 @@ package com.company.marketdataservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(properties = {
-        "market.scheduler.enabled=false",
-        "market.fx.scheduler-enabled=false",
-        "market.stock.scheduler.enabled=false"
-})
+@SpringBootTest
+@ActiveProfiles("test")
 class MarketDataServiceApplicationTests {
+
+    @MockBean
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Test
     void contextLoads() {
     }
-
 }
