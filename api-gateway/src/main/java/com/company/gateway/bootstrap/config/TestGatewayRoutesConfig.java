@@ -90,7 +90,7 @@ public class TestGatewayRoutesConfig {
                                 ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
                                 ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(analyticsBaseUri))
-                .route("v1-finance-api", r -> r.order(1)
+                .route("v1-finance-api", r -> r.order(-3)
                         .path("/api/v1/**")
                         .filters(f -> f.rewritePath(
                                 ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
@@ -126,6 +126,7 @@ public class TestGatewayRoutesConfig {
                 .route("analytics-service", r -> r.path("/api/analytics/**")
                         .uri(analyticsBaseUri))
                 .route("finance-api", r -> r.path("/api/**", "/health")
+                        .and().not(p -> p.path("/api/v1/**"))
                         .uri(financeBaseUri))
                 .build();
     }

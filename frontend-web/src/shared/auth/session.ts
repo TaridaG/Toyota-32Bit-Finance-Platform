@@ -160,11 +160,13 @@ export function getProfileDisplayLabel(claims: AuthClaims | null): string {
   if (!claims) {
     return ''
   }
-  if (claims.name?.trim()) {
-    return claims.name.trim()
-  }
+  // Keycloak `name` is often firstName+lastName from registration (e.g. "deneyenkado Member"),
+  // not the portal display username — prefer login identity claims first.
   if (claims.preferred_username?.trim()) {
     return claims.preferred_username.trim()
+  }
+  if (claims.name?.trim()) {
+    return claims.name.trim()
   }
   if (claims.email?.trim()) {
     const local = claims.email.trim().split('@')[0]
@@ -196,6 +198,13 @@ export type ProfileAvatarChangeDetail = { avatarUpdatedAt: string | null }
 export function notifyProfileAvatarChanged(detail?: ProfileAvatarChangeDetail) {
   const payload: ProfileAvatarChangeDetail = detail ?? { avatarUpdatedAt: null }
   window.dispatchEvent(new CustomEvent('finance-profile-avatar', { detail: payload }))
+}
+
+export type ProfileUsernameChangeDetail = { username: string }
+
+/** Notifies shell UI that portal display username changed (profile API is source of truth). */
+export function notifyProfileUsernameChanged(detail: ProfileUsernameChangeDetail) {
+  window.dispatchEvent(new CustomEvent('finance-profile-username', { detail }))
 }
 
 /** Current access JWT from the active storage (local or session per remember-me). */

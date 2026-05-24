@@ -16,6 +16,8 @@
         <spring-boot.version>3.2.5</spring-boot.version>
         <spring-cloud.version>2023.0.4</spring-cloud.version>
         <springdoc.version>2.6.0</springdoc.version>
+        <logback-kafka-appender.version>0.2.0-RC2</logback-kafka-appender.version>
+        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     </properties>
     <dependencies>
         <dependency>
@@ -43,6 +45,7 @@
     </dependencies>
 
     <modules>
+        <module>platform-logging</module>
         <module>finance-api</module>
         <module>notification-service</module>
         <module>market-data-service</module>
@@ -78,6 +81,21 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.company</groupId>
+                <artifactId>platform-logging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.danielwegener</groupId>
+                <artifactId>logback-kafka-appender</artifactId>
+                <version>${logback-kafka-appender.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash-logback-encoder.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

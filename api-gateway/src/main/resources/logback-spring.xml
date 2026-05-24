@@ -1,5 +1,5 @@
 <configuration>
-    <property name="APP_NAME" value="finance-api"/>
+    <property name="APP_NAME" value="api-gateway"/>
     <property name="KAFKA_BOOTSTRAP" value="${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}"/>
     <include resource="logback-kafka-base.xml"/>
 

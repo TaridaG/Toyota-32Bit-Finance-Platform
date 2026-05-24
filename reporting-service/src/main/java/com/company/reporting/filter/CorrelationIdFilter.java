@@ -9,12 +9,16 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Reporting HTTP isteklerinde {@code X-Correlation-Id} header'ını MDC'ye taşır (Kafka log pipeline ile uyumlu).
+ */
 @Slf4j
 @Component
 public class CorrelationIdFilter implements Filter {
 
     public static final String HEADER_NAME = "X-Correlation-Id";
 
+    /** Gelen header veya yeni UUID ile MDC correlation/trace alanlarını set eder. */
     @Override
     public void doFilter(ServletRequest request,
                          ServletResponse response,
@@ -30,11 +34,12 @@ public class CorrelationIdFilter implements Filter {
         }
 
         MDC.put("correlationId", correlationId);
+        MDC.put("traceId", correlationId);
 
         try {
             chain.doFilter(request, response);
         } finally {
-            MDC.remove("correlationId");
+            MDC.clear();
         }
     }
 }

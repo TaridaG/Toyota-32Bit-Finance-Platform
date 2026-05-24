@@ -47,6 +47,12 @@ management:
   metrics:
     tags:
       application: analytics-service
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces
 
 clients:
   finance:

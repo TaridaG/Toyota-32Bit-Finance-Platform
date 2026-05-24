@@ -32,12 +32,14 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         }
 
         MDC.put("correlationId", correlationId);
+        MDC.put("traceId", correlationId);
         response.setHeader(HEADER, correlationId);
+        response.setHeader("X-Trace-Id", correlationId);
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            MDC.remove("correlationId");
+            MDC.clear();
         }
     }
 }

@@ -65,10 +65,11 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Logging -->
+        <!-- Merkezi JSON log + Kafka app.logs -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-logging</artifactId>
+            <groupId>com.company</groupId>
+            <artifactId>platform-logging</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <!-- Lombok -->

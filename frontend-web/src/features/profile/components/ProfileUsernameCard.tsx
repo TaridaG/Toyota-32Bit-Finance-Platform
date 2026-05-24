@@ -7,7 +7,11 @@ import {
   readApiErrorMessage,
 } from '../api/portalProfileApi'
 import type { PortalProfile } from '../types'
-import { isRememberMeEnabled, persistAuthSession } from '../../../shared/auth/session'
+import {
+  isRememberMeEnabled,
+  notifyProfileUsernameChanged,
+  persistAuthSession,
+} from '../../../shared/auth/session'
 import {
   isUsernameFormatValid,
   normalizeUsernameInput,
@@ -111,6 +115,7 @@ export function ProfileUsernameCard({ profile, onUsernameChanged }: Props) {
       setCurrentPassword('')
       setSuccess(true)
       onUsernameChanged({ ...profile, username: next })
+      notifyProfileUsernameChanged({ username: next })
       window.setTimeout(() => setSuccess(false), 4000)
       setExpanded(false)
     } catch (err) {

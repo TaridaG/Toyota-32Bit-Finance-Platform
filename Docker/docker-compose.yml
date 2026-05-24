@@ -198,8 +198,8 @@ services:
 
   market-data-service:
     build:
-      context: ../market-data-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: market-data-service/Dockerfile
     container_name: market-data-service
     depends_on:
       kafka:
@@ -250,6 +250,7 @@ services:
       finance-api:
         condition: service_started
     environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
       - SPRING_DATASOURCE_USERNAME=finance
       - SPRING_DATASOURCE_PASSWORD=123456
@@ -282,6 +283,7 @@ services:
       minio:
         condition: service_started
     environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
       - SPRING_DATASOURCE_USERNAME=finance
       - SPRING_DATASOURCE_PASSWORD=123456
@@ -325,13 +327,16 @@ services:
 
   news-service:
     build:
-      context: ../news-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: news-service/Dockerfile
     container_name: news-service
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started
     environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=finance
@@ -384,6 +389,8 @@ services:
       dockerfile: Dockerfile
     container_name: api-gateway
     depends_on:
+      kafka:
+        condition: service_started
       finance-api:
         condition: service_started
       market-data-service:
@@ -403,6 +410,7 @@ services:
       JWT_ISSUER_URI: http://localhost:8085/realms/finance
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "8080:8080"
     networks:
@@ -467,6 +475,10 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       prometheus:
         condition: service_started

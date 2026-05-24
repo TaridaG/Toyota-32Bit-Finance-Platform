@@ -209,6 +209,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [alarmPricesBySymbol, setAlarmPricesBySymbol] = useState<Record<string, number>>({})
   const { refreshKey: alarmsRefreshKey, bumpAlarmsRefresh } = useAlarmUi()
   const [serverAvatarUpdatedAt, setServerAvatarUpdatedAt] = useState<string | null>(null)
+  const [portalUsername, setPortalUsername] = useState<string | null>(null)
   const [profileImgBroken, setProfileImgBroken] = useState(false)
   const profileAnchorRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme, toggleTheme } = useTheme()
@@ -230,10 +231,20 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
   const claims = useMemo(() => (isAuthenticated ? getAuthClaims() : null), [isAuthenticated])
   const displayLabel = useMemo(() => {
+    const username = portalUsername?.trim()
+    if (username) {
+      return `@${username}`
+    }
     const label = getProfileDisplayLabel(claims)
     return label.length > 0 ? label : '…'
-  }, [claims])
-  const initials = useMemo(() => getProfileInitials(displayLabel), [displayLabel])
+  }, [portalUsername, claims])
+  const initials = useMemo(() => {
+    const username = portalUsername?.trim()
+    if (username) {
+      return username.slice(0, 1).toUpperCase()
+    }
+    return getProfileInitials(displayLabel.replace(/^@/, ''))
+  }, [portalUsername, displayLabel])
   const serverAvatarBlobUrl = usePortalAvatarObjectUrl(serverAvatarUpdatedAt ?? undefined)
   const avatarUrl = useMemo(() => {
     if (!isAuthenticated) {
@@ -249,11 +260,36 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   useEffect(() => {
     if (!isAuthenticated) {
       setServerAvatarUpdatedAt(null)
+      setPortalUsername(null)
       return
     }
     void fetchPortalProfile()
-      .then((p) => setServerAvatarUpdatedAt(p.avatarUpdatedAt ?? null))
-      .catch(() => setServerAvatarUpdatedAt(null))
+      .then((p) => {
+        setServerAvatarUpdatedAt(p.avatarUpdatedAt ?? null)
+        setPortalUsername(p.username ?? null)
+      })
+      .catch(() => {
+        setServerAvatarUpdatedAt(null)
+        setPortalUsername(null)
+      })
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    const onUsername = (e: Event) => {
+      const detail = (e as CustomEvent<{ username?: string }>).detail
+      if (typeof detail?.username === 'string' && detail.username.trim()) {
+        setPortalUsername(detail.username.trim())
+        return
+      }
+      if (!isAuthenticated) {
+        return
+      }
+      void fetchPortalProfile()
+        .then((p) => setPortalUsername(p.username ?? null))
+        .catch(() => setPortalUsername(null))
+    }
+    window.addEventListener('finance-profile-username', onUsername)
+    return () => window.removeEventListener('finance-profile-username', onUsername)
   }, [isAuthenticated])
 
   useEffect(() => {

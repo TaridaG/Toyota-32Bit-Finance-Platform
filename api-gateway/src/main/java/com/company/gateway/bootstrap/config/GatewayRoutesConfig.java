@@ -122,7 +122,7 @@ public class GatewayRoutesConfig {
                                         .setName("analyticsCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/analytics")))
                         .uri(analyticsBaseUri))
-                .route("v1-finance-api", r -> r.order(1)
+                .route("v1-finance-api", r -> r.order(-3)
                         .path("/api/v1/**")
                         .filters(f -> f
                                 .rewritePath(
@@ -186,7 +186,9 @@ public class GatewayRoutesConfig {
                                         .setName("analyticsCircuitBreaker")
                                         .setFallbackUri("forward:/fallback/analytics")))
                         .uri(analyticsBaseUri))
-                .route("finance-api", r -> r.order(0).path("/api/**", "/health")
+                .route("finance-api", r -> r.order(0)
+                        .path("/api/**", "/health")
+                        .and().not(p -> p.path("/api/v1/**"))
                         .filters(f -> f
                                 .requestRateLimiter(rl -> rl
                                         .setRateLimiter(apiRateLimiter)

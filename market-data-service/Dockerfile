@@ -1,13 +1,16 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
-COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw mvnw
-COPY mvnw.cmd mvnw.cmd
-COPY src src
-RUN chmod +x mvnw && ./mvnw clean package -DskipTests
+
+COPY pom.xml pom.xml
+COPY platform-logging platform-logging
+COPY market-data-service/pom.xml market-data-service/pom.xml
+COPY market-data-service/src market-data-service/src
+
+RUN mvn -q -f pom.xml -N install -DskipTests \
+    && mvn -q -f platform-logging/pom.xml install -DskipTests \
+    && mvn -q -f market-data-service/pom.xml -DskipTests package
 
 FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
-COPY --from=build /workspace/target/market-data-service*.jar app.jar
-ENTRYPOINT ["java","-jar","app.jar"]
+COPY --from=build /workspace/market-data-service/target/market-data-service*.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]

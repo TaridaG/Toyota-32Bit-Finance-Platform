@@ -32,3 +32,13 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ['log-consumer-service:8087']
+
+  - job_name: analytics-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['analytics-service:8080']
+
+  - job_name: reporting-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['reporting-service:8080']

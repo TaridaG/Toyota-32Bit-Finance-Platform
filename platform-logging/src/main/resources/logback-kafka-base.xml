@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ortak Logstash JSON appenders. Tüketen servis logback-spring.xml içinde APP_NAME ve
+  KAFKA_BOOTSTRAP tanımlayıp bu dosyayı include eder.
+-->
+<included>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <customFields>{"service":"${APP_NAME}"}</customFields>
+        </encoder>
+    </appender>
+
+    <appender name="KAFKA" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+        <topic>app.logs</topic>
+        <producerConfig>bootstrap.servers=${KAFKA_BOOTSTRAP}</producerConfig>
+        <producerConfig>acks=1</producerConfig>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>correlationId</includeMdcKeyName>
+            <customFields>{"service":"${APP_NAME}"}</customFields>
+        </encoder>
+    </appender>
+</included>

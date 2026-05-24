@@ -9440,6 +9440,7 @@ button:disabled {
 }
 
 .my-portfolio-dist-dashboard .my-portfolio-allocation-donut-shell {
+  display: block;
   margin: 0 auto;
   max-width: 7.5rem;
 }
@@ -9447,6 +9448,11 @@ button:disabled {
 .my-portfolio-dist-dashboard .my-portfolio-allocation-donut-visual {
   width: 7.5rem;
   height: 7.5rem;
+}
+
+/* Dashboard already shows symbol/weight/value in .my-portfolio-dist-list — hide inline legend to avoid overlap. */
+.my-portfolio-dist-dashboard .my-portfolio-allocation-legend {
+  display: none;
 }
 
 .my-portfolio-dist-dashboard .my-portfolio-dist-list {

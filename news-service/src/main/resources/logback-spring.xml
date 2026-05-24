@@ -1,12 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%date{ISO8601} %level [%X{correlationId}] %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
+    <property name="APP_NAME" value="news-service"/>
+    <property name="KAFKA_BOOTSTRAP" value="${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}"/>
+    <include resource="logback-kafka-base.xml"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="KAFKA"/>
     </root>
 </configuration>

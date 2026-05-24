@@ -129,6 +129,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.company</groupId>
+			<artifactId>platform-logging</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.6.0</version>
