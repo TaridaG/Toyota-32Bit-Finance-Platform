@@ -3,6 +3,48 @@ The following was discovered as part of building this project:
 
 * The original package name 'com.company.finance-api' is invalid and this project uses 'com.company.finance_api' instead.
 
+# API documentation (OpenAPI / Swagger)
+
+All HTTP microservices expose **OpenAPI 3** at `/v3/api-docs` and **Swagger UI** at `/swagger-ui.html` via [springdoc-openapi](https://springdoc.org/).
+
+## Unified UI (recommended)
+
+With **api-gateway** running, open the aggregated Swagger UI (dropdown lists every service):
+
+| Environment | Swagger UI | Example OpenAPI JSON |
+|-------------|------------|----------------------|
+| Local dev (`application-dev`) | http://localhost:9090/swagger-ui/index.html | http://localhost:9090/services/finance/v3/api-docs |
+| Docker Compose | http://localhost:8080/swagger-ui/index.html | http://localhost:8080/services/finance/v3/api-docs |
+
+## Per-service (direct)
+
+| Service | Local dev port | Swagger UI |
+|---------|----------------|------------|
+| finance-api | 8080 | http://localhost:8080/swagger-ui.html |
+| market-data-service | 8082 | http://localhost:8082/swagger-ui.html |
+| news-service | 8083 (gateway dev) / 8082 (service default) | same pattern |
+| reporting-service | 8084 | http://localhost:8084/swagger-ui.html |
+| analytics-service | 8085 | http://localhost:8085/swagger-ui.html |
+| notification-service | 8086 | http://localhost:8086/swagger-ui.html |
+| log-consumer-service | 8087 | http://localhost:8087/swagger-ui.html |
+
+## How to verify
+
+1. Start infrastructure and services (`Docker/docker-compose.yml` or run modules from IDE).
+2. Open gateway Swagger UI (table above).
+3. Top-right **dropdown** — switch between `finance-api`, `market-data-service`, `news-service`, etc. Each should load paths without errors.
+4. Quick HTTP checks (gateway on port 9090 locally):
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/services/finance/v3/api-docs
+curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/services/market/v3/api-docs
+curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/services/news/v3/api-docs
+```
+
+Expected status: **200** for each when the target service is up.
+
+5. Protected endpoints: in Swagger UI click **Authorize**, paste a Keycloak access token (`Bearer` prefix optional), then try a secured route.
+
 # Getting Started
 
 ### Reference Documentation

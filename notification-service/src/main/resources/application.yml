@@ -2,6 +2,8 @@ server:
   port: 8086
 
 spring:
+  config:
+    import: optional:classpath:application-openapi.yml
   application:
     name: notification-service
   datasource:

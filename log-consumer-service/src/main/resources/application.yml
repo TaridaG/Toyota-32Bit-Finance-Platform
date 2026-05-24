@@ -2,6 +2,8 @@ server:
   port: 8087
 
 spring:
+  config:
+    import: optional:classpath:application-openapi.yml
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     listener:

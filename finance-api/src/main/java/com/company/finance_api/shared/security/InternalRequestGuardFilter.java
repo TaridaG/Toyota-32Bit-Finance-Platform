@@ -44,6 +44,13 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
       filterChain.doFilter(request, response);
       return;
     }
+    // OpenAPI / Swagger (no user context required)
+    if (path.startsWith("/swagger-ui")
+        || path.equals("/swagger-ui.html")
+        || path.startsWith("/v3/api-docs")) {
+      filterChain.doFilter(request, response);
+      return;
+    }
     // Public self-service auth (no JWT yet; gateway must not forward spoofed X-USERNAME)
     if ("POST".equalsIgnoreCase(request.getMethod())
         && (path.endsWith("/api/public/register")

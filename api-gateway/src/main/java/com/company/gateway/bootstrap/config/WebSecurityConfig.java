@@ -103,6 +103,35 @@ public class WebSecurityConfig {
         return p.startsWith("/api/public/");
     }
 
+    /** Swagger UI + springdoc config (proxied to finance-api; must ignore stale Bearer tokens). */
+    private static boolean isPublicSwaggerDocumentationGet(ServerWebExchange exchange) {
+        if (!HttpMethod.GET.equals(exchange.getRequest().getMethod())) {
+            return false;
+        }
+        String path = exchange.getRequest().getPath().value();
+        if (matchesPublicSwaggerDocumentationPath(path)) {
+            return true;
+        }
+        String uriPath = exchange.getRequest().getURI().getPath();
+        return uriPath != null && matchesPublicSwaggerDocumentationPath(uriPath);
+    }
+
+    private static boolean matchesPublicSwaggerDocumentationPath(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        String p = path;
+        if (p.endsWith("/") && p.length() > 1) {
+            p = p.substring(0, p.length() - 1);
+        }
+        return p.equals("/swagger-ui.html")
+                || p.startsWith("/swagger-ui/")
+                || p.startsWith("/webjars/")
+                || p.equals("/v3/api-docs")
+                || p.startsWith("/v3/api-docs/")
+                || (p.startsWith("/services/") && p.contains("/v3/api-docs"));
+    }
+
     private static boolean matchesPublicAuthPostPath(String path) {
         if (path == null || path.isBlank()) {
             return false;
@@ -161,6 +190,15 @@ public class WebSecurityConfig {
                 )
                 .authorizeExchange(ex -> ex
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/webjars/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**")
+                        .permitAll()
+                        .pathMatchers(HttpMethod.GET, "/services/*/v3/api-docs", "/services/*/v3/api-docs/**")
+                        .permitAll()
                         .pathMatchers("/", "/health").permitAll()
                         .pathMatchers("/actuator/health", "/actuator/prometheus").permitAll()
                         .pathMatchers(HttpMethod.POST,
@@ -203,6 +241,7 @@ public class WebSecurityConfig {
                         .bearerTokenConverter(exchange -> isPublicUnauthenticatedPost(exchange)
                                         || isPublicUnauthenticatedGet(exchange)
                                         || isPublicAnonymousGet(exchange)
+                                        || isPublicSwaggerDocumentationGet(exchange)
                                 ? Mono.empty()
                                 : defaultBearer.convert(exchange))
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))

@@ -39,3 +39,22 @@ app:
   security:
     jwt:
       jwk-set-uri: ${APP_SECURITY_JWT_JWK_SET_URI:http://keycloak:8080/realms/finance/protocol/openid-connect/certs}
+
+# Aggregated platform API docs (browser hits gateway host; UI proxied from finance-api).
+springdoc:
+  swagger-ui:
+    urls:
+      - name: finance-api
+        url: /services/finance/v3/api-docs
+      - name: market-data-service
+        url: /services/market/v3/api-docs
+      - name: news-service
+        url: /services/news/v3/api-docs
+      - name: reporting-service
+        url: /services/reporting/v3/api-docs
+      - name: analytics-service
+        url: /services/analytics/v3/api-docs
+      - name: log-consumer-service
+        url: /services/log-consumer/v3/api-docs
+      - name: notification-service
+        url: /services/notification/v3/api-docs
