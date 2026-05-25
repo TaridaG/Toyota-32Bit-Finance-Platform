@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import i18n, { DEFAULT_LOCALE, normalizeLocale, setAppLocale, type SupportedLocale } from '../i18n'
 import { apiClient } from '../api/client'
 import { SUPPORTED_CURRENCIES, type AppPreferencesContextValue, type SupportedCurrency } from './preferences'
@@ -43,22 +43,26 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const setLanguage = useCallback(async (nextLanguage: SupportedLocale) => {
+    await setAppLocale(nextLanguage)
+    setLanguageState(nextLanguage)
+  }, [])
+
+  const setCurrency = useCallback((nextCurrency: SupportedCurrency) => {
+    setCurrencyState((current) => (current === nextCurrency ? current : nextCurrency))
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(CURRENCY_STORAGE_KEY, nextCurrency)
+    }
+  }, [])
+
   const value = useMemo<AppPreferencesContextValue>(
     () => ({
       language,
       currency,
-      setLanguage: async (nextLanguage) => {
-        await setAppLocale(nextLanguage)
-        setLanguageState(nextLanguage)
-      },
-      setCurrency: (nextCurrency) => {
-        setCurrencyState(nextCurrency)
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(CURRENCY_STORAGE_KEY, nextCurrency)
-        }
-      },
+      setLanguage,
+      setCurrency,
     }),
-    [currency, language],
+    [currency, language, setCurrency, setLanguage],
   )
 
   return <AppPreferencesContext.Provider value={value}>{children}</AppPreferencesContext.Provider>

@@ -1,6 +1,5 @@
 package com.company.finance_api.market.infrastructure.http;
 
-import com.company.finance_api.dto.MarketInsightsResponse;
 import com.company.finance_api.dto.MarketOverviewPageResponse;
 import com.company.finance_api.service.MarketOverviewService;
 import com.company.finance_api.shared.web.ApiResponse;
@@ -32,12 +31,5 @@ public class MarketOverviewController {
       @RequestHeader(value = "X-Currency", required = false) String currency) {
     return ApiResponse.success(
         marketOverviewService.getOverview(page, size, category, search, currency, sort));
-  }
-
-  /** GET /insights — piyasa insight özetini {@code X-Currency} başlığına göre döner. */
-  @GetMapping("/insights")
-  public ApiResponse<MarketInsightsResponse> insights(
-      @RequestHeader(value = "X-Currency", required = false) String currency) {
-    return ApiResponse.success(marketOverviewService.getInsights(currency));
   }
 }

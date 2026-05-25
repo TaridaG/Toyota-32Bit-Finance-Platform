@@ -171,10 +171,11 @@ body,
 }
 
 .portal-action-primary {
-  background: #f59e0b;
-  border-color: #f59e0b;
-  color: #111827;
+  background: linear-gradient(135deg, #d62d20 0%, #ef4444 52%, #b91c1c 100%);
+  border-color: #b91c1c;
+  color: #fff;
   font-weight: 600;
+  box-shadow: 0 10px 24px rgba(185, 28, 28, 0.18);
 }
 
 .portal-action-secondary {
@@ -185,6 +186,10 @@ body,
 .portal-action-primary:hover,
 .portal-action-secondary:hover {
   opacity: 0.94;
+}
+
+.portal-action-primary:hover {
+  box-shadow: 0 12px 28px rgba(185, 28, 28, 0.24);
 }
 
 .portal-icon-button {
@@ -5699,6 +5704,10 @@ button:disabled {
   align-items: start;
 }
 
+.fi-markets-layout.fi-markets-layout-no-sidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .fi-markets-main {
   min-width: 0;
 }
@@ -6055,7 +6064,7 @@ button:disabled {
 }
 
 .markets-table col.markets-col-trend {
-  width: 19%;
+  width: 12%;
 }
 
 .markets-table th,
@@ -6394,11 +6403,11 @@ button:disabled {
 }
 
 .markets-trend-cell {
-  display: grid;
-  gap: 0.28rem;
-  justify-items: start;
+  display: flex;
+  align-items: center;
   max-width: 100%;
   overflow: hidden;
+  width: 100%;
 }
 
 .markets-trend-badge {
@@ -9440,6 +9449,7 @@ button:disabled {
 }
 
 .my-portfolio-dist-dashboard .my-portfolio-allocation-donut-shell {
+  display: block;
   margin: 0 auto;
   max-width: 7.5rem;
 }
@@ -9447,6 +9457,11 @@ button:disabled {
 .my-portfolio-dist-dashboard .my-portfolio-allocation-donut-visual {
   width: 7.5rem;
   height: 7.5rem;
+}
+
+/* Dashboard already shows symbol/weight/value in .my-portfolio-dist-list — hide inline legend to avoid overlap. */
+.my-portfolio-dist-dashboard .my-portfolio-allocation-legend {
+  display: none;
 }
 
 .my-portfolio-dist-dashboard .my-portfolio-dist-list {
@@ -16269,9 +16284,9 @@ col.my-portfolio-alloc-col-pnl {
   }
 
   .portal-mobile-auth-primary {
-    background: #facc15;
-    border-color: #eab308;
-    color: #111827;
+    background: linear-gradient(135deg, #d62d20 0%, #ef4444 52%, #b91c1c 100%);
+    border-color: #b91c1c;
+    color: #fff;
   }
 
   .portal-mobile-auth-secondary {

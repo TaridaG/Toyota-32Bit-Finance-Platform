@@ -67,6 +67,9 @@ class GatewaySecurityTests {
         r.add("gateway.services.news-base-uri", () -> "http://127.0.0.1:" + newsMock.getPort());
         r.add("gateway.services.market-base-uri", () -> "http://127.0.0.1:" + marketMock.getPort());
         r.add("gateway.services.finance-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
+        r.add("gateway.services.analytics-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
+        r.add("gateway.services.log-consumer-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
+        r.add("gateway.services.notification-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
     }
 
     @Test

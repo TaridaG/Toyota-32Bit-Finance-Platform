@@ -15,9 +15,8 @@ import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.service.CurrencyConversionService;
 import com.company.finance_api.service.PortfolioOverviewService;
 import com.company.finance_api.service.PriceService;
+import com.company.finance_api.shared.cache.JsonCacheService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -34,18 +33,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-/** PortfolioOverviewServiceImpl iş mantığını uygular (portfolio overview service). */
+/** Portfolio overview için response cache kullanan service implementation'dır. */
 @Service
 public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
 
   private static final Logger log = LoggerFactory.getLogger(PortfolioOverviewServiceImpl.class);
   private static final Duration CACHE_TTL = Duration.ofSeconds(5);
-  private static final String USD = "USD";
 
   private final TransactionRepository transactionRepository;
   private final UserRepository userRepository;
@@ -54,8 +49,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
   private final PriceService priceService;
   private final CurrencyConversionService currencyConversionService;
   private final ExternalPortfolioRepository externalPortfolioRepository;
-  private final ObjectMapper objectMapper;
-  private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+  private final JsonCacheService jsonCacheService;
 
   public PortfolioOverviewServiceImpl(
       TransactionRepository transactionRepository,
@@ -65,8 +59,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
       PriceService priceService,
       CurrencyConversionService currencyConversionService,
       ExternalPortfolioRepository externalPortfolioRepository,
-      ObjectMapper objectMapper,
-      ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider) {
+      JsonCacheService jsonCacheService) {
     this.transactionRepository = transactionRepository;
     this.userRepository = userRepository;
     this.currentUserResolver = currentUserResolver;
@@ -74,17 +67,17 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
     this.priceService = priceService;
     this.currencyConversionService = currencyConversionService;
     this.externalPortfolioRepository = externalPortfolioRepository;
-    this.objectMapper = objectMapper;
-    this.stringRedisTemplateProvider = stringRedisTemplateProvider;
+    this.jsonCacheService = jsonCacheService;
   }
 
-  /** MyOverview sorgusunu döner. */
+  /** Kullanıcının portfolio overview sonucunu hedef currency bazında döner. */
   @Override
   public PortfolioOverviewResponse getMyOverview(String targetCurrency, Long portfolioId) {
     UUID userId = currentUserResolver.getCurrentUserId();
     String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
     String cacheKey = cacheKey(userId, normalizedCurrency, portfolioId);
-    Optional<PortfolioOverviewResponse> cached = readFromCache(cacheKey);
+    Optional<PortfolioOverviewResponse> cached =
+        jsonCacheService.get(cacheKey, new com.fasterxml.jackson.core.type.TypeReference<>() {});
     if (cached.isPresent()) {
       return cached.get();
     }
@@ -213,7 +206,7 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
             totalPnlPercent,
             dayOverDayChange,
             items);
-    writeToCache(cacheKey, response);
+    jsonCacheService.put(cacheKey, response, CACHE_TTL);
     return response;
   }
 
@@ -244,36 +237,6 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
       return value.setScale(4, RoundingMode.HALF_UP);
     }
     return value.setScale(2, RoundingMode.HALF_UP);
-  }
-
-  private Optional<PortfolioOverviewResponse> readFromCache(String key) {
-    try {
-      StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
-      if (redis == null) {
-        return Optional.empty();
-      }
-      String payload = redis.opsForValue().get(key);
-      if (!StringUtils.hasText(payload)) {
-        return Optional.empty();
-      }
-      PortfolioOverviewResponse value = objectMapper.readValue(payload, new TypeReference<>() {});
-      return Optional.of(value);
-    } catch (Exception ex) {
-      log.debug("PORTFOLIO_OVERVIEW_CACHE_READ_FAIL key={} reason={}", key, ex.toString());
-      return Optional.empty();
-    }
-  }
-
-  private void writeToCache(String key, PortfolioOverviewResponse value) {
-    try {
-      StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
-      if (redis == null) {
-        return;
-      }
-      redis.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-    } catch (Exception ex) {
-      log.debug("PORTFOLIO_OVERVIEW_CACHE_WRITE_FAIL key={} reason={}", key, ex.toString());
-    }
   }
 
   private String cacheKey(UUID userId, String currency, Long portfolioId) {

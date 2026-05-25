@@ -1,9 +1,12 @@
 FROM maven:3.9.8-eclipse-temurin-21 AS build
-WORKDIR /app
+WORKDIR /workspace
 
-COPY pom.xml .
-COPY src ./src
-RUN mvn -q -DskipTests package
+COPY pom.xml pom.xml
+COPY news-service/pom.xml news-service/pom.xml
+COPY news-service/src news-service/src
+
+RUN mvn -q -f pom.xml -N install -DskipTests \
+    && mvn -q -f news-service/pom.xml -DskipTests package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
@@ -14,7 +17,7 @@ RUN apt-get update \
     && useradd --system --gid appgroup --create-home --home-dir /home/appuser appuser \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /workspace/news-service/target/*.jar app.jar
 RUN chown -R appuser:appgroup /app
 
 USER appuser

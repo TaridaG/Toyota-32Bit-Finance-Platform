@@ -58,6 +58,10 @@ class GatewayRoutingTests {
         GatewayOidcIssuerStub.registerIssuerUri(r);
         r.add("gateway.services.finance-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
         r.add("gateway.services.market-base-uri", () -> "http://127.0.0.1:" + marketMock.getPort());
+        r.add("gateway.services.news-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
+        r.add("gateway.services.analytics-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
+        r.add("gateway.services.log-consumer-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
+        r.add("gateway.services.notification-base-uri", () -> "http://127.0.0.1:" + financeMock.getPort());
     }
 
     @Test
@@ -105,6 +109,46 @@ class GatewayRoutingTests {
         RecordedRequest recorded = marketMock.takeRequest();
         Assertions.assertEquals("/api/market/crypto/latest", recorded.getPath());
         Assertions.assertNull(recorded.getHeader("X-USER-ID"));
+    }
+
+    @Test
+    void api_v1_should_rewrite_to_legacy_path_on_finance_upstream() throws Exception {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
+                .subject("jwt-sub-1")
+                .claim("preferred_username", "jwt-user")
+                .claim("realm_access", Map.of("roles", List.of("USER"))));
+
+        webTestClient.get()
+                .uri("/api/v1/portfolio/overview")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"ok\":true}");
+
+        RecordedRequest recorded = financeMock.takeRequest();
+        Assertions.assertEquals("/api/portfolio/overview", recorded.getPath());
+    }
+
+    @Test
+    void legacy_api_should_emit_deprecation_headers() throws Exception {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
+                .subject("jwt-sub-1")
+                .claim("preferred_username", "jwt-user")
+                .claim("realm_access", Map.of("roles", List.of("USER"))));
+
+        webTestClient.get()
+                .uri("/api/portfolio/overview")
+                .headers(h -> h.setBearerAuth(token))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Deprecation", "true")
+                .expectHeader().exists("Link");
     }
 
     @Test

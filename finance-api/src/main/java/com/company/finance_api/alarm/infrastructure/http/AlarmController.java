@@ -1,8 +1,8 @@
 package com.company.finance_api.alarm.infrastructure.http;
 
-import com.company.finance_api.dto.AlarmResponse;
-import com.company.finance_api.dto.CreateAlarmRequest;
-import com.company.finance_api.service.AlarmService;
+import com.company.finance_api.alarm.infrastructure.http.dto.AlarmResponse;
+import com.company.finance_api.alarm.infrastructure.http.dto.CreateAlarmRequest;
+import com.company.finance_api.alarm.application.AlarmService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -40,6 +41,30 @@ public interface FxRateHistoryRepository extends JpaRepository<FxRateHistoryEntr
             ORDER BY canonical_symbol, observed_at DESC, id DESC
             """, nativeQuery = true)
     List<LatestFxRateView> findLatestRatesPerSymbol();
+
+    interface DailyCloseView {
+        java.time.LocalDate getDay();
+
+        BigDecimal getPrice();
+
+        Instant getObservedAt();
+    }
+
+    @Query(value = """
+            SELECT day, price, observed_at AS observedAt
+            FROM (
+                SELECT DISTINCT ON (DATE(observed_at AT TIME ZONE 'UTC'))
+                    DATE(observed_at AT TIME ZONE 'UTC') AS day,
+                    mid AS price,
+                    observed_at
+                FROM mds_fx_rate_history
+                WHERE canonical_symbol = :symbol
+                ORDER BY DATE(observed_at AT TIME ZONE 'UTC') DESC, observed_at DESC
+            ) daily
+            ORDER BY day DESC
+            LIMIT 2
+            """, nativeQuery = true)
+    List<DailyCloseView> findLastTwoDailyCloses(@Param("symbol") String symbol);
 
     @Query(value = """
             SELECT COUNT(DISTINCT DATE(observed_at))

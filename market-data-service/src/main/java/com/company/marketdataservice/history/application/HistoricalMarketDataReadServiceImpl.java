@@ -203,7 +203,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
                 change6M = computePeriodChange(symbol, now.minus(210, ChronoUnit.DAYS), toExclusive);
                 change1Y = computePeriodChange(symbol, now.minus(400, ChronoUnit.DAYS), toExclusive);
             } else {
-                change1D = computePeriodChange(symbol, now.minus(1, ChronoUnit.DAYS), toExclusive);
+                change1D = computeLatestDailyStepPercentChange(symbol);
                 change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
                 change1M = computePeriodChange(symbol, now.minus(30, ChronoUnit.DAYS), toExclusive);
                 change3M = computePeriodChange(symbol, now.minus(90, ChronoUnit.DAYS), toExclusive);
@@ -274,6 +274,39 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             }
         }
         return computePeriodChange(symbol, now.minus(14, ChronoUnit.DAYS), toExclusive);
+    }
+
+    /**
+     * Last calendar-day close vs previous calendar-day close. Avoids 0% on weekends when the live
+     * scheduler keeps republishing Friday's close inside a rolling 24h window.
+     */
+    private double computeLatestDailyStepPercentChange(String symbol) {
+        BigDecimal last;
+        BigDecimal prev;
+        if (usesFxRateHistory(symbol)) {
+            var rows = fxRateHistoryRepository.findLastTwoDailyCloses(symbol);
+            if (rows == null || rows.size() < 2) {
+                Instant now = clock.instant();
+                return computePeriodChange(symbol, now.minus(1, ChronoUnit.DAYS), now.plus(1, ChronoUnit.DAYS));
+            }
+            last = rows.get(0).getPrice();
+            prev = rows.get(1).getPrice();
+        } else {
+            var rows = marketPriceHistoryRepository.findLastTwoDailyCloses(symbol);
+            if (rows == null || rows.size() < 2) {
+                Instant now = clock.instant();
+                return computePeriodChange(symbol, now.minus(1, ChronoUnit.DAYS), now.plus(1, ChronoUnit.DAYS));
+            }
+            last = rows.get(0).getPrice();
+            prev = rows.get(1).getPrice();
+        }
+        if (last == null || prev == null || prev.compareTo(BigDecimal.ZERO) == 0) {
+            return 0d;
+        }
+        return last.subtract(prev)
+                .divide(prev, 8, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue();
     }
 
     private double computePeriodChange(String symbol, Instant fromInclusive, Instant toExclusive) {

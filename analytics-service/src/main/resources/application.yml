@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:classpath:application-openapi.yml
   application:
     name: analytics-service
 
@@ -45,6 +47,12 @@ management:
   metrics:
     tags:
       application: analytics-service
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_PROBABILITY:0.1}
+  otlp:
+    tracing:
+      endpoint: http://jaeger:4318/v1/traces
 
 clients:
   finance:

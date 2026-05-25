@@ -19,5 +19,6 @@ gateway:
     finance-base-uri: ${FINANCE_BASE_URI:http://finance-api:8080}
     market-base-uri: ${MARKET_BASE_URI:http://market-data-service:8080}
     news-base-uri: ${NEWS_BASE_URI:http://news-service:8082}
-    reporting-base-uri: ${REPORTING_BASE_URI:http://reporting-service:8080}
     analytics-base-uri: ${ANALYTICS_BASE_URI:http://analytics-service:8080}
+    log-consumer-base-uri: ${LOG_CONSUMER_BASE_URI:http://log-consumer-service:8087}
+    notification-base-uri: ${NOTIFICATION_BASE_URI:http://notification-service:8086}

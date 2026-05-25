@@ -4,10 +4,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import com.company.finance_api.domain.AlarmHistory;
+import com.company.finance_api.alarm.domain.AlarmHistory;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.NotificationType;
-import com.company.finance_api.repository.AlarmHistoryRepository;
+import com.company.finance_api.alarm.infrastructure.persistence.AlarmHistoryRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

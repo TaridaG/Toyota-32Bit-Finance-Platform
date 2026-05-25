@@ -1,14 +1,12 @@
 package com.company.marketdataservice.history.infrastructure.write;
 import com.company.marketdataservice.fx.domain.FxSnapshotUpdatedEvent;
 import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryEntry;
-import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,30 +21,26 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FxHistoryWriteService {
 
-    private final FxRateHistoryRepository repository;
+    private static final int BATCH_SIZE = 250;
+    private static final String INSERT_IGNORE_DUPLICATE = """
+            INSERT INTO mds_fx_rate_history
+                (instrument_id, canonical_symbol, base_currency, quote_currency, bid, ask, mid, provider, observed_at, event_id, ingest_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (canonical_symbol, provider, observed_at) DO NOTHING
+            """;
+
+    private final JdbcTemplate jdbcTemplate;
 
     /**
      * Veriyi persist eder.
          * @param event girdi parametresi
          */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void save(FxSnapshotUpdatedEvent event) {
         FxRateHistoryEntry entry = toEntry(event);
         if (entry == null) {
             return;
         }
-        try {
-            repository.save(entry);
-        } catch (DataIntegrityViolationException ex) {
-            log.debug(
-                    "fx_history_duplicate_ignored eventId={} symbol={} provider={} observedAt={} reason={}",
-                    event.eventId(),
-                    event.canonicalSymbol(),
-                    event.source(),
-                    event.occurredAt(),
-                    ex.getClass().getSimpleName()
-            );
-        }
+        persistEntries(List.of(entry));
     }
 
     /**
@@ -57,9 +51,42 @@ public class FxHistoryWriteService {
         if (events == null || events.isEmpty()) {
             return;
         }
+        List<FxRateHistoryEntry> entries = new ArrayList<>();
         for (FxSnapshotUpdatedEvent event : events) {
-            save(event);
+            FxRateHistoryEntry entry = toEntry(event);
+            if (entry != null) {
+                entries.add(entry);
+            }
         }
+        if (entries.isEmpty()) {
+            return;
+        }
+        persistEntries(entries);
+    }
+
+    private void persistEntries(List<FxRateHistoryEntry> entries) {
+        for (int i = 0; i < entries.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, entries.size());
+            List<FxRateHistoryEntry> batch = entries.subList(i, end);
+            jdbcTemplate.batchUpdate(INSERT_IGNORE_DUPLICATE, batch, batch.size(), (ps, entry) -> {
+                if (entry.getInstrumentId() != null) {
+                    ps.setLong(1, entry.getInstrumentId());
+                } else {
+                    ps.setObject(1, null);
+                }
+                ps.setString(2, entry.getCanonicalSymbol());
+                ps.setString(3, entry.getBaseCurrency());
+                ps.setString(4, entry.getQuoteCurrency());
+                ps.setBigDecimal(5, entry.getBid());
+                ps.setBigDecimal(6, entry.getAsk());
+                ps.setBigDecimal(7, entry.getMid());
+                ps.setString(8, entry.getProvider());
+                ps.setTimestamp(9, Timestamp.from(entry.getObservedAt()));
+                ps.setObject(10, entry.getEventId());
+                ps.setTimestamp(11, Timestamp.from(entry.getIngestTime()));
+            });
+        }
+        log.debug("fx_history_persisted rows={}", entries.size());
     }
 
     private static FxRateHistoryEntry toEntry(FxSnapshotUpdatedEvent event) {

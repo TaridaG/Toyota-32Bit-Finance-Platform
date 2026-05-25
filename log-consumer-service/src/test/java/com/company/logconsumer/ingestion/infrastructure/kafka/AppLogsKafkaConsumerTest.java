@@ -60,6 +60,23 @@ class AppLogsKafkaConsumerTest {
     }
 
     @Test
+    void consume_logstashServiceField_indexesAndAcks() throws Exception {
+        String json = """
+                {"@timestamp":"2026-05-23T10:00:00Z","level":"INFO","service":"finance-api","message":"ok"}
+                """;
+        ConsumerRecord<String, String> record = new ConsumerRecord<>("app.logs", 0, 0L, "key", json);
+
+        consumer.consume(record, ack);
+
+        verify(indexer).index(any(AppLogEvent.class));
+        verify(ack).acknowledge();
+        assertEquals(1.0, registry.get("kafka_events_processed_total")
+                .tag("symbol", "finance-api")
+                .counter()
+                .count());
+    }
+
+    @Test
     void resolveSymbol_blankServiceName_returnsUnknown() {
         AppLogEvent event = new AppLogEvent(
                 "2026-05-23T10:00:00Z", "INFO", "  ", "ok",
@@ -80,7 +97,7 @@ class AppLogsKafkaConsumerTest {
     }
 
     @Test
-    void consume_indexFailure_rethrows() throws Exception {
+    void consume_openSearchFailure_recordsMetricsAndDoesNotAck() throws Exception {
         String json = """
                 {"timestamp":"2026-05-23T10:00:00Z","level":"ERROR","serviceName":"finance-api","message":"fail"}
                 """;
@@ -89,6 +106,14 @@ class AppLogsKafkaConsumerTest {
 
         assertThrows(RuntimeException.class, () -> consumer.consume(record, ack));
         verify(ack, never()).acknowledge();
+        assertEquals(1.0, registry.get("kafka_events_opensearch_failed_total")
+                .tag("symbol", "finance-api")
+                .counter()
+                .count());
+        assertEquals(1.0, registry.get("kafka_events_failed_total")
+                .tag("symbol", "finance-api")
+                .counter()
+                .count());
     }
 
     @Test

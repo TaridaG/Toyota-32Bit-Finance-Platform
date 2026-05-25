@@ -10,8 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.domain.enums.InstrumentType;
-import com.company.finance_api.dto.WatchlistItemDto;
-import com.company.finance_api.service.WatchlistService;
+import com.company.finance_api.watchlist.infrastructure.http.dto.WatchlistItemDto;
+import com.company.finance_api.watchlist.application.WatchlistService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.time.Instant;

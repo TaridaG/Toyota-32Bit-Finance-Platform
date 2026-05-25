@@ -1,0 +1,60 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "HTTP istek hızı (finance-api)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"finance-api\"}[1m]))",
+          "legendFormat": "req/s"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Log consumer — işlenen Kafka log olayları",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_events_processed_total[1m]))",
+          "legendFormat": "processed/s"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "OpenSearch index hataları (log-consumer)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_events_opensearch_failed_total[5m]))",
+          "legendFormat": "failures/s"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["finance-platform"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "Finance Platform — Overview",
+  "uid": "finance-platform-overview",
+  "version": 1
+}

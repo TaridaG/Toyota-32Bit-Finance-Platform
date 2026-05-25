@@ -94,6 +94,9 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             for (MarketPriceDto p : mapLatestPriceViews(marketPriceHistoryRepository.findLatestTrbondPricesPerSymbol())) {
                 merged.putIfAbsent(norm(p.symbol()), p);
             }
+            for (MarketPriceDto p : mapLatestPriceViews(marketPriceHistoryRepository.findLatestCryptoPricesPerSymbol())) {
+                merged.putIfAbsent(norm(p.symbol()), p);
+            }
         }
         mergeTrackedBondsFromEvdsIfAbsent(merged);
         List<MarketPriceDto> sorted = metalFuturesMarketEnricher.enrich(sortBySymbol(merged));

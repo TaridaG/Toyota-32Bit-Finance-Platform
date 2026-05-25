@@ -4,6 +4,8 @@ import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.PriceType;
 import java.time.Duration;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Profile("cache-redis")
 public class RedisPriceCacheService implements PriceCacheService {
 
+  private static final Logger log = LoggerFactory.getLogger(RedisPriceCacheService.class);
   private static final Duration TTL = Duration.ofMinutes(5);
 
   private final RedisTemplate<String, InstrumentPrice> redisTemplate;
@@ -40,20 +43,31 @@ public class RedisPriceCacheService implements PriceCacheService {
       // Evict incompatible entry and allow DB fallback path.
       redisTemplate.delete(cacheKey);
       return Optional.empty();
+    } catch (RuntimeException ex) {
+      log.debug("PRICE_CACHE_REDIS_READ_FAIL key={} reason={}", cacheKey, ex.toString());
+      return Optional.empty();
     }
   }
 
   /** {@inheritDoc} */
   @Override
   public void putLatestPrice(InstrumentPrice price) {
-    redisTemplate
-        .opsForValue()
-        .set(key(price.getInstrument().getId(), price.getPriceType()), price, TTL);
+    String cacheKey = key(price.getInstrument().getId(), price.getPriceType());
+    try {
+      redisTemplate.opsForValue().set(cacheKey, price, TTL);
+    } catch (RuntimeException ex) {
+      log.debug("PRICE_CACHE_REDIS_WRITE_FAIL key={} reason={}", cacheKey, ex.toString());
+    }
   }
 
   /** {@inheritDoc} */
   @Override
   public void evictLatestPrice(Long instrumentId, PriceType priceType) {
-    redisTemplate.delete(key(instrumentId, priceType));
+    String cacheKey = key(instrumentId, priceType);
+    try {
+      redisTemplate.delete(cacheKey);
+    } catch (RuntimeException ex) {
+      log.debug("PRICE_CACHE_REDIS_EVICT_FAIL key={} reason={}", cacheKey, ex.toString());
+    }
   }
 }

@@ -2,6 +2,8 @@ server:
   port: 8086
 
 spring:
+  config:
+    import: optional:classpath:application-openapi.yml
   application:
     name: notification-service
   datasource:
@@ -42,7 +44,7 @@ management:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: 1.0
+      probability: ${TRACING_SAMPLE_PROBABILITY:0.1}
   otlp:
     tracing:
       endpoint: http://jaeger:4318/v1/traces

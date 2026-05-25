@@ -58,11 +58,6 @@ export type MarketOverviewPageResponse = {
   totalPages: number
 }
 
-export type MarketInsightsResponse = {
-  topGainers: MarketOverviewItem[]
-  topLosers: MarketOverviewItem[]
-}
-
 export type AnnualFinancialStatement = {
   year: number | null
   revenue: number | null

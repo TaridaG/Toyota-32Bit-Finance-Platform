@@ -4,8 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { useMarkets } from '../../features/markets/hooks/useMarkets'
 import { MarketsPortfolioSimulationCard } from './components/MarketsPortfolioSimulationCard'
-import { MarketsPageSidebar } from './components/MarketsPageSidebar'
-import { useMarketChampions } from './hooks/useMarketChampions'
 import { addRowToMarketsPortfolioSimulation } from './lib/marketsPortfolioSimBridge'
 import { MARKETS_ROW_DRAG_MIME, serializeMarketsRowDrag } from './lib/marketsRowDrag'
 import { fetchInstrumentFundamentals } from '../../features/markets/api/marketService'
@@ -24,9 +22,6 @@ const DEFAULT_SIZE = 10
 const DEFAULT_CATEGORY = 'all'
 const PRICE_FLASH_MS = 500
 const PRICE_ANIMATION_MS = 300
-const SPARKLINE_WIDTH = 64
-const SPARKLINE_HEIGHT = 22
-const SPARKLINE_PADDING = 2
 
 function IconAlarmClock() {
   return (
@@ -86,77 +81,20 @@ function trbondTenorYears(symbol: string): number | null {
   return Number.isFinite(y) ? y : null
 }
 
-function toSparklinePoints(row: MarketOverviewItem): number[] {
-  const safePrice = Number.isFinite(row.price) && row.price > 0 ? row.price : 1
-  const trend = (row.change1D ?? row.change24h ?? 0) / 100
-  const wave = [0.18, -0.12, 0.1, -0.08, 0.06, -0.04, 0.03]
-  const points = wave.map((w, index) => {
-    const t = index / (wave.length - 1)
-    const base = safePrice * (1 + trend * (t - 1))
-    const wobble = safePrice * w * Math.max(Math.abs(trend), 0.01)
-    return Math.max(0.0001, base + wobble)
-  })
-  points.push(safePrice)
-  return points
-}
-
-function toSparklinePath(points: number[]): string {
-  if (points.length === 0) {
-    return ''
-  }
-  const min = Math.min(...points)
-  const max = Math.max(...points)
-  const range = max - min || 1
-  return points
-    .map((point, index) => {
-      const x = SPARKLINE_PADDING + (index / Math.max(points.length - 1, 1)) * (SPARKLINE_WIDTH - SPARKLINE_PADDING * 2)
-      const y =
-        SPARKLINE_HEIGHT -
-        SPARKLINE_PADDING -
-        ((point - min) / range) * (SPARKLINE_HEIGHT - SPARKLINE_PADDING * 2)
-      return `${index === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`
-    })
-    .join(' ')
-}
-
-function formatContractCount(value: number | null | undefined, fmt: Intl.NumberFormat): string {
-  if (value == null || !Number.isFinite(value)) {
-    return '—'
-  }
-  return fmt.format(value)
-}
-
-function formatFuturesDayRange(row: MarketOverviewItem, usdFmt: Intl.NumberFormat): string {
-  const lo = row.dayLow ?? row.low24h
-  const hi = row.dayHigh ?? row.high24h
-  if (lo == null || hi == null || !Number.isFinite(lo) || !Number.isFinite(hi)) {
-    return '—'
-  }
-  return `${usdFmt.format(lo)} – ${usdFmt.format(hi)}`
-}
-
-function formatContractExpiry(iso: string | null | undefined, locale: string): string {
-  if (!iso) {
-    return '—'
-  }
-  const d = new Date(iso)
-  if (!Number.isFinite(d.getTime())) {
-    return '—'
-  }
-  return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-function trendLabelText(label: MarketOverviewItem['trendLabel']): string {
+function trendLabelText(
+  label: MarketOverviewItem['trendLabel'],
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
   switch (label) {
     case 'WEAK':
-      return 'Zayif'
+      return t('trendLabels.weak')
     case 'STRONG':
-      return 'Guclu'
+      return t('trendLabels.strong')
     case 'VERY_STRONG':
-      return 'Asiri Guclu'
+      return t('trendLabels.veryStrong')
     case 'NEUTRAL':
     default:
-      return 'Notr'
+      return t('trendLabels.neutral')
   }
 }
 
@@ -234,12 +172,6 @@ export function MarketsPage() {
     sort: sortQuery,
     displayCurrency: currency,
   })
-  const championsEnabled = !loading && !error
-  const { champions: sidebarChampions, loading: championsLoading } = useMarketChampions(
-    currency,
-    selectedCategory,
-    championsEnabled,
-  )
   /** Header-selected currency (converted line). */
   const selectedCurrencyFormat = useMemo(
     () =>
@@ -633,7 +565,7 @@ export function MarketsPage() {
 
       <MarketsPortfolioSimulationCard />
 
-      <div className="fi-markets-layout">
+      <div className="fi-markets-layout fi-markets-layout-no-sidebar">
         <div className="fi-markets-main">
         <article className="card markets-main-card">
           <label className="markets-search-field markets-search-row">
@@ -1047,9 +979,6 @@ export function MarketsPage() {
                             </td>
                             <td className="markets-col-trend">
                               {(() => {
-                                const points = toSparklinePoints(row)
-                                const path = toSparklinePath(points)
-                                const isTrendUp = points[points.length - 1] >= points[0]
                                 const score = row.trendScore
                                 const trendClass =
                                   score == null
@@ -1066,19 +995,9 @@ export function MarketsPage() {
                               <div className="markets-trend-cell" title={tooltip}>
                                 <span className={`markets-trend-badge ${trendClass}`}>
                                   {score != null
-                                    ? `${score.toFixed(0)} · ${trendLabelText(row.trendLabel)}`
+                                    ? `${score.toFixed(0)} · ${trendLabelText(row.trendLabel, t)}`
                                     : '—'}
                                 </span>
-                                <svg
-                                  className="sparkline sparkline-compact"
-                                  viewBox={`0 0 ${SPARKLINE_WIDTH} ${SPARKLINE_HEIGHT}`}
-                                  aria-label={`${row.symbol} trend`}
-                                >
-                                  <path
-                                    d={path}
-                                    className={isTrendUp ? 'sparkline-line-positive' : 'sparkline-line-negative'}
-                                  />
-                                </svg>
                               </div>
                             )
                           })()}
@@ -1240,7 +1159,6 @@ export function MarketsPage() {
           <p className="markets-last-updated">{t('lastUpdated')}</p>
         </article>
         </div>
-        <MarketsPageSidebar champions={sidebarChampions} loading={championsLoading} />
       </div>
     </section>
   )

@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.dto.MarketInsightsResponse;
 import com.company.finance_api.dto.MarketOverviewPageResponse;
 import com.company.finance_api.service.MarketOverviewService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
@@ -40,17 +39,5 @@ class MarketOverviewControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.page").value(0));
-  }
-
-  @Test
-  void insights_returnsInsightsPayload() throws Exception {
-    when(marketOverviewService.getInsights("USD"))
-        .thenReturn(new MarketInsightsResponse(List.of(), List.of()));
-
-    mockMvc
-        .perform(get("/api/market/insights").header("X-Currency", "USD"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.data.topGainers").isArray());
   }
 }

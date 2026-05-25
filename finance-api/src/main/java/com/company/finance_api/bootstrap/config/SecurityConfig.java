@@ -30,11 +30,13 @@ import org.springframework.util.StringUtils;
 public class SecurityConfig {
 
   /**
-   * JWT olmadan erişilebilen katalog okumaları (rates, portal info-cards). OAuth2 chain'den ayrı
+   * JWT olmadan erişilebilen katalog okumaları (instruments, rates, portal info-cards). OAuth2 chain'den ayrı
    * tutulur; misafir ve eski Bearer token'lar {@code 401} + {@code WWW-Authenticate: Bearer} almaz.
    */
   private static final RequestMatcher PUBLIC_ANONYMOUS_READ_PATHS =
       new OrRequestMatcher(
+          new AntPathRequestMatcher("/api/instruments"),
+          new AntPathRequestMatcher("/api/instruments/**"),
           new AntPathRequestMatcher("/api/rates"),
           new AntPathRequestMatcher("/api/rates/**"),
           new AntPathRequestMatcher("/api/portal/info-cards"),
@@ -57,7 +59,7 @@ public class SecurityConfig {
   }
 
   /**
-   * Anonim katalog GET'leri (TCMB rates, Finansal Okuryazarlık info-cards). OAuth2 chain'den önce
+   * Anonim katalog GET'leri (instruments, TCMB rates, Finansal Okuryazarlık info-cards). OAuth2 chain'den önce
    * çalışır.
    */
   @Bean
@@ -85,7 +87,13 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth -> {
-              auth.requestMatchers("/health")
+              auth.requestMatchers(
+                      "/swagger-ui.html",
+                      "/swagger-ui/**",
+                      "/v3/api-docs",
+                      "/v3/api-docs/**")
+                  .permitAll()
+                  .requestMatchers("/health")
                   .permitAll()
                   .requestMatchers(
                       HttpMethod.POST,

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { fetchMarketOverviewPage } from '../api/marketService'
+import { fetchLiveFxMidRows, fetchMarketOverviewPage, repriceMarketOverviewRows } from '../api/marketService'
+import { parseMarketSortQuery } from '../lib/marketSort'
 import type { MarketCategory, MarketOverviewItem } from '../../../shared/types/market'
 import type { SupportedCurrency } from '../../../shared/preferences/preferences'
 
@@ -32,6 +33,11 @@ type RefetchOptions = {
 
 const POLL_INTERVAL_VISIBLE_MS = 10_000
 const POLL_INTERVAL_HIDDEN_MS = 30_000
+
+type FetchContext = {
+  queryKey: string
+  currency: SupportedCurrency
+}
 
 function isAbortError(err: unknown): boolean {
   if (axios.isCancel(err)) {
@@ -97,11 +103,47 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
   const [error, setError] = useState<string | null>(null)
   const debouncedSearch = useDebouncedValue(searchTerm.trim(), 350)
   const abortRef = useRef<AbortController | null>(null)
+  const rowsRef = useRef<MarketOverviewItem[]>([])
+  const lastFetchContextRef = useRef<FetchContext | null>(null)
+  const sortField = parseMarketSortQuery(sort).field
+  const backendDisplayCurrency: SupportedCurrency = sortField === 'displayAmount' ? displayCurrency : 'USD'
+
+  useEffect(() => {
+    rowsRef.current = rows
+  }, [rows])
 
   const refetchInternal = useCallback(
     async (options?: RefetchOptions) => {
       const silent = options?.silent === true
       const externalSignal = options?.signal
+      const resolvedPage = Math.max(page, 0)
+      const queryKey = [resolvedPage, size, category, debouncedSearch, sort ?? ''].join('|')
+      const lastFetchContext = lastFetchContextRef.current
+      const canClientReprice =
+        !silent &&
+        sortField !== 'displayAmount' &&
+        rowsRef.current.length > 0 &&
+        lastFetchContext?.queryKey === queryKey &&
+        lastFetchContext.currency !== displayCurrency
+
+      if (canClientReprice) {
+        try {
+          const fxRows = await fetchLiveFxMidRows()
+          if (externalSignal?.aborted) {
+            return
+          }
+          const nextRows = repriceMarketOverviewRows(rowsRef.current, displayCurrency, fxRows)
+          setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
+          setError(null)
+          lastFetchContextRef.current = { queryKey, currency: displayCurrency }
+          return
+        } catch (err) {
+          if (isAbortError(err) || externalSignal?.aborted) {
+            return
+          }
+          console.warn('market repricing fallback failed, refetching overview', err)
+        }
+      }
 
       if (!silent) {
         abortRef.current?.abort()
@@ -114,24 +156,38 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
       }
       try {
         const response = await fetchMarketOverviewPage({
-          page: Math.max(page, 0),
+          page: resolvedPage,
           size,
           category,
           query: debouncedSearch,
           sort,
-          displayCurrency,
+          displayCurrency: backendDisplayCurrency,
           signal,
         })
         if (signal?.aborted) {
           return
         }
-        const nextRows = Array.isArray(response.content) ? response.content : []
+        let nextRows = Array.isArray(response.content) ? response.content : []
+        let resolvedCurrency = backendDisplayCurrency
+        if (sortField !== 'displayAmount' && backendDisplayCurrency !== displayCurrency && nextRows.length > 0) {
+          try {
+            const fxRows = await fetchLiveFxMidRows()
+            if (signal?.aborted) {
+              return
+            }
+            nextRows = repriceMarketOverviewRows(nextRows, displayCurrency, fxRows)
+            resolvedCurrency = displayCurrency
+          } catch (repricingError) {
+            console.warn('market overview repricing after fetch failed', repricingError)
+          }
+        }
         setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
         const nextTotalElements = response.totalElements ?? 0
         const nextTotalPages = response.totalPages ?? 0
         setTotalElements((prev) => (prev === nextTotalElements ? prev : nextTotalElements))
         setTotalPages((prev) => (prev === nextTotalPages ? prev : nextTotalPages))
         setError(null)
+        lastFetchContextRef.current = { queryKey, currency: resolvedCurrency }
       } catch (err) {
         if (isAbortError(err) || signal?.aborted) {
           return
@@ -147,7 +203,7 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
         }
       }
     },
-    [category, debouncedSearch, displayCurrency, page, size, sort, t],
+    [backendDisplayCurrency, category, debouncedSearch, displayCurrency, page, size, sort, sortField, t],
   )
 
   const refetch = useCallback(async () => refetchInternal(), [refetchInternal])

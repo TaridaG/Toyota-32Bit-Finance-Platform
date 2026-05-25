@@ -11,7 +11,7 @@ import com.company.finance_api.domain.enums.Exchange;
 import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.dto.CandlestickResponse;
-import com.company.finance_api.repository.AlarmRuleRepository;
+import com.company.finance_api.alarm.infrastructure.persistence.AlarmRuleRepository;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.repository.TransactionRepository;

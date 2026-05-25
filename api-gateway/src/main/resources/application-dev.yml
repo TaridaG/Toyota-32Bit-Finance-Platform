@@ -19,5 +19,8 @@ gateway:
     finance-base-uri: ${FINANCE_BASE_URI:http://localhost:8080}
     market-base-uri: ${MARKET_BASE_URI:http://localhost:8082}
     news-base-uri: ${NEWS_BASE_URI:http://localhost:8083}
-    reporting-base-uri: ${REPORTING_BASE_URI:http://localhost:8084}
     analytics-base-uri: ${ANALYTICS_BASE_URI:http://localhost:8085}
+    log-consumer-base-uri: ${LOG_CONSUMER_BASE_URI:http://localhost:8087}
+    notification-base-uri: ${NOTIFICATION_BASE_URI:http://localhost:8086}
+
+# Swagger UI is proxied from finance-api; aggregated specs are served by gateway routes.

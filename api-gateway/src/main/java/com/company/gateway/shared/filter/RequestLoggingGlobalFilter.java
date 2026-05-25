@@ -35,12 +35,18 @@ public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
             String correlationId = exchange.getRequest().getHeaders().getFirst(CorrelationIdGlobalFilter.CORRELATION_ID);
             if (correlationId != null && !correlationId.isBlank()) {
                 MDC.put("correlationId", correlationId);
+                MDC.put("traceId", correlationId);
             }
             try {
-                log.info("gateway_request method={} path={} status={} tookMs={} outcome={}",
-                        method, path, status, tookMs, signal.name());
+                if (status >= 400 || tookMs >= 500) {
+                    log.info("gateway_request method={} path={} status={} tookMs={} outcome={}",
+                            method, path, status, tookMs, signal.name());
+                } else if (log.isDebugEnabled()) {
+                    log.debug("gateway_request method={} path={} status={} tookMs={} outcome={}",
+                            method, path, status, tookMs, signal.name());
+                }
             } finally {
-                MDC.remove("correlationId");
+                MDC.clear();
             }
         });
     }

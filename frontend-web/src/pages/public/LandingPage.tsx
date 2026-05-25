@@ -1,15 +1,15 @@
-import { lazy, Suspense, useMemo } from 'react'
+﻿import { lazy, Suspense, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
-import { useMarkets } from '../../features/markets/hooks/useMarkets'
 import { useNews } from '../../features/news/hooks/useNews'
-import { formatNumber, formatPrice } from '../../shared/format/number'
-import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
+import { formatNumber } from '../../shared/format/number'
 import { useTheme } from '../../shared/theme/ThemeProvider'
 import type { NewsApiItem } from '../../features/news/api/newsService'
 import { ChartBackground } from './components/ChartBackground'
+import { AnalysisPreview } from './components/AnalysisPreview'
+import { GlobalMarketsSection } from './components/global-markets/GlobalMarketsSection'
 import './landing.css'
 
 const SectionDots = lazy(() =>
@@ -23,7 +23,6 @@ const SECTION_IDS = [
   'ai-insights',
   'news',
   'portfolio',
-  'reporting',
   'security',
   'final-cta',
 ] as const
@@ -51,8 +50,6 @@ export function LandingPage() {
   const reduceMotion = useReducedMotion() ?? false
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { currency } = useAppPreferences()
-  const marketOverview = useMarkets({ page: 0, size: 4, category: 'all', searchTerm: '', displayCurrency: currency })
   const newsFeed = useNews(0, 8)
   useDocumentTitle(t('titleDoc'))
 
@@ -68,7 +65,8 @@ export function LandingPage() {
   const sentimentStats = useMemo(() => {
     const base = { positive: 0, negative: 0, neutral: 0 }
     return newsFeed.data.reduce((acc, item) => {
-      acc[item.sentiment] += 1
+      const sentiment = item.sentiment ?? 'neutral'
+      acc[sentiment] += 1
       return acc
     }, base)
   }, [newsFeed.data])
@@ -77,13 +75,6 @@ export function LandingPage() {
     const withReaction = newsFeed.data.filter((item) => item.reactionPercent1h != null)
     return withReaction.sort((a, b) => Math.abs(b.reactionPercent1h ?? 0) - Math.abs(a.reactionPercent1h ?? 0))[0] ?? null
   }, [newsFeed.data])
-
-  const marketHealth = useMemo(() => {
-    const total = marketOverview.rows.length
-    const live = marketOverview.rows.filter((item) => item.freshness === 'LIVE').length
-    const delayed = Math.max(0, total - live)
-    return { total, live, delayed }
-  }, [marketOverview.rows])
 
   const leadingSentiment = useMemo(() => {
     const entries: Array<{ key: 'positive' | 'negative' | 'neutral'; value: number }> = [
@@ -121,87 +112,26 @@ export function LandingPage() {
         <div className="hero-fade" />
       </motion.section>
 
-      <motion.section id="markets" className="landing-section landing-screen-section section-markets" {...motionProps}>
-        <div className="container">
-          <header className="landing-section-head landing-section-inner">
-            <div className="landing-markets-head-title">
-              <h2 className="section-title">{t('markets.title')}</h2>
-              <span className={`landing-live-pill${marketHealth.delayed > 0 ? ' landing-live-pill-delayed' : ''}`}>
-                {marketHealth.delayed > 0 ? 'DELAYED' : 'LIVE'}
-              </span>
-            </div>
-            <p>{t('markets.subtitle')}</p>
-            {marketHealth.total > 0 ? (
-              <p className="landing-markets-health">
-                {marketHealth.live}/{marketHealth.total} instruments live
-              </p>
-            ) : null}
-          </header>
-          {marketOverview.loading ? (
-            <p className="landing-state">{t('states.loading')}</p>
-          ) : marketOverview.error ? (
-            <div className="landing-state-row">
-              <p className="landing-state">{t('states.error')}</p>
-              <button type="button" onClick={() => void marketOverview.refetch()}>
-                {t('states.retry')}
-              </button>
-            </div>
-          ) : (
-            <motion.div
-              className="landing-card-grid grid landing-section-inner"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              whileInView={reduceMotion ? {} : { opacity: 1 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ staggerChildren: 0.08 }}
-            >
-              {marketOverview.rows.map((instrument) => (
-                <motion.article
-                  key={instrument.symbol}
-                  className="landing-feature-card landing-card"
-                  initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-                  whileInView={reduceMotion ? {} : { opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <div>
-                    <strong className="landing-feature-card-symbol">
-                      {instrument.symbol}
-                      <span
-                        className={`landing-feature-status-dot${instrument.freshness === 'STALE' ? ' landing-feature-status-dot-stale' : ''
-                          }`}
-                        aria-hidden
-                      />
-                    </strong>
-                    <p>{instrument.name}</p>
-                  </div>
-                  <div className="landing-feature-card-right">
-                    <span className="landing-feature-price">{formatPrice(instrument.price, i18n.language, currency)}</span>
-                    <small className={`landing-change-chip ${(instrument.change24h ?? 0) >= 0 ? 'landing-up' : 'landing-down'}`}>
-                      {(instrument.change24h ?? 0) >= 0 ? '▲ ' : '▼ '}
-                      {formatNumber(instrument.change24h, i18n.language, 2)}%
-                    </small>
-                  </div>
-                </motion.article>
-              ))}
-            </motion.div>
-          )}
-        </div>
-      </motion.section>
+      <GlobalMarketsSection />
 
       <motion.section id="analysis" className="landing-section landing-screen-section section-analysis" {...motionProps}>
-        <div className="container analysis-grid">
-          <div className="landing-copy">
-            <h2 className="section-title">{t('analysis.title')}</h2>
-            <p>{t('analysis.subtitle')}</p>
-            <ul>
+        <div className="container analysis-showcase">
+          <div className="landing-copy analysis-copy">
+            <h2 className="analysis-title">{t('analysis.title')}</h2>
+            <p className="analysis-subtitle">{t('analysis.subtitle')}</p>
+            <ul className="analysis-points">
               <li>{t('analysis.points.point1')}</li>
               <li>{t('analysis.points.point2')}</li>
               <li>{t('analysis.points.point3')}</li>
             </ul>
+            <div className="landing-cta-row analysis-cta-row">
+              <Link to="/analysis" className="landing-cta-primary">
+                {t('analysis.cta')}
+              </Link>
+            </div>
           </div>
-          <div className="landing-visual-box landing-card">
-            <h3>{t('analysis.visualTitle')}</h3>
-            <p>{t('analysis.visualBody')}</p>
+          <div className="analysis-visual-wrap">
+            <AnalysisPreview />
           </div>
         </div>
       </motion.section>
@@ -220,9 +150,9 @@ export function LandingPage() {
             <p>
               {topReactionItem
                 ? t('ai.stats.reaction', {
-                  symbol: topReactionSymbol(topReactionItem),
-                  value: formatNumber(topReactionItem.reactionPercent1h, i18n.language, 2),
-                })
+                    symbol: topReactionSymbol(topReactionItem),
+                    value: formatNumber(topReactionItem.reactionPercent1h, i18n.language, 2),
+                  })
                 : t('ai.stats.reactionFallback')}
             </p>
           </div>
@@ -273,19 +203,6 @@ export function LandingPage() {
         </div>
       </motion.section>
 
-      <motion.section id="reporting" className="landing-section landing-screen-section" {...motionProps}>
-        <div className="container landing-split">
-          <div className="landing-copy">
-            <h2 className="section-title">{t('reporting.title')}</h2>
-            <p>{t('reporting.subtitle')}</p>
-          </div>
-          <div className="landing-visual-box landing-card">
-            <h3>{t('reporting.visualTitle')}</h3>
-            <p>{t('reporting.visualBody')}</p>
-          </div>
-        </div>
-      </motion.section>
-
       <motion.section id="security" className="landing-section landing-screen-section section-security" {...motionProps}>
         <div className="container landing-split">
           <div className="landing-copy">
@@ -318,4 +235,3 @@ export function LandingPage() {
 function topReactionSymbol(item: NewsApiItem): string {
   return item.relatedSymbols[0] ?? item.sourceName
 }
-

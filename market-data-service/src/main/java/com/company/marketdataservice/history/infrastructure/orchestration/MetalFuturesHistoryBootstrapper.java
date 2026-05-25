@@ -1,8 +1,10 @@
 package com.company.marketdataservice.history.infrastructure.orchestration;
+import com.company.marketdataservice.bootstrap.config.MarketHistoryBackfillProperties;
 import com.company.marketdataservice.bootstrap.config.MetalFuturesHistoryBootstrapProperties;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.history.domain.HistoricalPricePoint;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;
+import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.spot.infrastructure.provider.yahoo.YahooFinanceHistoricalPriceProvider;
 import com.company.marketdataservice.history.infrastructure.write.MarketHistoryWriteService;
 import org.slf4j.Logger;
@@ -15,10 +17,13 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -34,17 +39,24 @@ public class MetalFuturesHistoryBootstrapper {
     private final YahooFinanceHistoricalPriceProvider historicalPriceProvider;
     private final MarketHistoryWriteService marketHistoryWriteService;
     private final InstrumentMappingService instrumentMappingService;
+    private final MarketPriceHistoryRepository marketPriceHistoryRepository;
+    private final MarketHistoryBackfillProperties backfillProperties;
     private final MetalFuturesHistoryBootstrapProperties properties;
+    private final Set<String> readySymbols = ConcurrentHashMap.newKeySet();
 
     public MetalFuturesHistoryBootstrapper(
             YahooFinanceHistoricalPriceProvider historicalPriceProvider,
             MarketHistoryWriteService marketHistoryWriteService,
             InstrumentMappingService instrumentMappingService,
+            MarketPriceHistoryRepository marketPriceHistoryRepository,
+            MarketHistoryBackfillProperties backfillProperties,
             MetalFuturesHistoryBootstrapProperties properties
     ) {
         this.historicalPriceProvider = historicalPriceProvider;
         this.marketHistoryWriteService = marketHistoryWriteService;
         this.instrumentMappingService = instrumentMappingService;
+        this.marketPriceHistoryRepository = marketPriceHistoryRepository;
+        this.backfillProperties = backfillProperties;
         this.properties = properties;
     }
 
@@ -102,6 +114,11 @@ public class MetalFuturesHistoryBootstrapper {
 
     private void backfillSymbol(String symbol, LocalDate start, LocalDate end, String trigger) {
         String normalized = symbol.trim().toUpperCase(Locale.ROOT);
+        if (readySymbols.contains(normalized) || hasSufficientHistory(normalized)) {
+            readySymbols.add(normalized);
+            log.debug("METAL_FUTURES_HISTORY_SKIP trigger={} symbol={} reason=sufficient_history", trigger, normalized);
+            return;
+        }
         List<HistoricalPricePoint> raw = historicalPriceProvider.fetchRange(normalized, start, end);
         if (raw.isEmpty()) {
             log.info("METAL_FUTURES_HISTORY_EMPTY trigger={} symbol={} from={} to={}", trigger, normalized, start, end);
@@ -132,6 +149,21 @@ public class MetalFuturesHistoryBootstrapper {
             return;
         }
         marketHistoryWriteService.saveBatch(events);
+        if (hasSufficientHistory(normalized)) {
+            readySymbols.add(normalized);
+        }
         log.info("METAL_FUTURES_HISTORY_BACKFILLED trigger={} symbol={} points={}", trigger, normalized, events.size());
+    }
+
+    private boolean hasSufficientHistory(String symbol) {
+        long totalDays = marketPriceHistoryRepository.countDistinctDaysBySymbol(symbol);
+        int minTotalDays = Math.max(30, backfillProperties.getMinPriceHistoryDays());
+        if (totalDays < minTotalDays) {
+            return false;
+        }
+        Instant recentFrom = Instant.now().minus(365, ChronoUnit.DAYS);
+        long recentDays = marketPriceHistoryRepository.countDistinctDaysBySymbolSince(symbol, recentFrom);
+        int minRecentDays = Math.max(30, backfillProperties.getMinRecentPriceHistoryDays());
+        return recentDays >= minRecentDays;
     }
 }
