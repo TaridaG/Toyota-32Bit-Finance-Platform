@@ -7,6 +7,10 @@ import com.company.finance_api.dto.NewsEnrichedPageResponse;
 import com.company.finance_api.dto.NewsEnrichedResponse;
 import com.company.finance_api.dto.NewsOriginalResponse;
 import com.company.finance_api.dto.NewsRelatedAssetPerformance;
+import com.company.finance_api.dto.NewsWeeklyAssetRowResponse;
+import com.company.finance_api.dto.NewsWeeklySourceRowResponse;
+import com.company.finance_api.dto.NewsWeeklySummaryResponse;
+import com.company.finance_api.dto.NewsWeeklyTopicRowResponse;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.NewsFavoriteRepository;
 import com.company.finance_api.service.InstrumentService;
@@ -56,6 +60,9 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       Set.of("drop", "drops", "fall", "falls", "down", "bear", "sell", "negative", "miss", "loss");
 
   private static final int FAVORITE_NEWS_FETCH_CAP = 120;
+  private static final int WEEKLY_SUMMARY_MAX_AGE_MINUTES = 7 * 24 * 60;
+  private static final int WEEKLY_SUMMARY_TOP_LIMIT = 5;
+  private static final List<String> WEEKLY_TOPIC_ORDER = List.of("crypto", "macro", "bist", "fx", "viop");
 
   private final InstrumentService instrumentService;
   private final InstrumentPriceRepository instrumentPriceRepository;
@@ -95,7 +102,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       String category,
       String sentiment,
       Integer maxAgeMinutes,
-      String search) {
+      String search,
+      String relatedSymbols,
+      String sourceName,
+      String assetKey,
+      String primaryTopic) {
     int resolvedPage = Math.max(page, 0);
     int resolvedSize = Math.max(size, 1);
     String resolvedLang = normalizeLanguage(language);
@@ -103,8 +114,12 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     String resolvedSentiment = normalizeSentimentFilter(sentiment);
     Integer resolvedMaxAgeMinutes = normalizeMaxAge(maxAgeMinutes);
     String resolvedSearch = normalizeSearch(search);
+    Set<String> resolvedRelatedSymbols = normalizeRelatedSymbolsFilter(relatedSymbols);
+    String resolvedSourceName = normalizeSourceNameFilter(sourceName);
+    String resolvedAssetKey = normalizeAssetKeyFilter(assetKey);
+    String resolvedPrimaryTopic = normalizePrimaryTopicFilter(primaryTopic);
     String cacheKey =
-        "news:enriched:v2:lang:"
+        "news:enriched:v3:lang:"
             + resolvedLang
             + ":page:"
             + resolvedPage
@@ -117,7 +132,15 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             + ":maxAge:"
             + (resolvedMaxAgeMinutes == null ? "all" : resolvedMaxAgeMinutes)
             + ":q:"
-            + (resolvedSearch == null ? "" : resolvedSearch.toLowerCase(Locale.ROOT));
+            + (resolvedSearch == null ? "" : resolvedSearch.toLowerCase(Locale.ROOT))
+            + ":relatedSymbols:"
+            + (resolvedRelatedSymbols.isEmpty() ? "all" : String.join(",", resolvedRelatedSymbols))
+            + ":sourceName:"
+            + (resolvedSourceName == null ? "all" : resolvedSourceName)
+            + ":assetKey:"
+            + (resolvedAssetKey == null ? "all" : resolvedAssetKey)
+            + ":primaryTopic:"
+            + (resolvedPrimaryTopic == null ? "all" : resolvedPrimaryTopic);
     Optional<NewsEnrichedPageResponse> cached =
         jsonCacheService.get(cacheKey, new TypeReference<>() {});
     if (cached.isPresent()) {
@@ -126,7 +149,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     boolean hasClientFilters =
         !"all".equals(resolvedCategory)
             || !"all".equals(resolvedSentiment)
-            || resolvedMaxAgeMinutes != null;
+            || resolvedMaxAgeMinutes != null
+            || !resolvedRelatedSymbols.isEmpty()
+            || resolvedSourceName != null
+            || resolvedAssetKey != null
+            || resolvedPrimaryTopic != null;
     NewsServicePageResponse<NewsServiceNewsItem> upstream =
         hasClientFilters
             ? collectFilteredUpstreamPage(
@@ -136,7 +163,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
                 resolvedCategory,
                 resolvedSentiment,
                 resolvedMaxAgeMinutes,
-                resolvedSearch)
+                resolvedSearch,
+                resolvedRelatedSymbols,
+                resolvedSourceName,
+                resolvedAssetKey,
+                resolvedPrimaryTopic)
             : fetchNewsPage(resolvedPage, resolvedSize, resolvedLang, true, resolvedSearch);
     List<String> symbols;
     try {
@@ -165,6 +196,102 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     return response;
   }
 
+  @Override
+  public NewsWeeklySummaryResponse getWeeklySummary(String language, String portfolioSymbols) {
+    String resolvedLang = normalizeLanguage(language);
+    Set<String> resolvedPortfolioSymbols = normalizeRelatedSymbolsFilter(portfolioSymbols);
+    String cacheKey =
+        "news:weekly-summary:v1:lang:"
+            + resolvedLang
+            + ":portfolioSymbols:"
+            + (resolvedPortfolioSymbols.isEmpty() ? "none" : String.join(",", resolvedPortfolioSymbols));
+    Optional<NewsWeeklySummaryResponse> cached =
+        jsonCacheService.get(cacheKey, new TypeReference<>() {});
+    if (cached.isPresent()) {
+      return cached.get();
+    }
+
+    List<NewsServiceNewsItem> weeklyItems =
+        collectFilteredUpstreamItems(
+            resolvedLang,
+            "all",
+            "all",
+            WEEKLY_SUMMARY_MAX_AGE_MINUTES,
+            null,
+            Set.of(),
+            null,
+            null,
+            null);
+
+    long totalCount = weeklyItems.size();
+    Map<String, Long> topicCounts = new LinkedHashMap<>();
+    Map<String, Long> assetCounts = new LinkedHashMap<>();
+    Map<String, Long> sourceCounts = new LinkedHashMap<>();
+    long portfolioRelatedCount = 0L;
+
+    for (NewsServiceNewsItem item : weeklyItems) {
+      String primaryTopic = resolvePrimaryTopic(item);
+      if (primaryTopic != null) {
+        topicCounts.put(primaryTopic, topicCounts.getOrDefault(primaryTopic, 0L) + 1L);
+      }
+
+      for (String raw : item.relatedSymbols() == null ? List.<String>of() : item.relatedSymbols()) {
+        String assetSymbol = normalizeSidebarAssetSymbol(raw);
+        if (!assetSymbol.isBlank()) {
+          assetCounts.put(assetSymbol, assetCounts.getOrDefault(assetSymbol, 0L) + 1L);
+        }
+      }
+
+      String source = normalizeSourceDisplay(item.sourceName());
+      if (source != null) {
+        sourceCounts.put(source, sourceCounts.getOrDefault(source, 0L) + 1L);
+      }
+
+      if (!resolvedPortfolioSymbols.isEmpty()
+          && matchesFilters(item, "all", "all", null, resolvedPortfolioSymbols, null, null, null)) {
+        portfolioRelatedCount++;
+      }
+    }
+
+    List<NewsWeeklyTopicRowResponse> topics =
+        WEEKLY_TOPIC_ORDER.stream()
+            .map(
+                key ->
+                    new NewsWeeklyTopicRowResponse(
+                        key,
+                        topicCounts.getOrDefault(key, 0L),
+                        totalCount == 0
+                            ? 0
+                            : (int) Math.round((topicCounts.getOrDefault(key, 0L) * 100.0d) / totalCount)))
+            .filter(row -> row.count() > 0)
+            .toList();
+
+    Comparator<Map.Entry<String, Long>> byCountDescThenKey =
+        Comparator.<Map.Entry<String, Long>>comparingLong(Map.Entry::getValue)
+            .reversed()
+            .thenComparing(Map.Entry::getKey);
+
+    List<NewsWeeklyAssetRowResponse> topAssets =
+        assetCounts.entrySet().stream()
+            .sorted(byCountDescThenKey)
+            .limit(WEEKLY_SUMMARY_TOP_LIMIT)
+            .map(entry -> new NewsWeeklyAssetRowResponse(entry.getKey(), entry.getValue()))
+            .toList();
+
+    List<NewsWeeklySourceRowResponse> sources =
+        sourceCounts.entrySet().stream()
+            .sorted(byCountDescThenKey)
+            .limit(WEEKLY_SUMMARY_TOP_LIMIT)
+            .map(entry -> new NewsWeeklySourceRowResponse(entry.getKey(), entry.getValue()))
+            .toList();
+
+    NewsWeeklySummaryResponse response =
+        new NewsWeeklySummaryResponse(
+            totalCount, topics, topAssets, sources, resolvedPortfolioSymbols.isEmpty() ? 0L : portfolioRelatedCount);
+    jsonCacheService.put(cacheKey, response, CACHE_TTL);
+    return response;
+  }
+
   private NewsServicePageResponse<NewsServiceNewsItem> collectFilteredUpstreamPage(
       int page,
       int size,
@@ -172,7 +299,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       String category,
       String sentiment,
       Integer maxAgeMinutes,
-      String search) {
+      String search,
+      Set<String> relatedSymbols,
+      String sourceName,
+      String assetKey,
+      String primaryTopic) {
     final int scanPageSize = Math.max(50, Math.min(200, size * 5));
     final long startIndex = (long) page * size;
     final long endExclusive = startIndex + size;
@@ -188,7 +319,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       upstreamTotalPages = Math.max(upstreamPage.totalPages(), upstreamPageIndex + 1);
 
       for (NewsServiceNewsItem item : upstreamPage.content()) {
-        if (!matchesFilters(item, category, sentiment, maxAgeMinutes)) {
+        if (!matchesFilters(
+            item, category, sentiment, maxAgeMinutes, relatedSymbols, sourceName, assetKey, primaryTopic)) {
           continue;
         }
         if (filteredTotal >= startIndex && filteredTotal < endExclusive) {
@@ -205,6 +337,42 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
     int totalPages = filteredTotal == 0 ? 0 : (int) Math.ceil((double) filteredTotal / size);
     return new NewsServicePageResponse<>(selectedPageItems, page, size, filteredTotal, totalPages);
+  }
+
+  private List<NewsServiceNewsItem> collectFilteredUpstreamItems(
+      String language,
+      String category,
+      String sentiment,
+      Integer maxAgeMinutes,
+      String search,
+      Set<String> relatedSymbols,
+      String sourceName,
+      String assetKey,
+      String primaryTopic) {
+    final int scanPageSize = 200;
+    List<NewsServiceNewsItem> items = new ArrayList<>();
+    int upstreamPageIndex = 0;
+    int upstreamTotalPages = Integer.MAX_VALUE;
+
+    while (upstreamPageIndex < upstreamTotalPages) {
+      NewsServicePageResponse<NewsServiceNewsItem> upstreamPage =
+          fetchNewsPage(upstreamPageIndex, scanPageSize, language, true, search);
+      upstreamTotalPages = Math.max(upstreamPage.totalPages(), upstreamPageIndex + 1);
+
+      for (NewsServiceNewsItem item : upstreamPage.content()) {
+        if (matchesFilters(
+            item, category, sentiment, maxAgeMinutes, relatedSymbols, sourceName, assetKey, primaryTopic)) {
+          items.add(item);
+        }
+      }
+
+      upstreamPageIndex++;
+      if (upstreamPage.content().isEmpty()) {
+        break;
+      }
+    }
+
+    return items;
   }
 
   /** Kullanıcının favorite news listesi için enrichment uygulanmış page sonucunu döner. */
@@ -230,7 +398,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       if (item == null) {
         continue;
       }
-      if (!matchesFilters(item, resolvedCategory, "all", resolvedMaxAgeMinutes)) {
+      if (!matchesFilters(
+          item, resolvedCategory, "all", resolvedMaxAgeMinutes, Set.of(), null, null, null)) {
         continue;
       }
       if (!matchesSearch(item, resolvedSearch)) {
@@ -535,6 +704,16 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     return List.of(mapCategoryToUi(wireCategory));
   }
 
+  private String resolvePrimaryTopic(NewsServiceNewsItem item) {
+    for (String topic : resolveTopicTags(item)) {
+      String normalized = normalizePrimaryTopicFilter(topic);
+      if (normalized != null) {
+        return normalized;
+      }
+    }
+    return null;
+  }
+
   private boolean hasRelatedSymbolMatch(NewsEnrichedResponse item, String symbol) {
     if (item.relatedSymbols() == null || item.relatedSymbols().isEmpty()) {
       return false;
@@ -553,6 +732,32 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       return "";
     }
     return symbol.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
+  }
+
+  private static String normalizeSidebarAssetSymbol(String symbol) {
+    if (!StringUtils.hasText(symbol)) {
+      return "";
+    }
+    String upper = symbol.trim().toUpperCase(Locale.ROOT);
+    if (upper.endsWith("USDT") && upper.length() > 4) {
+      return upper.substring(0, upper.length() - 4);
+    }
+    return upper;
+  }
+
+  private static String normalizeSourceName(String sourceName) {
+    if (!StringUtils.hasText(sourceName)) {
+      return "";
+    }
+    return sourceName.trim().toLowerCase(Locale.ROOT);
+  }
+
+  private static String normalizeSourceDisplay(String sourceName) {
+    if (!StringUtils.hasText(sourceName)) {
+      return null;
+    }
+    String normalized = sourceName.trim();
+    return normalized.isBlank() ? null : normalized;
   }
 
   private List<NewsServiceNewsItem> fetchNewsChart(
@@ -582,7 +787,14 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
   }
 
   private boolean matchesFilters(
-      NewsServiceNewsItem item, String category, String sentiment, Integer maxAgeMinutes) {
+      NewsServiceNewsItem item,
+      String category,
+      String sentiment,
+      Integer maxAgeMinutes,
+      Set<String> relatedSymbols,
+      String sourceName,
+      String assetKey,
+      String primaryTopic) {
     if (!"all".equals(category) && !matchesCategoryUi(item, category)) {
       return false;
     }
@@ -599,6 +811,45 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       }
       Instant threshold = Instant.now().minusSeconds(maxAgeMinutes.longValue() * 60L);
       if (item.publishedAt().isBefore(threshold)) {
+        return false;
+      }
+    }
+    if (!relatedSymbols.isEmpty()) {
+      if (item.relatedSymbols() == null || item.relatedSymbols().isEmpty()) {
+        return false;
+      }
+      boolean matched = false;
+      for (String related : item.relatedSymbols()) {
+        if (related != null && relatedSymbols.contains(normalizeSymbolKey(related))) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        return false;
+      }
+    }
+    if (sourceName != null && !sourceName.equals(normalizeSourceName(item.sourceName()))) {
+      return false;
+    }
+    if (assetKey != null) {
+      if (item.relatedSymbols() == null || item.relatedSymbols().isEmpty()) {
+        return false;
+      }
+      boolean matched = false;
+      for (String related : item.relatedSymbols()) {
+        if (assetKey.equals(normalizeSidebarAssetSymbol(related))) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        return false;
+      }
+    }
+    if (primaryTopic != null) {
+      String resolvedPrimaryTopic = resolvePrimaryTopic(item);
+      if (!primaryTopic.equals(resolvedPrimaryTopic)) {
         return false;
       }
     }
@@ -925,6 +1176,40 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
     String normalized = search.trim();
     return normalized.isBlank() ? null : normalized;
+  }
+
+  private static String normalizeSourceNameFilter(String sourceName) {
+    if (!StringUtils.hasText(sourceName)) {
+      return null;
+    }
+    String normalized = normalizeSourceName(sourceName);
+    return normalized.isBlank() ? null : normalized;
+  }
+
+  private static String normalizeAssetKeyFilter(String assetKey) {
+    if (!StringUtils.hasText(assetKey)) {
+      return null;
+    }
+    String normalized = normalizeSidebarAssetSymbol(assetKey);
+    return normalized.isBlank() ? null : normalized;
+  }
+
+  private static String normalizePrimaryTopicFilter(String primaryTopic) {
+    if (!StringUtils.hasText(primaryTopic)) {
+      return null;
+    }
+    String normalized = primaryTopic.trim().toLowerCase(Locale.ROOT);
+    return WEEKLY_TOPIC_ORDER.contains(normalized) ? normalized : null;
+  }
+
+  private static Set<String> normalizeRelatedSymbolsFilter(String relatedSymbols) {
+    if (!StringUtils.hasText(relatedSymbols)) {
+      return Set.of();
+    }
+    return java.util.Arrays.stream(relatedSymbols.split(","))
+        .map(NewsEnrichmentServiceImpl::normalizeSymbolKey)
+        .filter(StringUtils::hasText)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   private static String nz(String value) {

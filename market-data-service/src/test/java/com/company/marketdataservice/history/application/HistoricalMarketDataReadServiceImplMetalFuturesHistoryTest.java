@@ -43,7 +43,7 @@ class HistoricalMarketDataReadServiceImplMetalFuturesHistoryTest {
 
         HistoricalMarketDataReadServiceImpl service =
                 new HistoricalMarketDataReadServiceImpl(
-                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, null);
+                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, null, null);
 
         List<HistoryPointDto> out = service.getPriceHistory("GC=F", from, to);
 

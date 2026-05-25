@@ -1,4 +1,9 @@
 import { apiClient } from '../../../shared/api/client'
+import { getCachedOrLoad } from './requestCache'
+
+const INSTRUMENTS_TTL_MS = 30_000
+const HISTORY_TTL_MS = 5 * 60_000
+const CASHFLOW_TTL_MS = 60_000
 
 export type EurobondInstrumentWire = {
   displayName?: string | null
@@ -62,9 +67,11 @@ function unwrapData<T>(raw: unknown): T | null {
 }
 
 export async function fetchTrEurobondInstruments(): Promise<EurobondInstrumentWire[]> {
-  const { data } = await apiClient.get<ApiEnvelope<EurobondInstrumentWire[]>>('/api/market/eurobonds/tr/instruments')
-  const list = unwrapData<EurobondInstrumentWire[]>(data)
-  return Array.isArray(list) ? list : []
+  return getCachedOrLoad('faiz-vadeli:eurobond:instruments', INSTRUMENTS_TTL_MS, async () => {
+    const { data } = await apiClient.get<ApiEnvelope<EurobondInstrumentWire[]>>('/api/market/eurobonds/tr/instruments')
+    const list = unwrapData<EurobondInstrumentWire[]>(data)
+    return Array.isArray(list) ? list : []
+  })
 }
 
 export async function fetchTrEurobondHistory(
@@ -72,18 +79,22 @@ export async function fetchTrEurobondHistory(
   range: '1Y' | '5Y' | 'ALL',
   frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY',
 ): Promise<EurobondHistoryWire | null> {
-  const { data } = await apiClient.get<ApiEnvelope<EurobondHistoryWire>>(
-    `/api/market/eurobonds/tr/instruments/${encodeURIComponent(isin)}/history`,
-    { params: { range, frequency } },
-  )
-  return unwrapData<EurobondHistoryWire>(data)
+  return getCachedOrLoad(`faiz-vadeli:eurobond:history:${isin}:${range}:${frequency}`, HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<ApiEnvelope<EurobondHistoryWire>>(
+      `/api/market/eurobonds/tr/instruments/${encodeURIComponent(isin)}/history`,
+      { params: { range, frequency } },
+    )
+    return unwrapData<EurobondHistoryWire>(data)
+  })
 }
 
 export async function fetchTrEurobondCashflow(isin: string, nominal: number): Promise<EurobondCashflowWire | null> {
-  const { data } = await apiClient.get<ApiEnvelope<EurobondCashflowWire>>('/api/market/eurobonds/tr/cashflow', {
-    params: { isin, nominal },
+  return getCachedOrLoad(`faiz-vadeli:eurobond:cashflow:${isin}:${nominal}`, CASHFLOW_TTL_MS, async () => {
+    const { data } = await apiClient.get<ApiEnvelope<EurobondCashflowWire>>('/api/market/eurobonds/tr/cashflow', {
+      params: { isin, nominal },
+    })
+    return unwrapData<EurobondCashflowWire>(data)
   })
-  return unwrapData<EurobondCashflowWire>(data)
 }
 
 export function toNum(v: number | string | null | undefined): number | null {

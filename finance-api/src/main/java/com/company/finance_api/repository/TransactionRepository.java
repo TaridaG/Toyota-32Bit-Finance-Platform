@@ -5,6 +5,7 @@ import com.company.finance_api.domain.Transaction;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -24,6 +25,9 @@ public interface TransactionRepository
 
   List<Transaction> findByUserAndExternalPortfolioOrderByCreatedAtAsc(
       User user, ExternalPortfolio externalPortfolio);
+
+  List<Transaction> findByUserIdAndExternalPortfolioIdOrderByCreatedAtAsc(
+      UUID userId, Long externalPortfolioId);
 
   List<Transaction> findByUserAndInstrument(User user, Instrument instrument);
 

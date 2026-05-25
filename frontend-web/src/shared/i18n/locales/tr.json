@@ -1248,6 +1248,7 @@
     "filterSummaryAll": "Tum haberler listeleniyor",
     "filterSummaryActive": "Filtreli gorunum aktif",
     "timeRangeAll": "Tümü",
+    "timeRange7d": "7g",
     "noNews": "Haber bulunamadı",
     "loadError": "Haberler yüklenemedi.",
     "closeDetails": "Detayları kapat",
@@ -1291,9 +1292,12 @@
       "loginRequired": "Giriş yapmalısın",
       "loginAction": "Giriş Yap",
       "noWeeklyData": "Bu hafta için özet veri yok",
-      "portfolioFilterActive": "Portföyünle ilişkili haberler listeleniyor.",
+      "weeklyFilterActive": "Haftalık özet filtresi aktif: {{label}}",
+      "clearWeeklyFilter": "Filtreyi kaldır",
+      "noWeeklyFilterResults": "Son 7 günde bu filtreye uygun haber bulunamadı.",
+      "portfolioFilterActive": "Portföyünle ilişkili son 7 gün haberleri listeleniyor.",
       "clearPortfolioFilter": "Filtreyi kaldır",
-      "noPortfolioNewsOnPage": "Bu sayfada portföyünle eşleşen haber yok. Sonraki sayfayı deneyin."
+      "noPortfolioNewsOnPage": "Son 7 günde portföyünle ilişkili haber bulunamadı."
     }
   },
   "analysis": {
@@ -1594,11 +1598,22 @@
     "insightTitle": "Piyasa İçgörüsü",
     "favoriteNewsTitle": "Favori Haberlerim",
     "favoriteNewsEmpty": "Henüz favori haber yok. Haberler sayfasından yıldızla kaydedebilirsin.",
+    "targetInsightEmpty": "Bir hedef belirlediğinde ilerleme barın burada görünecek.",
+    "targetInsightLoadError": "Hedef özeti yüklenemedi.",
     "fromLastYear": "geçen yıla göre",
     "sinceYesterday": "düne göre",
     "valueChart": {
       "empty": "Sunucu bu portföy için birkaç değer kaydı oluşturduğunda grafik görünür.",
+      "dailyChangePct": "Günlük değişim %",
+      "loading": "Grafik yükleniyor…",
+      "metricAria": "Portföy grafik metriği",
+      "metricLabel": "Metrik",
+      "performanceTitle": "Performans %",
+      "marketValueTitle": "Toplam değer",
+      "metricPerformance": "Performans %",
+      "metricValue": "Toplam değer",
       "rangeAria": "Portföy değeri grafik aralığı",
+      "rangeLabel": "Aralık",
       "periodChange": "{{pct}} · {{range}}",
       "flatInRange": "{{range}} aralığında sabit",
       "periodRange": "{{from}} – {{to}}",
@@ -1622,18 +1637,6 @@
       "empty": "Kar veya zararda pozisyon yok.",
       "legendAria": "Kar / zarar dağılımı",
       "ringShare": "Halka payı: %{{pct}}"
-    },
-    "portfolioAnalysis": {
-      "title": "Portföy Analizi",
-      "lead": "Portföy değeri, günlük işlem hacmi, kar/zarar ve dağılım tek ekranda.",
-      "pickPortfolio": "Analiz için üstten bir portföy seçin.",
-      "openAllocation": "Dağılım detayı",
-      "valueTrend": "Portföy değeri (günlük)",
-      "valueTrendHint": "Her gün kapanış değeri; bugün canlı toplam.",
-      "pnlBreakdown": "Kar / zarar dağılımı",
-      "dailyFlow": "Günlük alım–satım",
-      "dailyFlowHint": "O gün gerçekleşen net nakit akışı (alım − satım).",
-      "allocation": "Dağılım özeti"
     },
     "allocation": {
       "detailTitle": "Portföy dağılımı detayı",
@@ -1706,7 +1709,6 @@
         "markets": "Portföye Ekle",
         "portfolio": "İşlem Geçmişi",
         "allocation": "Portföy Dağılımı",
-        "portfolioAnalysis": "Portföy Analizi",
         "news": "Haberlerim",
         "analysis": "Analizim",
         "targets": "Hedefim",

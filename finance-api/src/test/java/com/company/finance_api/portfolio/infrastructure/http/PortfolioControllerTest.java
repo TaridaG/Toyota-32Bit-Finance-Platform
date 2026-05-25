@@ -6,8 +6,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.dto.PortfolioOverviewResponse;
+import com.company.finance_api.dto.PortfolioPerformanceSeriesResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
 import com.company.finance_api.service.PortfolioOverviewService;
+import com.company.finance_api.service.PortfolioPerformanceSeriesService;
 import com.company.finance_api.service.PortfolioService;
 import com.company.finance_api.service.PortfolioSnapshotService;
 import com.company.finance_api.service.PortfolioTradeFlowService;
@@ -36,6 +38,7 @@ class PortfolioControllerTest {
 
   @MockBean private PortfolioService portfolioService;
   @MockBean private PortfolioOverviewService portfolioOverviewService;
+  @MockBean private PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
   @MockBean private PortfolioSnapshotService portfolioSnapshotService;
   @MockBean private PortfolioValuationService portfolioValuationService;
   @MockBean private PortfolioTradeFlowService portfolioTradeFlowService;
@@ -79,6 +82,22 @@ class PortfolioControllerTest {
 
     mockMvc
         .perform(get("/api/portfolio/overview").header("X-Currency", "USD"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.currency").value("USD"));
+  }
+
+  @Test
+  void performanceSeries_returnsSeriesPayload() throws Exception {
+    when(portfolioPerformanceSeriesService.getMyPerformanceSeries("USD", 7L, "1w"))
+        .thenReturn(new PortfolioPerformanceSeriesResponse("USD", null, List.of()));
+
+    mockMvc
+        .perform(
+            get("/api/portfolio/performance-series")
+                .param("portfolioId", "7")
+                .param("range", "1w")
+                .header("X-Currency", "USD"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.currency").value("USD"));

@@ -13,6 +13,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 class CompositeFxProviderTest {
 
@@ -39,7 +40,7 @@ class CompositeFxProviderTest {
         FxMarketProperties props = new FxMarketProperties();
         props.setProviderOrder(List.of("TCMB", "EXCHANGE_API"));
         StooqMetalSpotFxProvider stooq = mock(StooqMetalSpotFxProvider.class);
-        when(stooq.fetchLatestRates()).thenReturn(List.of());
+        when(stooq.fetchLatestRates(any(), any())).thenReturn(List.of());
 
         CompositeFxProvider composite = new CompositeFxProvider(tcmb, api, stooq, props);
 
@@ -65,7 +66,7 @@ class CompositeFxProviderTest {
         FxMarketProperties props = new FxMarketProperties();
         props.setProviderOrder(List.of("TCMB", "EXCHANGE_API"));
         StooqMetalSpotFxProvider stooq = mock(StooqMetalSpotFxProvider.class);
-        when(stooq.fetchLatestRates()).thenReturn(List.of());
+        when(stooq.fetchLatestRates(any(), any())).thenReturn(List.of());
 
         CompositeFxProvider composite = new CompositeFxProvider(tcmb, api, stooq, props);
 

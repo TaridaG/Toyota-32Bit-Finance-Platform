@@ -1244,6 +1244,7 @@
     "filterSummaryAll": "Alle News werden angezeigt",
     "filterSummaryActive": "Gefilterte Ansicht aktiv",
     "timeRangeAll": "Alle",
+    "timeRange7d": "7T",
     "noNews": "Keine News",
     "loadError": "News konnten nicht geladen werden.",
     "closeDetails": "Details schließen",
@@ -1288,9 +1289,12 @@
       "loginRequired": "Sie müssen sich anmelden",
       "loginAction": "Anmelden",
       "noWeeklyData": "Noch keine Wochenübersicht",
-      "portfolioFilterActive": "News zu Ihrem Portfolio werden angezeigt.",
+      "weeklyFilterActive": "Wochenfilter aktiv: {{label}}",
+      "clearWeeklyFilter": "Filter entfernen",
+      "noWeeklyFilterResults": "Keine News für diesen Wochenfilter in den letzten 7 Tagen gefunden.",
+      "portfolioFilterActive": "Portfolio-bezogene News der letzten 7 Tage werden angezeigt.",
       "clearPortfolioFilter": "Filter entfernen",
-      "noPortfolioNewsOnPage": "Auf dieser Seite keine Portfolio-News. Nächste Seite versuchen."
+      "noPortfolioNewsOnPage": "Keine portfolio-bezogenen News in den letzten 7 Tagen gefunden."
     }
   },
   "analysis": {
@@ -1591,11 +1595,22 @@
     "insightTitle": "Markteinblick",
     "favoriteNewsTitle": "Meine Favoriten-Nachrichten",
     "favoriteNewsEmpty": "Noch keine Favoriten. Speichere Artikel auf der Nachrichtenseite mit dem Stern.",
+    "targetInsightEmpty": "Sobald Sie ein Ziel festlegen, erscheint Ihr Fortschrittsbalken hier.",
+    "targetInsightLoadError": "Zielübersicht konnte nicht geladen werden.",
     "fromLastYear": "gegenüber letztem Jahr",
     "sinceYesterday": "ggü. Vortag (UTC)",
     "valueChart": {
       "empty": "Der Verlauf erscheint, sobald einige Portfolio-Snapshots erfasst wurden.",
+      "dailyChangePct": "Tagesänderung %",
+      "loading": "Diagramm wird geladen…",
+      "metricAria": "Portfolio-Diagrammmetrik",
+      "metricLabel": "Metrik",
+      "performanceTitle": "Performance %",
+      "marketValueTitle": "Gesamtwert",
+      "metricPerformance": "Performance %",
+      "metricValue": "Gesamtwert",
       "rangeAria": "Zeitraum Portfoliowert",
+      "rangeLabel": "Zeitraum",
       "periodChange": "{{pct}} · {{range}}",
       "flatInRange": "Unverändert in {{range}}",
       "periodRange": "{{from}} – {{to}}",
@@ -1619,18 +1634,6 @@
       "empty": "Keine Positionen mit Gewinn oder Verlust.",
       "legendAria": "Gewinn-/Verlustaufteilung",
       "ringShare": "Ringanteil: {{pct}}%"
-    },
-    "portfolioAnalysis": {
-      "title": "Portfolioanalyse",
-      "lead": "Portfoliowert, täglicher Handelsfluss, G/V und Allokation auf einer Seite.",
-      "pickPortfolio": "Wählen Sie oben ein Portfolio für die Analyse.",
-      "openAllocation": "Allokationsdetails",
-      "valueTrend": "Portfoliowert (täglich)",
-      "valueTrendHint": "Tagesendwert; heute mit Live-Gesamtwert.",
-      "pnlBreakdown": "Gewinn-/Verlustaufteilung",
-      "dailyFlow": "Täglicher Kauf/Verkauf",
-      "dailyFlowHint": "Netto-Cashflow des Tages (Käufe minus Verkäufe).",
-      "allocation": "Allokationsübersicht"
     },
     "allocation": {
       "detailTitle": "Portfolioallokation",
@@ -1703,7 +1706,6 @@
         "markets": "Portfolio Hinzufugen",
         "portfolio": "Transaktionsverlauf",
         "allocation": "Portfolioverteilung",
-        "portfolioAnalysis": "Portfolioanalyse",
         "news": "Meine News",
         "analysis": "Meine Analyse",
         "targets": "Meine Ziele",

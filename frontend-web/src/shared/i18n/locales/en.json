@@ -1249,6 +1249,7 @@
     "filterSummaryAll": "Showing all news",
     "filterSummaryActive": "Filtered view is active",
     "timeRangeAll": "All",
+    "timeRange7d": "7d",
     "noNews": "No news",
     "loadError": "News could not be loaded.",
     "closeDetails": "Close details",
@@ -1293,9 +1294,12 @@
       "loginRequired": "You must sign in",
       "loginAction": "Sign in",
       "noWeeklyData": "No weekly summary yet",
-      "portfolioFilterActive": "Showing news related to your portfolio.",
+      "weeklyFilterActive": "Weekly summary filter active: {{label}}",
+      "clearWeeklyFilter": "Clear filter",
+      "noWeeklyFilterResults": "No news matched this weekly filter in the last 7 days.",
+      "portfolioFilterActive": "Showing portfolio-related news from the last 7 days.",
       "clearPortfolioFilter": "Clear filter",
-      "noPortfolioNewsOnPage": "No portfolio-related news on this page. Try the next page."
+      "noPortfolioNewsOnPage": "No portfolio-related news found in the last 7 days."
     }
   },
   "analysis": {
@@ -1598,11 +1602,22 @@
     "insightTitle": "Market Insight",
     "favoriteNewsTitle": "My Favorite News",
     "favoriteNewsEmpty": "No favorite news yet. Star articles on the News page to save them here.",
+    "targetInsightEmpty": "Once you set a goal, your progress bar will appear here.",
+    "targetInsightLoadError": "Could not load goal summary.",
     "fromLastYear": "from last year",
     "sinceYesterday": "vs. prior day (UTC)",
     "valueChart": {
       "empty": "History will appear after the server records a few portfolio snapshots for this account.",
+      "dailyChangePct": "Daily change %",
+      "loading": "Loading chart…",
+      "metricAria": "Portfolio chart metric",
+      "metricLabel": "Metric",
+      "performanceTitle": "Performance %",
+      "marketValueTitle": "Total value",
+      "metricPerformance": "Performance %",
+      "metricValue": "Total value",
       "rangeAria": "Portfolio value chart range",
+      "rangeLabel": "Range",
       "periodChange": "{{pct}} · {{range}}",
       "flatInRange": "Flat in {{range}}",
       "periodRange": "{{from}} – {{to}}",
@@ -1626,18 +1641,6 @@
       "empty": "No positions with gain or loss yet.",
       "legendAria": "Profit vs loss split",
       "ringShare": "Ring share: {{pct}}%"
-    },
-    "portfolioAnalysis": {
-      "title": "Portfolio analysis",
-      "lead": "Portfolio value, daily trade flow, P&L, and allocation in one view.",
-      "pickPortfolio": "Select a portfolio above to view analysis.",
-      "openAllocation": "Distribution details",
-      "valueTrend": "Portfolio value (daily)",
-      "valueTrendHint": "End-of-day value; today shows live total.",
-      "pnlBreakdown": "Profit / loss breakdown",
-      "dailyFlow": "Daily buy & sell",
-      "dailyFlowHint": "Net cash flow for that day (buys minus sells).",
-      "allocation": "Allocation overview"
     },
     "allocation": {
       "detailTitle": "Portfolio allocation",
@@ -1710,7 +1713,6 @@
         "markets": "Add to Portfolio",
         "portfolio": "Transaction History",
         "allocation": "Portfolio distribution",
-        "portfolioAnalysis": "Portfolio analysis",
         "news": "My News",
         "analysis": "My Analysis",
         "targets": "My Targets",

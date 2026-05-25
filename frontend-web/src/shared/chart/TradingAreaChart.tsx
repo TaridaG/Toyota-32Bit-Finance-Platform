@@ -6,7 +6,16 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { AreaSeries, createChart, type IChartApi, type ISeriesApi, type LineData, type TickMarkFormatter, type Time } from 'lightweight-charts'
+import {
+  AreaSeries,
+  createChart,
+  type IChartApi,
+  type ISeriesApi,
+  type LineData,
+  type TickMarkFormatter,
+  type Time,
+  type UTCTimestamp,
+} from 'lightweight-charts'
 import {
   lineDataShallowEqual,
   toLineDataSeries,
@@ -16,12 +25,14 @@ import {
 import { attachTradingChartInteractions } from './tradingChartInteractions'
 import { buildTradingAreaChartOptions } from './tradingChartOptions'
 import { axisBandForVisibleSpan, formatTradingAxisTick, formatTradingCrosshairTime } from './tradingChartFormatters'
-import { setVisibleWindowAlignedToNow } from './tradingChartViewport'
+import { nowUnixSec, setVisibleWindowEndingAt } from './tradingChartViewport'
 import { timeToUnixSec } from './timeUtils'
 
 const DEV = import.meta.env.DEV
 const DEFAULT_WINDOW_SEC = 7 * 86_400
 const DEFAULT_MAX_HISTORY_SEC = 5 * 365 * 86_400
+const LOGICAL_BAR_SPACING_MIN = 8
+const LOGICAL_BAR_SPACING_MAX = 56
 
 export type TradingAreaChartColors = {
   lineColor: string
@@ -50,6 +61,7 @@ export type TradingAreaChartProps = {
   rightBoundary?: 'now' | 'lastData'
   className?: string
   mountClassName?: string
+  viewportMode?: 'time-window' | 'logical-range'
   /** Dev-only viewport lifecycle log */
   debug?: boolean
 }
@@ -60,8 +72,25 @@ function chartDebug(
   state: Record<string, string | number | boolean | null | undefined>,
 ): void {
   if (!DEV) return
-  // eslint-disable-next-line no-console
   console.debug(`[trading-chart][${action}]`, { chartId, ...state })
+}
+
+function shortcutEndSec(rightBoundary: 'now' | 'lastData', lastDataSec: number): number {
+  const nowSec = nowUnixSec()
+  if (rightBoundary === 'lastData') {
+    return Math.min(nowSec, Math.max(0, lastDataSec))
+  }
+  return nowSec
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n))
+}
+
+function computeLogicalBarSpacing(width: number, pointCount: number): number | undefined {
+  if (!Number.isFinite(width) || width <= 0 || pointCount <= 1) return undefined
+  const visibleBars = Math.max(1, pointCount - 1)
+  return clamp((width - 24) / visibleBars, LOGICAL_BAR_SPACING_MIN, LOGICAL_BAR_SPACING_MAX)
 }
 
 const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChartProps>(
@@ -81,6 +110,7 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
       rightBoundary = 'now',
       className = 'my-portfolio-value-chart',
       mountClassName = 'my-portfolio-value-chart-mount',
+      viewportMode = 'time-window',
       debug = false,
     },
     ref,
@@ -142,23 +172,83 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
       const tickFmt: TickMarkFormatter = (time, tickMarkType, tickLocale) =>
         formatTradingAxisTick(time, tickMarkType, tickLocale ?? loc, span)
       try {
+        const options = buildTradingAreaChartOptions({
+          width: Math.max(1, ch.chartElement().clientWidth),
+          height: Math.max(1, ch.chartElement().clientHeight),
+          isDark,
+          locale: loc,
+          maskAmounts,
+          visibleSpanSec: span,
+          tickMarkFormatter: tickFmt,
+          timeFormatter: (t: Time) => formatTradingCrosshairTime(span, loc, t),
+          valueFormatter,
+        })
+        if (viewportMode === 'logical-range') {
+          const logicalBarSpacing = computeLogicalBarSpacing(ch.chartElement().clientWidth, lineDataRef.current.length)
+          options.timeScale = {
+            ...options.timeScale,
+            rightOffset: 0,
+            lockVisibleTimeRangeOnResize: false,
+            ...(logicalBarSpacing != null ? { barSpacing: logicalBarSpacing } : {}),
+          }
+        }
         ch.applyOptions(
-          buildTradingAreaChartOptions({
-            width: Math.max(1, ch.chartElement().clientWidth),
-            height: Math.max(1, ch.chartElement().clientHeight),
-            isDark,
-            locale: loc,
-            maskAmounts,
-            visibleSpanSec: span,
-            tickMarkFormatter: tickFmt,
-            timeFormatter: (t: Time) => formatTradingCrosshairTime(span, loc, t),
-            valueFormatter,
-          }),
+          options,
         )
       } catch {
         /* */
       }
-    }, [isDark, maskAmounts, valueFormatter])
+    }, [isDark, maskAmounts, valueFormatter, viewportMode])
+
+    const applyLogicalViewport = useCallback(() => {
+      const chart = chartRef.current
+      const points = lineDataRef.current
+      if (!chart || points.length === 0) return
+      const ts = chart.timeScale()
+      const firstSec = timeToUnixSec(points[0].time)
+      const lastSec = timeToUnixSec(points[points.length - 1].time)
+      const padSec = firstSec === lastSec ? 12 * 3600 : 0
+      const fromSec = Math.max(0, firstSec - padSec)
+      const toSec = Math.max(fromSec + 60, lastSec + padSec)
+      const logicalBarSpacing = computeLogicalBarSpacing(chart.chartElement().clientWidth, points.length)
+      try {
+        chart.applyOptions({
+          timeScale: {
+            rightOffset: 0,
+            lockVisibleTimeRangeOnResize: false,
+            ...(logicalBarSpacing != null ? { barSpacing: logicalBarSpacing } : {}),
+          },
+        })
+      } catch {
+        /* */
+      }
+      if (points.length > 1) {
+        try {
+          ts.setVisibleLogicalRange({
+            from: -0.5,
+            to: Math.max(0.5, points.length - 0.5),
+          })
+          spanSecRef.current = Math.max(60, lastSec - firstSec)
+          return
+        } catch {
+          /* */
+        }
+      }
+      try {
+        ts.setVisibleRange({
+          from: fromSec as UTCTimestamp,
+          to: toSec as UTCTimestamp,
+        })
+        spanSecRef.current = Math.max(60, toSec - fromSec)
+      } catch {
+        try {
+          ts.fitContent()
+        } catch {
+          /* */
+        }
+        spanSecRef.current = Math.max(60, lastSec - firstSec)
+      }
+    }, [])
 
     useLayoutEffect(() => {
       heightRef.current = height
@@ -200,18 +290,29 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
       const tickFmt0: TickMarkFormatter = (time, tickMarkType, tickLocale) =>
         formatTradingAxisTick(time, tickMarkType, tickLocale ?? loc0, span0)
 
+      const chartOptions = buildTradingAreaChartOptions({
+        width: w0,
+        height: h0,
+        isDark,
+        locale: loc0,
+        maskAmounts,
+        visibleSpanSec: span0,
+        tickMarkFormatter: tickFmt0,
+        timeFormatter: (t: Time) => formatTradingCrosshairTime(span0, loc0, t),
+        valueFormatter,
+      })
+      if (viewportMode === 'logical-range') {
+        const logicalBarSpacing = computeLogicalBarSpacing(w0, lineData.length)
+        chartOptions.timeScale = {
+          ...chartOptions.timeScale,
+          rightOffset: 0,
+          lockVisibleTimeRangeOnResize: false,
+          ...(logicalBarSpacing != null ? { barSpacing: logicalBarSpacing } : {}),
+        }
+      }
+
       const chart = createChart(mount, {
-        ...buildTradingAreaChartOptions({
-          width: w0,
-          height: h0,
-          isDark,
-          locale: loc0,
-          maskAmounts,
-          visibleSpanSec: span0,
-          tickMarkFormatter: tickFmt0,
-          timeFormatter: (t: Time) => formatTradingCrosshairTime(span0, loc0, t),
-          valueFormatter,
-        }),
+        ...chartOptions,
       })
 
       const series = chart.addSeries(AreaSeries, {
@@ -231,20 +332,27 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
       series.setData(lineData)
 
       interactionOffRef.current?.()
-      interactionOffRef.current = attachTradingChartInteractions({
-        chart,
-        mount,
-        spanSecRef,
-        getLastDataUnixSec: () => lastBarSecRef.current,
-        maxHistorySec,
-        rightBoundary,
-        onPresentationTick: applyPresentation,
-        chartId,
-        interactionDebug: debug,
-      })
+      interactionOffRef.current =
+        viewportMode === 'logical-range'
+            ? null
+            : attachTradingChartInteractions({
+                chart,
+                mount,
+                spanSecRef,
+                getLastDataUnixSec: () => lastBarSecRef.current,
+                maxHistorySec,
+                rightBoundary,
+                onPresentationTick: applyPresentation,
+                chartId,
+                interactionDebug: debug,
+              })
 
       if (!initialViewportAppliedRef.current) {
-        setVisibleWindowAlignedToNow(chart, defaultWindowSec)
+        if (viewportMode === 'logical-range') {
+          applyLogicalViewport()
+        } else {
+          setVisibleWindowEndingAt(chart, shortcutEndSec(rightBoundary, lastBar), defaultWindowSec)
+        }
         spanSecRef.current = defaultWindowSec
         initialViewportAppliedRef.current = true
         const tr0 = chart.timeScale().getVisibleRange()
@@ -296,6 +404,9 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
         const h = Math.max(mount.clientHeight || 0, heightRef.current, 1)
         try {
           chartRef.current.resize(w, h)
+          if (viewportMode === 'logical-range') {
+            requestAnimationFrame(() => applyLogicalViewport())
+          }
           log('resize', { w, h })
         } catch {
           /* */
@@ -311,6 +422,7 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
       defaultWindowSec,
       maxHistorySec,
       rightBoundary,
+      viewportMode,
       isDark,
       maskAmounts,
       colors.lineColor,
@@ -387,7 +499,11 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
         const chart = chartRef.current
         if (!chart || lineData.length === 0) return
         const span = Math.max(60, Math.floor(spanSec))
-        setVisibleWindowAlignedToNow(chart, span)
+        if (viewportMode === 'logical-range') {
+          applyLogicalViewport()
+        } else {
+          setVisibleWindowEndingAt(chart, shortcutEndSec(rightBoundary, lastBarSecRef.current), span)
+        }
         spanSecRef.current = span
         applyPresentation()
         const tr = chart.timeScale().getVisibleRange()
@@ -410,7 +526,7 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
           spanMismatchSec: spanMismatch,
         })
       },
-      [applyPresentation, lineData.length, log],
+      [applyLogicalViewport, applyPresentation, lineData.length, log, rightBoundary, viewportMode],
     )
 
     useImperativeHandle(
@@ -423,7 +539,11 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
           const chart = chartRef.current
           if (!chart || lineData.length === 0) return
           const span = Math.max(60, spanSecRef.current)
-          setVisibleWindowAlignedToNow(chart, span)
+          if (viewportMode === 'logical-range') {
+            applyLogicalViewport()
+          } else {
+            setVisibleWindowEndingAt(chart, shortcutEndSec(rightBoundary, lastBarSecRef.current), span)
+          }
           applyPresentation()
           log('go_to_latest', { spanSec: span })
         },
@@ -445,8 +565,24 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
           })
         },
       }),
-      [applyPresentation, lineData.length, log, runShortcutViewport],
+      [applyLogicalViewport, applyPresentation, lineData.length, log, rightBoundary, runShortcutViewport, viewportMode],
     )
+
+    useLayoutEffect(() => {
+      if (!chartRef.current || lineData.length === 0) return
+      if (viewportMode === 'logical-range') {
+        applyLogicalViewport()
+        applyPresentation()
+        return
+      }
+      runShortcutViewport(defaultWindowSec)
+    }, [applyLogicalViewport, applyPresentation, defaultWindowSec, lineData.length, runShortcutViewport, viewportMode])
+
+    useLayoutEffect(() => {
+      if (viewportMode !== 'logical-range' || !chartRef.current || lineData.length === 0) return
+      applyLogicalViewport()
+      applyPresentation()
+    }, [applyLogicalViewport, applyPresentation, lineData, viewportMode])
 
     const stableEmpty = useMemo(() => emptyLabel, [emptyLabel])
 

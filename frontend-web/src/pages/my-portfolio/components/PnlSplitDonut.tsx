@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PortfolioOverviewItem } from '../../../shared/types/portfolio'
 
@@ -73,6 +73,8 @@ export function PnlSplitDonut({
 }: Props) {
   const { t } = useTranslation('portfolio')
   const visualRef = useRef<HTMLDivElement>(null)
+  const centerRef = useRef<HTMLDivElement>(null)
+  const valueRef = useRef<HTMLElement>(null)
   const [hovered, setHovered] = useState<number | null>(null)
   const [tooltipAnchor, setTooltipAnchor] = useState<{ x: number; y: number } | null>(null)
 
@@ -206,6 +208,41 @@ export function PnlSplitDonut({
   }, [])
 
   const active = hovered != null ? segments[hovered] : null
+  const totalPnlText = currencyFormat.format(totalPnl)
+
+  const fitCenterValue = useCallback(() => {
+    const wrap = visualRef.current
+    const center = centerRef.current
+    const valueEl = valueRef.current
+    if (!wrap || !center || !valueEl) return
+    if (hideAmounts) {
+      valueEl.style.fontSize = ''
+      return
+    }
+
+    const availableWidth = Math.max(center.clientWidth - 4, 0)
+    const wrapWidth = wrap.clientWidth
+    if (!availableWidth || !wrapWidth) return
+
+    const maxPx = Math.min(27.5, wrapWidth * 0.138)
+    const minPx = Math.max(12, wrapWidth * 0.068)
+
+    valueEl.style.fontSize = `${maxPx}px`
+    const naturalWidth = valueEl.scrollWidth
+    if (!naturalWidth) return
+
+    const nextPx = Math.max(minPx, Math.min(maxPx, ((availableWidth * 0.98) / naturalWidth) * maxPx))
+    valueEl.style.fontSize = `${nextPx.toFixed(2)}px`
+  }, [hideAmounts, totalPnlText])
+
+  useLayoutEffect(() => {
+    fitCenterValue()
+    const wrap = visualRef.current
+    if (!wrap || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => fitCenterValue())
+    ro.observe(wrap)
+    return () => ro.disconnect()
+  }, [fitCenterValue])
 
   if (!hasData) {
     const trackR = (R_OUT + R_IN) / 2
@@ -282,15 +319,17 @@ export function PnlSplitDonut({
             })
           )}
         </svg>
-        <div className="my-portfolio-pnl-donut-center">
+        <div className="my-portfolio-pnl-donut-center" ref={centerRef}>
           {hideAmounts ? (
             <>
-              <strong>••••</strong>
+              <strong className="my-portfolio-pnl-donut-center-value">••••</strong>
               <span>•••</span>
             </>
           ) : (
             <>
-              <strong>{currencyFormat.format(totalPnl)}</strong>
+              <strong ref={valueRef} className="my-portfolio-pnl-donut-center-value">
+                {totalPnlText}
+              </strong>
               <span>
                 {pctFormat.format(totalPnlPercent)}
                 %
@@ -302,7 +341,7 @@ export function PnlSplitDonut({
         {active != null && hovered != null && tooltipAnchor != null && !hideAmounts ? (
           <div
             className="my-portfolio-allocation-tooltip my-portfolio-pnl-donut-tooltip my-portfolio-pnl-donut-tooltip--anchored"
-            style={{ left: tooltipAnchor.x, top: tooltipAnchor.y }}
+            style={{ position: 'absolute', left: tooltipAnchor.x, top: tooltipAnchor.y }}
             role="tooltip"
           >
             <p className="my-portfolio-pnl-donut-tooltip-title">{active.label}</p>

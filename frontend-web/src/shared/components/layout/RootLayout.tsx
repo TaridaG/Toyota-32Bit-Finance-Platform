@@ -1,13 +1,12 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { PortalHeader } from './PortalHeader'
-import { logoutPortalSession } from '../../../features/profile/api/portalProfileApi'
+import { fetchPortalProfileBootstrap, logoutPortalSession } from '../../../features/profile/api/portalProfileApi'
 import { clearAuthSession, isAuthenticated } from '../../auth/session'
 import { logoutTerminatedPortalAccount } from '../../auth/accountFrozen'
 import { useFrozenAccountGuard } from '../../hooks/useFrozenAccountGuard'
 import { normalizeLocale } from '../../i18n'
 import { useAppPreferences } from '../../preferences/useAppPreferences'
-import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
 import { SUPPORTED_CURRENCIES } from '../../preferences/preferences'
 import { LiteracyHelpLayer } from '../../../features/literacy-help/LiteracyHelpLayer'
 import { AdminInfoCardPickLayer } from '../../../features/admin-info-card-pick/AdminInfoCardPickLayer'
@@ -33,7 +32,7 @@ export function RootLayout() {
 
     const hydrateFromProfile = async () => {
       try {
-        const profile = await fetchPortalProfile()
+        const profile = await fetchPortalProfileBootstrap()
         if (cancelled) {
           return
         }

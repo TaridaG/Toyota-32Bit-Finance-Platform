@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * FX provider zincirini sırayla dener; ilk başarılı snapshot'ı döner.
@@ -85,7 +86,10 @@ public class CompositeFxProvider implements FxProvider {
         }
         List<FxSnapshot> metals;
         try {
-            metals = stooqMetalSpotFxProvider.fetchLatestRates();
+            Optional<FxSnapshot> usdTry = resolveUsdTry(baseRates);
+            metals = usdTry
+                    .map(snapshot -> stooqMetalSpotFxProvider.fetchLatestRates(snapshot.mid(), snapshot.timestamp()))
+                    .orElseGet(List::of);
         } catch (Exception ex) {
             log.warn("FX_COMPOSITE_STOOQ_SPOT_FAILED reason={}", ex.getMessage());
             metals = List.of();
@@ -99,5 +103,14 @@ public class CompositeFxProvider implements FxProvider {
         List<FxSnapshot> merged = new ArrayList<>(baseRates);
         merged.addAll(metals);
         return merged;
+    }
+
+    private static Optional<FxSnapshot> resolveUsdTry(List<FxSnapshot> baseRates) {
+        if (baseRates == null || baseRates.isEmpty()) {
+            return Optional.empty();
+        }
+        return baseRates.stream()
+                .filter(snapshot -> snapshot != null && "USDTRY".equalsIgnoreCase(snapshot.canonicalSymbol()))
+                .findFirst();
     }
 }

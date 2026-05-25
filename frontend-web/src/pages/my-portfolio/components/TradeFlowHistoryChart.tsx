@@ -1,18 +1,9 @@
-import { useMemo, useRef } from 'react'
-import type { LineData, Time } from 'lightweight-charts'
+import { useMemo } from 'react'
 import type { PortfolioTradeFlowPoint } from '../../../shared/types/portfolio'
 import { TradingAreaChart } from '../../../shared/chart'
-import {
-  lineSeriesDataShallowEqual,
-  MAX_CHART_HISTORY_SEC,
-  normalizeTradeFlowLineData,
-  RANGE_TO_MS,
-  type ValueChartRange,
-} from './portfolioChartShared'
+import { MAX_CHART_HISTORY_SEC, normalizeTradeFlowLineData } from './portfolioChartShared'
 
-export type { ValueChartRange }
-
-function buildTradeFlowLineData(points: PortfolioTradeFlowPoint[]): LineData<Time>[] {
+function buildTradeFlowLineData(points: PortfolioTradeFlowPoint[]) {
   const sorted = [...points].sort((a, b) => {
     const ta = Date.parse(a.createdAt)
     const tb = Date.parse(b.createdAt)
@@ -53,19 +44,7 @@ export function TradeFlowHistoryChart({
   locale,
   maskAmounts = false,
 }: Props) {
-  const dataStableRef = useRef<LineData<Time>[]>([])
-  const lineData = useMemo(() => {
-    const next = buildTradeFlowLineData(points)
-    const prev = dataStableRef.current
-    if (lineSeriesDataShallowEqual(prev, next)) return prev
-    dataStableRef.current = next
-    return next
-  }, [points])
-
-  const chartData = useMemo(
-    () => lineData.map((d) => ({ time: d.time as number, value: d.value })),
-    [lineData],
-  )
+  const chartData = useMemo(() => buildTradeFlowLineData(points).map((d) => ({ time: d.time as number, value: d.value })), [points])
 
   return (
     <TradingAreaChart
@@ -86,33 +65,4 @@ export function TradeFlowHistoryChart({
       }}
     />
   )
-}
-
-/** Kart üstündeki alım / satım / net — tüm işlem geçmişi. */
-export function tradeFlowTotals(points: PortfolioTradeFlowPoint[]): { buy: number; sell: number; net: number } {
-  let buy = 0
-  let sell = 0
-  for (const p of points) {
-    if (p.signedAmount > 0) buy += p.signedAmount
-    else sell += -p.signedAmount
-  }
-  return { buy, sell, net: buy - sell }
-}
-
-export function tradeFlowPeriodTotals(
-  points: PortfolioTradeFlowPoint[],
-  range: ValueChartRange,
-): { buy: number; sell: number; net: number } {
-  const nowMs = Date.now()
-  const fromSec = Math.floor((nowMs - RANGE_TO_MS[range]) / 1000)
-  const nowSec = Math.floor(nowMs / 1000)
-  let buy = 0
-  let sell = 0
-  for (const p of points) {
-    const sec = Math.floor(Date.parse(p.createdAt) / 1000)
-    if (!Number.isFinite(sec) || sec < fromSec || sec > nowSec) continue
-    if (p.signedAmount > 0) buy += p.signedAmount
-    else sell += -p.signedAmount
-  }
-  return { buy, sell, net: buy - sell }
 }

@@ -1,8 +1,8 @@
 package com.company.marketdataservice.history.application;
-import com.company.marketdataservice.history.infrastructure.orchestration.MetalFuturesHistoryBootstrapper;
 import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
 import com.company.marketdataservice.bootstrap.config.MetalFuturesSymbols;
 import com.company.marketdataservice.history.infrastructure.http.dto.HistoryPointDto;
+import com.company.marketdataservice.spot.application.MarketDataReadService;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceSummaryDto;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryEntry;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryRepository;
@@ -13,7 +13,9 @@ import com.company.marketdataservice.history.infrastructure.persistence.MarketPr
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,12 +26,15 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Geçmiş fiyat, FX ve fon NAV serilerini okuyup özet metrik üretir.
@@ -51,24 +56,32 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
     private static final ZoneId TURKEY = ZoneId.of("Europe/Istanbul");
     /** Max calendar slip when baseline NAV is older than the requested lookback (data gaps). */
     private static final long FUND_NAV_TRAILING_MAX_SLIP_DAYS = 12L;
+    private static final long DEFAULT_SUMMARY_CACHE_TTL_MS = 45_000L;
 
     private final MarketPriceHistoryRepository marketPriceHistoryRepository;
     private final FxRateHistoryRepository fxRateHistoryRepository;
     private final FundNavHistoryRepository fundNavHistoryRepository;
     private final TefasFundNavHistoryRehydrationService fundNavHistoryRehydrationService;
+    private final MarketDataReadService marketDataReadService;
     private final Clock clock;
+    private final ConcurrentHashMap<String, SummaryCacheEntry> summaryCache = new ConcurrentHashMap<>();
+
+    @Value("${market.summary.cache-ttl-ms:" + DEFAULT_SUMMARY_CACHE_TTL_MS + "}")
+    private long summaryCacheTtlMs;
 
     public HistoricalMarketDataReadServiceImpl(
             MarketPriceHistoryRepository marketPriceHistoryRepository,
             FxRateHistoryRepository fxRateHistoryRepository,
             FundNavHistoryRepository fundNavHistoryRepository,
             @Autowired(required = false) TefasFundNavHistoryRehydrationService fundNavHistoryRehydrationService,
+            @Autowired(required = false) MarketDataReadService marketDataReadService,
             @Autowired(required = false) Clock clock
     ) {
         this.marketPriceHistoryRepository = marketPriceHistoryRepository;
         this.fxRateHistoryRepository = fxRateHistoryRepository;
         this.fundNavHistoryRepository = fundNavHistoryRepository;
         this.fundNavHistoryRehydrationService = fundNavHistoryRehydrationService;
+        this.marketDataReadService = marketDataReadService;
         this.clock = clock != null ? clock : Clock.systemUTC();
     }
 
@@ -146,76 +159,163 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         if (symbols == null || symbols.isEmpty()) {
             return Map.of();
         }
-
-        Map<String, MarketPriceSummaryDto> out = new LinkedHashMap<>();
+        List<String> normalized = normalizeSymbols(symbols);
+        if (normalized.isEmpty()) {
+            return Map.of();
+        }
+        long startedAt = System.nanoTime();
         Instant now = clock.instant();
-        Instant toExclusive = now.plus(1, ChronoUnit.DAYS);
-        int validSymbols = 0;
+        Map<String, MarketPriceSummaryDto> out = new LinkedHashMap<>();
+        List<String> cacheMisses = new ArrayList<>();
+        int cacheHits = 0;
+        for (String symbol : normalized) {
+            SummaryCacheEntry cached = summaryCache.get(symbol);
+            if (cached != null && cached.expiresAt().isAfter(now)) {
+                cacheHits++;
+                if (cached.summary() != null) {
+                    out.put(symbol, cached.summary());
+                }
+                continue;
+            }
+            cacheMisses.add(symbol);
+        }
+        if (!cacheMisses.isEmpty()) {
+            out.putAll(loadAndCacheSummaries(cacheMisses, now));
+        }
+        long durationMs = nanosToMillis(startedAt);
+        double avgSymbolMs = cacheMisses.isEmpty() ? 0d : durationMs / (double) cacheMisses.size();
+        log.info(
+                "MARKET_DB_SUMMARY_READ symbolsRequested={} symbolsResolved={} cacheHits={} cacheMisses={} avgMissMs={} durationMs={}",
+                normalized.size(),
+                out.size(),
+                cacheHits,
+                cacheMisses.size(),
+                BigDecimal.valueOf(avgSymbolMs).setScale(2, RoundingMode.HALF_UP),
+                durationMs);
+        return out;
+    }
+
+    @Scheduled(
+            initialDelayString = "${market.summary.cache-warm.initial-delay-ms:15000}",
+            fixedDelayString = "${market.summary.cache-warm.fixed-delay-ms:" + DEFAULT_SUMMARY_CACHE_TTL_MS + "}")
+    void warmSummaryCache() {
+        if (marketDataReadService == null) {
+            return;
+        }
+        LinkedHashSet<String> symbols = new LinkedHashSet<>();
+        marketDataReadService.getLatestPrices().stream()
+                .map(price -> price.symbol())
+                .filter(Objects::nonNull)
+                .map(symbol -> symbol.trim().toUpperCase(Locale.ROOT))
+                .filter(symbol -> !symbol.isBlank())
+                .forEach(symbols::add);
+        marketDataReadService.getFxRates().stream()
+                .map(rate -> rate.symbol())
+                .filter(Objects::nonNull)
+                .map(symbol -> symbol.trim().toUpperCase(Locale.ROOT))
+                .filter(symbol -> !symbol.isBlank())
+                .forEach(symbols::add);
+        if (symbols.isEmpty()) {
+            return;
+        }
+        long startedAt = System.nanoTime();
+        Map<String, MarketPriceSummaryDto> refreshed = loadAndCacheSummaries(List.copyOf(symbols), clock.instant());
+        log.info(
+                "MARKET_DB_SUMMARY_CACHE_WARM symbolsRequested={} symbolsResolved={} durationMs={}",
+                symbols.size(),
+                refreshed.size(),
+                nanosToMillis(startedAt));
+    }
+
+    private List<String> normalizeSymbols(List<String> symbols) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
         for (String raw : symbols) {
             if (raw == null || raw.isBlank()) {
                 continue;
             }
-            String symbol = raw.trim().toUpperCase(Locale.ROOT);
-            BigDecimal latestPrice;
-            if (symbol.startsWith("FUND_")) {
-                String fundCode = symbol.substring("FUND_".length());
-                var latestOpt = fundNavHistoryRepository.findTopByFundCodeOrderByObservedAtDesc(fundCode);
-                if (latestOpt.isEmpty() || latestOpt.get().getNav() == null) {
-                    continue;
-                }
-                latestPrice = latestOpt.get().getNav();
-            } else if (usesFxRateHistory(symbol)) {
-                List<HistoryPointDto> latestPoints = fxRateHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
-                if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
-                    continue;
-                }
-                latestPrice = latestPoints.get(0).value();
-            } else {
-                List<HistoryPointDto> latestPoints = marketPriceHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
-                if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
-                    continue;
-                }
-                latestPrice = latestPoints.get(0).value();
-            }
-            validSymbols++;
-
-            double change1D;
-            double change1W;
-            double change1M;
-            double change3M;
-            double change6M;
-            double change1Y;
-            if (symbol.startsWith("FUND_")) {
-                String fundCode = symbol.substring("FUND_".length());
-                change1D = computeFundNavTrailingPercent(fundCode, now, 1);
-                change1W = computeFundNavTrailingPercent(fundCode, now, 7);
-                change1M = computeFundNavTrailingPercent(fundCode, now, 30);
-                change3M = computeFundNavTrailingPercent(fundCode, now, 90);
-                change6M = computeFundNavTrailingPercent(fundCode, now, 180);
-                change1Y = computeFundNavTrailingPercent(fundCode, now, 365);
-            } else if (symbol.startsWith("TRBOND")) {
-                // Bond ingest stores calendar-daily rows (EVDS daily + forward-fill). Prefer last day-to-day step;
-                // fallback window if history is still warming up.
-                change1D = computeTcmbBondLatestStepPercentChange(symbol, now, toExclusive);
-                change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
-                change1M = computePeriodChange(symbol, now.minus(45, ChronoUnit.DAYS), toExclusive);
-                change3M = computePeriodChange(symbol, now.minus(120, ChronoUnit.DAYS), toExclusive);
-                change6M = computePeriodChange(symbol, now.minus(210, ChronoUnit.DAYS), toExclusive);
-                change1Y = computePeriodChange(symbol, now.minus(400, ChronoUnit.DAYS), toExclusive);
-            } else {
-                change1D = computeLatestDailyStepPercentChange(symbol);
-                change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
-                change1M = computePeriodChange(symbol, now.minus(30, ChronoUnit.DAYS), toExclusive);
-                change3M = computePeriodChange(symbol, now.minus(90, ChronoUnit.DAYS), toExclusive);
-                change6M = computePeriodChange(symbol, now.minus(180, ChronoUnit.DAYS), toExclusive);
-                change1Y = computePeriodChange(symbol, now.minus(365, ChronoUnit.DAYS), toExclusive);
-            }
-
-            out.put(symbol, new MarketPriceSummaryDto(latestPrice, change1D, change1W, change1M, change3M, change6M, change1Y));
+            normalized.add(raw.trim().toUpperCase(Locale.ROOT));
         }
-        log.info("MARKET_DB_SUMMARY_READ symbolsRequested={} symbolsResolved={}", symbols.size(), validSymbols);
-        return out;
+        return List.copyOf(normalized);
     }
+
+    private Map<String, MarketPriceSummaryDto> loadAndCacheSummaries(List<String> symbols, Instant now) {
+        Map<String, MarketPriceSummaryDto> computed = new LinkedHashMap<>();
+        Instant expiresAt = now.plusMillis(Math.max(summaryCacheTtlMs, 1L));
+        for (String symbol : symbols) {
+            MarketPriceSummaryDto summary = buildPriceSummary(symbol, now);
+            summaryCache.put(symbol, new SummaryCacheEntry(summary, expiresAt));
+            if (summary != null) {
+                computed.put(symbol, summary);
+            }
+        }
+        return computed;
+    }
+
+    private MarketPriceSummaryDto buildPriceSummary(String symbol, Instant now) {
+        Instant toExclusive = now.plus(1, ChronoUnit.DAYS);
+        BigDecimal latestPrice;
+        if (symbol.startsWith("FUND_")) {
+            String fundCode = symbol.substring("FUND_".length());
+            var latestOpt = fundNavHistoryRepository.findTopByFundCodeOrderByObservedAtDesc(fundCode);
+            if (latestOpt.isEmpty() || latestOpt.get().getNav() == null) {
+                return null;
+            }
+            latestPrice = latestOpt.get().getNav();
+        } else if (usesFxRateHistory(symbol)) {
+            List<HistoryPointDto> latestPoints =
+                    fxRateHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
+            if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
+                return null;
+            }
+            latestPrice = latestPoints.get(0).value();
+        } else {
+            List<HistoryPointDto> latestPoints =
+                    marketPriceHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
+            if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
+                return null;
+            }
+            latestPrice = latestPoints.get(0).value();
+        }
+
+        double change1D;
+        double change1W;
+        double change1M;
+        double change3M;
+        double change6M;
+        double change1Y;
+        if (symbol.startsWith("FUND_")) {
+            String fundCode = symbol.substring("FUND_".length());
+            change1D = computeFundNavTrailingPercent(fundCode, now, 1);
+            change1W = computeFundNavTrailingPercent(fundCode, now, 7);
+            change1M = computeFundNavTrailingPercent(fundCode, now, 30);
+            change3M = computeFundNavTrailingPercent(fundCode, now, 90);
+            change6M = computeFundNavTrailingPercent(fundCode, now, 180);
+            change1Y = computeFundNavTrailingPercent(fundCode, now, 365);
+        } else if (symbol.startsWith("TRBOND")) {
+            // Bond ingest stores calendar-daily rows (EVDS daily + forward-fill). Prefer last day-to-day step;
+            // fallback window if history is still warming up.
+            change1D = computeTcmbBondLatestStepPercentChange(symbol, now, toExclusive);
+            change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
+            change1M = computePeriodChange(symbol, now.minus(45, ChronoUnit.DAYS), toExclusive);
+            change3M = computePeriodChange(symbol, now.minus(120, ChronoUnit.DAYS), toExclusive);
+            change6M = computePeriodChange(symbol, now.minus(210, ChronoUnit.DAYS), toExclusive);
+            change1Y = computePeriodChange(symbol, now.minus(400, ChronoUnit.DAYS), toExclusive);
+        } else {
+            change1D = computeLatestDailyStepPercentChange(symbol);
+            change1W = computePeriodChange(symbol, now.minus(7, ChronoUnit.DAYS), toExclusive);
+            change1M = computePeriodChange(symbol, now.minus(30, ChronoUnit.DAYS), toExclusive);
+            change3M = computePeriodChange(symbol, now.minus(90, ChronoUnit.DAYS), toExclusive);
+            change6M = computePeriodChange(symbol, now.minus(180, ChronoUnit.DAYS), toExclusive);
+            change1Y = computePeriodChange(symbol, now.minus(365, ChronoUnit.DAYS), toExclusive);
+        }
+        return new MarketPriceSummaryDto(latestPrice, change1D, change1W, change1M, change3M, change6M, change1Y);
+    }
+
+    private static long nanosToMillis(long startedAt) {
+        return Math.max(0L, (System.nanoTime() - startedAt) / 1_000_000L);
+    }
+
+    private record SummaryCacheEntry(MarketPriceSummaryDto summary, Instant expiresAt) {}
 
     /**
      * Trailing return for daily TEFAS NAV: compare latest NAV (as of {@code now}) to the latest NAV

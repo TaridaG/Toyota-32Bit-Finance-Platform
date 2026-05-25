@@ -17,6 +17,7 @@ import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.repository.*;
 import com.company.finance_api.service.CurrencyConversionService;
+import com.company.finance_api.service.PortfolioPerformanceSeriesService;
 import com.company.finance_api.service.TradeService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;
@@ -46,6 +47,7 @@ public class TradeServiceImpl implements TradeService {
   private final InstrumentPriceRepository instrumentPriceRepository;
   private final JdbcTemplate jdbcTemplate;
   private final CurrencyConversionService currencyConversionService;
+  private final PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
   private final CurrentUserResolver currentUserResolver;
   private final UserRepository userRepository;
   private final ExternalPortfolioRepository externalPortfolioRepository;
@@ -157,6 +159,10 @@ public class TradeServiceImpl implements TradeService {
             saved.getPrice(),
             saved.getQuantity()));
 
+    if (portfolio != null) {
+      portfolioPerformanceSeriesService.recomputePortfolioHistory(user.getId(), portfolio.getId());
+    }
+
     return saved;
   }
 
@@ -223,6 +229,10 @@ public class TradeServiceImpl implements TradeService {
             saved.getType(),
             saved.getPrice(),
             saved.getQuantity()));
+
+    if (portfolio != null) {
+      portfolioPerformanceSeriesService.recomputePortfolioHistory(user.getId(), portfolio.getId());
+    }
 
     return saved;
   }

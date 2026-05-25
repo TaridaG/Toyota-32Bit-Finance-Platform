@@ -1,4 +1,8 @@
 import { apiClient } from '../../../shared/api/client'
+import { getCachedOrLoad } from './requestCache'
+
+const LATEST_TTL_MS = 30_000
+const HISTORY_TTL_MS = 5 * 60_000
 
 export type PolicyRateLatestResponse = {
   value?: number | null
@@ -24,13 +28,17 @@ export type PolicyRateHistoryResponse = {
 }
 
 export async function fetchPolicyRateLatest(): Promise<PolicyRateLatestResponse> {
-  const { data } = await apiClient.get<PolicyRateLatestResponse>('/api/rates/policy-rate/latest')
-  return data
+  return getCachedOrLoad('faiz-vadeli:policy-rate:latest', LATEST_TTL_MS, async () => {
+    const { data } = await apiClient.get<PolicyRateLatestResponse>('/api/rates/policy-rate/latest')
+    return data
+  })
 }
 
 export async function fetchPolicyRateHistory(): Promise<PolicyRateHistoryResponse> {
-  const { data } = await apiClient.get<PolicyRateHistoryResponse>('/api/rates/policy-rate/history', {
-    params: { range: '5Y', frequency: 'WEEKLY' },
+  return getCachedOrLoad('faiz-vadeli:policy-rate:history:5Y:WEEKLY', HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<PolicyRateHistoryResponse>('/api/rates/policy-rate/history', {
+      params: { range: '5Y', frequency: 'WEEKLY' },
+    })
+    return data
   })
-  return data
 }

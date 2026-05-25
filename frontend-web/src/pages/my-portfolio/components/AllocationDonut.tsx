@@ -75,6 +75,7 @@ type Props = {
   ariaLabel: string
   /** Instrument: live market % in tooltip; category: bucket value/weight 1D metrics from overview. */
   donutVariant?: 'instrument' | 'category'
+  hideAmounts?: boolean
 }
 
 function formatPricePct(fmt: Intl.NumberFormat, v: number | null | undefined): string {
@@ -88,6 +89,7 @@ export function AllocationDonut({
   currencyFormat,
   ariaLabel,
   donutVariant = 'instrument',
+  hideAmounts = false,
 }: Props) {
   const { t } = useTranslation('portfolio')
   const [hovered, setHovered] = useState<number | null>(null)
@@ -320,7 +322,7 @@ export function AllocationDonut({
                 {sharePctDisplay.format(activeRow.portfolioSharePct ?? activeRow.sharePct)}%
               </span>
               <span className="my-portfolio-allocation-tooltip-sep">·</span>
-              {currencyFormat.format(activeRow.value)}
+              {hideAmounts ? '•••' : currencyFormat.format(activeRow.value)}
             </p>
           </div>
           <div className="my-portfolio-allocation-tooltip-grid">

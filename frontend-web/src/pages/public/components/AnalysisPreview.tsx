@@ -57,14 +57,14 @@ const PRICE_LABELS = [
 ] as const
 
 const TIME_LABELS = [
-  { x: 44, label: '23 May' },
-  { x: 128, label: '12:00' },
-  { x: 238, label: '24 May' },
-  { x: 366, label: '22:00' },
+  { x: 44, label: '23 May', active: false },
+  { x: 128, label: '12:00', active: false },
+  { x: 238, label: '24 May', active: false },
+  { x: 366, label: '22:00', active: false },
   { x: 468, label: '25 May 15:30', active: true },
-  { x: 590, label: '26 May' },
-  { x: 664, label: '12:00' },
-  { x: 748, label: '27 May' },
+  { x: 590, label: '26 May', active: false },
+  { x: 664, label: '12:00', active: false },
+  { x: 748, label: '27 May', active: false },
 ] as const
 
 const SIDE_TOOLS = [

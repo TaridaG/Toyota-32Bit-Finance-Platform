@@ -20,8 +20,6 @@ export type AnalysisTickerBarProps = {
   dailyLow: number | null
   weeklyPct: number
   yearlyPct: number
-  trendScore: number | null
-  trendLabel: string | null
   categoryTag: string
   currencyCode: string
   scopeTag: string
@@ -74,8 +72,6 @@ export function AnalysisTickerBar({
   dailyLow,
   weeklyPct,
   yearlyPct,
-  trendScore,
-  trendLabel,
   categoryTag,
   currencyCode,
   scopeTag,
@@ -94,13 +90,6 @@ export function AnalysisTickerBar({
   )
   const absMove = pctDeltaFromDaily(price, dailyPct)
   const up = dailyPct >= 0
-
-  const trendText =
-    trendScore != null && trendLabel && ['WEAK', 'NEUTRAL', 'STRONG', 'VERY_STRONG'].includes(trendLabel)
-      ? t(`ticker.trendLabels.${trendLabel}`, { score: Math.round(trendScore) })
-      : trendScore != null
-        ? t('ticker.trendScoreOnly', { score: Math.round(trendScore) })
-        : '—'
 
   const hr = horizonReturns ?? {
     weekly: null,
@@ -205,12 +194,6 @@ export function AnalysisTickerBar({
               </div>
             </div>
           </div>
-          <div className="fi-analysis-ticker-terminal-seg fi-analysis-ticker-terminal-seg--trend">
-            <span className="fi-analysis-ticker-terminal-lbl">{t('ticker.trendScore')}</span>
-            <span className="fi-analysis-ticker-terminal-val fi-analysis-ticker-terminal-val--trend">
-              <span className="fi-analysis-ticker-trend-pill">{trendText}</span>
-            </span>
-          </div>
         </div>
       </header>
     )
@@ -239,12 +222,6 @@ export function AnalysisTickerBar({
         <div className="fi-analysis-ticker-metric">
           <dt>{t('ticker.yearlyChange')}</dt>
           <dd className={yearlyPct >= 0 ? 'fi-up' : 'fi-down'}>{formatNumber(yearlyPct, locale, 2)}%</dd>
-        </div>
-        <div className="fi-analysis-ticker-metric fi-analysis-ticker-metric--trend">
-          <dt>{t('ticker.trendScore')}</dt>
-          <dd>
-            <span className="fi-analysis-ticker-trend-pill">{trendText}</span>
-          </dd>
         </div>
       </dl>
     </header>

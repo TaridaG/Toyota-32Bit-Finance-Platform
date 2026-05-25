@@ -267,6 +267,24 @@ export function AnalysisChartFrame({
         </div>
 
         <div className="fi-chart-frame-top-right" ref={topRightRef}>
+          <div className="fi-chart-frame-range-select">
+            <label className="fi-toolbar-sr-only" htmlFor="fi-analysis-range-select">
+              {t('chartFrame.intervalsAria')}
+            </label>
+            <select
+              id="fi-analysis-range-select"
+              className="fi-chart-frame-range-select-control"
+              value={timeRange}
+              onChange={(event) => onRangeChange(event.target.value as TimeRange)}
+              aria-label={t('chartFrame.intervalsAria')}
+            >
+              {rangeButtons.map((range) => (
+                <option key={range} value={range}>
+                  {range}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="fi-chart-frame-ranges-scroll" role="toolbar" aria-label={t('chartFrame.intervalsAria')}>
             <div className="fi-interval-group fi-interval-group--scroll">
               {rangeButtons.map((range) => (

@@ -106,7 +106,7 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
   const rowsRef = useRef<MarketOverviewItem[]>([])
   const lastFetchContextRef = useRef<FetchContext | null>(null)
   const sortField = parseMarketSortQuery(sort).field
-  const backendDisplayCurrency: SupportedCurrency = sortField === 'displayAmount' ? displayCurrency : 'USD'
+  const backendDisplayCurrency: SupportedCurrency = displayCurrency
 
   useEffect(() => {
     rowsRef.current = rows
@@ -169,18 +169,6 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
         }
         let nextRows = Array.isArray(response.content) ? response.content : []
         let resolvedCurrency = backendDisplayCurrency
-        if (sortField !== 'displayAmount' && backendDisplayCurrency !== displayCurrency && nextRows.length > 0) {
-          try {
-            const fxRows = await fetchLiveFxMidRows()
-            if (signal?.aborted) {
-              return
-            }
-            nextRows = repriceMarketOverviewRows(nextRows, displayCurrency, fxRows)
-            resolvedCurrency = displayCurrency
-          } catch (repricingError) {
-            console.warn('market overview repricing after fetch failed', repricingError)
-          }
-        }
         setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
         const nextTotalElements = response.totalElements ?? 0
         const nextTotalPages = response.totalPages ?? 0

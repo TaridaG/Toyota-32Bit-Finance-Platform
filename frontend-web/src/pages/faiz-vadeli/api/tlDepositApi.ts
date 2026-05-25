@@ -1,4 +1,8 @@
 import { apiClient } from '../../../shared/api/client'
+import { getCachedOrLoad } from './requestCache'
+
+const LATEST_TTL_MS = 30_000
+const HISTORY_TTL_MS = 5 * 60_000
 
 export type TlDepositLatestResponse = {
   value?: number | null
@@ -26,15 +30,19 @@ export type TlDepositHistoryResponse = {
 }
 
 export async function fetchTlDepositLatest(maturity: string): Promise<TlDepositLatestResponse> {
-  const { data } = await apiClient.get<TlDepositLatestResponse>('/api/rates/tl-deposit/latest', {
-    params: { maturity },
+  return getCachedOrLoad(`faiz-vadeli:tl-deposit:latest:${maturity}`, LATEST_TTL_MS, async () => {
+    const { data } = await apiClient.get<TlDepositLatestResponse>('/api/rates/tl-deposit/latest', {
+      params: { maturity },
+    })
+    return data
   })
-  return data
 }
 
 export async function fetchTlDepositHistory(maturity: string): Promise<TlDepositHistoryResponse> {
-  const { data } = await apiClient.get<TlDepositHistoryResponse>('/api/rates/tl-deposit/history', {
-    params: { range: '5Y', frequency: 'WEEKLY', maturity },
+  return getCachedOrLoad(`faiz-vadeli:tl-deposit:history:${maturity}:5Y:WEEKLY`, HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<TlDepositHistoryResponse>('/api/rates/tl-deposit/history', {
+      params: { range: '5Y', frequency: 'WEEKLY', maturity },
+    })
+    return data
   })
-  return data
 }

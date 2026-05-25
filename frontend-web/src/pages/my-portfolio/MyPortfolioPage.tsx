@@ -1,7 +1,18 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { FavoriteNewsInsightCard } from './components/FavoriteNewsInsightCard'
+import { TargetsInsightCard } from './components/TargetsInsightCard'
 import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { fetchMarketOverview } from '../../features/markets/api/marketService'
 import { inferNativeQuote } from '../../features/markets/lib/marketDisplayConversion'
@@ -11,6 +22,7 @@ import {
   deletePortfolio,
   getInstrumentsCatalogForTradePicker,
   getMyPortfolioOverview,
+  getPortfolioPerformanceSeries,
   getPortfolioSnapshots,
   getPortfolios,
   getTransactionHistory,
@@ -23,6 +35,7 @@ import type {
   Portfolio,
   PortfolioOverview,
   PortfolioOverviewItem,
+  PortfolioPerformanceSeries,
   PortfolioTradeFlow,
   PortfolioValueSnapshot,
   PurchaseMode,
@@ -35,9 +48,10 @@ import type {
 import type { MarketOverviewPageResponse } from '../../shared/types/market'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
 import { PnlSplitDonut } from './components/PnlSplitDonut'
-import { MyPortfolioAnalysisSection } from './components/MyPortfolioAnalysisSection'
 import { PortfolioHistorySparkline } from './components/PortfolioHistorySparkline'
-import { tradeFlowTotals } from './components/TradeFlowHistoryChart'
+import { tradeFlowTotals } from './components/tradeFlowStats'
+import { PortfolioValueHistoryChart, type PortfolioChartMetric } from './components/PortfolioValueHistoryChart'
+import { RANGE_TO_MS, VALUE_CHART_RANGES, valueChartRangeLabel, type ValueChartRange } from './components/portfolioChartShared'
 import { loadTradeFlowForPortfolio } from '../../features/portfolio/lib/loadTradeFlowForPortfolio'
 import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { MyAnalysisPanel } from '../my-analysis/MyAnalysisPanel'
@@ -54,6 +68,88 @@ const CREATE_PORTFOLIO_SELECT_VALUE = '__create_portfolio__'
 /** Aggregate "Genel Bakış" in portfolio picker; not a real DB id. */
 const ALL_PORTFOLIOS_ID = -1
 const MASKED_MONEY_LABEL = '••••'
+
+function PortfolioDashboardGlyph({
+  kind,
+}: {
+  kind: 'performance' | 'value' | 'range' | 'currency' | 'history'
+}) {
+  switch (kind) {
+    case 'performance':
+      return (
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M2.5 10.5 5.6 7.4l2.2 2.2 4.7-5.1"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.6"
+          />
+          <path
+            d="M10.7 4.5h3v3"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.6"
+          />
+        </svg>
+      )
+    case 'value':
+      return (
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <rect x="2.5" y="8.5" width="2.2" height="4.5" rx="0.8" fill="currentColor" />
+          <rect x="6.9" y="5.8" width="2.2" height="7.2" rx="0.8" fill="currentColor" opacity="0.9" />
+          <rect x="11.3" y="3.2" width="2.2" height="9.8" rx="0.8" fill="currentColor" opacity="0.78" />
+        </svg>
+      )
+    case 'range':
+      return (
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="8" cy="8" r="5.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path
+            d="M8 5.2v3.1l2.1 1.4"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.5"
+          />
+        </svg>
+      )
+    case 'currency':
+      return (
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M5.3 4.1c.8-.7 1.8-1 3-1 2.1 0 3.5 1 3.5 2.5 0 3.3-5.7 1.7-5.7 4.5 0 1.2 1.1 2 2.9 2 1 0 2-.2 3-.8"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.4"
+          />
+          <path d="M8 2.3v11.4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
+        </svg>
+      )
+    case 'history':
+      return (
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path
+            d="M3 11.5h10"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="1.4"
+            opacity="0.5"
+          />
+          <circle cx="4.2" cy="8.4" r="1.1" fill="currentColor" />
+          <circle cx="8" cy="6.5" r="1.1" fill="currentColor" opacity="0.85" />
+          <circle cx="11.8" cy="4.8" r="1.1" fill="currentColor" opacity="0.7" />
+        </svg>
+      )
+  }
+}
 
 /** Read selected portfolio from `?portfolio=` (numeric id or `all` / omitted = Genel Bakış). */
 function portfolioIdFromSearchParams(params: URLSearchParams): number {
@@ -114,7 +210,7 @@ function mergePortfolioValueSnapshots(seriesList: PortfolioValueSnapshot[][]): P
   }
   return [...map.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([_day, v], i) => ({
+    .map(([, v], i) => ({
       id: -(i + 1),
       userId,
       totalCost: v.totalCost,
@@ -196,11 +292,6 @@ function formatHoldingQuantity(q: number, locale: string): string {
   if (!Number.isFinite(q)) return '—'
   if (Math.abs(q - Math.round(q)) < 1e-9) return String(Math.round(q))
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(q)
-}
-
-function formatPreviewMoney(v: number, fmt: Intl.NumberFormat): string {
-  if (!Number.isFinite(v) || v <= 0) return '—'
-  return fmt.format(v)
 }
 
 type AllocationSortKey =
@@ -412,7 +503,7 @@ function buildCategoryDonutRows(overview: PortfolioOverview | null, t: (key: str
   })
 }
 
-const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation', 'portfolioAnalysis'] as const
+const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation'] as const
 const sidebarSecondaryKeys = ['news', 'analysis', 'targets', 'watchlist', 'settings'] as const
 const PORTFOLIO_SECTIONS = new Set<string>([...sidebarMainKeys, ...sidebarSecondaryKeys])
 type MarketOption = {
@@ -612,16 +703,6 @@ function SidebarItemIcon({ item }: { item: string }) {
           <rect x="3" y="6" width="18" height="14" rx="3" />
           <path d="M3 11h18" />
           <path d="M8 3h8" />
-        </svg>
-      )
-    case 'portfolioAnalysis':
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden>
-          <path d="M4 20h16" />
-          <path d="M6 17l3-5 3 3 4-7 3 3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          <rect x="5" y="4" width="3" height="6" rx="0.8" opacity="0.55" />
-          <rect x="10" y="6" width="3" height="4" rx="0.8" opacity="0.7" />
-          <rect x="15" y="3" width="3" height="7" rx="0.8" opacity="0.85" />
         </svg>
       )
     case 'allocation':
@@ -861,6 +942,10 @@ export function MyPortfolioPage() {
     toDate: '',
   })
   const [overview, setOverview] = useState<PortfolioOverview | null>(null)
+  const [performanceSeries, setPerformanceSeries] = useState<PortfolioPerformanceSeries | null>(null)
+  const [performanceSeriesHydrated, setPerformanceSeriesHydrated] = useState(false)
+  const [valueChartMetric] = useState<PortfolioChartMetric>('performance')
+  const [valueChartRange, setValueChartRange] = useState<ValueChartRange>('1w')
   const [tradeFlow, setTradeFlow] = useState<PortfolioTradeFlow | null>(null)
   const [tradeFlowHydrated, setTradeFlowHydrated] = useState(false)
   const [recentTxPreview, setRecentTxPreview] = useState<TransactionHistoryItem[]>([])
@@ -997,6 +1082,80 @@ export function MyPortfolioPage() {
     () => (hideMoney ? maskedNumberFormatShim() : dashboardDayChangeFormat),
     [hideMoney, dashboardDayChangeFormat],
   )
+
+  const activeValueChartMetricLabel =
+    valueChartMetric === 'performance' ? t('valueChart.metricPerformance') : t('valueChart.metricValue')
+  const valueChartCurrencyCode = (performanceSeries?.currency ?? valuationCurrency).toUpperCase()
+  const valueChartPointsLabel = useMemo(() => {
+    const points = performanceSeries?.points ?? []
+    if (points.length === 0) {
+      return null
+    }
+    if (valueChartRange === 'all') {
+      return t('valueChart.points', { count: points.length })
+    }
+    const endMs = Date.parse(`${points[points.length - 1]!.day}T12:00:00Z`)
+    if (!Number.isFinite(endMs)) {
+      return t('valueChart.points', { count: points.length })
+    }
+    const startMs = Math.max(0, endMs - RANGE_TO_MS[valueChartRange] + 86_400_000)
+    const visibleCount = points.filter((point) => Date.parse(`${point.day}T12:00:00Z`) >= startMs).length
+    return t('valueChart.points', { count: Math.max(1, visibleCount) })
+  }, [performanceSeries, t, valueChartRange])
+  const valueChartRangeRailRef = useRef<HTMLDivElement | null>(null)
+  const valueChartRangeDragRef = useRef({
+    pointerId: -1,
+    startX: 0,
+    startScrollLeft: 0,
+    dragging: false,
+    suppressClick: false,
+  })
+
+  const handleValueChartRangePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const rail = valueChartRangeRailRef.current
+    if (!rail) return
+    valueChartRangeDragRef.current.pointerId = event.pointerId
+    valueChartRangeDragRef.current.startX = event.clientX
+    valueChartRangeDragRef.current.startScrollLeft = rail.scrollLeft
+    valueChartRangeDragRef.current.dragging = false
+    valueChartRangeDragRef.current.suppressClick = false
+  }, [])
+
+  const handleValueChartRangePointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const rail = valueChartRangeRailRef.current
+    if (!rail) return
+    const drag = valueChartRangeDragRef.current
+    if (drag.pointerId !== event.pointerId) return
+    const deltaX = event.clientX - drag.startX
+    if (!drag.dragging) {
+      if (Math.abs(deltaX) <= 8) {
+        return
+      }
+      drag.dragging = true
+      drag.suppressClick = true
+      rail.setPointerCapture?.(event.pointerId)
+    }
+    event.preventDefault()
+    rail.scrollLeft = drag.startScrollLeft - deltaX
+  }, [])
+
+  const handleValueChartRangePointerEnd = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const rail = valueChartRangeRailRef.current
+    const drag = valueChartRangeDragRef.current
+    if (drag.pointerId !== event.pointerId) return
+    if (rail?.hasPointerCapture?.(event.pointerId)) {
+      rail.releasePointerCapture(event.pointerId)
+    }
+    drag.pointerId = -1
+    drag.dragging = false
+  }, [])
+
+  const handleValueChartRangeClickCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!valueChartRangeDragRef.current.suppressClick) return
+    valueChartRangeDragRef.current.suppressClick = false
+    event.preventDefault()
+    event.stopPropagation()
+  }, [])
 
   const formatTxMoney = useCallback(
     (row: TransactionHistoryItem) => {
@@ -1393,8 +1552,7 @@ export function MyPortfolioPage() {
     if (
       activeSection !== 'dashboard' &&
       activeSection !== 'markets' &&
-      activeSection !== 'allocation' &&
-      activeSection !== 'portfolioAnalysis'
+      activeSection !== 'allocation'
     ) {
       return
     }
@@ -1403,11 +1561,42 @@ export function MyPortfolioPage() {
 
   useEffect(() => {
     if (selectedPortfolioId == null) {
+      setPerformanceSeries(null)
+      setPerformanceSeriesHydrated(false)
+      return
+    }
+    if (activeSection !== 'dashboard') {
+      setPerformanceSeries(null)
+      setPerformanceSeriesHydrated(false)
+      return
+    }
+    let cancelled = false
+    setPerformanceSeriesHydrated(false)
+    void getPortfolioPerformanceSeries(overviewApiPortfolioId, valuationCurrency, 'all')
+      .then((data) => {
+        if (!cancelled) {
+          setPerformanceSeries(data)
+          setPerformanceSeriesHydrated(true)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPerformanceSeries(null)
+          setPerformanceSeriesHydrated(true)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeSection, overviewApiPortfolioId, valuationCurrency, selectedPortfolioId])
+
+  useEffect(() => {
+    if (selectedPortfolioId == null) {
       setTradeFlow(null)
       setTradeFlowHydrated(false)
       return
     }
-    if (activeSection !== 'dashboard' && activeSection !== 'portfolioAnalysis') {
+    if (activeSection !== 'dashboard') {
       setTradeFlow(null)
       setTradeFlowHydrated(false)
       return
@@ -1427,10 +1616,7 @@ export function MyPortfolioPage() {
   }, [activeSection, overviewApiPortfolioId, valuationCurrency, selectedPortfolioId])
 
   useEffect(() => {
-    if (
-      selectedPortfolioId == null ||
-      (activeSection !== 'dashboard' && activeSection !== 'portfolioAnalysis')
-    ) {
+    if (selectedPortfolioId == null || activeSection !== 'dashboard') {
       setValueSnapshots([])
       return
     }
@@ -1725,6 +1911,8 @@ export function MyPortfolioPage() {
       await loadHistoryPage(0, appliedHistoryFilters, isAggregatePortfolioView ? null : selectedPortfolioId)
       const updatedOverview = await getMyPortfolioOverview(overviewApiPortfolioId, valuationCurrency)
       setOverview(updatedOverview)
+      setPerformanceSeries(await getPortfolioPerformanceSeries(overviewApiPortfolioId, valuationCurrency, 'all'))
+      setPerformanceSeriesHydrated(true)
       setTradeFlow(await loadTradeFlowForPortfolio(overviewApiPortfolioId, valuationCurrency))
     } catch (error) {
       const message = extractApiErrorMessage(error)
@@ -2435,40 +2623,6 @@ export function MyPortfolioPage() {
             </article>
           ) : null}
 
-          {activeSection === 'portfolioAnalysis' ? (
-            <MyPortfolioAnalysisSection
-              selectedPortfolioId={selectedPortfolioId}
-              overview={overview}
-              valueSnapshots={valueSnapshots}
-              tradeFlow={tradeFlow}
-              tradeFlowHydrated={tradeFlowHydrated}
-              instrumentDonutRows={instrumentDonutRows}
-              categoryDonutRows={categoryDonutRows}
-              distribution={distribution}
-              hideMoney={hideMoney}
-              isDarkTheme={isDarkTheme}
-              locale={i18n.language}
-              moneyFormat={displayDashboardCurrencyFormat}
-              dayChangeFormat={displayDashboardDayChangeFormat}
-              pctFormat={dashboardPctFormat}
-              sharePctDisplay={sharePctDisplay}
-              parseTotal={(ov) => {
-                const totalValue = parseApiDecimal(ov.totalValue, 0)
-                const dayOverDay = parseApiDecimal(ov.dayOverDayChange, 0)
-                return {
-                  totalValue,
-                  totalCost: parseApiDecimal(ov.totalCost, 0),
-                  totalPnl: parseApiDecimal(ov.totalPnl, 0),
-                  totalPnlPercent: parseApiDecimal(ov.totalPnlPercent, 0),
-                  dayOverDay,
-                  priorDayValue:
-                    ov.dayOverDayChange != null ? totalValue - dayOverDay : null,
-                }
-              }}
-              onOpenAllocation={() => selectPortfolioSection('allocation')}
-            />
-          ) : null}
-
           {activeSection === 'allocation' ? (
             <article className={`card my-portfolio-trade-card my-portfolio-allocation-detail${isDarkTheme ? ' is-dark' : ' is-light'}`}>
               <header className="my-portfolio-allocation-head">
@@ -2789,7 +2943,6 @@ export function MyPortfolioPage() {
           activeSection !== 'markets' &&
           activeSection !== 'portfolio' &&
           activeSection !== 'allocation' &&
-          activeSection !== 'portfolioAnalysis' &&
           activeSection !== 'settings' ? (
             <>
               <div className="my-portfolio-grid my-portfolio-grid--dashboard">
@@ -2797,68 +2950,144 @@ export function MyPortfolioPage() {
               <div className="my-portfolio-card-head">
                 <h3>{t('valueTitle')}</h3>
               </div>
-              <p className="my-portfolio-main-value">
-                {selectedPortfolioId == null
-                  ? '—'
-                  : overview
-                    ? displayDashboardCurrencyFormat.format(Number(overview.totalValue ?? 0))
-                    : '…'}
-              </p>
-              <p
-                className={`my-portfolio-sub-value${
-                  (() => {
-                    if (!overview) return ''
-                    const dod = parseApiDecimal(overview.dayOverDayChange, 0)
-                    if (dod > DOD_EPS) return ' my-portfolio-dod-pos'
-                    if (dod < -DOD_EPS) return ' my-portfolio-dod-neg'
-                    return ' my-portfolio-dod-neutral'
-                  })()
-                }`}
-              >
-                {selectedPortfolioId == null ? null : !overview ? (
-                  '…'
-                ) : (
-                  (() => {
-                    const totalVal = parseApiDecimal(overview.totalValue, 0)
-                    const dod = parseApiDecimal(overview.dayOverDayChange, 0)
-                    const priorClose = totalVal - dod
-                    const showPct = Math.abs(priorClose) >= DOD_EPS
-                    const pct = showPct ? (dod / priorClose) * 100 : null
-                    return (
-                      <>
-                        <span className="my-portfolio-dod-amount">{displayDashboardDayChangeFormat.format(dod)}</span>
-                        {pct != null && showPct ? (
-                          <span className="my-portfolio-dod-pct">
-                            {' '}
-                            ({hideMoney ? '•••' : dashboardPctFormat.format(pct)}%)
-                          </span>
-                        ) : null}
-                        <span className="my-portfolio-dod-suffix">
-                          {' '}
-                          {t('sinceYesterday')}
-                        </span>
-                      </>
-                    )
-                  })()
+              <div className="my-portfolio-dashboard-value-layout">
+                <div className="my-portfolio-dashboard-value-copy">
+                  <div className="my-portfolio-dashboard-value-badges">
+                    <span className="my-portfolio-dashboard-value-badge">
+                      <span className="my-portfolio-dashboard-value-badge-icon">
+                        <PortfolioDashboardGlyph kind="currency" />
+                      </span>
+                      {valueChartCurrencyCode}
+                    </span>
+                    <span className="my-portfolio-dashboard-value-badge is-muted">
+                      <span className="my-portfolio-dashboard-value-badge-icon">
+                        <PortfolioDashboardGlyph kind={valueChartMetric === 'performance' ? 'performance' : 'value'} />
+                      </span>
+                      {activeValueChartMetricLabel}
+                    </span>
+                  </div>
+                  <p className="my-portfolio-main-value">
+                    {selectedPortfolioId == null
+                      ? '—'
+                      : overview
+                        ? displayDashboardCurrencyFormat.format(Number(overview.totalValue ?? 0))
+                        : '…'}
+                  </p>
+                  <p
+                    className={`my-portfolio-sub-value${
+                      (() => {
+                        if (!overview) return ''
+                        const dod = parseApiDecimal(overview.dayOverDayChange, 0)
+                        if (dod > DOD_EPS) return ' my-portfolio-dod-pos'
+                        if (dod < -DOD_EPS) return ' my-portfolio-dod-neg'
+                        return ' my-portfolio-dod-neutral'
+                      })()
+                    }`}
+                  >
+                    {selectedPortfolioId == null ? null : !overview ? (
+                      '…'
+                    ) : (
+                      (() => {
+                        const totalVal = parseApiDecimal(overview.totalValue, 0)
+                        const dod = parseApiDecimal(overview.dayOverDayChange, 0)
+                        const priorClose = totalVal - dod
+                        const showPct = Math.abs(priorClose) >= DOD_EPS
+                        const pct = showPct ? (dod / priorClose) * 100 : null
+                        return (
+                          <>
+                            <span className="my-portfolio-dod-amount">{displayDashboardDayChangeFormat.format(dod)}</span>
+                            {pct != null && showPct ? (
+                              <span className="my-portfolio-dod-pct">
+                                {' '}
+                                ({hideMoney ? '•••' : dashboardPctFormat.format(pct)}%)
+                              </span>
+                            ) : null}
+                            <span className="my-portfolio-dod-suffix">
+                              {' '}
+                              {t('sinceYesterday')}
+                            </span>
+                          </>
+                        )
+                      })()
+                    )}
+                  </p>
+                  {valueChartPointsLabel ? (
+                    <p className="my-portfolio-dashboard-value-series-note">
+                      <span className="my-portfolio-dashboard-value-badge-icon">
+                        <PortfolioDashboardGlyph kind="history" />
+                      </span>
+                      {valueChartPointsLabel}
+                    </p>
+                  ) : null}
+                </div>
+                {selectedPortfolioId == null ? null : (
+                  <div className="my-portfolio-dashboard-value-chart">
+                    <div className="my-portfolio-dashboard-value-chart-shell">
+                      <div className="my-portfolio-dashboard-value-chart-panel">
+                        <div className="my-portfolio-dashboard-value-chart-head">
+                          <div>
+                            <p className="my-portfolio-dashboard-value-chart-label">
+                              {valueChartMetric === 'performance'
+                                ? t('valueChart.performanceTitle')
+                                : t('valueChart.marketValueTitle')}
+                            </p>
+                            <p className="my-portfolio-dashboard-value-chart-meta">
+                              <span>{valueChartRangeLabel(valueChartRange)}</span>
+                              {valueChartPointsLabel ? (
+                                <>
+                                  <span className="my-portfolio-dashboard-value-chart-meta-sep">·</span>
+                                  <span>{valueChartPointsLabel}</span>
+                                </>
+                              ) : null}
+                            </p>
+                          </div>
+                          <div className="my-portfolio-dashboard-value-range-scroller-wrap">
+                            <div
+                              ref={valueChartRangeRailRef}
+                              className="my-portfolio-dashboard-value-range-scroller"
+                              role="tablist"
+                              aria-label={t('valueChart.rangeAria')}
+                              onPointerDown={handleValueChartRangePointerDown}
+                              onPointerMove={handleValueChartRangePointerMove}
+                              onPointerUp={handleValueChartRangePointerEnd}
+                              onPointerCancel={handleValueChartRangePointerEnd}
+                              onClickCapture={handleValueChartRangeClickCapture}
+                            >
+                              {VALUE_CHART_RANGES.map((range) => (
+                                <button
+                                  key={range}
+                                  type="button"
+                                  className={`my-portfolio-chip my-portfolio-chip--range${valueChartRange === range ? ' is-active' : ''}`}
+                                  onClick={() => setValueChartRange(range)}
+                                >
+                                  {valueChartRangeLabel(range)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        {performanceSeriesHydrated ? (
+                          <PortfolioValueHistoryChart
+                            key={`${valueChartMetric}-${valueChartRange}-${performanceSeries?.points[0]?.day ?? 'empty'}-${performanceSeries != null && performanceSeries.points.length > 0 ? performanceSeries.points[performanceSeries.points.length - 1]!.day : 'empty'}-${performanceSeries?.points.length ?? 0}`}
+                            series={performanceSeries}
+                            metric={valueChartMetric}
+                            range={valueChartRange}
+                            height={236}
+                            isDark={isDarkTheme}
+                            locale={i18n.language}
+                            maskAmounts={hideMoney}
+                            moneyFormatter={displayDashboardCurrencyFormat}
+                            percentFormatter={dashboardPctFormat}
+                            emptyLabel={t('valueChart.empty')}
+                          />
+                        ) : (
+                          <div className="my-portfolio-value-chart-empty">{t('valueChart.loading')}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </p>
-              {selectedPortfolioId == null ? null : (
-                <PortfolioHistorySparkline
-                  variant="value"
-                  snapshots={valueSnapshots}
-                  liveTotalValue={overview ? parseApiDecimal(overview.totalValue, 0) : null}
-                  priorDayValue={
-                    overview && overview.dayOverDayChange != null
-                      ? parseApiDecimal(overview.totalValue, 0) - parseApiDecimal(overview.dayOverDayChange, 0)
-                      : null
-                  }
-                  isDark={isDarkTheme}
-                  locale={i18n.language}
-                  maskAmounts={hideMoney}
-                  formatValue={(v) => displayDashboardCurrencyFormat.format(v)}
-                  emptyLabel={t('valueChart.empty')}
-                />
-              )}
+              </div>
             </article>
 
             <article
@@ -3098,6 +3327,13 @@ export function MyPortfolioPage() {
               </div>
             </article>
 
+            <TargetsInsightCard
+              portfolioId={overviewApiPortfolioId}
+              displayCurrency={valuationCurrency}
+              moneyFormat={displayDashboardCurrencyFormat}
+              percentFormat={dashboardPctFormat}
+              hideMoney={hideMoney}
+            />
             <FavoriteNewsInsightCard />
               </div>
             </>

@@ -1,11 +1,11 @@
 import type { LineData, Time, UTCTimestamp } from 'lightweight-charts'
 import { timeToMs, timeToUnixSec } from '../../../shared/chart/timeUtils'
 
-export type ValueChartRange = '1w' | '1m' | '3m' | '6m' | '1y' | '5y'
+export type ValueChartRange = '1w' | '1m' | '3m' | '6m' | '1y' | 'all'
 
 export { timeToMs, timeToUnixSec }
 
-export const VALUE_CHART_RANGES: ValueChartRange[] = ['1w', '1m', '3m', '6m', '1y', '5y']
+export const VALUE_CHART_RANGES: ValueChartRange[] = ['1w', '1m', '3m', '6m', '1y', 'all']
 
 export function valueChartRangeLabel(r: ValueChartRange): string {
   switch (r) {
@@ -19,8 +19,8 @@ export function valueChartRangeLabel(r: ValueChartRange): string {
       return '6M'
     case '1y':
       return '1Y'
-    case '5y':
-      return '5Y'
+    case 'all':
+      return 'ALL'
     default:
       return r
   }
@@ -32,7 +32,7 @@ export const RANGE_TO_MS: Record<ValueChartRange, number> = {
   '3m': 90 * 86_400_000,
   '6m': 180 * 86_400_000,
   '1y': 365 * 86_400_000,
-  '5y': 5 * 365 * 86_400_000,
+  all: 50 * 365 * 86_400_000,
 }
 
 /** Kısayol butonları → imperative `setWindow` (saniye). */
@@ -42,16 +42,16 @@ export const RANGE_TO_SEC: Record<ValueChartRange, number> = {
   '3m': Math.floor(RANGE_TO_MS['3m'] / 1000),
   '6m': Math.floor(RANGE_TO_MS['6m'] / 1000),
   '1y': Math.floor(RANGE_TO_MS['1y'] / 1000),
-  '5y': Math.floor(RANGE_TO_MS['5y'] / 1000),
+  all: Math.floor(RANGE_TO_MS.all / 1000),
 }
 
 const DAY_SEC = 86_400
 
 /**
- * Zoom/pan + günlük omurga: en fazla bu kadar geri (dashboard time-series contract).
- * Sparse event noktaları yerine her zaman ~5y günlük grid üretilir.
+ * Zoom/pan + günlük omurga: en fazla bu kadar geri.
+ * Sparse event noktaları yerine gerekirse uzun inception geçmişi için geniş günlük grid üretilir.
  */
-export const MAX_CHART_HISTORY_SEC = 5 * 365 * DAY_SEC
+export const MAX_CHART_HISTORY_SEC = 50 * 365 * DAY_SEC
 
 /** Boş / düz seri: viewport’tan bağımsız, sadece çizilebilir zaman aralığı (gün adımı). */
 export const EMPTY_SERIES_DISPLAY_SPAN_SEC = 7 * DAY_SEC

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.company.marketdataservice.history.infrastructure.http.dto.HistoryPointDto;
@@ -52,12 +54,36 @@ class HistoricalMarketDataReadServiceImplDailyChangeTest {
 
         HistoricalMarketDataReadServiceImpl svc =
                 new HistoricalMarketDataReadServiceImpl(
-                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, clock);
+                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, null, clock);
 
         Map<String, MarketPriceSummaryDto> out = svc.getPriceSummary(List.of("GARAN"));
         MarketPriceSummaryDto dto = out.get("GARAN");
         assertNotNull(dto);
         assertEquals(5.26315789d, dto.change1D(), 1e-6);
+    }
+
+    @Test
+    void priceSummary_reusesWarmCache_forRepeatedReads() {
+        Instant now = Instant.parse("2026-05-24T15:00:00Z");
+        Clock clock = Clock.fixed(now, ZoneOffset.UTC);
+
+        when(marketPriceHistoryRepository.findLatestHistoryPoint(eq("GARAN"), any(Pageable.class)))
+                .thenReturn(List.of(new HistoryPointDto(now, new BigDecimal("100.00"))));
+        when(marketPriceHistoryRepository.findLastTwoDailyCloses("GARAN"))
+                .thenReturn(List.of(
+                        dailyClose(LocalDate.of(2026, 5, 23), new BigDecimal("100.00"), now),
+                        dailyClose(LocalDate.of(2026, 5, 22), new BigDecimal("95.00"), now.minus(1, ChronoUnit.DAYS))));
+        stubEmptyPeriodHistory("GARAN", now);
+
+        HistoricalMarketDataReadServiceImpl svc =
+                new HistoricalMarketDataReadServiceImpl(
+                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, null, clock);
+
+        svc.getPriceSummary(List.of("GARAN"));
+        svc.getPriceSummary(List.of("GARAN"));
+
+        verify(marketPriceHistoryRepository, times(1)).findLatestHistoryPoint(eq("GARAN"), any(Pageable.class));
+        verify(marketPriceHistoryRepository, times(1)).findLastTwoDailyCloses("GARAN");
     }
 
     private void stubEmptyPeriodHistory(String symbol, Instant now) {

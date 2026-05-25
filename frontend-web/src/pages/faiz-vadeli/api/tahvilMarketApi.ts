@@ -1,4 +1,8 @@
 import { apiClient } from '../../../shared/api/client'
+import { getCachedOrLoad } from './requestCache'
+
+const SUMMARY_TTL_MS = 30_000
+const HISTORY_TTL_MS = 5 * 60_000
 
 export type MarketPriceSummaryEntry = {
   price?: number | null
@@ -19,11 +23,13 @@ function toDateParam(d: Date): string {
 }
 
 export async function fetchTahvilSummary(symbol: string): Promise<MarketPriceSummaryEntry | null> {
-  const { data } = await apiClient.get<Record<string, MarketPriceSummaryEntry>>('/api/market/prices/summary', {
-    params: { symbols: symbol },
+  return getCachedOrLoad(`faiz-vadeli:tahvil:summary:${symbol.toUpperCase()}`, SUMMARY_TTL_MS, async () => {
+    const { data } = await apiClient.get<Record<string, MarketPriceSummaryEntry>>('/api/market/prices/summary', {
+      params: { symbols: symbol },
+    })
+    const row = data?.[symbol.toUpperCase()]
+    return row ?? null
   })
-  const row = data?.[symbol.toUpperCase()]
-  return row ?? null
 }
 
 /** Son ~5 yıl (TRBOND için MDS üst sınırı genişletilmiş aralık). */
@@ -31,12 +37,14 @@ export async function fetchTahvilHistory(symbol: string): Promise<MarketHistoryP
   const to = new Date()
   const from = new Date(to)
   from.setFullYear(from.getFullYear() - 5)
-  const { data } = await apiClient.get<MarketHistoryPoint[]>('/api/market/prices/history', {
-    params: {
-      symbol: symbol.toUpperCase(),
-      from: toDateParam(from),
-      to: toDateParam(to),
-    },
+  return getCachedOrLoad(`faiz-vadeli:tahvil:history:${symbol.toUpperCase()}:5Y`, HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<MarketHistoryPoint[]>('/api/market/prices/history', {
+      params: {
+        symbol: symbol.toUpperCase(),
+        from: toDateParam(from),
+        to: toDateParam(to),
+      },
+    })
+    return Array.isArray(data) ? data : []
   })
-  return Array.isArray(data) ? data : []
 }
