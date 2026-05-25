@@ -2,7 +2,6 @@ import { apiClient } from '../../../shared/api/client'
 import type {
   InstrumentFundamentals,
   MarketCategory,
-  MarketInsightsResponse,
   MarketOverviewItem,
   MarketOverviewPageResponse,
 } from '../../../shared/types/market'
@@ -10,6 +9,7 @@ import type { SupportedCurrency } from '../../../shared/preferences/preferences'
 import {
   buildFxTryHub,
   convertToDisplayCurrency,
+  type FxMidRow,
   inferNativeQuote,
 } from '../lib/marketDisplayConversion'
 import { normalizeFxQuotePrice } from '../lib/fxTryHubConversion'
@@ -24,6 +24,11 @@ import {
 
 /** Overview enriches full segment server-side; allow longer than default API timeout. */
 const MARKET_OVERVIEW_TIMEOUT_MS = 60_000
+const MARKET_FX_CACHE_TTL_MS = 10_000
+
+let marketFxRowsCache: FxMidRow[] | null = null
+let marketFxRowsCacheExpiresAt = 0
+let marketFxRowsInFlight: Promise<FxMidRow[]> | null = null
 
 type FetchMarketsParams = {
   page: number
@@ -497,7 +502,8 @@ async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
           const sumP = fromSummary.change1D ** 2 + fromSummary.change1M ** 2 + fromSummary.change1Y ** 2
           const fxP = s.change1D ** 2 + s.change1M ** 2 + s.change1Y ** 2
           if (sumP > fxP) {
-            const { price: _p, ...rest } = fromSummary
+            const rest = { ...fromSummary }
+            delete rest.price
             s = rest
           }
         }
@@ -810,6 +816,52 @@ export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promi
   }
 }
 
+export async function fetchLiveFxMidRows(forceRefresh = false): Promise<FxMidRow[]> {
+  const now = Date.now()
+  if (!forceRefresh && marketFxRowsCache && marketFxRowsCacheExpiresAt > now) {
+    return marketFxRowsCache
+  }
+  if (!forceRefresh && marketFxRowsInFlight) {
+    return marketFxRowsInFlight
+  }
+  marketFxRowsInFlight = (async () => {
+    const response = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/market/fx')
+    const rows = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : []
+    marketFxRowsCache = rows
+    marketFxRowsCacheExpiresAt = Date.now() + MARKET_FX_CACHE_TTL_MS
+    return rows
+  })()
+  try {
+    return await marketFxRowsInFlight
+  } finally {
+    marketFxRowsInFlight = null
+  }
+}
+
+export function repriceMarketOverviewRows(
+  rows: MarketOverviewItem[],
+  displayCurrency: SupportedCurrency,
+  fxRows: FxMidRow[],
+): MarketOverviewItem[] {
+  const hub = buildFxTryHub(fxRows)
+  if (!hub) {
+    return rows
+  }
+  return rows.map((row) => {
+    const nativeQuote = row.nativeQuote ?? inferNativeQuote(row.symbol, row.category, undefined, row.exchange ?? null)
+    const displayAmount = convertToDisplayCurrency(row.price, nativeQuote, displayCurrency, hub)
+    return {
+      ...row,
+      nativeQuote,
+      displayAmount,
+    }
+  })
+}
+
 /** Fetches `/api/market/prices` + `/api/market/fx` and applies the same filters as the overview table. */
 const catalogSnapshotInflight = new Map<string, Promise<MarketCatalogSnapshot>>()
 
@@ -1048,8 +1100,10 @@ export async function buildMarketOverviewFromCatalog(
   const fxHub = buildFxTryHub(fxResponseItems)
 
   const content = basePageRows.map((rawRow) => {
-    const { [SORT_DISPLAY_AMOUNT_KEY]: _sortMetric, ...row } = rawRow as typeof rawRow &
-      Record<string, number | null | undefined>
+    const row = {
+      ...(rawRow as typeof rawRow & Record<string, number | null | undefined>),
+    }
+    delete row[SORT_DISPLAY_AMOUNT_KEY]
     const trendAwareRow = row as CatalogRowWithPeriods & TrendMeta
     const summary = rowUsesFxHistory(row as CatalogRow)
       ? fxPeriodBySymbol[row.symbol] ?? { change1D: 0, change1M: 0, change3M: 0, change6M: 0, change1Y: 0 }
@@ -1130,31 +1184,6 @@ export async function fetchMarketOverviewItemBySymbol(
     )
   } catch {
     return null
-  }
-}
-
-export async function fetchMarketInsights(): Promise<MarketInsightsResponse> {
-  const [gainersPage, losersPage] = await Promise.all([
-    fetchMarketOverviewPage({
-      page: 0,
-      size: 5,
-      category: 'all',
-      query: '',
-      sort: 'change1D,desc',
-      displayCurrency: 'USD',
-    }),
-    fetchMarketOverviewPage({
-      page: 0,
-      size: 5,
-      category: 'all',
-      query: '',
-      sort: 'change1D,asc',
-      displayCurrency: 'USD',
-    }),
-  ])
-  return {
-    topGainers: gainersPage.content,
-    topLosers: losersPage.content,
   }
 }
 

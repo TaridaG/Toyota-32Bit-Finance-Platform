@@ -1,7 +1,7 @@
 package com.company.finance_api.alarm.infrastructure.http;
 
-import com.company.finance_api.dto.AlarmHistoryResponse;
-import com.company.finance_api.service.AlarmHistoryService;
+import com.company.finance_api.alarm.infrastructure.http.dto.AlarmHistoryResponse;
+import com.company.finance_api.alarm.application.AlarmHistoryService;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

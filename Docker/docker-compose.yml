@@ -90,44 +90,75 @@ services:
     networks:
       - finance-net
 
-  minio:
-    image: minio/minio
-    container_name: minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    networks:
-      - finance-net
-
   opensearch:
     image: opensearchproject/opensearch:2.12.0
     container_name: opensearch
+    restart: unless-stopped
     environment:
       - discovery.type=single-node
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=142536otuzikibit!@TOYOTAa
+      # Demo installer rejects numeric-only passwords; use mounted security config (admin / 123456789).
+      - DISABLE_INSTALL_DEMO_CONFIG=true
       - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+      - ./opensearch-config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./opensearch-config/opensearch-security:/usr/share/opensearch/config/opensearch-security:ro
+      - ./opensearch-config/esnode.pem:/usr/share/opensearch/config/esnode.pem:ro
+      - ./opensearch-config/esnode-key.pem:/usr/share/opensearch/config/esnode-key.pem:ro
+      - ./opensearch-config/root-ca.pem:/usr/share/opensearch/config/root-ca.pem:ro
+      - ./opensearch-config/kirk.pem:/usr/share/opensearch/config/kirk.pem:ro
+      - ./opensearch-config/kirk-key.pem:/usr/share/opensearch/config/kirk-key.pem:ro
     ports:
       - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -ksu admin:123456789 https://localhost:9200/_cluster/health | grep -Eq '\"status\":\"(green|yellow)\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     networks:
       - finance-net
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.12.0
     container_name: opensearch-dashboards
+    restart: unless-stopped
     ports:
       - "5601:5601"
     environment:
-      - OPENSEARCH_HOSTS=https://opensearch:9200
-      - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTAa
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      OPENSEARCH_HOSTS: https://opensearch:9200
+      OPENSEARCH_USERNAME: kibanaserver
+      OPENSEARCH_PASSWORD: kibanaserver
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     depends_on:
       opensearch:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u admin:123456789 http://localhost:5601/api/status | grep -q '\"state\":\"green\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    networks:
+      - finance-net
+
+  opensearch-dashboards-init:
+    image: curlimages/curl
+    container_name: opensearch-dashboards-init
+    restart: "no"
+    depends_on:
+      opensearch-dashboards:
+        condition: service_healthy
+    environment:
+      DASHBOARDS_URL: http://opensearch-dashboards:5601
+      DASHBOARDS_USERNAME: admin
+      DASHBOARDS_PASSWORD: "123456789"
+      INDEX_PATTERN_ID: application-logs
+      INDEX_PATTERN_TITLE: application-logs-*
+      INDEX_PATTERN_TIME_FIELD: "@timestamp"
+    volumes:
+      - ./opensearch-dashboards-init.sh:/bootstrap/opensearch-dashboards-init.sh:ro
+    command: ["sh", "/bootstrap/opensearch-dashboards-init.sh"]
     networks:
       - finance-net
 
@@ -145,8 +176,8 @@ services:
   # -----------------------------
   finance-api:
     build:
-      context: ../finance-api
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: finance-api/Dockerfile
     container_name: finance-api
     env_file:
       - .env
@@ -239,8 +270,8 @@ services:
 
   analytics-service:
     build:
-      context: ../analytics-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: analytics-service/Dockerfile
     container_name: analytics-service
     depends_on:
       postgres:
@@ -261,50 +292,14 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=none
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - FINANCE_BASE_URL=http://finance-api:8080
-      - CLIENTS_FINANCE_AUTH_MODE=${CLIENTS_FINANCE_AUTH_MODE:-bearer}
-      - CLIENTS_FINANCE_BEARER_TOKEN=${CLIENTS_FINANCE_BEARER_TOKEN:-dev-static-token}
-    networks:
-      - finance-net
-
-  reporting-service:
-    build:
-      context: ../reporting-service
-      dockerfile: Dockerfile
-    container_name: reporting-service
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      analytics-service:
-        condition: service_started
-      finance-api:
-        condition: service_started
-      minio:
-        condition: service_started
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
-      - SPRING_DATASOURCE_USERNAME=finance
-      - SPRING_DATASOURCE_PASSWORD=123456
-      - SPRING_FLYWAY_TABLE=reporting_flyway_schema_history
-      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
-      - SPRING_FLYWAY_BASELINE_VERSION=0
-      - SPRING_FLYWAY_ENABLED=false
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=none
-      - ANALYTICS_BASE_URL=http://analytics-service:8080
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - FINANCE_BASE_URL=http://finance-api:8080
-      - MINIO_URL=http://minio:9000
-      - CLIENTS_FINANCE_AUTH_MODE=${CLIENTS_FINANCE_AUTH_MODE:-bearer}
-      - CLIENTS_FINANCE_BEARER_TOKEN=${CLIENTS_FINANCE_BEARER_TOKEN:-dev-static-token}
+      - CLIENTS_FINANCE_AUTH_MODE=${CLIENTS_FINANCE_AUTH_MODE:-none}
     networks:
       - finance-net
 
   notification-service:
     build:
-      context: ../notification-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: notification-service/Dockerfile
     container_name: notification-service
     depends_on:
       kafka:
@@ -363,30 +358,32 @@ services:
 
   log-consumer-service:
     build:
-      context: ../log-consumer-service
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: log-consumer-service/Dockerfile
     container_name: log-consumer-service
     depends_on:
       kafka:
         condition: service_started
       opensearch:
-        condition: service_started
+        condition: service_healthy
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - APP_LOGS_TOPIC=app.logs
-      - OPENSEARCH_HOST=opensearch
-      - OPENSEARCH_PORT=9200
-      - OPENSEARCH_SCHEME=https
-      - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=142536otuzikibit!@TOYOTAa
-      - OPENSEARCH_INDEX_PREFIX=application-logs
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_LOGS_TOPIC: app.logs
+      LOG_CONSUMER_GROUP_ID: log-consumer-service
+      SPRING_APPLICATION_NAME: log-consumer-service
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PORT: "9200"
+      OPENSEARCH_SCHEME: https
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: "123456789"
+      OPENSEARCH_INDEX_PREFIX: application-logs
     networks:
       - finance-net
 
   api-gateway:
     build:
-      context: ../api-gateway
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     depends_on:
       kafka:
@@ -396,8 +393,6 @@ services:
       market-data-service:
         condition: service_started
       analytics-service:
-        condition: service_started
-      reporting-service:
         condition: service_started
       news-service:
         condition: service_started
@@ -463,8 +458,6 @@ services:
         condition: service_started
       analytics-service:
         condition: service_started
-      reporting-service:
-        condition: service_started
     networks:
       - finance-net
 
@@ -492,5 +485,6 @@ networks:
 volumes:
   finance_pg_data:
   kafka_data:
+  opensearch_data:
   frontend_web_node_modules:
 

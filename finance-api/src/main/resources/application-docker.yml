@@ -50,8 +50,6 @@ springdoc:
         url: /services/market/v3/api-docs
       - name: news-service
         url: /services/news/v3/api-docs
-      - name: reporting-service
-        url: /services/reporting/v3/api-docs
       - name: analytics-service
         url: /services/analytics/v3/api-docs
       - name: log-consumer-service

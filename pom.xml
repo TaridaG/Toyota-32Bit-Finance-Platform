@@ -16,8 +16,7 @@
         <spring-boot.version>3.2.5</spring-boot.version>
         <spring-cloud.version>2023.0.4</spring-cloud.version>
         <springdoc.version>2.6.0</springdoc.version>
-        <logback-kafka-appender.version>0.2.0-RC2</logback-kafka-appender.version>
-        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+        <log4j2.version>2.21.1</log4j2.version>
     </properties>
     <dependencies>
         <dependency>
@@ -42,10 +41,21 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+        </dependency>
     </dependencies>
 
     <modules>
-        <module>platform-logging</module>
         <module>finance-api</module>
         <module>notification-service</module>
         <module>market-data-service</module>
@@ -53,7 +63,6 @@
         <module>log-consumer-service</module>
         <module>news-service</module>
         <module>analytics-service</module>
-        <module>reporting-service</module>
     </modules>
 
     <dependencyManagement>
@@ -83,19 +92,9 @@
                 <version>${springdoc.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.company</groupId>
-                <artifactId>platform-logging</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.danielwegener</groupId>
-                <artifactId>logback-kafka-appender</artifactId>
-                <version>${logback-kafka-appender.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.logstash.logback</groupId>
-                <artifactId>logstash-logback-encoder</artifactId>
-                <version>${logstash-logback-encoder.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-layout-template-json</artifactId>
+                <version>${log4j2.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

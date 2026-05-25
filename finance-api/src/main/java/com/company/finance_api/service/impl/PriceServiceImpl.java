@@ -97,6 +97,7 @@ public class PriceServiceImpl implements PriceService {
   public InstrumentPrice savePrice(InstrumentPrice price) {
 
     InstrumentPrice saved = priceRepository.save(price);
+    priceCacheService.evictLatestPrice(saved.getInstrument().getId(), saved.getPriceType());
 
     eventPublisher.publishEvent(PriceUpdatedEvent.of(saved));
 

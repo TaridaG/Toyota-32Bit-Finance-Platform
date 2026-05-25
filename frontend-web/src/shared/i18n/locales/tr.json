@@ -785,7 +785,7 @@
         "dotLabel": "Hero"
       },
       "markets": {
-        "dotLabel": "Canlı piyasalar"
+        "dotLabel": "Küresel piyasalar"
       },
       "analysis": {
         "dotLabel": "Teknik analiz"
@@ -820,9 +820,39 @@
       "title": "Canlı piyasalar",
       "subtitle": "Öne çıkan enstrümanlar canlı market overview endpoint'inden yüklenir."
     },
+    "globalMarkets": {
+      "kicker": "Piyasa · Canlı verilerle anlık takip",
+      "titleLine1": "Küresel piyasalar",
+      "titleAccent": "parmaklarınızın",
+      "titleLine2": "ucunda",
+      "subtitle": "Binlerce enstrümanı tek ekranda izleyin, filtreleyin, karşılaştırın ve detaylı analiz edin.",
+      "features": {
+        "feature1": "Kripto, Hisse, BIST, NASDAQ ve daha fazlası",
+        "feature2": "Gelişmiş filtreleme ve sıralama",
+        "feature3": "Grafikler, teknik göstergeler ve haber akışı",
+        "feature4": "Trend skoru ile hızlı güç analizi"
+      },
+      "cta": "Piyasaları İncele",
+      "table": {
+        "kicker": "Canlı snapshot",
+        "title": "Öne çıkan enstrümanlar",
+        "live": "LIVE",
+        "symbol": "Sembol",
+        "price": "Fiyat",
+        "trendScore": "Trend Skoru",
+        "viewAll": "Tümünü Gör"
+      },
+      "trend": {
+        "weak": "Zayıf",
+        "neutral": "Nötr",
+        "strong": "Güçlü",
+        "veryStrong": "Aşırı Güçlü"
+      }
+    },
     "analysis": {
-      "title": "Teknik analiz çalışma alanı",
-      "subtitle": "Yapı, trend ve momentumu tek analiz akışında inceleyin.",
+      "title": "Profesyonel analiz araçlarıyla piyasaları derinlemesine keşfedin.",
+      "subtitle": "Gelişmiş grafik araçları, teknik çizimler ve yatırım simülasyonu ile piyasaları kendi bakış açınızla analiz edin. Her kararınız, veriye dayalı olsun.",
+      "cta": "Analiz ekranını aç",
       "points": {
         "point1": "Piyasa bağlamını gösterge tabanlı sinyallerle birleştirin.",
         "point2": "Varlıkları senkron zaman aralıklarıyla karşılaştırın.",
@@ -1027,6 +1057,12 @@
       "low24h": "24s En Düşük",
       "exchange": "Piyasa",
       "marketCap": "Piyasa Değeri"
+    },
+    "trendLabels": {
+      "weak": "Zayıf",
+      "neutral": "Nötr",
+      "strong": "Güçlü",
+      "veryStrong": "Çok Güçlü"
     },
     "searchLabel": "Ara",
     "searchPlaceholder": "Sembol veya varlık adı",

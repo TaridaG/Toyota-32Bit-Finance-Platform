@@ -1,9 +1,9 @@
 package com.company.finance_api.service.impl;
 
-import com.company.finance_api.domain.AlarmHistory;
+import com.company.finance_api.alarm.domain.AlarmHistory;
 import com.company.finance_api.dto.PortalNotificationPageResponse;
 import com.company.finance_api.dto.PortalNotificationResponse;
-import com.company.finance_api.repository.AlarmHistoryRepository;
+import com.company.finance_api.alarm.infrastructure.persistence.AlarmHistoryRepository;
 import com.company.finance_api.service.PortalNotificationService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ResourceNotFoundException;

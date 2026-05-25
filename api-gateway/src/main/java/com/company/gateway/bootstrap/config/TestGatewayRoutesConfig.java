@@ -23,9 +23,6 @@ public class TestGatewayRoutesConfig {
     @Value("${gateway.services.news-base-uri}")
     private String newsBaseUri;
 
-    @Value("${gateway.services.reporting-base-uri}")
-    private String reportingBaseUri;
-
     @Value("${gateway.services.analytics-base-uri}")
     private String analyticsBaseUri;
 
@@ -78,12 +75,6 @@ public class TestGatewayRoutesConfig {
                                 ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
                                 ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(newsBaseUri))
-                .route("v1-reporting-service", r -> r.order(-7)
-                        .path("/api/v1/reports/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
-                        .uri(reportingBaseUri))
                 .route("v1-analytics-service", r -> r.order(-6)
                         .path("/api/v1/analytics/**")
                         .filters(f -> f.rewritePath(
@@ -99,8 +90,8 @@ public class TestGatewayRoutesConfig {
                 .route("finance-api-public", r -> r.order(-1)
                         .path("/api/public/**")
                         .uri(financeBaseUri))
-                .route("finance-market-overview-insights", r -> r.order(-12)
-                        .path("/api/market/overview", "/api/market/overview/", "/api/market/insights", "/api/market/insights/")
+                .route("finance-market-overview", r -> r.order(-12)
+                        .path("/api/market/overview", "/api/market/overview/")
                         .uri(financeBaseUri))
                 .route("finance-market-eurobonds-tr", r -> r.order(-13)
                         .path("/api/market/eurobonds/tr", "/api/market/eurobonds/tr/**")
@@ -121,8 +112,6 @@ public class TestGatewayRoutesConfig {
                         .uri(financeBaseUri))
                 .route("news-service", r -> r.order(-9).path("/api/news/**")
                         .uri(newsBaseUri))
-                .route("reporting-service", r -> r.path("/api/reports/**")
-                        .uri(reportingBaseUri))
                 .route("analytics-service", r -> r.path("/api/analytics/**")
                         .uri(analyticsBaseUri))
                 .route("finance-api", r -> r.path("/api/**", "/health")

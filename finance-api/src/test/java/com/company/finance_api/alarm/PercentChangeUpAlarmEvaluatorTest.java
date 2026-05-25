@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.AlarmRule;
+import com.company.finance_api.alarm.domain.AlarmRule;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.User;

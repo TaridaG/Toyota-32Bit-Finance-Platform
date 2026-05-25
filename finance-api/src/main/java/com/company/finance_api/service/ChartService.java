@@ -2,6 +2,7 @@ package com.company.finance_api.service;
 
 import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.dto.*;
+import com.company.finance_api.alarm.infrastructure.http.dto.AlarmLineResponse;
 import java.time.Instant;
 import java.util.List;
 

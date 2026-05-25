@@ -18,8 +18,6 @@ import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
-import com.company.notification.report.infrastructure.kafka.messaging.ReportCompletedMessage;
-import com.company.notification.report.infrastructure.kafka.messaging.ReportFailedMessage;
 import com.company.notification.insight.infrastructure.kafka.messaging.AnalyticsInsightMessage;
 import com.company.notification.watchlist.infrastructure.kafka.messaging.WatchlistItemAddedMessage;
 import com.company.notification.insight.infrastructure.kafka.messaging.NewsInstrumentMatchedMessage;
@@ -133,70 +131,6 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, LoginSecurityAlertMessage> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(loginSecurityConsumerFactory);
-        factory.setCommonErrorHandler(kafkaErrorHandler);
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, ReportCompletedMessage> reportCompletedConsumerFactory(
-            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
-    ) {
-        JsonDeserializer<ReportCompletedMessage> deserializer =
-                new JsonDeserializer<>(ReportCompletedMessage.class);
-        deserializer.addTrustedPackages("*");
-        deserializer.setUseTypeHeaders(false);
-
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-service-report-completed");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ReportCompletedMessage>
-    reportCompletedKafkaListenerContainerFactory(
-            ConsumerFactory<String, ReportCompletedMessage> reportCompletedConsumerFactory,
-            DefaultErrorHandler kafkaErrorHandler
-    ) {
-        ConcurrentKafkaListenerContainerFactory<String, ReportCompletedMessage> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(reportCompletedConsumerFactory);
-        factory.setCommonErrorHandler(kafkaErrorHandler);
-        return factory;
-    }
-
-    @Bean
-    public ConsumerFactory<String, ReportFailedMessage> reportFailedConsumerFactory(
-            @Value("${spring.kafka.bootstrap-servers}") String bootstrapServers
-    ) {
-        JsonDeserializer<ReportFailedMessage> deserializer =
-                new JsonDeserializer<>(ReportFailedMessage.class);
-        deserializer.addTrustedPackages("*");
-        deserializer.setUseTypeHeaders(false);
-
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "notification-service-report-failed");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, ReportFailedMessage>
-    reportFailedKafkaListenerContainerFactory(
-            ConsumerFactory<String, ReportFailedMessage> reportFailedConsumerFactory,
-            DefaultErrorHandler kafkaErrorHandler
-    ) {
-        ConcurrentKafkaListenerContainerFactory<String, ReportFailedMessage> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(reportFailedConsumerFactory);
         factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
     }

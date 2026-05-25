@@ -2,7 +2,6 @@ package com.company.finance_api.service.impl;
 
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.dto.MarketInsightsResponse;
 import com.company.finance_api.dto.MarketOverviewItemResponse;
 import com.company.finance_api.dto.MarketOverviewPageResponse;
 import com.company.finance_api.market.MarketOverviewCategoryRules;
@@ -10,6 +9,7 @@ import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.service.CurrencyConversionService;
 import com.company.finance_api.service.InstrumentService;
 import com.company.finance_api.service.MarketOverviewService;
+import com.company.finance_api.shared.cache.JsonCacheService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,33 +34,30 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/** MarketOverviewServiceImpl iş mantığını uygular (market overview service). */
+/** Market overview için response cache kullanan service implementation'dır. */
 @Service
 public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private static final Logger log = LoggerFactory.getLogger(MarketOverviewServiceImpl.class);
   private static final Duration CACHE_TTL = Duration.ofSeconds(5);
   private static final Duration UNIVERSE_CACHE_TTL = Duration.ofSeconds(5);
+  private static final Duration SUMMARY_CACHE_TTL = Duration.ofSeconds(45);
+  private static final Duration INSTRUMENT_CACHE_TTL = Duration.ofMinutes(5);
   private static final int MAX_OVERVIEW_PAGE_SIZE = 50;
-  private static final String INSIGHTS_CACHE_KEY = "market:insights";
-  private static final String USD = "USD";
-  private static final String TRY = "TRY";
   private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
   private final InstrumentService instrumentService;
   private final InstrumentPriceRepository instrumentPriceRepository;
   private final CurrencyConversionService currencyConversionService;
   private final ObjectMapper objectMapper;
-  private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+  private final JsonCacheService jsonCacheService;
 
   @Value("${clients.market-data.base-url:http://market-data-service:8080}")
   private String marketDataBaseUrl;
@@ -70,26 +67,27 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private final RestClient restClient = RestClient.create();
 
-  /** Cached merged catalog + MDS horizon % (shared across page/sort/champions requests). */
   private final ConcurrentHashMap<String, CachedUniverseSnapshot> universeCacheLocal =
       new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, CachedSummaryMap> summaryCacheLocal =
+      new ConcurrentHashMap<>();
+  private volatile CachedInstrumentMap instrumentMapCache =
+      new CachedInstrumentMap(Map.of(), Instant.EPOCH);
 
   public MarketOverviewServiceImpl(
       InstrumentService instrumentService,
       InstrumentPriceRepository instrumentPriceRepository,
       CurrencyConversionService currencyConversionService,
       ObjectMapper objectMapper,
-      ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider) {
+      JsonCacheService jsonCacheService) {
     this.instrumentService = instrumentService;
     this.instrumentPriceRepository = instrumentPriceRepository;
     this.currencyConversionService = currencyConversionService;
     this.objectMapper = objectMapper;
-    this.stringRedisTemplateProvider = stringRedisTemplateProvider;
+    this.jsonCacheService = jsonCacheService;
   }
 
-  /** Sayfalanmış piyasa özet listesini hedef para birimine göre döner. */
-
-  /** Sayfalanmış piyasa özet listesini döner. */
+  /** Sayfalanmış market overview sonucunu döner. */
   @Override
   public MarketOverviewPageResponse getOverview(
       int page, int size, String category, String search, String targetCurrency, String sort) {
@@ -109,7 +107,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             normalizedSearch,
             normalizedCurrency,
             normalizedSort);
-    Optional<MarketOverviewPageResponse> cached = readFromCache(cacheKey);
+    Optional<MarketOverviewPageResponse> cached =
+        jsonCacheService.get(cacheKey, new TypeReference<>() {});
     if (cached.isPresent()) {
       return cached.get();
     }
@@ -143,7 +142,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       MarketOverviewPageResponse emptyPage =
           new MarketOverviewPageResponse(
               List.of(), resolvedPage, resolvedSize, totalElements, totalPages);
-      writeToCache(cacheKey, emptyPage);
+      jsonCacheService.put(cacheKey, emptyPage, CACHE_TTL);
       return emptyPage;
     }
 
@@ -180,54 +179,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     MarketOverviewPageResponse response =
         new MarketOverviewPageResponse(
             content, resolvedPage, resolvedSize, totalElements, totalPages);
-    writeToCache(cacheKey, response);
-    return response;
-  }
-
-  /** Piyasa insight özetini döner. */
-  @Override
-  public MarketInsightsResponse getInsights(String targetCurrency) {
-    String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
-    String currencyInsightsCacheKey = INSIGHTS_CACHE_KEY + ":currency:" + normalizedCurrency;
-    Optional<MarketInsightsResponse> cached =
-        readFromCache(currencyInsightsCacheKey, new TypeReference<>() {});
-    if (cached.isPresent()) {
-      return cached.get();
-    }
-
-    List<MarketBaseItem> baseItems = loadMergedBaseItems();
-    Map<String, BigDecimal> currentPricesBySymbol =
-        baseItems.stream()
-            .collect(
-                Collectors.toMap(
-                    MarketBaseItem::symbol, MarketBaseItem::price, (left, right) -> left));
-    Map<String, HistoricalChanges> changesBySymbol =
-        enrichHistoricalChangesWithMdsSummary(
-            fetchHistoricalChanges(currentPricesBySymbol),
-            new ArrayList<>(currentPricesBySymbol.keySet()));
-    List<String> allSymbols = baseItems.stream().map(MarketBaseItem::symbol).toList();
-    Map<String, TrendEnrichment> contextualTrends =
-        computeContextualTrendEnrichments(allSymbols, changesBySymbol);
-    List<MarketOverviewItemResponse> all =
-        enrichAll(baseItems, normalizedCurrency, changesBySymbol, contextualTrends);
-    all = applySummaryChangeFallback(all);
-    List<MarketOverviewItemResponse> changeReady =
-        all.stream().filter(item -> item.change24h() != null).toList();
-
-    List<MarketOverviewItemResponse> topGainers =
-        changeReady.stream()
-            .sorted(Comparator.comparing(MarketOverviewItemResponse::change24h).reversed())
-            .limit(5)
-            .toList();
-
-    List<MarketOverviewItemResponse> topLosers =
-        changeReady.stream()
-            .sorted(Comparator.comparing(MarketOverviewItemResponse::change24h))
-            .limit(5)
-            .toList();
-
-    MarketInsightsResponse response = new MarketInsightsResponse(topGainers, topLosers);
-    writeToCache(currencyInsightsCacheKey, response);
+    jsonCacheService.put(cacheKey, response, CACHE_TTL);
     return response;
   }
 
@@ -328,6 +280,10 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private record CachedUniverseSnapshot(UniverseSnapshot snapshot, Instant expiresAt) {}
 
+  private record CachedSummaryMap(Map<String, SummaryDto> payload, Instant expiresAt) {}
+
+  private record CachedInstrumentMap(Map<String, Instrument> payload, Instant expiresAt) {}
+
   private List<MarketBaseItem> loadMergedBaseItems(String mdsSegment, String normalizedCategory) {
     List<MarketPriceDto> prices = fetchLatestPrices(mdsSegment);
     // TCMB crosses + Stooq spot metals are published on MDS /api/market/fx, not always in /prices
@@ -335,13 +291,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     if ("forex".equalsIgnoreCase(mdsSegment) || "metals".equalsIgnoreCase(mdsSegment)) {
       prices = mergeDistinctPrices(prices, fetchFxRatesAsPrices());
     }
-    Map<String, Instrument> instrumentsBySymbol =
-        instrumentService.getAllActive().stream()
-            .collect(
-                Collectors.toMap(
-                    instrument -> instrument.getSymbol().trim().toUpperCase(Locale.ROOT),
-                    Function.identity(),
-                    (left, right) -> left));
+    Map<String, Instrument> instrumentsBySymbol = loadActiveInstrumentsBySymbol();
     List<MarketBaseItem> filtered =
         prices.stream()
             .filter(price -> price.symbol() != null && !price.symbol().isBlank())
@@ -487,7 +437,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     if (!fromPriceSymbols.isEmpty()) {
       return fromPriceSymbols;
     }
-    return instrumentService.getAllActive().stream()
+    return instrumentsBySymbol.values().stream()
         .map(
             instrument ->
                 mergeBase(
@@ -509,6 +459,31 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                         null),
                     instrument))
         .toList();
+  }
+
+  private Map<String, Instrument> loadActiveInstrumentsBySymbol() {
+    Instant now = Instant.now();
+    CachedInstrumentMap cached = instrumentMapCache;
+    if (cached.expiresAt().isAfter(now) && !cached.payload().isEmpty()) {
+      return cached.payload();
+    }
+    synchronized (this) {
+      now = Instant.now();
+      cached = instrumentMapCache;
+      if (cached.expiresAt().isAfter(now) && !cached.payload().isEmpty()) {
+        return cached.payload();
+      }
+      Map<String, Instrument> next =
+          instrumentService.getAllActive().stream()
+              .collect(
+                  Collectors.toMap(
+                      instrument -> instrument.getSymbol().trim().toUpperCase(Locale.ROOT),
+                      Function.identity(),
+                      (left, right) -> left));
+      instrumentMapCache =
+          new CachedInstrumentMap(Map.copyOf(next), Instant.now().plus(INSTRUMENT_CACHE_TTL));
+      return instrumentMapCache.payload();
+    }
   }
 
   private boolean searchMatches(MarketBaseItem item, String search) {
@@ -1143,6 +1118,12 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     if (symbols.isEmpty()) {
       return Map.of();
     }
+    String summaryCacheKey = summaryCacheKey(symbols);
+    Instant now = Instant.now();
+    CachedSummaryMap cached = summaryCacheLocal.get(summaryCacheKey);
+    if (cached != null && cached.expiresAt().isAfter(now)) {
+      return cached.payload();
+    }
     // Yahoo futures symbols contain '='; must use encoded URI — raw toUriString() + RestClient
     // drops or mis-parses GC=F,SI=F so MDS summary never merges into overview 1M–1Y.
     URI uri =
@@ -1154,12 +1135,23 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             .toUri();
     try {
       String payload = restClient.get().uri(uri).retrieve().body(String.class);
-      return parsePriceSummaryPayload(payload, symbols.size());
+      Map<String, SummaryDto> parsed = parsePriceSummaryPayload(payload, symbols.size());
+      summaryCacheLocal.put(
+          summaryCacheKey, new CachedSummaryMap(Map.copyOf(parsed), Instant.now().plus(SUMMARY_CACHE_TTL)));
+      return parsed;
     } catch (Exception ex) {
       log.warn(
           "MARKET_SUMMARY_FALLBACK_FAILED symbols={} reason={}", symbols.size(), ex.toString());
       return Map.of();
     }
+  }
+
+  private String summaryCacheKey(List<String> symbols) {
+    return symbols.stream()
+        .filter(StringUtils::hasText)
+        .map(symbol -> symbol.trim().toUpperCase(Locale.ROOT))
+        .sorted()
+        .collect(Collectors.joining(","));
   }
 
   private Map<String, SummaryDto> parsePriceSummaryPayload(String payload, int symbolsRequested) {
@@ -1215,40 +1207,6 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       return new BigDecimal(value.toString());
     } catch (NumberFormatException ex) {
       return null;
-    }
-  }
-
-  private <T> Optional<T> readFromCache(String key, TypeReference<T> typeReference) {
-    try {
-      StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
-      if (redis == null) {
-        return Optional.empty();
-      }
-      String payload = redis.opsForValue().get(key);
-      if (!StringUtils.hasText(payload)) {
-        return Optional.empty();
-      }
-      T value = objectMapper.readValue(payload, typeReference);
-      return Optional.of(value);
-    } catch (Exception ex) {
-      log.debug("MARKET_OVERVIEW_CACHE_READ_FAIL key={} reason={}", key, ex.toString());
-      return Optional.empty();
-    }
-  }
-
-  private Optional<MarketOverviewPageResponse> readFromCache(String key) {
-    return readFromCache(key, new TypeReference<>() {});
-  }
-
-  private void writeToCache(String key, Object value) {
-    try {
-      StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
-      if (redis == null) {
-        return;
-      }
-      redis.opsForValue().set(key, objectMapper.writeValueAsString(value), CACHE_TTL);
-    } catch (Exception ex) {
-      log.debug("MARKET_OVERVIEW_CACHE_WRITE_FAIL key={} reason={}", key, ex.toString());
     }
   }
 

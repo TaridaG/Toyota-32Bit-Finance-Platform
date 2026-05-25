@@ -22,9 +22,6 @@ public class GatewayOpenApiRoutesConfig {
     @Value("${gateway.services.news-base-uri}")
     private String newsBaseUri;
 
-    @Value("${gateway.services.reporting-base-uri}")
-    private String reportingBaseUri;
-
     @Value("${gateway.services.analytics-base-uri}")
     private String analyticsBaseUri;
 
@@ -49,10 +46,6 @@ public class GatewayOpenApiRoutesConfig {
                         .path("/services/news/v3/api-docs", "/services/news/v3/api-docs/**")
                         .filters(f -> f.rewritePath("/services/news/(?<path>.*)", "/${path}"))
                         .uri(newsBaseUri))
-                .route("openapi-reporting", r -> r.order(-100)
-                        .path("/services/reporting/v3/api-docs", "/services/reporting/v3/api-docs/**")
-                        .filters(f -> f.rewritePath("/services/reporting/(?<path>.*)", "/${path}"))
-                        .uri(reportingBaseUri))
                 .route("openapi-analytics", r -> r.order(-100)
                         .path("/services/analytics/v3/api-docs", "/services/analytics/v3/api-docs/**")
                         .filters(f -> f.rewritePath("/services/analytics/(?<path>.*)", "/${path}"))

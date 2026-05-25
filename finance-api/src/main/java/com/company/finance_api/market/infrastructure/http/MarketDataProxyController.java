@@ -23,7 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * only needs {@code VITE_PROXY_TARGET} (:8080). API gateway sends {@code
  * /api/market/instruments/.../fundamentals} straight to market-data-service; finance still exposes
  * {@link MarketFundamentalsPassthroughController} for direct finance calls. {@code
- * /api/market/overview} and {@code /api/market/insights} stay on {@link MarketOverviewController}.
+ * /api/market/overview} stays on {@link MarketOverviewController}.
  * Policy rate history ({@code /api/rates/**}) is proxied the same way as market prices.
  */
 /** market-data-service'e HTTP proxy; portal isteklerini upstream'e iletir. */

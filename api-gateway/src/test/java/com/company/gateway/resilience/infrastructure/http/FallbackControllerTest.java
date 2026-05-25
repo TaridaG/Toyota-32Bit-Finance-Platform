@@ -49,16 +49,6 @@ class FallbackControllerTest {
     }
 
     @Test
-    void reportingFallback_returns503WithErrorResponse() {
-        MockServerWebExchange exchange = exchangeWithCorrelationId("corr-reporting");
-
-        ResponseEntity<ErrorResponse> response = controller.reportingFallback(exchange).block();
-
-        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
-        assertEquals("REPORTING_UNAVAILABLE", response.getBody().code());
-    }
-
-    @Test
     void analyticsFallback_returns503WithErrorResponse() {
         MockServerWebExchange exchange = exchangeWithCorrelationId("corr-analytics");
 

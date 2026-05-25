@@ -37,11 +37,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
-        '/api/market/insights': {
-          target: financeTarget,
-          changeOrigin: true,
-          secure: false,
-        },
         // Fundamentals are proxied by finance-api; direct MDS would 404 on catalog gaps.
         '/api/market/instruments': {
           target: financeTarget,
@@ -66,7 +61,6 @@ export default defineConfig(({ mode }) => {
       }
     : singleApiProxy
 
-  // eslint-disable-next-line no-console -- dev-only proxy diagnostics
   console.info(
     `[vite] /api proxy → ${financeTarget}${
       useSingleApiProxy

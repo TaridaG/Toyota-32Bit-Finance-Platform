@@ -1,10 +1,25 @@
 spring:
+  application:
+    name: log-consumer-service-test
   kafka:
-    bootstrap-servers: 127.0.0.1:9092
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
     listener:
-      auto-startup: false
+      observation-enabled: false
+
+log-consumer:
+  topic: app.logs
+  group-id: log-consumer-service-test
 
 opensearch:
   host: localhost
   port: 9200
   scheme: http
+  username: ""
+  password: ""
+  index-prefix: application-logs-test
+  log-retention-days: 7
+
+management:
+  tracing:
+    sampling:
+      probability: 0.0

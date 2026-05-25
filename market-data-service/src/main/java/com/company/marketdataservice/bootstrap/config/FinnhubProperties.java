@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
@@ -26,4 +27,16 @@ public class FinnhubProperties {
     private String apiKey = "";
     /** Symbols that Finnhub should own for historical ingestion (e.g. AAPL, AMZN, NVDA). */
     private List<String> symbols = new ArrayList<>();
+
+    /** True when live/fundamentals ingestion should use Finnhub for this canonical symbol. */
+    public boolean ownsSymbol(String symbol) {
+        if (symbol == null || symbol.isBlank() || symbols == null || symbols.isEmpty()) {
+            return false;
+        }
+        String normalized = symbol.trim().toUpperCase(Locale.ROOT);
+        return symbols.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(s -> s.trim().toUpperCase(Locale.ROOT))
+                .anyMatch(normalized::equals);
+    }
 }

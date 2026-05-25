@@ -3,7 +3,6 @@ import { AppLayout } from '../../shared/components/layout/AppLayout'
 import { RootLayout } from '../../shared/components/layout/RootLayout'
 import { DashboardPage } from '../../pages/dashboard/DashboardPage'
 import { ExternalPortfolioPage } from '../../pages/external-portfolio/ExternalPortfolioPage'
-import { SimulationPage } from '../../pages/simulation/SimulationPage'
 import { MarketsPage } from '../../pages/markets/MarketsPage'
 import { MyPortfolioPage } from '../../pages/my-portfolio/MyPortfolioPage'
 import { NewsPage } from '../../pages/news/NewsPage'
@@ -26,8 +25,7 @@ import {
 import { PublicOnly, RequireAdmin, RequireAuth } from './RouteGuards'
 import { AdminLayout } from '../../pages/admin/AdminLayout'
 import { AdminOverviewPage } from '../../pages/admin/AdminOverviewPage'
-import { AdminPlaceholderPage } from '../../pages/admin/AdminPlaceholderPage'
-import { ADMIN_KPI_TOTAL_USERS_PATH, ADMIN_SECTION_ROUTES } from '../../features/admin/adminSectionRoutes'
+import { ADMIN_KPI_TOTAL_USERS_PATH } from '../../features/admin/adminSectionRoutes'
 import { AdminAvgLatencyPage } from '../../pages/admin/AdminAvgLatencyPage'
 import { AdminTotalNewsPage } from '../../pages/admin/AdminTotalNewsPage'
 import { AdminTotalPortfoliosPage } from '../../pages/admin/AdminTotalPortfoliosPage'
@@ -104,21 +102,10 @@ export const appRouter = createBrowserRouter([
         children: [
           { index: true, element: <AdminOverviewPage /> },
           { path: ADMIN_KPI_TOTAL_USERS_PATH, element: <AdminTotalUsersPage /> },
-          ...ADMIN_SECTION_ROUTES.filter((r) => r.path !== ADMIN_KPI_TOTAL_USERS_PATH).map((r) => ({
-            path: r.path,
-            element:
-              r.path === 'kpi/avg-latency' ? (
-                <AdminAvgLatencyPage />
-              ) : r.path === 'kpi/news-sources' ? (
-                <AdminTotalNewsPage />
-              ) : r.path === 'kpi/active-portfolios' ? (
-                <AdminTotalPortfoliosPage />
-              ) : r.path === 'kpi/market-streams' ? (
-                <AdminMarketAssetsPage />
-              ) : (
-                <AdminPlaceholderPage titleKey={r.titleKey} leadKey={r.leadKey} />
-              ),
-          })),
+          { path: 'kpi/active-portfolios', element: <AdminTotalPortfoliosPage /> },
+          { path: 'kpi/market-streams', element: <AdminMarketAssetsPage /> },
+          { path: 'kpi/news-sources', element: <AdminTotalNewsPage /> },
+          { path: 'kpi/avg-latency', element: <AdminAvgLatencyPage /> },
           { path: 'users', element: <Navigate to="/admin/kpi/total-users" replace /> },
           { path: 'portfolios', element: <Navigate to="/admin/kpi/active-portfolios" replace /> },
           { path: 'market-data', element: <Navigate to="/admin/kpi/market-streams" replace /> },
@@ -151,7 +138,7 @@ export const appRouter = createBrowserRouter([
           { path: 'analysis', element: <AnalysisPage /> },
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'portfolio', element: <ExternalPortfolioPage /> },
-          { path: 'simulation', element: <SimulationPage /> },
+          { path: 'simulation', element: <Navigate to="/app/analysis" replace /> },
           { path: 'profile', element: <ProfileSettingsPage /> },
           { path: 'notifications', element: <NotificationsPage /> },
           { path: 'alarms', element: <AlarmsPage /> },
@@ -173,7 +160,7 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/simulation',
-    element: <Navigate to="/app/simulation" replace />,
+    element: <Navigate to="/app/analysis" replace />,
   },
 ])
 

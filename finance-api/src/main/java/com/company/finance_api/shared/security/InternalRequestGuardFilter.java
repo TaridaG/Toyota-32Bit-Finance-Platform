@@ -85,7 +85,6 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
     // Public market catalog pages (gateway forwards here; must not require X-USERNAME).
     if ("GET".equalsIgnoreCase(request.getMethod())
         && (path.startsWith("/api/market/overview")
-            || path.startsWith("/api/market/insights")
             || path.startsWith("/api/market/eurobonds/"))) {
       filterChain.doFilter(request, response);
       return;

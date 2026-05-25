@@ -216,13 +216,27 @@ function stripAuthorizationHeader(config: InternalAxiosRequestConfig) {
   delete h.authorization
 }
 
+function hasHeaderValue(config: InternalAxiosRequestConfig, name: string): boolean {
+  const headers = config.headers
+  if (!headers) {
+    return false
+  }
+  if (typeof headers.get === 'function') {
+    const value = headers.get(name) ?? headers.get(name.toLowerCase())
+    return value != null && String(value).trim().length > 0
+  }
+  const h = headers as Record<string, unknown>
+  const value = h[name] ?? h[name.toLowerCase()]
+  return value != null && String(value).trim().length > 0
+}
+
 function attachLocaleHeaders(config: InternalAxiosRequestConfig) {
   const language = window.localStorage.getItem(LANGUAGE_STORAGE_KEY)?.trim()
   const currency = window.localStorage.getItem(CURRENCY_STORAGE_KEY)?.trim()
-  if (language) {
+  if (language && !hasHeaderValue(config, 'X-Language')) {
     config.headers['X-Language'] = language
   }
-  if (currency) {
+  if (currency && !hasHeaderValue(config, 'X-Currency')) {
     config.headers['X-Currency'] = currency
   }
 }

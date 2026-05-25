@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.NewsFavoriteRepository;
 import com.company.finance_api.service.InstrumentService;
+import com.company.finance_api.shared.cache.JsonCacheService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
 
 @ExtendWith(MockitoExtension.class)
 class NewsEnrichmentServiceImplTest {
@@ -26,7 +25,7 @@ class NewsEnrichmentServiceImplTest {
   @Mock private InstrumentPriceRepository instrumentPriceRepository;
   @Mock private NewsFavoriteRepository newsFavoriteRepository;
   @Mock private CurrentUserResolver currentUserResolver;
-  @Mock private ObjectProvider<org.springframework.data.redis.core.StringRedisTemplate> stringRedisTemplateProvider;
+  @Mock private JsonCacheService jsonCacheService;
 
   private NewsEnrichmentServiceImpl newsEnrichmentService;
 
@@ -38,8 +37,7 @@ class NewsEnrichmentServiceImplTest {
             instrumentPriceRepository,
             newsFavoriteRepository,
             currentUserResolver,
-            new ObjectMapper(),
-            stringRedisTemplateProvider);
+            jsonCacheService);
   }
 
   @Test

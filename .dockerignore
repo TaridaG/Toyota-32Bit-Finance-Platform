@@ -1,0 +1,8 @@
+**/target/
+**/.git/
+**/.idea/
+**/.vscode/
+**/*.iml
+frontend-web/node_modules/
+Docker/opensearch-config/*.pem
+photos/

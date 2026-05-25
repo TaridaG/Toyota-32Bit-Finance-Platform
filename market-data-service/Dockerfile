@@ -2,12 +2,10 @@ FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
 COPY pom.xml pom.xml
-COPY platform-logging platform-logging
 COPY market-data-service/pom.xml market-data-service/pom.xml
 COPY market-data-service/src market-data-service/src
 
 RUN mvn -q -f pom.xml -N install -DskipTests \
-    && mvn -q -f platform-logging/pom.xml install -DskipTests \
     && mvn -q -f market-data-service/pom.xml -DskipTests package
 
 FROM eclipse-temurin:21-jre AS runtime

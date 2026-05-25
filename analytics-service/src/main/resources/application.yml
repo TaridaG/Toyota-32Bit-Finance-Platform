@@ -49,7 +49,7 @@ management:
       application: analytics-service
   tracing:
     sampling:
-      probability: 1.0
+      probability: ${TRACING_SAMPLE_PROBABILITY:0.1}
   otlp:
     tracing:
       endpoint: http://jaeger:4318/v1/traces

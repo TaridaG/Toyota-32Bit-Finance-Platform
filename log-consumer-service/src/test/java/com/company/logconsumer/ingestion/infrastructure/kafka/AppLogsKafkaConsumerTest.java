@@ -97,7 +97,7 @@ class AppLogsKafkaConsumerTest {
     }
 
     @Test
-    void consume_indexFailure_rethrows() throws Exception {
+    void consume_openSearchFailure_recordsMetricsAndDoesNotAck() throws Exception {
         String json = """
                 {"timestamp":"2026-05-23T10:00:00Z","level":"ERROR","serviceName":"finance-api","message":"fail"}
                 """;
@@ -106,6 +106,14 @@ class AppLogsKafkaConsumerTest {
 
         assertThrows(RuntimeException.class, () -> consumer.consume(record, ack));
         verify(ack, never()).acknowledge();
+        assertEquals(1.0, registry.get("kafka_events_opensearch_failed_total")
+                .tag("symbol", "finance-api")
+                .counter()
+                .count());
+        assertEquals(1.0, registry.get("kafka_events_failed_total")
+                .tag("symbol", "finance-api")
+                .counter()
+                .count());
     }
 
     @Test

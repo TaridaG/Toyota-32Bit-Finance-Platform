@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <Property name="KAFKA_BOOTSTRAP">${env:KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %5p [%X{traceId}%X{correlationId}] %logger{36} - %msg%n"/>
+        </Console>
+
+        <Kafka name="Kafka" topic="app.logs" syncSend="false" ignoreExceptions="false">
+            <JsonTemplateLayout eventTemplateUri="classpath:log4j2-kafka-template.json"/>
+            <Property name="bootstrap.servers">${KAFKA_BOOTSTRAP}</Property>
+            <Property name="acks">1</Property>
+            <Property name="retries">3</Property>
+            <Property name="request.timeout.ms">30000</Property>
+            <Property name="delivery.timeout.ms">120000</Property>
+            <Property name="linger.ms">20</Property>
+            <Property name="batch.size">65536</Property>
+        </Kafka>
+
+        <Async name="AsyncKafka" includeLocation="false">
+            <AppenderRef ref="Kafka"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="org.springframework" level="warn"/>
+        <Logger name="org.hibernate" level="warn"/>
+        <Logger name="org.apache.kafka" level="warn"/>
+        <Logger name="reactor.netty" level="warn"/>
+        <Logger name="io.netty" level="warn"/>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncKafka"/>
+        </Root>
+    </Loggers>
+</Configuration>

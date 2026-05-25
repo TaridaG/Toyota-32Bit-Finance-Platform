@@ -19,7 +19,7 @@ import com.company.finance_api.repository.AdminMarketAssetSnapshotRepository;
 import com.company.finance_api.repository.AdminMarketAssetStatRepository;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.repository.TransactionRepository;
-import com.company.finance_api.repository.WatchlistItemRepository;
+import com.company.finance_api.watchlist.infrastructure.persistence.WatchlistItemRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;

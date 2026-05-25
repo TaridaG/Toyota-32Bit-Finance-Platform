@@ -1,12 +1,12 @@
 package com.company.marketdataservice.history.infrastructure.write;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryEntry;
-import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,14 @@ import java.util.UUID;
 public class MarketHistoryWriteService {
 
     private static final int BATCH_SIZE = 250;
-    private final MarketPriceHistoryRepository repository;
+    private static final String INSERT_IGNORE_DUPLICATE = """
+            INSERT INTO mds_market_price_history
+                (instrument_id, instrument_symbol, provider, source_symbol, price, price_type, observed_at, event_id, ingest_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (instrument_symbol, provider, observed_at, price_type) DO NOTHING
+            """;
+
+    private final JdbcTemplate jdbcTemplate;
 
     /**
      * Veriyi persist eder.
@@ -33,24 +40,7 @@ public class MarketHistoryWriteService {
         if (entry == null) {
             return;
         }
-        try {
-            repository.save(entry);
-            log.info(
-                    "DB WRITE symbol={} price={} time={}",
-                    entry.getInstrumentSymbol(),
-                    entry.getPrice(),
-                    entry.getObservedAt()
-            );
-        } catch (DataIntegrityViolationException ex) {
-            log.debug(
-                    "market_history_duplicate_ignored eventId={} symbol={} provider={} observedAt={} reason={}",
-                    event.eventId(),
-                    event.instrumentSymbol(),
-                    event.source(),
-                    event.occurredAt(),
-                    ex.getClass().getSimpleName()
-            );
-        }
+        persistEntries(List.of(entry));
     }
 
     /**
@@ -62,47 +52,39 @@ public class MarketHistoryWriteService {
             return;
         }
         List<MarketPriceHistoryEntry> entries = new ArrayList<>();
-        List<MarketPriceUpdatedEvent> validEvents = new ArrayList<>();
         for (MarketPriceUpdatedEvent event : events) {
             MarketPriceHistoryEntry entry = toEntry(event);
             if (entry != null) {
                 entries.add(entry);
-                validEvents.add(event);
             }
         }
         if (entries.isEmpty()) {
             return;
         }
+        persistEntries(entries);
+    }
+
+    private void persistEntries(List<MarketPriceHistoryEntry> entries) {
         for (int i = 0; i < entries.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, entries.size());
             List<MarketPriceHistoryEntry> batch = entries.subList(i, end);
-            try {
-                repository.saveAll(batch);
-                for (MarketPriceHistoryEntry entry : batch) {
-                    log.info(
-                            "DB WRITE symbol={} price={} time={}",
-                            entry.getInstrumentSymbol(),
-                            entry.getPrice(),
-                            entry.getObservedAt()
-                    );
+            jdbcTemplate.batchUpdate(INSERT_IGNORE_DUPLICATE, batch, batch.size(), (ps, entry) -> {
+                if (entry.getInstrumentId() != null) {
+                    ps.setLong(1, entry.getInstrumentId());
+                } else {
+                    ps.setObject(1, null);
                 }
-            } catch (DataIntegrityViolationException ex) {
-                for (MarketPriceHistoryEntry entry : batch) {
-                    try {
-                        repository.save(entry);
-                    } catch (DataIntegrityViolationException duplicateEx) {
-                        log.debug(
-                                "market_history_duplicate_ignored eventId={} symbol={} provider={} observedAt={} reason={}",
-                                entry.getEventId(),
-                                entry.getInstrumentSymbol(),
-                                entry.getProvider(),
-                                entry.getObservedAt(),
-                                duplicateEx.getClass().getSimpleName()
-                        );
-                    }
-                }
-            }
+                ps.setString(2, entry.getInstrumentSymbol());
+                ps.setString(3, entry.getProvider());
+                ps.setString(4, entry.getSourceSymbol());
+                ps.setBigDecimal(5, entry.getPrice());
+                ps.setString(6, entry.getPriceType());
+                ps.setTimestamp(7, Timestamp.from(entry.getObservedAt()));
+                ps.setObject(8, entry.getEventId());
+                ps.setTimestamp(9, Timestamp.from(entry.getIngestTime()));
+            });
         }
+        log.debug("market_history_persisted rows={}", entries.size());
     }
 
     private static MarketPriceHistoryEntry toEntry(MarketPriceUpdatedEvent event) {

@@ -30,7 +30,11 @@ export function MarketsPageSidebar({ champions, loading }: MarketsPageSidebarPro
           {loading ? (
             <p className="fi-news-side-muted">{t('common:loading')}</p>
           ) : (
-            <ChampionRow champion={champions?.[period] ?? null} formatPct={percentFormat.format} emptyLabel={t('sidebar.noChampion')} />
+            <ChampionRow
+              champion={champions?.[period] ?? null}
+              formatPct={percentFormat.format}
+              emptyLabel={t('sidebar.noChampion')}
+            />
           )}
         </SidebarCard>
       ))}

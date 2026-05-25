@@ -786,7 +786,7 @@
         "dotLabel": "Hero"
       },
       "markets": {
-        "dotLabel": "Live markets"
+        "dotLabel": "Global markets"
       },
       "analysis": {
         "dotLabel": "Technical analysis"
@@ -821,9 +821,39 @@
       "title": "Live markets",
       "subtitle": "Featured instruments are loaded from the live market overview endpoint."
     },
+    "globalMarkets": {
+      "kicker": "Markets · Live data at a glance",
+      "titleLine1": "Global markets",
+      "titleAccent": "at your fingertips",
+      "titleLine2": "",
+      "subtitle": "Monitor, filter, compare, and analyze thousands of instruments on a single screen.",
+      "features": {
+        "feature1": "Crypto, equities, BIST, NASDAQ, and more",
+        "feature2": "Advanced filtering and sorting",
+        "feature3": "Charts, technical indicators, and news flow",
+        "feature4": "Trend score for rapid strength analysis"
+      },
+      "cta": "Explore Markets",
+      "table": {
+        "kicker": "Live snapshot",
+        "title": "Featured instruments",
+        "live": "LIVE",
+        "symbol": "Symbol",
+        "price": "Price",
+        "trendScore": "Trend Score",
+        "viewAll": "View all"
+      },
+      "trend": {
+        "weak": "Weak",
+        "neutral": "Neutral",
+        "strong": "Strong",
+        "veryStrong": "Very Strong"
+      }
+    },
     "analysis": {
-      "title": "Technical analysis workspace",
-      "subtitle": "Review structure, trend, and momentum in one analysis flow.",
+      "title": "Explore markets in depth with professional analysis tools.",
+      "subtitle": "Use advanced charting tools, technical drawings, and investment simulation to analyze markets from your own perspective. Let every decision be grounded in data.",
+      "cta": "Open analysis workspace",
       "points": {
         "point1": "Overlay market context with indicator-based signals.",
         "point2": "Compare assets with synchronized time ranges.",
@@ -1028,6 +1058,12 @@
       "low24h": "24h Low",
       "exchange": "Exchange",
       "marketCap": "Market cap"
+    },
+    "trendLabels": {
+      "weak": "Weak",
+      "neutral": "Neutral",
+      "strong": "Strong",
+      "veryStrong": "Very Strong"
     },
     "searchLabel": "Search",
     "searchPlaceholder": "Symbol or asset name",

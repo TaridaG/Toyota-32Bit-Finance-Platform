@@ -45,7 +45,10 @@ public class FinnhubInstrumentFundamentalsProvider implements InstrumentFundamen
          */
     @Override
     public boolean supports(InstrumentCatalogEntry instrument) {
-        return finnhubProperties.isEnabled() && "STOCK".equalsIgnoreCase(instrument.getAssetClass());
+        return finnhubProperties.isEnabled()
+                && instrument != null
+                && "STOCK".equalsIgnoreCase(instrument.getAssetClass())
+                && finnhubProperties.ownsSymbol(instrument.getCanonicalSymbol());
     }
 
     /**

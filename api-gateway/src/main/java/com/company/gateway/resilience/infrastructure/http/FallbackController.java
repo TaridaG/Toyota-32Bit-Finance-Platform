@@ -47,15 +47,6 @@ public class FallbackController {
                 "News service is temporarily unavailable"));
     }
 
-    /** reporting-service circuit breaker fallback yanıtı. */
-    @RequestMapping("/fallback/reporting")
-    public Mono<ResponseEntity<ErrorResponse>> reportingFallback(ServerWebExchange exchange) {
-        return Mono.just(serviceUnavailable(
-                exchange,
-                "REPORTING_UNAVAILABLE",
-                "Reporting service is temporarily unavailable"));
-    }
-
     /** analytics-service circuit breaker fallback yanıtı. */
     @RequestMapping("/fallback/analytics")
     public Mono<ResponseEntity<ErrorResponse>> analyticsFallback(ServerWebExchange exchange) {

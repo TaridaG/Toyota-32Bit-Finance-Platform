@@ -1,7 +1,7 @@
 package com.company.finance_api.event.listener;
 
 import com.company.finance_api.event.PriceUpdatedEvent;
-import com.company.finance_api.service.AlarmService;
+import com.company.finance_api.alarm.application.AlarmService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

@@ -121,6 +121,43 @@ public interface MarketPriceHistoryRepository extends JpaRepository<MarketPriceH
             """, nativeQuery = true)
     List<LatestMarketPriceView> findLatestTrbondPricesPerSymbol();
 
+    /** Latest row per *USDT crypto pair when live snapshot has no tick (Binance/CoinGecko outage). */
+    @Query(value = """
+            SELECT DISTINCT ON (instrument_symbol)
+                instrument_symbol AS symbol,
+                price AS price,
+                provider AS source,
+                observed_at AS timestamp
+            FROM mds_market_price_history
+            WHERE instrument_symbol LIKE '%USDT'
+            ORDER BY instrument_symbol, observed_at DESC, id DESC
+            """, nativeQuery = true)
+    List<LatestMarketPriceView> findLatestCryptoPricesPerSymbol();
+
+    interface DailyCloseView {
+        java.time.LocalDate getDay();
+
+        BigDecimal getPrice();
+
+        Instant getObservedAt();
+    }
+
+    @Query(value = """
+            SELECT day, price, observed_at AS observedAt
+            FROM (
+                SELECT DISTINCT ON (DATE(observed_at AT TIME ZONE 'UTC'))
+                    DATE(observed_at AT TIME ZONE 'UTC') AS day,
+                    price,
+                    observed_at
+                FROM mds_market_price_history
+                WHERE instrument_symbol = :symbol
+                ORDER BY DATE(observed_at AT TIME ZONE 'UTC') DESC, observed_at DESC
+            ) daily
+            ORDER BY day DESC
+            LIMIT 2
+            """, nativeQuery = true)
+    List<DailyCloseView> findLastTwoDailyCloses(@Param("symbol") String symbol);
+
     @Query(value = """
             SELECT instrument_symbol AS symbol, observed_at AS observedAt, price AS price
             FROM mds_market_price_history

@@ -781,7 +781,7 @@
         "dotLabel": "Hero"
       },
       "markets": {
-        "dotLabel": "Live-Märkte"
+        "dotLabel": "Globale Märkte"
       },
       "analysis": {
         "dotLabel": "Technische Analyse"
@@ -816,9 +816,39 @@
       "title": "Live-Märkte",
       "subtitle": "Top-Instrumente werden aus dem Live-Market-Overview-Endpunkt geladen."
     },
+    "globalMarkets": {
+      "kicker": "Märkte · Live-Daten im Blick",
+      "titleLine1": "Globale Märkte",
+      "titleAccent": "in Ihrer Hand",
+      "titleLine2": "",
+      "subtitle": "Tausende Instrumente auf einem Bildschirm verfolgen, filtern, vergleichen und analysieren.",
+      "features": {
+        "feature1": "Krypto, Aktien, BIST, NASDAQ und mehr",
+        "feature2": "Erweiterte Filterung und Sortierung",
+        "feature3": "Charts, technische Indikatoren und News-Flow",
+        "feature4": "Trend-Score für schnelle Stärkeanalyse"
+      },
+      "cta": "Märkte erkunden",
+      "table": {
+        "kicker": "Live-Snapshot",
+        "title": "Top-Instrumente",
+        "live": "LIVE",
+        "symbol": "Symbol",
+        "price": "Preis",
+        "trendScore": "Trend-Score",
+        "viewAll": "Alle anzeigen"
+      },
+      "trend": {
+        "weak": "Schwach",
+        "neutral": "Neutral",
+        "strong": "Stark",
+        "veryStrong": "Sehr stark"
+      }
+    },
     "analysis": {
-      "title": "Technischer Analyse-Arbeitsbereich",
-      "subtitle": "Struktur, Trend und Momentum in einem Analysefluss auswerten.",
+      "title": "Entdecken Sie die Maerkte im Detail mit professionellen Analysetools.",
+      "subtitle": "Nutzen Sie fortschrittliche Charting-Tools, technische Zeichnungen und Investment-Simulationen, um die Maerkte aus Ihrer eigenen Perspektive zu analysieren. Treffen Sie jede Entscheidung datenbasiert.",
+      "cta": "Analysebereich oeffnen",
       "points": {
         "point1": "Marktkontext mit indikatorbasierten Signalen kombinieren.",
         "point2": "Assets mit synchronisierten Zeitfenstern vergleichen.",
@@ -1023,6 +1053,12 @@
       "low24h": "24h Tief",
       "exchange": "Börse",
       "marketCap": "Marktkapitalisierung"
+    },
+    "trendLabels": {
+      "weak": "Schwach",
+      "neutral": "Neutral",
+      "strong": "Stark",
+      "veryStrong": "Sehr stark"
     },
     "searchLabel": "Suchen",
     "searchPlaceholder": "Symbol oder Assetname",

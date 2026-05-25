@@ -1,6 +1,7 @@
 package com.company.finance_api.chart.infrastructure.http;
 
 import com.company.finance_api.dto.*;
+import com.company.finance_api.alarm.infrastructure.http.dto.AlarmLineResponse;
 import com.company.finance_api.service.ChartService;
 import com.company.finance_api.shared.web.ApiResponse;
 import com.company.finance_api.shared.web.PriceTypeParamResolver;

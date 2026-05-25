@@ -166,15 +166,6 @@ public class StockPriceScheduler {
     }
 
     private boolean isOwnedByFinnhub(String symbol) {
-        if (!finnhubProperties.isEnabled() || symbol == null || symbol.isBlank()) {
-            return false;
-        }
-        Set<String> owned = finnhubProperties.getSymbols() == null
-                ? Set.of()
-                : finnhubProperties.getSymbols().stream()
-                .filter(s -> s != null && !s.isBlank())
-                .map(s -> s.trim().toUpperCase(Locale.ROOT))
-                .collect(Collectors.toSet());
-        return owned.contains(symbol.trim().toUpperCase(Locale.ROOT));
+        return finnhubProperties.ownsSymbol(symbol);
     }
 }

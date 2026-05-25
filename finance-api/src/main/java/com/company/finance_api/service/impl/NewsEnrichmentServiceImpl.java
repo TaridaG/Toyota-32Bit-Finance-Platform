@@ -11,11 +11,11 @@ import com.company.finance_api.repository.InstrumentPriceRepository;
 import com.company.finance_api.repository.NewsFavoriteRepository;
 import com.company.finance_api.service.InstrumentService;
 import com.company.finance_api.service.NewsEnrichmentService;
+import com.company.finance_api.shared.cache.JsonCacheService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -35,16 +35,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-/** NewsEnrichmentServiceImpl iş mantığını uygular (news enrichment service). */
+/** News enrichment için response cache kullanan service implementation'dır. */
 @Service
 public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
 
@@ -63,8 +61,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
   private final InstrumentPriceRepository instrumentPriceRepository;
   private final NewsFavoriteRepository newsFavoriteRepository;
   private final CurrentUserResolver currentUserResolver;
-  private final ObjectMapper objectMapper;
-  private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+  private final JsonCacheService jsonCacheService;
   private final RestClient restClient = RestClient.create();
 
   @Value("${clients.news.base-url:http://news-service:8080}")
@@ -81,17 +78,15 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       InstrumentPriceRepository instrumentPriceRepository,
       NewsFavoriteRepository newsFavoriteRepository,
       CurrentUserResolver currentUserResolver,
-      ObjectMapper objectMapper,
-      ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider) {
+      JsonCacheService jsonCacheService) {
     this.instrumentService = instrumentService;
     this.instrumentPriceRepository = instrumentPriceRepository;
     this.newsFavoriteRepository = newsFavoriteRepository;
     this.currentUserResolver = currentUserResolver;
-    this.objectMapper = objectMapper;
-    this.stringRedisTemplateProvider = stringRedisTemplateProvider;
+    this.jsonCacheService = jsonCacheService;
   }
 
-  /** EnrichedNews sorgusunu döner. */
+  /** Filtrelenmiş ve enrichment uygulanmış news page sonucunu döner. */
   @Override
   public NewsEnrichedPageResponse getEnrichedNews(
       int page,
@@ -123,7 +118,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             + (resolvedMaxAgeMinutes == null ? "all" : resolvedMaxAgeMinutes)
             + ":q:"
             + (resolvedSearch == null ? "" : resolvedSearch.toLowerCase(Locale.ROOT));
-    Optional<NewsEnrichedPageResponse> cached = readFromCache(cacheKey);
+    Optional<NewsEnrichedPageResponse> cached =
+        jsonCacheService.get(cacheKey, new TypeReference<>() {});
     if (cached.isPresent()) {
       return cached.get();
     }
@@ -165,7 +161,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             upstream.size(),
             upstream.totalElements(),
             upstream.totalPages());
-    writeToCache(cacheKey, response);
+    jsonCacheService.put(cacheKey, response, CACHE_TTL);
     return response;
   }
 
@@ -211,7 +207,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     return new NewsServicePageResponse<>(selectedPageItems, page, size, filteredTotal, totalPages);
   }
 
-  /** EnrichedFavoriteNews sorgusunu döner. */
+  /** Kullanıcının favorite news listesi için enrichment uygulanmış page sonucunu döner. */
   @Override
   public NewsEnrichedPageResponse getEnrichedFavoriteNews(
       int page, int size, String language, String category, Integer maxAgeMinutes, String search) {
@@ -306,7 +302,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     return bag.contains(search.toLowerCase(Locale.ROOT));
   }
 
-  /** EnrichedChartNews sorgusunu döner. */
+  /** Chart ekranındaki zaman aralığına karşılık gelen enriched news listesini döner. */
   @Override
   public List<NewsEnrichedResponse> getEnrichedChartNews(
       String symbol,
@@ -334,7 +330,8 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             + fromInclusive
             + ":to:"
             + toInclusive;
-    Optional<List<NewsEnrichedResponse>> cached = readFromCache(cacheKey, new TypeReference<>() {});
+    Optional<List<NewsEnrichedResponse>> cached =
+        jsonCacheService.get(cacheKey, new TypeReference<>() {});
     if (cached.isPresent()) {
       return cached.get();
     }
@@ -356,11 +353,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             .map(item -> enrich(item, symbolsForEnrichment))
             .filter(item -> matchesChartNews(item, resolvedSymbol, resolvedCategoryUi))
             .toList();
-    writeToCache(cacheKey, enriched, Duration.ofMinutes(2));
+    jsonCacheService.put(cacheKey, enriched, Duration.ofMinutes(2));
     return enriched;
   }
 
-  /** EnrichedNewsDetail sorgusunu döner. */
+  /** Tekil news kaydını related asset performance bilgileri ile birlikte döner. */
   @Override
   public NewsEnrichedDetailResponse getEnrichedNewsDetail(Long id, String language) {
     String resolvedLang = normalizeLanguage(language);
@@ -420,11 +417,11 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         relatedAssets);
   }
 
-  /** OriginalNews sorgusunu döner. */
+  /** Orijinal title/summary içeriğini kısa ömürlü cache ile birlikte döner. */
   @Override
   public NewsOriginalResponse getOriginalNews(Long id) {
     String cacheKey = "news:original:id:" + id;
-    Optional<NewsOriginalResponse> cached = readFromCache(cacheKey, new TypeReference<>() {});
+    Optional<NewsOriginalResponse> cached = jsonCacheService.get(cacheKey, new TypeReference<>() {});
     if (cached.isPresent()) {
       return cached.get();
     }
@@ -449,7 +446,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
         StringUtils.hasText(data.summaryOriginal()) ? data.summaryOriginal() : data.summary();
     NewsOriginalResponse response =
         new NewsOriginalResponse(data.id(), nz(originalTitle), nz(originalSummary));
-    writeToCache(cacheKey, response, ORIGINAL_CACHE_TTL);
+    jsonCacheService.put(cacheKey, response, ORIGINAL_CACHE_TTL);
     return response;
   }
 
@@ -823,44 +820,6 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       return List.of();
     }
     return body.data();
-  }
-
-  private Optional<NewsEnrichedPageResponse> readFromCache(String key) {
-    return readFromCache(key, new TypeReference<>() {});
-  }
-
-  private <T> Optional<T> readFromCache(String key, TypeReference<T> typeReference) {
-    try {
-      StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
-      if (redis == null) {
-        return Optional.empty();
-      }
-      String payload = redis.opsForValue().get(key);
-      if (!StringUtils.hasText(payload)) {
-        return Optional.empty();
-      }
-      T value = objectMapper.readValue(payload, typeReference);
-      return Optional.of(value);
-    } catch (Exception ex) {
-      log.debug("NEWS_ENRICHED_CACHE_READ_FAIL key={} reason={}", key, ex.toString());
-      return Optional.empty();
-    }
-  }
-
-  private void writeToCache(String key, Object value) {
-    writeToCache(key, value, CACHE_TTL);
-  }
-
-  private void writeToCache(String key, Object value, Duration ttl) {
-    try {
-      StringRedisTemplate redis = stringRedisTemplateProvider.getIfAvailable();
-      if (redis == null) {
-        return;
-      }
-      redis.opsForValue().set(key, objectMapper.writeValueAsString(value), ttl);
-    } catch (Exception ex) {
-      log.debug("NEWS_ENRICHED_CACHE_WRITE_FAIL key={} reason={}", key, ex.toString());
-    }
   }
 
   private record NewsServiceApiResponse<T>(boolean success, T data) {}

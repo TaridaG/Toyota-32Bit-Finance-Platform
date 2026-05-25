@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Kafka {@code app.logs} topic'inden gelen tek bir uygulama log satırının JSON modeli.
  * <p>
- * Üretici tarafında Logstash {@link net.logstash.logback.encoder.LogstashEncoder} alan adları
+ * Üretici tarafında Log4j2 {@code JsonTemplateLayout} alan adları
  * ({@code @timestamp}, {@code service}, {@code logger_name}) ile uyumludur.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

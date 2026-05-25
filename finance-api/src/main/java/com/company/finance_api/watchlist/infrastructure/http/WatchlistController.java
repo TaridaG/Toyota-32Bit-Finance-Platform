@@ -1,8 +1,8 @@
 package com.company.finance_api.watchlist.infrastructure.http;
 
-import com.company.finance_api.dto.AddWatchlistItemRequest;
-import com.company.finance_api.dto.WatchlistItemDto;
-import com.company.finance_api.service.WatchlistService;
+import com.company.finance_api.watchlist.infrastructure.http.dto.AddWatchlistItemRequest;
+import com.company.finance_api.watchlist.infrastructure.http.dto.WatchlistItemDto;
+import com.company.finance_api.watchlist.application.WatchlistService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.List;
