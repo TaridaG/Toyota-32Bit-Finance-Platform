@@ -1,8 +1,8 @@
 package com.company.finance_api.notification.infrastructure.http;
 
-import com.company.finance_api.dto.PortalNotificationPageResponse;
-import com.company.finance_api.dto.PortalNotificationResponse;
-import com.company.finance_api.service.PortalNotificationService;
+import com.company.finance_api.notification.application.PortalNotificationService;
+import com.company.finance_api.notification.infrastructure.http.dto.PortalNotificationPageResponse;
+import com.company.finance_api.notification.infrastructure.http.dto.PortalNotificationResponse;
 import com.company.finance_api.shared.web.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

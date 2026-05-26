@@ -7,7 +7,7 @@ import com.company.finance_api.dto.PublicRegisterRequest;
 import com.company.finance_api.dto.PublicRegisterResponse;
 import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
 import com.company.finance_api.repository.UserRepository;
-import com.company.finance_api.service.UserService;
+import com.company.finance_api.profile.application.UserService;
 import com.company.finance_api.shared.identity.KeycloakRealmAdminClient;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

@@ -1,8 +1,8 @@
 package com.company.finance_api.portfolio.infrastructure.http;
 
-import com.company.finance_api.dto.TransactionHistoryPageResponse;
-import com.company.finance_api.dto.TransactionHistoryResponse;
-import com.company.finance_api.service.TransactionHistoryService;
+import com.company.finance_api.portfolio.application.TransactionHistoryService;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryPageResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryResponse;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.time.LocalDate;
 import java.util.List;

@@ -9,12 +9,12 @@ import static org.mockito.Mockito.when;
 
 import com.company.finance_api.domain.User;
 import com.company.finance_api.dto.PortfolioOverviewResponse;
+import com.company.finance_api.portfolio.application.PortfolioOverviewService;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.portfolio.goal.dto.UpsertPortfolioValueGoalRequest;
 import com.company.finance_api.portfolio.goal.dto.UpsertProfitGoalRequest;
 import com.company.finance_api.repository.UserRepository;
-import com.company.finance_api.service.PortfolioOverviewService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;
 import java.util.List;

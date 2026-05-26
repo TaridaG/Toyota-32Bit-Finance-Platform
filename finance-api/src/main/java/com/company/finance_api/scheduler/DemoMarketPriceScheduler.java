@@ -5,7 +5,7 @@ import com.company.finance_api.domain.InstrumentPrice;
 import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.alarm.application.AlarmService;
-import com.company.finance_api.service.PriceService;
+import com.company.finance_api.pricing.application.PriceService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;

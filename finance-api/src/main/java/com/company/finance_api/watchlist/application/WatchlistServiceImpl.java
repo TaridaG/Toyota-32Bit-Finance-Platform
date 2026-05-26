@@ -9,7 +9,7 @@ import com.company.finance_api.watchlist.domain.event.WatchlistItemRemovedEvent;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.watchlist.infrastructure.persistence.WatchlistItemRepository;
-import com.company.finance_api.service.OutboxService;
+import com.company.finance_api.outbox.application.OutboxService;
 import com.company.finance_api.watchlist.application.WatchlistService;
 import com.company.finance_api.shared.kafka.KafkaTopics;
 import com.company.finance_api.shared.security.CurrentUserResolver;

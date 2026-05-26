@@ -25,7 +25,7 @@ import com.company.finance_api.registration.PortalRegistrationService;
 import com.company.finance_api.registration.RegistrationEmailAvailabilityService;
 import com.company.finance_api.registration.RegistrationEmailVerificationService;
 import com.company.finance_api.repository.UserRepository;
-import com.company.finance_api.service.OutboxService;
+import com.company.finance_api.outbox.application.OutboxService;
 import com.company.finance_api.shared.identity.KeycloakDirectGrantClient;
 import com.company.finance_api.shared.identity.KeycloakRealmAdminClient;
 import com.company.finance_api.shared.kafka.KafkaTopics;

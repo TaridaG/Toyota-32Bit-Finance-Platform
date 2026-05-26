@@ -797,16 +797,16 @@
         "dotLabel": "Zenginleştirilmiş haberler"
       },
       "portfolio": {
-        "dotLabel": "Portföy K/Z"
+        "dotLabel": "Banka kurları"
       },
       "reporting": {
         "dotLabel": "Raporlama"
       },
       "security": {
-        "dotLabel": "Güvenlik"
+        "dotLabel": "Finansal okuryazarlık"
       },
       "final-cta": {
-        "dotLabel": "Final çağrı"
+        "dotLabel": "Portföy"
       }
     },
     "hero": {
@@ -878,15 +878,54 @@
       }
     },
     "news": {
-      "title": "Zenginleştirilmiş haber zekası",
-      "subtitle": "Özet, duygu ve reaksiyon değerleri backend enriched news akışından gelir."
+      "title": "Haber akışını tek ekranda takip edin",
+      "subtitle": "Zenginleştirilmiş haber sayfası; görsel kartlar, AI özetleri, 3 dil desteği ve yıldızlama akışlarını tek deneyimde birleştirir.",
+      "cta": "Haber sayfasını aç",
+      "points": {
+        "point1": "Kategori, arama ve sembol bazlı filtrelerle haberi hızlı daraltın.",
+        "point2": "TR, EN ve DE dilleri arasında geçiş yapıp aynı akışı farklı dil katmanlarıyla okuyun.",
+        "point3": "Önemli haberleri yıldızlayın, görsellerle tarayın ve ilk reaksiyonu tek bakışta yakalayın."
+      },
+      "preview": {
+        "product": "News Workspace",
+        "statusLive": "Canlı akış",
+        "statusLoading": "Önizleme hazırlanıyor",
+        "statusOffline": "Demo görünüm",
+        "searchPlaceholder": "Haberlerde ara",
+        "filters": {
+          "all": "Tümü",
+          "crypto": "Kripto",
+          "macro": "Makro"
+        },
+        "favoriteBadge": "Yıldızlı",
+        "readMore": "Detaya git",
+        "aiTitle": "AI özet",
+        "sentiment": {
+          "positive": "Pozitif akış önde",
+          "negative": "Negatif akış önde",
+          "neutral": "Denge korunuyor"
+        },
+        "stats": {
+          "positive": "Pozitif",
+          "negative": "Negatif",
+          "neutral": "Nötr",
+          "reaction": "1s reaksiyon",
+          "none": "Hazırlanıyor"
+        },
+        "languagesTitle": "3 dil desteği",
+        "languagesBody": "Aynı haber akışına TR, EN ve DE katmanlarıyla erişin.",
+        "favoriteTitle": "Yıldızla ve kaydet",
+        "favoriteBody": "Önemli haberleri daha sonra açmak için favorilere ekleyin.",
+        "savedLabel": "Favorilere eklendi",
+        "visualLabel": "Görsel akışta"
+      }
     },
     "portfolio": {
-      "title": "Portföy K/Z ve raporlama",
-      "subtitle": "Dağılımı, gerçekleşen performansı ve raporlama döngüsünü tek iş akışında izleyin.",
-      "cta": "Portföy çalışma alanını aç",
-      "visualTitle": "Güvenlik ve gözlemlenebilirlik",
-      "visualBody": "Kurumsal kontroller, izleme, denetlenebilirlik ve güvenilir teslimat için tasarlanmıştır."
+      "title": "Canlı banka kurlarını anlık izleyin",
+      "subtitle": "Banka ve kurum alış-satış kurlarını, makas farklarını ve en iyi oranları tek ekranda karşılaştırın.",
+      "cta": "Banka kurları sayfasını aç",
+      "visualTitle": "Banka kurları",
+      "visualBody": "Canlı snapshot ve tablo görünümü ile bankalar arası fiyat farklarını anında izleyin."
     },
     "reporting": {
       "title": "Karar odaklı raporlama",
@@ -895,16 +934,76 @@
       "visualBody": "Operasyonel ve yönetimsel incelemeler için tekrar kullanılabilir rapor görünümleri üretin."
     },
     "security": {
-      "title": "Güvenlik ve gözlemlenebilirlik",
-      "subtitle": "Platform davranışını güvenle izleyin ve risk hassas operasyonları takip edin.",
-      "visualTitle": "Kurumsal güvenlik katmanları",
-      "visualBody": "Birleşik izleme ve denetlenebilirlik, oynak piyasalarda kör noktaları azaltır."
+      "title": "Finansal okuryazarlık ve bilgi kartları",
+      "subtitle": "Temel kavramları öğrenin, ekranlara özel açıklamaları bilgi kartlarıyla görün ve yatırım terimlerini daha hızlı anlayın.",
+      "cta": "Finansal okuryazarlık sayfasını aç",
+      "visualTitle": "Bilgi kartları",
+      "visualBody": "Terim kartları ve ekran içi yardım butonları ile öğrenmeyi akışın içine taşıyın.",
+      "preview": {
+        "infoButton": "Bilgi kartı öner",
+        "learningAreas": "Öğrenme alanları",
+        "pagePill": "Finansal Okuryazarlık",
+        "helpPill": "Bilgi kartı aç",
+        "stats": {
+          "terms": "Terim",
+          "charts": "Grafik",
+          "tools": "Araç"
+        },
+        "areas": {
+          "markets": "Piyasalar",
+          "technical": "Teknik analiz",
+          "macro": "Makro",
+          "portfolio": "Portföy"
+        },
+        "cards": {
+          "rsi": {
+            "title": "RSI",
+            "badge": "Gösterge",
+            "difficulty": "Temel",
+            "description": "Momentumun aşırı alım ve aşırı satım bölgelerine ne kadar yaklaştığını hızlıca açıklar."
+          },
+          "candles": {
+            "title": "Mum Grafik",
+            "badge": "Grafik",
+            "difficulty": "Başlangıç",
+            "description": "Açılış, kapanış, en yüksek ve en düşük fiyatı aynı görünümde okumayı kolaylaştırır."
+          }
+        }
+      }
     },
     "finalCta": {
-      "title": "Ekibinizi tek kurumsal finans platformunda birleştirin",
-      "subtitle": "Güvenli erişimle başlayın, piyasa zekası iş akışınızı ölçekleyin.",
+      "title": "Portföyünüzü oluşturun ve başlayın",
+      "subtitle": "Giriş yapın veya kaydolun, ilk portföyünüzü oluşturup varlıklarınızı tek ekranda takip etmeye başlayın.",
       "login": "Giriş Yap",
-      "register": "Kaydol"
+      "register": "Kaydol",
+      "preview": {
+        "sidebarTitle": "Portföyler",
+        "portfolioName": "Ana Portföy",
+        "heading": "Portföy Genel Bakış",
+        "subheading": "Toplam değer, günlük değişim ve dağılım aynı ekranda.",
+        "status": "Demo görünüm",
+        "positionsCount": "3 varlık",
+        "nav": {
+          "overview": "Genel Bakış",
+          "markets": "Piyasalar",
+          "allocation": "Dağılım",
+          "goals": "Hedefler"
+        },
+        "stats": {
+          "value": "Toplam değer",
+          "dailyChange": "Günlük değişim",
+          "positions": "Pozisyon"
+        },
+        "panels": {
+          "performance": "Performans",
+          "holdings": "Varlıklar"
+        },
+        "assets": {
+          "airlines": "Türk Hava Yolları",
+          "gold": "Gram Altın",
+          "eurobond": "USD Eurobond"
+        }
+      }
     }
   },
   "auth": {

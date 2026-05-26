@@ -1,6 +1,6 @@
 package com.company.finance_api.scheduler;
 
-import com.company.finance_api.service.PortfolioSnapshotService;
+import com.company.finance_api.portfolio.application.PortfolioSnapshotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -3,7 +3,7 @@ package com.company.finance_api.portfolio.valuation.impl;
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.portfolio.valuation.InstrumentPriceProvider;
 import com.company.finance_api.repository.InstrumentRepository;
-import com.company.finance_api.service.PriceService;
+import com.company.finance_api.pricing.application.PriceService;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

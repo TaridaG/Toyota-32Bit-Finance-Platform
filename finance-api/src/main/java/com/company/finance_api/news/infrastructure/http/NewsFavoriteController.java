@@ -1,10 +1,10 @@
 package com.company.finance_api.news.infrastructure.http;
 
-import com.company.finance_api.dto.AddNewsFavoriteRequest;
-import com.company.finance_api.dto.NewsEnrichedPageResponse;
-import com.company.finance_api.dto.NewsFavoriteItemDto;
-import com.company.finance_api.service.NewsEnrichmentService;
-import com.company.finance_api.service.NewsFavoriteService;
+import com.company.finance_api.news.application.NewsEnrichmentService;
+import com.company.finance_api.news.application.NewsFavoriteService;
+import com.company.finance_api.news.infrastructure.http.dto.AddNewsFavoriteRequest;
+import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedPageResponse;
+import com.company.finance_api.news.infrastructure.http.dto.NewsFavoriteItemDto;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.List;

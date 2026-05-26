@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.enums.Exchange;
 import com.company.finance_api.domain.enums.InstrumentType;
-import com.company.finance_api.service.InstrumentService;
+import com.company.finance_api.instrument.application.InstrumentService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;

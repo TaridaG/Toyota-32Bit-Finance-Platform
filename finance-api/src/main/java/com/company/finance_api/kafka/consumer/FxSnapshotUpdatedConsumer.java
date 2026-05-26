@@ -9,7 +9,7 @@ import com.company.finance_api.kafka.event.FxSnapshotUpdatedEvent;
 import com.company.finance_api.kafka.support.SemanticPriceWriteMetrics;
 import com.company.finance_api.kafka.support.SnapshotInstrumentResolution;
 import com.company.finance_api.repository.ProcessedEventRepository;
-import com.company.finance_api.service.PriceService;
+import com.company.finance_api.pricing.application.PriceService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import java.math.BigDecimal;

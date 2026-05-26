@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.company.finance_api.chart.infrastructure.http.dto.CandlestickResponse;
 import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.dto.CandlestickResponse;
-import com.company.finance_api.service.ChartService;
+import com.company.finance_api.chart.application.ChartService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.math.BigDecimal;

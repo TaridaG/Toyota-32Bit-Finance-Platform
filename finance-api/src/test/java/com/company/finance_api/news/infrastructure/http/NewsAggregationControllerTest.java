@@ -6,9 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.dto.NewsEnrichedPageResponse;
-import com.company.finance_api.dto.NewsWeeklySummaryResponse;
-import com.company.finance_api.service.NewsEnrichmentService;
+import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedPageResponse;
+import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklySummaryResponse;
+import com.company.finance_api.news.application.NewsEnrichmentService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;

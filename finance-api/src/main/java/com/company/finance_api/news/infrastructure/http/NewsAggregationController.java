@@ -1,10 +1,11 @@
 package com.company.finance_api.news.infrastructure.http;
 
-import com.company.finance_api.dto.NewsEnrichedDetailResponse;
-import com.company.finance_api.dto.NewsEnrichedPageResponse;
-import com.company.finance_api.dto.NewsOriginalResponse;
-import com.company.finance_api.dto.NewsWeeklySummaryResponse;
-import com.company.finance_api.service.NewsEnrichmentService;
+import com.company.finance_api.news.application.NewsEnrichmentService;
+import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedDetailResponse;
+import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedPageResponse;
+import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedResponse;
+import com.company.finance_api.news.infrastructure.http.dto.NewsOriginalResponse;
+import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklySummaryResponse;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.time.Instant;
 import java.util.List;
@@ -63,7 +64,7 @@ public class NewsAggregationController {
   }
 
   @GetMapping("/enriched/chart")
-  public ApiResponse<List<com.company.finance_api.dto.NewsEnrichedResponse>> chartEnriched(
+  public ApiResponse<List<NewsEnrichedResponse>> chartEnriched(
       @RequestParam String symbol,
       @RequestParam String category,
       @RequestParam Instant from,

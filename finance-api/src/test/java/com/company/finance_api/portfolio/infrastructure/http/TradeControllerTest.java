@@ -13,7 +13,7 @@ import com.company.finance_api.domain.enums.TradeInputMode;
 import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
 import com.company.finance_api.dto.TradePreviewResponse;
-import com.company.finance_api.service.TradeService;
+import com.company.finance_api.portfolio.application.TradeService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.math.BigDecimal;
