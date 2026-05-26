@@ -134,6 +134,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Prepare Docker env file
+        shell: bash
+        run: cp Docker/.env.example Docker/.env
+
       - name: Validate main Docker Compose file
         run: docker compose -f Docker/docker-compose.yml config
 
