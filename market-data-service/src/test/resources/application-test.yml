@@ -1,4 +1,9 @@
 spring:
+  datasource:
+    url: jdbc:h2:mem:market_data_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;NON_KEYWORDS=DAY
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
   flyway:
     enabled: false
   jpa:
@@ -9,12 +14,29 @@ spring:
       enabled: false
 
 market:
+  tracked-symbols:
+    - ""
+  tracked-stocks: []
   scheduler:
     enabled: false
   fx:
     scheduler-enabled: false
   stock:
     scheduler:
+      enabled: false
+  bond:
+    scheduler-enabled: false
+    history-bootstrap:
+      enabled: false
+    history-refresh:
+      enabled: false
+  tr-gov-usd-eurobond:
+    history-bootstrap:
+      enabled: false
+    history-refresh:
+      enabled: false
+  history:
+    backfill:
       enabled: false
 
 providers:
