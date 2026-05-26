@@ -115,7 +115,7 @@ export const GlobeScene = memo(function GlobeScene({ tiltRef, reduceMotion, isMo
   return (
     <>
       <ambientLight intensity={isDark ? 0.34 : 0.74} />
-      {!isDark ? <hemisphereLight skyColor="#dbeafe" groundColor="#d6d3d1" intensity={0.55} /> : null}
+      {!isDark ? <hemisphereLight args={['#dbeafe', '#d6d3d1', 0.55]} /> : null}
       <directionalLight
         position={isDark ? [3, 2, 4] : [4.5, 1.8, 5]}
         intensity={isDark ? 1.02 : 1.55}

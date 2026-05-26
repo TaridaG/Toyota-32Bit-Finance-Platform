@@ -112,6 +112,9 @@ export function inferNativeQuote(
   if (cat === 'FUND') {
     return s.startsWith('FUND_') ? 'TRY' : 'USD'
   }
+  if (cat === 'DEPOSIT') {
+    return 'TRY'
+  }
   if (cat === 'STOCK') {
     if (ex === 'BIST' || ex === 'TEFAS') return 'TRY'
     if (ex === 'NASDAQ' || ex === 'FINNHUB' || ex === 'BINANCE') return 'USD'

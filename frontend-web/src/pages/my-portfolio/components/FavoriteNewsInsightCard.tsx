@@ -56,7 +56,7 @@ export function FavoriteNewsInsightCard() {
         <ul className="my-portfolio-insight-list my-portfolio-favorite-news-list">
           {items.map((item) => (
             <li key={item.id}>
-              <FavoriteNewsThumb imageUrl={item.imageUrl} title={item.title} />
+              <FavoriteNewsThumb imageUrl={item.imageUrl} />
               <div>
                 <strong>{item.title}</strong>
                 <small>{stripHtml(item.summary)}</small>
@@ -69,7 +69,7 @@ export function FavoriteNewsInsightCard() {
   )
 }
 
-function FavoriteNewsThumb({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
+function FavoriteNewsThumb({ imageUrl }: { imageUrl?: string | null }) {
   const [broken, setBroken] = useState(false)
   const showImage = Boolean(imageUrl?.trim()) && !broken
 

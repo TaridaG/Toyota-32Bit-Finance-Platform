@@ -67,7 +67,7 @@ export async function fetchPortfolioGoals(
     headers: { 'X-Currency': displayCurrency },
   })
   if (!data.success) {
-    throw new Error(data.error?.message ?? 'Goals request failed')
+    throw new Error('Goals request failed')
   }
   return parseView(data.data)
 }
@@ -82,7 +82,7 @@ export async function savePortfolioValueGoal(
     ...body,
   }, { headers: { 'X-Currency': displayCurrency } })
   if (!data.success) {
-    throw new Error(data.error?.message ?? 'Save failed')
+    throw new Error('Save failed')
   }
   return parseView(data.data)
 }
@@ -103,7 +103,7 @@ export async function saveProfitGoal(
     ...body,
   }, { headers: { 'X-Currency': displayCurrency } })
   if (!data.success) {
-    throw new Error(data.error?.message ?? 'Save failed')
+    throw new Error('Save failed')
   }
   return parseView(data.data)
 }

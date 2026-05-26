@@ -13,10 +13,12 @@ import com.company.finance_api.event.publisher.TransactionEventPublisher;
 import com.company.finance_api.portfolio.FxHistoricalAnchor;
 import com.company.finance_api.portfolio.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.MdsInstrumentSymbolAliases;
+import com.company.finance_api.portfolio.TlDepositInstruments;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.repository.*;
 import com.company.finance_api.service.CurrencyConversionService;
+import com.company.finance_api.service.PortfolioPerformanceSeriesService;
 import com.company.finance_api.service.TradeService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;
@@ -46,10 +48,12 @@ public class TradeServiceImpl implements TradeService {
   private final InstrumentPriceRepository instrumentPriceRepository;
   private final JdbcTemplate jdbcTemplate;
   private final CurrencyConversionService currencyConversionService;
+  private final PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
   private final CurrentUserResolver currentUserResolver;
   private final UserRepository userRepository;
   private final ExternalPortfolioRepository externalPortfolioRepository;
   private final TransactionEventPublisher transactionEventPublisher;
+  private final TlDepositIndexQueryService tlDepositIndexQueryService;
   private static final List<com.company.finance_api.domain.enums.PriceType> VALUATION_PRICE_TYPES =
       List.of(
           com.company.finance_api.domain.enums.PriceType.MARKET,
@@ -157,6 +161,10 @@ public class TradeServiceImpl implements TradeService {
             saved.getPrice(),
             saved.getQuantity()));
 
+    if (portfolio != null) {
+      portfolioPerformanceSeriesService.recomputePortfolioHistory(user.getId(), portfolio.getId());
+    }
+
     return saved;
   }
 
@@ -224,6 +232,10 @@ public class TradeServiceImpl implements TradeService {
             saved.getPrice(),
             saved.getQuantity()));
 
+    if (portfolio != null) {
+      portfolioPerformanceSeriesService.recomputePortfolioHistory(user.getId(), portfolio.getId());
+    }
+
     return saved;
   }
 
@@ -266,6 +278,9 @@ public class TradeServiceImpl implements TradeService {
       throw new IllegalArgumentException("purchaseMode is required");
     }
     String instrumentCurrency = InstrumentListingCurrency.resolve(instrument);
+    if (TlDepositInstruments.isTlDeposit(instrument) && request.getInputMode() != TradeInputMode.AMOUNT) {
+      throw new IllegalArgumentException("TL deposit supports amount input only");
+    }
     String inputCurrency = currencyConversionService.normalizeCurrency(request.getInputCurrency());
     UnitPriceResolution unitPriceResolution =
         resolveUnitPrice(request, instrument, instrumentCurrency);
@@ -327,6 +342,9 @@ public class TradeServiceImpl implements TradeService {
 
   private UnitPriceResolution resolveUnitPrice(
       TradeExecutionRequest request, Instrument instrument, String instrumentCurrency) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return resolveTlDepositUnitPrice(request, instrument);
+    }
     if (request.getPurchaseMode() == PurchaseMode.PAST) {
       Instant acquiredAt = request.getAcquiredAt();
       if (acquiredAt == null) {
@@ -409,6 +427,12 @@ public class TradeServiceImpl implements TradeService {
   }
 
   private BigDecimal fetchLatestValuationPriceDirect(Instrument instrument) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService
+          .getLatestPrice(instrument)
+          .map(InstrumentPrice::getPrice)
+          .orElseThrow(() -> new IllegalStateException("Price not available"));
+    }
     for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<BigDecimal> found =
           instrumentPriceRepository
@@ -444,6 +468,11 @@ public class TradeServiceImpl implements TradeService {
 
   private Optional<BigDecimal> fetchValuationPriceAtOrBefore(
       Instrument instrument, Instant target) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService
+          .getLatestPriceBefore(instrument, target)
+          .map(InstrumentPrice::getPrice);
+    }
     List<String> symbols = MdsInstrumentSymbolAliases.historyLookupSymbols(instrument);
     if (symbols.isEmpty()) {
       return Optional.empty();
@@ -463,6 +492,11 @@ public class TradeServiceImpl implements TradeService {
   }
 
   private Optional<BigDecimal> fetchHistoricalPriceFromMds(Instrument instrument, Instant target) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService
+          .getLatestPriceBefore(instrument, target)
+          .map(InstrumentPrice::getPrice);
+    }
     for (String sym : MdsInstrumentSymbolAliases.historyLookupSymbols(instrument)) {
       Optional<BigDecimal> fromMarket = queryMdsMarketPriceHistory(sym, target);
       if (fromMarket.isPresent()) {
@@ -474,6 +508,9 @@ public class TradeServiceImpl implements TradeService {
   }
 
   private Optional<Instant> findFirstAvailableMdsMarketPriceDate(Instrument instrument) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService.getFirstAvailableInstant(instrument);
+    }
     Optional<Instant> best = Optional.empty();
     for (String sym : MdsInstrumentSymbolAliases.historyLookupSymbols(instrument)) {
       best = minInstant(best, queryMdsFirstMarketObserved(sym));
@@ -482,6 +519,9 @@ public class TradeServiceImpl implements TradeService {
   }
 
   private Optional<Instant> findLastAvailableMdsMarketPriceDate(Instrument instrument) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService.getLastAvailableInstant(instrument);
+    }
     Optional<Instant> best = Optional.empty();
     for (String sym : MdsInstrumentSymbolAliases.historyLookupSymbols(instrument)) {
       best = maxInstant(best, queryMdsLastMarketObserved(sym));
@@ -611,6 +651,9 @@ public class TradeServiceImpl implements TradeService {
   }
 
   private Optional<Instant> findFirstAvailablePriceDate(Instrument instrument) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService.getFirstAvailableInstant(instrument);
+    }
     for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<Instant> found =
           instrumentPriceRepository
@@ -624,6 +667,9 @@ public class TradeServiceImpl implements TradeService {
   }
 
   private Optional<Instant> findLastAvailablePriceDate(Instrument instrument) {
+    if (TlDepositInstruments.isTlDeposit(instrument)) {
+      return tlDepositIndexQueryService.getLastAvailableInstant(instrument);
+    }
     for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<Instant> found =
           instrumentPriceRepository
@@ -643,6 +689,65 @@ public class TradeServiceImpl implements TradeService {
     return externalPortfolioRepository
         .findByIdAndUserId(portfolioId, user.getId())
         .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
+  }
+
+  private UnitPriceResolution resolveTlDepositUnitPrice(
+      TradeExecutionRequest request, Instrument instrument) {
+    if (request.getPurchaseMode() == PurchaseMode.PAST) {
+      Instant acquiredAt = request.getAcquiredAt();
+      if (acquiredAt == null) {
+        throw new IllegalArgumentException("acquiredAt is required for past purchases");
+      }
+      Optional<BigDecimal> historicalPrice =
+          tlDepositIndexQueryService
+              .getLatestPriceBefore(
+                  instrument, FxHistoricalAnchor.normalizeEndOfAcquisitionDay(acquiredAt))
+              .map(InstrumentPrice::getPrice);
+      if (historicalPrice.isPresent()) {
+        return new UnitPriceResolution(
+            historicalPrice.get().setScale(6, RoundingMode.HALF_UP),
+            false,
+            "TL_DEPOSIT_INDEX_HISTORICAL",
+            Optional.empty(),
+            false);
+      }
+      Optional<Instant> earliestOpt = tlDepositIndexQueryService.getFirstAvailableInstant(instrument);
+      if (earliestOpt.isEmpty()) {
+        throw new IllegalArgumentException("TL deposit historical index unavailable");
+      }
+      Instant earliestInstant = earliestOpt.get();
+      Optional<BigDecimal> rolledPrice =
+          tlDepositIndexQueryService
+              .getLatestPriceBefore(
+                  instrument, FxHistoricalAnchor.normalizeEndOfAcquisitionDay(earliestInstant))
+              .map(InstrumentPrice::getPrice);
+      if (rolledPrice.isPresent()) {
+        Instant dayStartUtc =
+            earliestInstant
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+        return new UnitPriceResolution(
+            rolledPrice.get().setScale(6, RoundingMode.HALF_UP),
+            false,
+            "TL_DEPOSIT_INDEX_EARLIEST_AVAILABLE",
+            Optional.of(dayStartUtc),
+            true);
+      }
+      throw new IllegalArgumentException("TL deposit historical index unavailable");
+    }
+    BigDecimal valuationPrice =
+        tlDepositIndexQueryService
+            .getLatestPrice(instrument)
+            .map(InstrumentPrice::getPrice)
+            .orElseThrow(() -> new IllegalStateException("Price not available"));
+    return new UnitPriceResolution(
+        valuationPrice.setScale(6, RoundingMode.HALF_UP),
+        false,
+        "TL_DEPOSIT_INDEX_LIVE",
+        Optional.empty(),
+        false);
   }
 
   private record Computation(

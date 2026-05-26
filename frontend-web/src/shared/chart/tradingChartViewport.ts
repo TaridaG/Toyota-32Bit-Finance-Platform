@@ -6,12 +6,12 @@ export function nowUnixSec(): number {
   return Math.floor(Date.now() / 1000)
 }
 
-/** Görünür pencere: [now − span, now]; shortcut / ilk açılış. */
-export function setVisibleWindowAlignedToNow(chart: IChartApi, spanSec: number): void {
-  const nowS = nowUnixSec()
+/** Görünür pencere: [endSec − span, endSec]; shortcut / ilk açılış. */
+export function setVisibleWindowEndingAt(chart: IChartApi, endSec: number, spanSec: number): void {
   const span = Math.max(60, Math.floor(spanSec))
-  const from = Math.max(0, nowS - span) as UTCTimestamp
-  const to = nowS as UTCTimestamp
+  const end = Math.max(0, Math.floor(endSec))
+  const from = Math.max(0, end - span) as UTCTimestamp
+  const to = end as UTCTimestamp
   try {
     chart.timeScale().setVisibleRange({ from, to })
   } catch {
@@ -21,6 +21,11 @@ export function setVisibleWindowAlignedToNow(chart: IChartApi, spanSec: number):
       /* */
     }
   }
+}
+
+/** Görünür pencere: [now − span, now]; legacy helper. */
+export function setVisibleWindowAlignedToNow(chart: IChartApi, spanSec: number): void {
+  setVisibleWindowEndingAt(chart, nowUnixSec(), spanSec)
 }
 
 export function computeTimeScaleBounds(

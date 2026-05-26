@@ -4,6 +4,7 @@ import com.company.finance_api.dto.NewsEnrichedDetailResponse;
 import com.company.finance_api.dto.NewsEnrichedPageResponse;
 import com.company.finance_api.dto.NewsEnrichedResponse;
 import com.company.finance_api.dto.NewsOriginalResponse;
+import com.company.finance_api.dto.NewsWeeklySummaryResponse;
 import java.time.Instant;
 import java.util.List;
 
@@ -16,7 +17,13 @@ public interface NewsEnrichmentService {
       String category,
       String sentiment,
       Integer maxAgeMinutes,
-      String search);
+      String search,
+      String relatedSymbols,
+      String sourceName,
+      String assetKey,
+      String primaryTopic);
+
+  NewsWeeklySummaryResponse getWeeklySummary(String language, String portfolioSymbols);
 
   /** getOriginalNews sözleşmesi. */
   NewsOriginalResponse getOriginalNews(Long id);

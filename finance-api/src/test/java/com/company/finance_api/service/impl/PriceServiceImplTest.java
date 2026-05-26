@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.InstrumentPrice;
+import com.company.finance_api.domain.enums.Exchange;
+import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.domain.enums.PriceType;
 import com.company.finance_api.event.PriceUpdatedEvent;
 import com.company.finance_api.repository.InstrumentPriceRepository;
@@ -22,11 +24,13 @@ class PriceServiceImplTest {
   @Mock private InstrumentPriceRepository priceRepository;
   @Mock private PriceCacheService priceCacheService;
   @Mock private ApplicationEventPublisher eventPublisher;
+  @Mock private TlDepositIndexQueryService tlDepositIndexQueryService;
 
   @Test
   void savePriceEvictsLatestCacheEntryAfterPersist() {
     PriceServiceImpl service =
-        new PriceServiceImpl(priceRepository, priceCacheService, eventPublisher);
+        new PriceServiceImpl(
+            priceRepository, priceCacheService, eventPublisher, tlDepositIndexQueryService);
     Instrument instrument = mock(Instrument.class);
     InstrumentPrice input = mock(InstrumentPrice.class);
     InstrumentPrice saved = mock(InstrumentPrice.class);
@@ -40,5 +44,23 @@ class PriceServiceImplTest {
 
     verify(priceCacheService).evictLatestPrice(42L, PriceType.MARKET);
     verify(eventPublisher).publishEvent(org.mockito.ArgumentMatchers.any(PriceUpdatedEvent.class));
+  }
+
+  @Test
+  void getLatestValuationPriceUsesTlDepositIndexServiceForDepositInstrument() {
+    PriceServiceImpl service =
+        new PriceServiceImpl(
+            priceRepository, priceCacheService, eventPublisher, tlDepositIndexQueryService);
+    Instrument instrument =
+        new Instrument("TLDEP_MT04", "TL Mevduat - 1 yila kadar", InstrumentType.DEPOSIT, Exchange.TCMB);
+    InstrumentPrice synthetic =
+        new InstrumentPrice(instrument, PriceType.MARKET, new java.math.BigDecimal("1.012345"), java.time.Instant.now());
+
+    when(tlDepositIndexQueryService.supports(instrument)).thenReturn(true);
+    when(tlDepositIndexQueryService.getLatestPrice(instrument)).thenReturn(java.util.Optional.of(synthetic));
+
+    org.junit.jupiter.api.Assertions.assertEquals(
+        java.util.Optional.of(synthetic), service.getLatestValuationPrice(instrument));
+    verify(tlDepositIndexQueryService).getLatestPrice(instrument);
   }
 }

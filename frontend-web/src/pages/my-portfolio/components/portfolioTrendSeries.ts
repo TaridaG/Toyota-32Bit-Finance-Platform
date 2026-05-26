@@ -142,6 +142,29 @@ export function buildPortfolioTrendSeries(
   return points.slice(start)
 }
 
+/** Filled günlük portföy değerini bir önceki güne göre yüzde değişime çevirir. */
+export function buildDayOverDayPctSeries(points: PortfolioTrendPoint[]): PortfolioTrendPoint[] {
+  if (points.length < 2) return []
+
+  const out: PortfolioTrendPoint[] = []
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]!
+    const cur = points[i]!
+
+    let pct = 0
+    if (Math.abs(prev.v) >= 1e-6) {
+      pct = ((cur.v - prev.v) / prev.v) * 100
+    } else if (Math.abs(cur.v) >= 1e-6) {
+      continue
+    }
+
+    if (Number.isFinite(pct)) {
+      out.push({ t: cur.t, v: pct })
+    }
+  }
+  return out
+}
+
 /** Seçilen aralığa göre filtre; az kayıtta bile pencere boyunca çizgi üretir. */
 export function filterTrendByRange(
   series: PortfolioTrendPoint[],

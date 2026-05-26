@@ -15,6 +15,7 @@ import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../fea
 import { instrumentHelpRowProps } from '../../components/help/instrumentHelpAttrs'
 import { resolveInstrumentDisplayLabel } from '../../features/markets/lib/tefasFundDisplay'
 import { useAlarmUi } from '../../features/alarms/AlarmUiContext'
+import { scheduleIdleWork } from '../../shared/browser/scheduleIdleWork'
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
@@ -113,10 +114,10 @@ export function MarketsPage() {
   const [fundamentalsBySymbol, setFundamentalsBySymbol] = useState<Record<string, InstrumentFundamentals>>({})
   const [fundamentalsLoadingSymbol, setFundamentalsLoadingSymbol] = useState<string | null>(null)
   const [fundamentalsErrorBySymbol, setFundamentalsErrorBySymbol] = useState<Record<string, string>>({})
-  const [fundamentalsPrefetchingSymbols, setFundamentalsPrefetchingSymbols] = useState<string[]>([])
   const [priceFlashBySymbol, setPriceFlashBySymbol] = useState<Record<string, 'up' | 'down'>>({})
   const [animatedPriceBySymbol, setAnimatedPriceBySymbol] = useState<Record<string, number>>({})
   const previousPriceBySymbolRef = useRef<Record<string, number>>({})
+  const fundamentalsPrefetchingSymbolsRef = useRef<Set<string>>(new Set())
   const flashTimeoutsRef = useRef<Record<string, number>>({})
   const animationFrameBySymbolRef = useRef<Record<string, number>>({})
   const animatedPriceBySymbolRef = useRef<Record<string, number>>({})
@@ -351,14 +352,16 @@ export function MarketsPage() {
       setFavoriteSymbols([])
       return
     }
-    void fetchWatchlist()
-      .then((rows) => {
-        setFavoriteIds(rows.map((item) => item.instrumentId))
-        setFavoriteSymbols(rows.map((item) => item.symbol))
-      })
-      .catch(() => {
-        // keep current client state if watchlist fetch fails
-      })
+    return scheduleIdleWork(() => {
+      void fetchWatchlist()
+        .then((rows) => {
+          setFavoriteIds(rows.map((item) => item.instrumentId))
+          setFavoriteSymbols(rows.map((item) => item.symbol))
+        })
+        .catch(() => {
+          // keep current client state if watchlist fetch fails
+        })
+    }, 1_200)
   }, [authenticated])
 
   const handleSort = (field: MarketSortField) => {
@@ -395,28 +398,38 @@ export function MarketsPage() {
       .filter(
         (symbol) =>
           !fundamentalsBySymbol[symbol] &&
-          !fundamentalsPrefetchingSymbols.includes(symbol),
+          !fundamentalsPrefetchingSymbolsRef.current.has(symbol),
       )
     if (targets.length === 0) {
       return
     }
-    const batch = targets.slice(0, 8)
-    setFundamentalsPrefetchingSymbols((prev) => [...prev, ...batch])
-    Promise.all(
-      batch.map(async (symbol) => {
-        try {
-          const payload = await fetchInstrumentFundamentals(symbol)
-          setFundamentalsBySymbol((prev) => ({ ...prev, [symbol]: payload }))
-        } catch {
-          // keep row without market cap when unavailable
-        } finally {
-          setFundamentalsPrefetchingSymbols((prev) => prev.filter((item) => item !== symbol))
-        }
-      }),
-    ).catch(() => {
-      // no-op
-    })
-  }, [fundamentalsBySymbol, fundamentalsPrefetchingSymbols, visibleRows])
+    const batch = targets.slice(0, 4)
+    batch.forEach((symbol) => fundamentalsPrefetchingSymbolsRef.current.add(symbol))
+    let started = false
+    const cancel = scheduleIdleWork(() => {
+      started = true
+      Promise.all(
+        batch.map(async (symbol) => {
+          try {
+            const payload = await fetchInstrumentFundamentals(symbol)
+            setFundamentalsBySymbol((prev) => ({ ...prev, [symbol]: payload }))
+          } catch {
+            // keep row without market cap when unavailable
+          } finally {
+            fundamentalsPrefetchingSymbolsRef.current.delete(symbol)
+          }
+        }),
+      ).catch(() => {
+        // no-op
+      })
+    }, 1_500)
+    return () => {
+      cancel()
+      if (!started) {
+        batch.forEach((symbol) => fundamentalsPrefetchingSymbolsRef.current.delete(symbol))
+      }
+    }
+  }, [fundamentalsBySymbol, visibleRows])
 
   const toggleFundamentals = (symbol: string) => {
     if (expandedSymbol === symbol) {

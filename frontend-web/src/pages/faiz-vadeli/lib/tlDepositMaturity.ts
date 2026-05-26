@@ -6,3 +6,14 @@ export type TlDepositMaturityCode = (typeof TL_DEPOSIT_MATURITY_CODES)[number]
 export function isTlDepositMaturityCode(s: string): s is TlDepositMaturityCode {
   return (TL_DEPOSIT_MATURITY_CODES as readonly string[]).includes(s)
 }
+
+export function getTlDepositMaturityCodeFromInstrumentSymbol(
+  symbol: string | null | undefined,
+): TlDepositMaturityCode | null {
+  const normalized = String(symbol ?? '')
+    .trim()
+    .toUpperCase()
+  if (!normalized.startsWith('TLDEP_')) return null
+  const suffix = normalized.slice('TLDEP_'.length)
+  return isTlDepositMaturityCode(suffix) ? suffix : null
+}

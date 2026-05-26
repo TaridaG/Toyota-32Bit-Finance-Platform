@@ -8,6 +8,7 @@ export type AllocationDonutRow = {
   /** Stable id for React/SVG keys (e.g. category bucket); falls back to symbol. */
   rowKey?: string
   symbol: string
+  displaySymbol?: string
   value: number
   sharePct: number
   colorClass: string
@@ -42,6 +43,14 @@ function colorClassToCssColor(colorClass: string): string {
       return '#fb7185'
     case 'my-portfolio-dot-green':
       return '#22c55e'
+    case 'my-portfolio-dot-amber':
+      return '#f59e0b'
+    case 'my-portfolio-dot-cyan':
+      return '#06b6d4'
+    case 'my-portfolio-dot-indigo':
+      return '#6366f1'
+    case 'my-portfolio-dot-teal':
+      return '#14b8a6'
     case 'my-portfolio-dot-other':
       return '#64748b'
     default:
@@ -75,6 +84,7 @@ type Props = {
   ariaLabel: string
   /** Instrument: live market % in tooltip; category: bucket value/weight 1D metrics from overview. */
   donutVariant?: 'instrument' | 'category'
+  hideAmounts?: boolean
 }
 
 function formatPricePct(fmt: Intl.NumberFormat, v: number | null | undefined): string {
@@ -88,6 +98,7 @@ export function AllocationDonut({
   currencyFormat,
   ariaLabel,
   donutVariant = 'instrument',
+  hideAmounts = false,
 }: Props) {
   const { t } = useTranslation('portfolio')
   const [hovered, setHovered] = useState<number | null>(null)
@@ -291,7 +302,7 @@ export function AllocationDonut({
           >
             <span className="my-portfolio-allocation-legend-left">
               <span className={`my-portfolio-dot ${row.colorClass}`} aria-hidden />
-              <span className="my-portfolio-allocation-legend-symbol">{row.symbol}</span>
+              <span className="my-portfolio-allocation-legend-symbol">{row.displaySymbol ?? row.symbol}</span>
             </span>
             <span className="my-portfolio-allocation-legend-pct">
               {sharePctDisplay.format(row.sharePct)}%
@@ -313,14 +324,14 @@ export function AllocationDonut({
           role="tooltip"
         >
           <div className="my-portfolio-allocation-tooltip-head">
-            <strong>{activeRow.symbol}</strong>
+            <strong>{activeRow.displaySymbol ?? activeRow.symbol}</strong>
             <p className="my-portfolio-allocation-tooltip-meta">
               {t('allocation.tooltipWeight')}{' '}
               <span className="my-portfolio-allocation-tooltip-w">
                 {sharePctDisplay.format(activeRow.portfolioSharePct ?? activeRow.sharePct)}%
               </span>
               <span className="my-portfolio-allocation-tooltip-sep">·</span>
-              {currencyFormat.format(activeRow.value)}
+              {hideAmounts ? '•••' : currencyFormat.format(activeRow.value)}
             </p>
           </div>
           <div className="my-portfolio-allocation-tooltip-grid">

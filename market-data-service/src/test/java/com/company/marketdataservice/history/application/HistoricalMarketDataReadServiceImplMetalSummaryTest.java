@@ -67,7 +67,7 @@ class HistoricalMarketDataReadServiceImplMetalSummaryTest {
 
         HistoricalMarketDataReadServiceImpl svc =
                 new HistoricalMarketDataReadServiceImpl(
-                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, clock);
+                        marketPriceHistoryRepository, fxRateHistoryRepository, fundNavHistoryRepository, null, null, clock);
 
         Map<String, MarketPriceSummaryDto> out = svc.getPriceSummary(List.of("XAUTRY"));
         MarketPriceSummaryDto dto = out.get("XAUTRY");

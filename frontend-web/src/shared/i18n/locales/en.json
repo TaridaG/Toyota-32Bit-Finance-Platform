@@ -1249,6 +1249,7 @@
     "filterSummaryAll": "Showing all news",
     "filterSummaryActive": "Filtered view is active",
     "timeRangeAll": "All",
+    "timeRange7d": "7d",
     "noNews": "No news",
     "loadError": "News could not be loaded.",
     "closeDetails": "Close details",
@@ -1293,9 +1294,12 @@
       "loginRequired": "You must sign in",
       "loginAction": "Sign in",
       "noWeeklyData": "No weekly summary yet",
-      "portfolioFilterActive": "Showing news related to your portfolio.",
+      "weeklyFilterActive": "Weekly summary filter active: {{label}}",
+      "clearWeeklyFilter": "Clear filter",
+      "noWeeklyFilterResults": "No news matched this weekly filter in the last 7 days.",
+      "portfolioFilterActive": "Showing portfolio-related news from the last 7 days.",
       "clearPortfolioFilter": "Clear filter",
-      "noPortfolioNewsOnPage": "No portfolio-related news on this page. Try the next page."
+      "noPortfolioNewsOnPage": "No portfolio-related news found in the last 7 days."
     }
   },
   "analysis": {
@@ -1598,11 +1602,22 @@
     "insightTitle": "Market Insight",
     "favoriteNewsTitle": "My Favorite News",
     "favoriteNewsEmpty": "No favorite news yet. Star articles on the News page to save them here.",
+    "targetInsightEmpty": "Once you set a goal, your progress bar will appear here.",
+    "targetInsightLoadError": "Could not load goal summary.",
     "fromLastYear": "from last year",
     "sinceYesterday": "vs. prior day (UTC)",
     "valueChart": {
       "empty": "History will appear after the server records a few portfolio snapshots for this account.",
+      "dailyChangePct": "Daily change %",
+      "loading": "Loading chart…",
+      "metricAria": "Portfolio chart metric",
+      "metricLabel": "Metric",
+      "performanceTitle": "Performance %",
+      "marketValueTitle": "Total value",
+      "metricPerformance": "Performance %",
+      "metricValue": "Total value",
       "rangeAria": "Portfolio value chart range",
+      "rangeLabel": "Range",
       "periodChange": "{{pct}} · {{range}}",
       "flatInRange": "Flat in {{range}}",
       "periodRange": "{{from}} – {{to}}",
@@ -1626,18 +1641,6 @@
       "empty": "No positions with gain or loss yet.",
       "legendAria": "Profit vs loss split",
       "ringShare": "Ring share: {{pct}}%"
-    },
-    "portfolioAnalysis": {
-      "title": "Portfolio analysis",
-      "lead": "Portfolio value, daily trade flow, P&L, and allocation in one view.",
-      "pickPortfolio": "Select a portfolio above to view analysis.",
-      "openAllocation": "Distribution details",
-      "valueTrend": "Portfolio value (daily)",
-      "valueTrendHint": "End-of-day value; today shows live total.",
-      "pnlBreakdown": "Profit / loss breakdown",
-      "dailyFlow": "Daily buy & sell",
-      "dailyFlowHint": "Net cash flow for that day (buys minus sells).",
-      "allocation": "Allocation overview"
     },
     "allocation": {
       "detailTitle": "Portfolio allocation",
@@ -1679,7 +1682,9 @@
         "CRYPTO": "Crypto",
         "STOCK": "Stocks",
         "FX": "FX",
+        "METAL": "Metals",
         "FUND": "Funds",
+        "DEPOSIT": "TL deposit",
         "BOND": "Bonds"
       },
       "ofPortfolio": "of portfolio",
@@ -1710,7 +1715,6 @@
         "markets": "Add to Portfolio",
         "portfolio": "Transaction History",
         "allocation": "Portfolio distribution",
-        "portfolioAnalysis": "Portfolio analysis",
         "news": "My News",
         "analysis": "My Analysis",
         "targets": "My Targets",
@@ -1737,6 +1741,87 @@
       "creating": "Creating…"
     },
     "marketsAdd": {
+      "title": "Add New Instrument to Portfolio",
+      "assetTypeLabel": "Asset type",
+      "assetTypeAll": "All types",
+      "steps": {
+        "details": "Trade Details",
+        "preview": "Preview"
+      },
+      "searchLabel": "Search Instrument",
+      "searchPlaceholder": "Search company, symbol or ISIN...",
+      "instrumentLabel": "Instrument",
+      "purchaseMode": {
+        "now": "Add at Market",
+        "past": "Add Past Purchase"
+      },
+      "inputMode": {
+        "lots": "Enter by Lots",
+        "amount": "Enter by Amount"
+      },
+      "entryModeLabel": "Entry Mode",
+      "entryModePrincipal": "Enter by Principal",
+      "lotsLabel": "Lot Quantity",
+      "lotLabel": "Lot",
+      "buyPriceLabel": "Buy Price",
+      "buyPricePlaceholder": "Enter your buy price",
+      "earliestPriceNotice": "The earliest price data is on {{date}}; the purchase will be saved with that date.",
+      "manualPriceRequiredNotice": "No price data was found for this instrument. Try a different date or instrument.",
+      "paymentCurrencyLabel": "Payment Currency",
+      "totalAmountLabel": "Total Amount",
+      "acquiredAtLabel": "Purchase Date",
+      "confirmationTitle": "Purchase Details",
+      "transactionTypeLabel": "Transaction Type",
+      "back": "Back",
+      "saving": "Saving...",
+      "submit": "Confirm and Add",
+      "continue": "Continue",
+      "distributionTitle": "Portfolio Distribution",
+      "costPerLotLabel": "Cost / Lot",
+      "totalLotsLabel": "Total Lots",
+      "instrumentCurrencyLabel": "Instrument Currency",
+      "instrumentChangesTitle": "Instrument Performance",
+      "previewNote": "The transaction is calculated using live price and FX data.",
+      "fxPanel": {
+        "title": "FX Snapshot Used at Purchase",
+        "sourcePast": "MDS (purchase day)",
+        "sourceNow": "Live Source",
+        "pair": "Pair",
+        "mid": "Mid",
+        "note": "For historical purchases, FX rates come from MDS for the purchase day; for current purchases, they come from the live pricing table. Summary and distribution continue in the header currency using live FX."
+      },
+      "periods": {
+        "today": "Today",
+        "oneMonth": "1 Month",
+        "threeMonths": "3 Months",
+        "sixMonths": "6 Months",
+        "oneYear": "1 Year"
+      },
+      "depositRateLabel": "Interest rate",
+      "depositRateLoading": "Loading rate...",
+      "depositRateUnavailable": "Rate unavailable",
+      "depositPastDateRequired": "A past purchase date is required for deposits.",
+      "depositPrincipalLabel": "TRY principal",
+      "depositMaturity": {
+        "MT01": "TL Deposit · Up to 1 Month",
+        "MT02": "TL Deposit · Up to 3 Months",
+        "MT03": "TL Deposit · Up to 6 Months",
+        "MT04": "TL Deposit · Up to 1 Year",
+        "MT05": "TL Deposit · 1 Year and Longer",
+        "MT06": "TL Deposit"
+      },
+      "messages": {
+        "saved": "Transaction saved successfully."
+      },
+      "errors": {
+        "previewFailed": "Preview failed.",
+        "currentPriceUnavailable": "Current price could not be loaded (server or FX data issue).",
+        "pastPreviewFailed": "Historical price preview failed; try another date or instrument.",
+        "pastDateRequired": "A purchase date is required for historical entries.",
+        "pastDateAndPriceRequired": "A purchase date and unit price are required for historical entries.",
+        "saveFailed": "Transaction could not be saved.",
+        "instrumentListLoadFailed": "The instrument list could not be loaded. Check API (/api/instruments, /api/market) and gateway connectivity."
+      },
       "listingHintTry": "This portfolio is TRY-based. Only TRY-quoted instruments are listed (e.g. BIST, FX in lira).",
       "listingHintUsd": "This portfolio is USD-based. Only USD-quoted instruments are listed (e.g. US equities, USD crypto).",
       "listingHintNeutral": "This portfolio is not currency-locked. Summary and list use your header display currency ({{currency}}) for quote filtering.",

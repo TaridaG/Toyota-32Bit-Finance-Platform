@@ -126,7 +126,9 @@ export function AnalysisPage() {
 
   useEffect(() => {
     if (!selectedSymbol) {
+      lastSyncedSymbolRef.current = null
       setDeepLinkedRow(null)
+      setDeepLinkedAsset(null)
       setDeepLinkLoading(false)
       return
     }
@@ -140,6 +142,8 @@ export function AnalysisPage() {
       return
     }
     let cancelled = false
+    setDeepLinkedRow(null)
+    setDeepLinkedAsset(null)
     setDeepLinkLoading(true)
     void fetchMarketOverviewItemBySymbol(selectedSymbol, currency)
       .then((row) => {
@@ -156,7 +160,7 @@ export function AnalysisPage() {
     return () => {
       cancelled = true
     }
-  }, [catalogAssets, currency, chartSegment, selectedSymbol])
+  }, [catalogAssets, currency, selectedSymbol])
 
   const assets = useMemo<AssetDefinition[]>(() => {
     if (!deepLinkedAsset) {
@@ -595,12 +599,18 @@ export function AnalysisPage() {
     setSelectedNews(null)
     const asset = sourceAssets.find((item) => item.id === id)
     if (asset) {
-      if (asset.marketSegment && asset.marketSegment !== 'all') {
+      if (asset.marketSegment && asset.marketSegment !== 'all' && asset.marketSegment !== chartSegment) {
         setChartSegment(asset.marketSegment)
       }
+      const nextSymbol = asset.symbol.replace('/', '').toUpperCase()
+      if (normalizeSymbol(selectedSymbol ?? '') === normalizeSymbol(nextSymbol)) {
+        return
+      }
       const next = new URLSearchParams(searchParams)
-      next.set('symbol', asset.symbol.replace('/', '').toUpperCase())
-      setSearchParams(next, { replace: true })
+      next.set('symbol', nextSymbol)
+      if (next.toString() !== searchParams.toString()) {
+        setSearchParams(next, { replace: true })
+      }
     }
   }
 
@@ -630,8 +640,10 @@ export function AnalysisPage() {
       selectedAsset.marketSegment && selectedAsset.marketSegment !== 'all'
         ? selectedAsset.marketSegment
         : chartSegment
-    setPickerCategory(segment)
-  }, [chartSegment, instrumentPickerOpen, selectedAsset?.id])
+    if (segment !== pickerCategory) {
+      setPickerCategory(segment)
+    }
+  }, [chartSegment, instrumentPickerOpen, pickerCategory, selectedAsset?.id])
 
   useEffect(() => {
     if (!instrumentPickerOpen || effectivePickerLoading || !selectedAsset) {
@@ -646,30 +658,32 @@ export function AnalysisPage() {
   }, [effectivePickerAssets, effectivePickerLoading, instrumentPickerOpen, selectedAsset])
 
   useEffect(() => {
-    if (deepLinkedAsset?.marketSegment && deepLinkedAsset.marketSegment !== 'all') {
-      setChartSegment(deepLinkedAsset.marketSegment)
-    }
-  }, [deepLinkedAsset])
-
-  useEffect(() => {
     if (catalogLoading || assets.length === 0) {
       return
     }
     if (selectedSymbol) {
       const found = assets.find((asset) => normalizeSymbol(asset.symbol) === normalizeSymbol(selectedSymbol))
       if (found?.marketSegment && found.marketSegment !== 'all' && lastSyncedSymbolRef.current !== selectedSymbol) {
-        setChartSegment(found.marketSegment)
+        if (found.marketSegment !== chartSegment) {
+          setChartSegment(found.marketSegment)
+        }
         lastSyncedSymbolRef.current = selectedSymbol
       }
       return
     }
     if (assets.length > 0) {
       const first = assets[0]
+      const firstSymbol = first.symbol.replace('/', '').toUpperCase()
+      if (normalizeSymbol(selectedSymbol ?? '') === normalizeSymbol(firstSymbol)) {
+        return
+      }
       const next = new URLSearchParams(searchParams)
-      next.set('symbol', first.symbol.replace('/', '').toUpperCase())
-      setSearchParams(next, { replace: true })
+      next.set('symbol', firstSymbol)
+      if (next.toString() !== searchParams.toString()) {
+        setSearchParams(next, { replace: true })
+      }
     }
-  }, [assets, catalogLoading, searchParams, selectedSymbol, setSearchParams])
+  }, [assets, catalogLoading, chartSegment, searchParams, selectedSymbol, setSearchParams])
 
   useEffect(() => {
     if (!instrumentPickerOpen) {
@@ -717,8 +731,6 @@ export function AnalysisPage() {
                     dailyLow={overview?.low24h ?? null}
                     weeklyPct={stats.weekly}
                     yearlyPct={stats.yearly}
-                    trendScore={overview?.trendScore ?? null}
-                    trendLabel={overview?.trendLabel ?? null}
                     categoryTag={categoryTag}
                     currencyCode={quoteCurrency}
                     scopeTag={scopeTag}

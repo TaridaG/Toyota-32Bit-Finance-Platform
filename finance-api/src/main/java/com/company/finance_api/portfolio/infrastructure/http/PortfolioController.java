@@ -2,11 +2,13 @@ package com.company.finance_api.portfolio.infrastructure.http;
 
 import com.company.finance_api.domain.PortfolioSnapshot;
 import com.company.finance_api.dto.PortfolioOverviewResponse;
+import com.company.finance_api.dto.PortfolioPerformanceSeriesResponse;
 import com.company.finance_api.dto.PortfolioPositionResponse;
 import com.company.finance_api.dto.PortfolioSummaryResponse;
 import com.company.finance_api.dto.PortfolioTradeFlowResponse;
 import com.company.finance_api.dto.PortfolioValuationResponse;
 import com.company.finance_api.service.PortfolioOverviewService;
+import com.company.finance_api.service.PortfolioPerformanceSeriesService;
 import com.company.finance_api.service.PortfolioService;
 import com.company.finance_api.service.PortfolioSnapshotService;
 import com.company.finance_api.service.PortfolioTradeFlowService;
@@ -24,6 +26,7 @@ public class PortfolioController {
 
   private final PortfolioService portfolioService;
   private final PortfolioOverviewService portfolioOverviewService;
+  private final PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
   private final PortfolioSnapshotService portfolioSnapshotService;
   private final PortfolioValuationService portfolioValuationService;
   private final PortfolioTradeFlowService portfolioTradeFlowService;
@@ -59,6 +62,16 @@ public class PortfolioController {
   public ApiResponse<List<PortfolioSnapshot>> snapshots(
       @RequestParam(value = "portfolioId") Long portfolioId) {
     return ApiResponse.success(portfolioSnapshotService.getMySnapshots(portfolioId));
+  }
+
+  /** Portfolio performans serisini hedef para biriminde döner. */
+  @GetMapping("/performance-series")
+  public ApiResponse<PortfolioPerformanceSeriesResponse> performanceSeries(
+      @RequestHeader(value = "X-Currency", required = false) String targetCurrency,
+      @RequestParam(value = "portfolioId", required = false) Long portfolioId,
+      @RequestParam(value = "range", required = false) String range) {
+    return ApiResponse.success(
+        portfolioPerformanceSeriesService.getMyPerformanceSeries(targetCurrency, portfolioId, range));
   }
 
   /** Portfolio alım-satım akışı metriklerini döner. */

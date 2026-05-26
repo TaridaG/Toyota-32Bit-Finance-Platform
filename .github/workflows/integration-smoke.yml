@@ -1,0 +1,67 @@
+name: integration-smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pom.xml'
+      - 'finance-api/**'
+      - 'finance-api/Dockerfile'
+      - 'Docker/docker-compose.ci.yml'
+      - '.github/workflows/integration-smoke.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  finance-api-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate CI Compose file
+        run: docker compose -p finance-ci -f Docker/docker-compose.ci.yml config
+
+      - name: Build and start smoke stack
+        run: docker compose -p finance-ci -f Docker/docker-compose.ci.yml up -d --build
+
+      - name: Wait for finance-api health
+        shell: bash
+        run: |
+          for attempt in {1..60}; do
+            if curl -fsS http://localhost:18080/actuator/health | grep -q '"status":"UP"'; then
+              echo "finance-api is healthy"
+              exit 0
+            fi
+            echo "waiting for finance-api health (${attempt}/60)"
+            sleep 5
+          done
+
+          echo "finance-api failed to become healthy"
+          docker compose -p finance-ci -f Docker/docker-compose.ci.yml logs --no-color finance-api postgres redis kafka
+          exit 1
+
+      - name: Capture smoke logs
+        if: failure()
+        run: docker compose -p finance-ci -f Docker/docker-compose.ci.yml logs --no-color > finance-api-smoke.log
+
+      - name: Upload smoke logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-api-smoke-logs
+          path: finance-api-smoke.log
+
+      - name: Tear down smoke stack
+        if: always()
+        run: docker compose -p finance-ci -f Docker/docker-compose.ci.yml down -v --remove-orphans

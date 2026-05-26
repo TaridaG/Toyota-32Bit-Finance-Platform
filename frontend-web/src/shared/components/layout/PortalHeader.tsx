@@ -13,7 +13,7 @@ import {
   getProfileInitials,
   isAdminUser,
 } from '../../auth/session'
-import { fetchPortalProfile } from '../../../features/profile/api/portalProfileApi'
+import { fetchPortalProfile, fetchPortalProfileBootstrap } from '../../../features/profile/api/portalProfileApi'
 import { usePortalAvatarObjectUrl } from '../../../features/profile/hooks/usePortalAvatarObjectUrl'
 import { updatePortalPreferences } from '../../../features/profile/api/portalProfileApi'
 import {
@@ -45,6 +45,7 @@ import {
   PUBLIC_FINANCIAL_LITERACY_ROUTE,
   PUBLIC_MARKETS_ROUTE,
 } from '../../../app/routes/publicCatalogRoutes'
+import { scheduleIdleWork } from '../../browser/scheduleIdleWork'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -263,7 +264,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
       setPortalUsername(null)
       return
     }
-    void fetchPortalProfile()
+    void fetchPortalProfileBootstrap()
       .then((p) => {
         setServerAvatarUpdatedAt(p.avatarUpdatedAt ?? null)
         setPortalUsername(p.username ?? null)
@@ -356,7 +357,9 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
       setNotificationTotalCount(0)
       return
     }
-    void loadNotificationsPreview()
+    return scheduleIdleWork(() => {
+      void loadNotificationsPreview()
+    }, 1_500)
   }, [isAuthenticated, loadNotificationsPreview])
 
   useEffect(() => {
@@ -430,7 +433,9 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
       setAlarmPricesBySymbol({})
       return
     }
-    void loadAlarmsPreview()
+    return scheduleIdleWork(() => {
+      void loadAlarmsPreview()
+    }, 2_000)
   }, [isAuthenticated, alarmsRefreshKey, loadAlarmsPreview])
 
   useEffect(() => {
@@ -998,36 +1003,57 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
             aria-label={t('header.mobile.closeMenu')}
             onClick={closeMenu}
           />
-          <aside className="portal-mobile-drawer" aria-label="Mobil menü">
-            <button className="portal-mobile-close" aria-label={t('header.mobile.close')} onClick={closeMenu}>
-              x
-            </button>
-
-            {isAuthenticated ? (
-              <div className="portal-mobile-user">
-                <div className="portal-mobile-user-avatar" aria-hidden>
-                  {avatarUrl && !profileImgBroken ? (
-                    <img
-                      src={avatarUrl}
-                      alt=""
-                      className="portal-mobile-user-avatar-img"
-                      onError={() => setProfileImgBroken(true)}
-                    />
-                  ) : (
-                    <span className="portal-mobile-user-initials">{initials}</span>
-                  )}
+          <aside
+            className="portal-mobile-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="portal-mobile-menu-title"
+          >
+            <div className="portal-mobile-drawer-head">
+              {isAuthenticated ? (
+                <div className="portal-mobile-drawer-brand portal-mobile-drawer-brand--user">
+                  <img src={siteLogo} className="portal-mobile-drawer-brand-mark" alt="" aria-hidden="true" />
+                  <div className="portal-mobile-drawer-brand-copy">
+                    <span className="portal-mobile-drawer-kicker">{t('appName')}</span>
+                    <span id="portal-mobile-menu-title" className="portal-mobile-drawer-title">
+                      {displayLabel}
+                    </span>
+                  </div>
                 </div>
-                <div className="portal-mobile-user-text">
-                  <span className="portal-mobile-user-name">{displayLabel}</span>
-                  <Link to="/app/profile" className="portal-mobile-user-settings" onClick={closeMenu}>
-                    {t('header.profileMenu.settings')}
-                  </Link>
+              ) : (
+                <div className="portal-mobile-drawer-brand">
+                  <img src={siteLogo} className="portal-mobile-drawer-brand-mark" alt="" aria-hidden="true" />
+                  <div className="portal-mobile-drawer-brand-copy">
+                    <span className="portal-mobile-drawer-kicker">{t('appName')}</span>
+                    <span id="portal-mobile-menu-title" className="portal-mobile-drawer-title">
+                      {t('header.mobile.openMenu')}
+                    </span>
+                  </div>
                 </div>
+              )}
+              <div className="portal-mobile-drawer-head-actions">
+                {isAuthenticated ? (
+                  <div className="portal-mobile-drawer-avatar" aria-hidden>
+                    {avatarUrl && !profileImgBroken ? (
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        className="portal-mobile-drawer-avatar-img"
+                        onError={() => setProfileImgBroken(true)}
+                      />
+                    ) : (
+                      <span className="portal-mobile-drawer-avatar-initials">{initials}</span>
+                    )}
+                  </div>
+                ) : null}
+                <button className="portal-mobile-close" aria-label={t('header.mobile.close')} onClick={closeMenu}>
+                  <span aria-hidden="true">×</span>
+                </button>
               </div>
-            ) : null}
+            </div>
 
             {!isAuthenticated ? (
-              <div className="portal-mobile-auth-row">
+              <div className="portal-mobile-auth-row portal-mobile-section">
                 <Link to="/login" className="portal-mobile-auth-secondary" onClick={closeMenu}>
                   {t('header.actions.login')}
                 </Link>
@@ -1037,53 +1063,50 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
               </div>
             ) : null}
 
-            <div className="portal-mobile-search">
-              <span>{t('search')}</span>
-              <input type="text" placeholder={t('search')} />
-            </div>
-
-            <nav className="portal-mobile-list" aria-label="Mobil navigasyon">
-              {isAuthenticated
-                ? appNavForSession.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      end={item.end}
-                      onClick={closeMenu}
-                      className={({ isActive }) =>
-                        `portal-mobile-item${isActive ? ' portal-mobile-item-active' : ''}`
-                      }
-                    >
-                      <span className="portal-mobile-item-icon" />
-                      <span>{t(item.labelKey)}</span>
-                      <span className="portal-mobile-item-arrow">›</span>
-                    </NavLink>
-                  ))
-                : mobileNavItems.map((item) => (
-                    item.to ? (
+            <section className="portal-mobile-section portal-mobile-nav-shell">
+              <nav className="portal-mobile-list" aria-label="Mobil navigasyon">
+                {isAuthenticated
+                  ? appNavForSession.map((item) => (
                       <NavLink
-                        key={item.labelKey}
+                        key={item.to}
                         to={item.to}
+                        end={item.end}
                         onClick={closeMenu}
                         className={({ isActive }) =>
                           `portal-mobile-item${isActive ? ' portal-mobile-item-active' : ''}`
                         }
                       >
                         <span className="portal-mobile-item-icon" />
-                        <span>{t(item.labelKey)}</span>
+                        <span className="portal-mobile-item-label">{t(item.labelKey)}</span>
                         <span className="portal-mobile-item-arrow">›</span>
                       </NavLink>
-                    ) : (
-                      <a key={item.labelKey} href={item.href ?? '#'} onClick={closeMenu} className="portal-mobile-item">
-                        <span className="portal-mobile-item-icon" />
-                        <span>{t(item.labelKey)}</span>
-                        <span className="portal-mobile-item-arrow">›</span>
-                      </a>
-                    )
-                  ))}
-            </nav>
+                    ))
+                  : mobileNavItems.map((item) => (
+                      item.to ? (
+                        <NavLink
+                          key={item.labelKey}
+                          to={item.to}
+                          onClick={closeMenu}
+                          className={({ isActive }) =>
+                            `portal-mobile-item${isActive ? ' portal-mobile-item-active' : ''}`
+                          }
+                        >
+                          <span className="portal-mobile-item-icon" />
+                          <span className="portal-mobile-item-label">{t(item.labelKey)}</span>
+                          <span className="portal-mobile-item-arrow">›</span>
+                        </NavLink>
+                      ) : (
+                        <a key={item.labelKey} href={item.href ?? '#'} onClick={closeMenu} className="portal-mobile-item">
+                          <span className="portal-mobile-item-icon" />
+                          <span className="portal-mobile-item-label">{t(item.labelKey)}</span>
+                          <span className="portal-mobile-item-arrow">›</span>
+                        </a>
+                      )
+                    ))}
+              </nav>
+            </section>
 
-            <div className="portal-mobile-footer">
+            <div className="portal-mobile-footer portal-mobile-footer-card">
               <div className="portal-mobile-theme">
                 <span>{t('header.theme.label')}</span>
                 <div>
@@ -1103,7 +1126,12 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                   </button>
                 </div>
               </div>
-              <p>{t('support247')}</p>
+              {isAuthenticated ? (
+                <Link to="/app/profile" className="portal-mobile-drawer-profile-link" onClick={closeMenu}>
+                  {t('header.profileMenu.settings')}
+                </Link>
+              ) : null}
+              <p className="portal-mobile-support">{t('support247')}</p>
               {isAuthenticated ? (
                 <button
                   className="portal-action-secondary"

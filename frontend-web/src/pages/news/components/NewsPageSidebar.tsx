@@ -1,20 +1,34 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { NewsSidebarStats } from '../lib/buildNewsSidebarStats'
+import type { NewsSidebarStats, NewsTopicKey } from '../lib/buildNewsSidebarStats'
 
 type NewsPageSidebarProps = {
   stats: NewsSidebarStats | null
   loading: boolean
   authenticated: boolean
+  activeTopicKey?: NewsTopicKey | null
+  activeAssetSymbol?: string | null
+  activeSourceName?: string | null
+  portfolioActive?: boolean
   onPortfolioNewsClick?: () => void
+  onTopicClick?: (key: NewsTopicKey) => void
+  onAssetClick?: (symbol: string) => void
+  onSourceClick?: (name: string) => void
 }
 
 export function NewsPageSidebar({
   stats,
   loading,
   authenticated,
+  activeTopicKey = null,
+  activeAssetSymbol = null,
+  activeSourceName = null,
+  portfolioActive = false,
   onPortfolioNewsClick,
+  onTopicClick,
+  onAssetClick,
+  onSourceClick,
 }: NewsPageSidebarProps) {
   const { t } = useTranslation('newsPage')
 
@@ -31,12 +45,17 @@ export function NewsPageSidebar({
           <ul className="fi-news-side-list">
             {stats.topics.map((row) => (
               <li key={row.key}>
-                <span className={`fi-news-side-dot fi-news-side-dot-${row.key}`} aria-hidden />
-                <span className="fi-news-side-label">{t(`categories.${row.key}`)}</span>
-                <span className="fi-news-side-value">
-                  {t('sidebar.weeklyNewsCount', { count: row.count })}
-                </span>
-                <span className="fi-news-side-pct">%{row.percent}</span>
+                <SidebarRowButton
+                  active={activeTopicKey === row.key}
+                  onClick={onTopicClick ? () => onTopicClick(row.key) : undefined}
+                >
+                  <span className={`fi-news-side-dot fi-news-side-dot-${row.key}`} aria-hidden />
+                  <span className="fi-news-side-label">{t(`categories.${row.key}`)}</span>
+                  <span className="fi-news-side-value">
+                    {t('sidebar.weeklyNewsCount', { count: row.count })}
+                  </span>
+                  <span className="fi-news-side-pct">%{row.percent}</span>
+                </SidebarRowButton>
               </li>
             ))}
           </ul>
@@ -52,13 +71,18 @@ export function NewsPageSidebar({
           <ul className="fi-news-side-list fi-news-side-list-compact">
             {stats.topAssets.map((row) => (
               <li key={row.symbol}>
-                <span className="fi-news-side-asset-icon" aria-hidden>
-                  {row.symbol.slice(0, 1)}
-                </span>
-                <span className="fi-news-side-label">{row.symbol}</span>
-                <span className="fi-news-side-value">
-                  {t('sidebar.weeklyNewsCount', { count: row.count })}
-                </span>
+                <SidebarRowButton
+                  active={activeAssetSymbol === row.symbol}
+                  onClick={onAssetClick ? () => onAssetClick(row.symbol) : undefined}
+                >
+                  <span className="fi-news-side-asset-icon" aria-hidden>
+                    {row.symbol.slice(0, 1)}
+                  </span>
+                  <span className="fi-news-side-label">{row.symbol}</span>
+                  <span className="fi-news-side-value">
+                    {t('sidebar.weeklyNewsCount', { count: row.count })}
+                  </span>
+                </SidebarRowButton>
               </li>
             ))}
           </ul>
@@ -78,7 +102,11 @@ export function NewsPageSidebar({
               {t('sidebar.weeklyNewsCount', { count: stats?.portfolioRelatedCount ?? 0 })}
             </p>
             {onPortfolioNewsClick ? (
-              <button type="button" className="fi-news-side-action" onClick={onPortfolioNewsClick}>
+              <button
+                type="button"
+                className={`fi-news-side-action${portfolioActive ? ' is-active' : ''}`}
+                onClick={onPortfolioNewsClick}
+              >
                 {t('sidebar.portfolioAction')}
               </button>
             ) : null}
@@ -93,13 +121,18 @@ export function NewsPageSidebar({
           <ul className="fi-news-side-list fi-news-side-list-compact">
             {stats.sources.map((row) => (
               <li key={row.name}>
-                <span className="fi-news-side-source-icon" aria-hidden>
-                  {row.name.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="fi-news-side-label">{row.name}</span>
-                <span className="fi-news-side-value">
-                  {t('sidebar.weeklyNewsCount', { count: row.count })}
-                </span>
+                <SidebarRowButton
+                  active={activeSourceName === row.name}
+                  onClick={onSourceClick ? () => onSourceClick(row.name) : undefined}
+                >
+                  <span className="fi-news-side-source-icon" aria-hidden>
+                    {row.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="fi-news-side-label">{row.name}</span>
+                  <span className="fi-news-side-value">
+                    {t('sidebar.weeklyNewsCount', { count: row.count })}
+                  </span>
+                </SidebarRowButton>
               </li>
             ))}
           </ul>
@@ -114,6 +147,27 @@ export function NewsPageSidebar({
         </Link>
       ) : null}
     </aside>
+  )
+}
+
+function SidebarRowButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick?: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      className={`fi-news-side-row${active ? ' is-active' : ''}`}
+      onClick={onClick}
+      disabled={!onClick}
+    >
+      {children}
+    </button>
   )
 }
 

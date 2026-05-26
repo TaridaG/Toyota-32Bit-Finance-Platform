@@ -502,8 +502,7 @@ async function enrichCatalogRowsWithPeriodMetrics(rows: CatalogRow[]): Promise<{
           const sumP = fromSummary.change1D ** 2 + fromSummary.change1M ** 2 + fromSummary.change1Y ** 2
           const fxP = s.change1D ** 2 + s.change1M ** 2 + s.change1Y ** 2
           if (sumP > fxP) {
-            const rest = { ...fromSummary }
-            delete rest.price
+            const { price: _price, ...rest } = fromSummary
             s = rest
           }
         }
@@ -1334,6 +1333,35 @@ function syntheticTefasFundFundamentals(symbol: string): InstrumentFundamentals 
   }
 }
 
+/** Yahoo-style futures contracts (`GC=F`, `SI=F`, etc.) do not expose equity fundamentals. */
+function isYahooFuturesFundamentalsLocal(symbol: string): boolean {
+  const s = symbol.trim().toUpperCase()
+  return /^[A-Z0-9.=/-]+=F$/.test(s)
+}
+
+function syntheticYahooFuturesFundamentals(symbol: string): InstrumentFundamentals {
+  const s = symbol.trim().toUpperCase()
+  return {
+    symbol: s,
+    provider: 'INTERNAL_META',
+    providerSymbol: s,
+    companyName: s,
+    country: null,
+    currency: null,
+    exchange: 'FUTURES',
+    ipoDate: null,
+    industry: 'Futures Contract',
+    website: null,
+    marketCapitalization: null,
+    sharesOutstanding: null,
+    peTtm: null,
+    epsTtm: null,
+    fetchedAt: new Date().toISOString(),
+    cacheHit: false,
+    annualStatements: [],
+  }
+}
+
 export async function fetchInstrumentFundamentals(symbol: string, forceRefresh = false): Promise<InstrumentFundamentals> {
   if (isTryFxFundamentalsLocal(symbol)) {
     void forceRefresh
@@ -1342,6 +1370,10 @@ export async function fetchInstrumentFundamentals(symbol: string, forceRefresh =
   if (isCanonicalTefasFundSymbol(symbol)) {
     void forceRefresh
     return syntheticTefasFundFundamentals(symbol)
+  }
+  if (isYahooFuturesFundamentalsLocal(symbol)) {
+    void forceRefresh
+    return syntheticYahooFuturesFundamentals(symbol)
   }
   const response = await apiClient.get<InstrumentFundamentals>(`/api/market/instruments/${encodeURIComponent(symbol.trim())}/fundamentals`, {
     params: { forceRefresh },

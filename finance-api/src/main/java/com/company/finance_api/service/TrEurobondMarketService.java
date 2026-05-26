@@ -16,11 +16,11 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -50,13 +50,16 @@ public class TrEurobondMarketService {
   @Transactional(readOnly = true)
   /** listActiveInstruments işlemini gerçekleştirir. */
   public List<EurobondInstrumentDto> listActiveInstruments() {
-    List<EurobondInstrumentDto> out = new ArrayList<>();
     LocalDate today = LocalDate.now();
-    for (EurobondInstrument inst :
-        instrumentRepository.findAllByActiveIsTrueOrderByMaturityDateAsc()) {
-      Optional<EurobondQuote> q =
-          quoteRepository.findFirstByIsinOrderByQuoteTimeDesc(inst.getIsin());
-      out.add(toDto(inst, q.orElse(null), today));
+    List<EurobondInstrument> instruments =
+        instrumentRepository.findAllByActiveIsTrueOrderByMaturityDateAsc();
+    if (instruments.isEmpty()) {
+      return List.of();
+    }
+    Map<String, EurobondQuote> latestQuotesByIsin = loadLatestQuotesByIsin(instruments);
+    List<EurobondInstrumentDto> out = new ArrayList<>(instruments.size());
+    for (EurobondInstrument inst : instruments) {
+      out.add(toDto(inst, latestQuotesByIsin.get(inst.getIsin()), today));
     }
     return out;
   }
@@ -137,6 +140,22 @@ public class TrEurobondMarketService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid ISIN");
     }
     return isin;
+  }
+
+  private Map<String, EurobondQuote> loadLatestQuotesByIsin(List<EurobondInstrument> instruments) {
+    List<String> isins = instruments.stream().map(EurobondInstrument::getIsin).toList();
+    return quoteRepository.findLatestByIsinIn(isins).stream()
+        .collect(
+            java.util.stream.Collectors.toMap(
+                EurobondQuote::getIsin,
+                java.util.function.Function.identity(),
+                (left, right) ->
+                    Comparator.comparing(EurobondQuote::getQuoteTime)
+                        .compare(left, right)
+                        >= 0
+                        ? left
+                        : right,
+                LinkedHashMap::new));
   }
 
   private static EurobondInstrumentDto toDto(

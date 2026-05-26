@@ -190,6 +190,20 @@ export type PortfolioTradeFlow = {
   points: PortfolioTradeFlowPoint[]
 }
 
+export type PortfolioPerformancePoint = {
+  day: string
+  marketValue: number
+  netFlow: number
+  dailyReturnPct?: number | null
+  twrPct: number
+}
+
+export type PortfolioPerformanceSeries = {
+  currency: string
+  inceptionDay?: string | null
+  points: PortfolioPerformancePoint[]
+}
+
 export type PortfolioOverview = {
   currency: string
   totalValue: number

@@ -40,7 +40,7 @@ export type NewsOriginalResponse = {
 
 export type NewsFetchFilters = {
   category: 'all' | 'bist' | 'viop' | 'fx' | 'crypto' | 'macro'
-  range: 'all' | '1h' | '6h' | '24h'
+  range: 'all' | '1h' | '6h' | '24h' | '7d'
 }
 
 function maxAgeMinutesForRange(range: NewsFetchFilters['range']): number | undefined {
@@ -51,9 +51,43 @@ function maxAgeMinutesForRange(range: NewsFetchFilters['range']): number | undef
       return 360
     case '24h':
       return 1440
+    case '7d':
+      return 7 * 24 * 60
     default:
       return undefined
   }
+}
+
+export type NewsFetchOptions = {
+  maxAgeMinutes?: number
+  relatedSymbols?: string[]
+  sourceName?: string
+  assetKey?: string
+  primaryTopic?: 'bist' | 'viop' | 'fx' | 'crypto' | 'macro'
+}
+
+export type NewsWeeklyTopicRow = {
+  key: 'bist' | 'viop' | 'fx' | 'crypto' | 'macro'
+  count: number
+  percent: number
+}
+
+export type NewsWeeklyAssetRow = {
+  symbol: string
+  count: number
+}
+
+export type NewsWeeklySourceRow = {
+  name: string
+  count: number
+}
+
+export type NewsWeeklySummaryResponse = {
+  totalCount: number
+  topics: NewsWeeklyTopicRow[]
+  topAssets: NewsWeeklyAssetRow[]
+  sources: NewsWeeklySourceRow[]
+  portfolioRelatedCount: number
 }
 
 export type FetchChartNewsParams = {
@@ -86,10 +120,14 @@ export async function fetchNews(
   language?: string,
   filters?: NewsFetchFilters,
   search?: string,
-  options?: { maxAgeMinutes?: number },
+  options?: NewsFetchOptions,
 ): Promise<PageResponse<NewsApiItem>> {
   const maxAgeMinutes = options?.maxAgeMinutes ?? maxAgeMinutesForRange(filters?.range ?? 'all')
   const normalizedSearch = search?.trim()
+  const relatedSymbols = (options?.relatedSymbols ?? [])
+    .map((symbol) => symbol.trim())
+    .filter(Boolean)
+    .join(',')
   const response = await apiClient.get<ApiResponse<PageResponse<NewsApiItem>>>('/api/news/enriched', {
     params: {
       page,
@@ -97,6 +135,27 @@ export async function fetchNews(
       category: filters?.category && filters.category !== 'all' ? filters.category : undefined,
       maxAgeMinutes,
       q: normalizedSearch || undefined,
+      relatedSymbols: relatedSymbols || undefined,
+      sourceName: options?.sourceName?.trim() || undefined,
+      assetKey: options?.assetKey?.trim() || undefined,
+      primaryTopic: options?.primaryTopic || undefined,
+    },
+    headers: language ? { 'X-Language': language } : undefined,
+  })
+  return response.data.data
+}
+
+export async function fetchNewsWeeklySummary(
+  language?: string,
+  portfolioSymbols?: string[],
+): Promise<NewsWeeklySummaryResponse> {
+  const normalizedPortfolioSymbols = (portfolioSymbols ?? [])
+    .map((symbol) => symbol.trim())
+    .filter(Boolean)
+    .join(',')
+  const response = await apiClient.get<ApiResponse<NewsWeeklySummaryResponse>>('/api/news/enriched/weekly-summary', {
+    params: {
+      portfolioSymbols: normalizedPortfolioSymbols || undefined,
     },
     headers: language ? { 'X-Language': language } : undefined,
   })

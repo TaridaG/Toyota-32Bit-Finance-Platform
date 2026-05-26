@@ -89,7 +89,15 @@ export function NewsDetailModal({ newsId, searchQuery, onClose }: NewsDetailModa
       effectiveOriginal,
     )
   }, [detail, effectiveOriginal, showOriginal])
-  const showTranslationToggle = detail ? shouldShowNewsTranslationToggle(detail) : false
+  const showTranslationToggle = detail
+    ? shouldShowNewsTranslationToggle({
+        title: detail.title,
+        summary: detail.summary ?? undefined,
+        titleOriginal: detail.titleOriginal ?? undefined,
+        summaryOriginal: detail.summaryOriginal ?? null,
+        translated: detail.translated,
+      })
+    : false
   const sourceUrl = detail ? resolveNewsArticleUrl(detail.articleUrl, detail.sourceName) : ''
 
   return (

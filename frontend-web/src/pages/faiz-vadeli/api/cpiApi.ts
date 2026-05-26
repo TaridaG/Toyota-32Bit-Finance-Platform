@@ -1,4 +1,8 @@
 import { apiClient } from '../../../shared/api/client'
+import { getCachedOrLoad } from './requestCache'
+
+const LATEST_TTL_MS = 30_000
+const HISTORY_TTL_MS = 5 * 60_000
 
 export type CpiMetricCode = 'INDEX' | 'MONTHLY_PCT' | 'YEARLY_PCT'
 
@@ -25,16 +29,20 @@ export type CpiHistoryResponse = {
 }
 
 export async function fetchCpiLatest(metric: CpiMetricCode = 'YEARLY_PCT'): Promise<CpiLatestResponse> {
-  const { data } = await apiClient.get<CpiLatestResponse>('/api/rates/cpi/latest', { params: { metric } })
-  return data
+  return getCachedOrLoad(`faiz-vadeli:cpi:latest:${metric}`, LATEST_TTL_MS, async () => {
+    const { data } = await apiClient.get<CpiLatestResponse>('/api/rates/cpi/latest', { params: { metric } })
+    return data
+  })
 }
 
 export async function fetchCpiHistory(
   metric: CpiMetricCode,
   range: '5Y' = '5Y',
 ): Promise<CpiHistoryResponse> {
-  const { data } = await apiClient.get<CpiHistoryResponse>('/api/rates/cpi/history', {
-    params: { metric, range },
+  return getCachedOrLoad(`faiz-vadeli:cpi:history:${metric}:${range}`, HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<CpiHistoryResponse>('/api/rates/cpi/history', {
+      params: { metric, range },
+    })
+    return data
   })
-  return data
 }

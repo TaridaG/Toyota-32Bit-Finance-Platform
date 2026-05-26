@@ -4,6 +4,11 @@ import type { PortalLoginTokens } from '../../../shared/api/publicAuth'
 import type { ApiEnvelope, PortalProfile } from '../types'
 
 const BASE = '/api/portal/profile'
+const PORTAL_PROFILE_BOOTSTRAP_TTL_MS = 10_000
+
+let portalProfileBootstrapCache: PortalProfile | null = null
+let portalProfileBootstrapExpiresAt = 0
+let portalProfileBootstrapInFlight: Promise<PortalProfile> | null = null
 
 /** Revokes trusted-device cookie server-side (httpOnly); call before clearAuthSession on logout. */
 export async function logoutPortalSession(): Promise<void> {
@@ -45,6 +50,28 @@ function assertSuccessOnly(body: ApiEnvelope<unknown>): void {
 export async function fetchPortalProfile(): Promise<PortalProfile> {
   const { data } = await apiClient.get<ApiEnvelope<PortalProfile>>(BASE)
   return assertSuccessData(data)
+}
+
+export function primePortalProfileBootstrap(profile: PortalProfile): PortalProfile {
+  portalProfileBootstrapCache = profile
+  portalProfileBootstrapExpiresAt = Date.now() + PORTAL_PROFILE_BOOTSTRAP_TTL_MS
+  return profile
+}
+
+export async function fetchPortalProfileBootstrap(forceRefresh = false): Promise<PortalProfile> {
+  const now = Date.now()
+  if (!forceRefresh && portalProfileBootstrapCache && portalProfileBootstrapExpiresAt > now) {
+    return portalProfileBootstrapCache
+  }
+  if (!forceRefresh && portalProfileBootstrapInFlight) {
+    return portalProfileBootstrapInFlight
+  }
+  portalProfileBootstrapInFlight = fetchPortalProfile()
+    .then((profile) => primePortalProfileBootstrap(profile))
+    .finally(() => {
+      portalProfileBootstrapInFlight = null
+    })
+  return portalProfileBootstrapInFlight
 }
 
 export async function changePortalPassword(currentPassword: string, newPassword: string): Promise<void> {

@@ -11,11 +11,12 @@ import org.springframework.data.repository.query.Param;
 /** WatchlistItem entity persistence için Spring Data repository. */
 public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Long> {
 
-  @Query("select w from WatchlistItem w where w.user.id = :userId and w.active = true")
+  @Query(
+      "select w from WatchlistItem w join fetch w.instrument where w.user.id = :userId and w.active = true")
   List<WatchlistItem> findByUserIdAndActiveTrue(@Param("userId") UUID userId);
 
   @Query(
-      "select w from WatchlistItem w where w.user.id = :userId and w.instrument.id = :instrumentId")
+      "select w from WatchlistItem w join fetch w.instrument where w.user.id = :userId and w.instrument.id = :instrumentId")
   Optional<WatchlistItem> findByUserIdAndInstrumentId(
       @Param("userId") UUID userId, @Param("instrumentId") Long instrumentId);
 

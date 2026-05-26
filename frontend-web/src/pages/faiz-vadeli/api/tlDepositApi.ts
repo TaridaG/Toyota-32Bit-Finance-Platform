@@ -1,4 +1,8 @@
 import { apiClient } from '../../../shared/api/client'
+import { getCachedOrLoad } from './requestCache'
+
+const LATEST_TTL_MS = 30_000
+const HISTORY_TTL_MS = 5 * 60_000
 
 export type TlDepositLatestResponse = {
   value?: number | null
@@ -25,16 +29,48 @@ export type TlDepositHistoryResponse = {
   points: TlDepositHistoryPoint[]
 }
 
+export type TlDepositIndexLatestResponse = {
+  maturityCode?: string | null
+  asOfDate?: string | null
+  indexValue?: number | null
+  annualRatePercent?: number | null
+  sourceObservationDate?: string | null
+  sourceProvider?: string
+  unit?: string
+}
+
 export async function fetchTlDepositLatest(maturity: string): Promise<TlDepositLatestResponse> {
-  const { data } = await apiClient.get<TlDepositLatestResponse>('/api/rates/tl-deposit/latest', {
-    params: { maturity },
+  return getCachedOrLoad(`faiz-vadeli:tl-deposit:latest:${maturity}`, LATEST_TTL_MS, async () => {
+    const { data } = await apiClient.get<TlDepositLatestResponse>('/api/rates/tl-deposit/latest', {
+      params: { maturity },
+    })
+    return data
   })
-  return data
 }
 
 export async function fetchTlDepositHistory(maturity: string): Promise<TlDepositHistoryResponse> {
-  const { data } = await apiClient.get<TlDepositHistoryResponse>('/api/rates/tl-deposit/history', {
-    params: { range: '5Y', frequency: 'WEEKLY', maturity },
+  return getCachedOrLoad(`faiz-vadeli:tl-deposit:history:${maturity}:5Y:WEEKLY`, HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<TlDepositHistoryResponse>('/api/rates/tl-deposit/history', {
+      params: { range: '5Y', frequency: 'WEEKLY', maturity },
+    })
+    return data
   })
-  return data
+}
+
+export async function fetchTlDepositIndexLatest(
+  maturity: string,
+  asOf?: string,
+): Promise<TlDepositIndexLatestResponse> {
+  const cacheKey = asOf
+    ? `faiz-vadeli:tl-deposit:index:latest:${maturity}:${asOf}`
+    : `faiz-vadeli:tl-deposit:index:latest:${maturity}:latest`
+  return getCachedOrLoad(cacheKey, LATEST_TTL_MS, async () => {
+    const { data } = await apiClient.get<TlDepositIndexLatestResponse>(
+      '/api/rates/tl-deposit/index/latest',
+      {
+        params: { maturity, asOf: asOf || undefined },
+      },
+    )
+    return data
+  })
 }

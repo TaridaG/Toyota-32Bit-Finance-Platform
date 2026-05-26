@@ -5,19 +5,35 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle'
 import { isAuthenticated } from '../../shared/auth/session'
 import type { NewsDataPoint } from './types'
 import { mapNewsItem, stripHtml } from './utils/newsItemMappers'
-import { fetchNewsOriginal, type NewsApiItem } from '../../features/news/api/newsService'
+import { fetchNewsOriginal } from '../../features/news/api/newsService'
 import {
   addNewsFavorite,
   fetchNewsFavorites,
   removeNewsFavorite,
 } from '../../features/news/api/newsFavoritesApi'
 import { useNews } from '../../features/news/hooks/useNews'
-import type { NewsFetchFilters } from '../../features/news/api/newsService'
+import type { NewsFetchFilters, NewsFetchOptions } from '../../features/news/api/newsService'
 import { NewsCard } from './components/NewsCard'
 import { NewsDetailModal } from './components/NewsDetailModal'
 import { NewsPageSidebar } from './components/NewsPageSidebar'
 import { useNewsSidebarInsights } from './hooks/useNewsSidebarInsights'
-import { isNewsRelatedToPortfolio } from './lib/buildNewsSidebarStats'
+import type { NewsTopicKey } from './lib/buildNewsSidebarStats'
+
+type WeeklyFilterSnapshot = {
+  filters: NewsFetchFilters
+  searchDraft: string
+  appliedSearch: string
+  showFavoritesOnly: boolean
+}
+
+type ActiveWeeklySidebarFilter =
+  | { kind: 'portfolio' }
+  | { kind: 'topic'; key: NewsTopicKey }
+  | { kind: 'asset'; symbol: string }
+  | { kind: 'source'; name: string }
+  | null
+
+const EMPTY_NEWS_FETCH_OPTIONS: NewsFetchOptions = {}
 
 export function NewsPage() {
   const { t, i18n } = useTranslation('newsPage')
@@ -29,6 +45,43 @@ export function NewsPage() {
   const [appliedFilters, setAppliedFilters] = useState<NewsFetchFilters>(defaultFilters)
   const [searchDraft, setSearchDraft] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
+  const [authenticated, setAuthenticated] = useState(isAuthenticated)
+  const [portfolioSymbols, setPortfolioSymbols] = useState<string[]>([])
+  const [portfolioSymbolsHydrated, setPortfolioSymbolsHydrated] = useState(() => !isAuthenticated())
+  const [activeWeeklySidebarFilter, setActiveWeeklySidebarFilter] = useState<ActiveWeeklySidebarFilter>(null)
+  const [weeklyFilterSnapshot, setWeeklyFilterSnapshot] = useState<WeeklyFilterSnapshot | null>(null)
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [favoriteNewsIds, setFavoriteNewsIds] = useState<number[]>([])
+  const [favoriteNotice, setFavoriteNotice] = useState<string | null>(null)
+  const [favoritePendingIds, setFavoritePendingIds] = useState<number[]>([])
+  useDocumentTitle(t('titleDoc'))
+  const isWeeklySidebarFilterActive = activeWeeklySidebarFilter != null
+  const newsRequestOptions = useMemo<NewsFetchOptions>(
+    () => {
+      if (activeWeeklySidebarFilter == null) {
+        return EMPTY_NEWS_FETCH_OPTIONS
+      }
+      switch (activeWeeklySidebarFilter.kind) {
+        case 'portfolio':
+          return {
+            relatedSymbols: portfolioSymbols.length > 0 ? portfolioSymbols : undefined,
+          }
+        case 'topic':
+          return {
+            primaryTopic: activeWeeklySidebarFilter.key,
+          }
+        case 'asset':
+          return {
+            assetKey: activeWeeklySidebarFilter.symbol,
+          }
+        case 'source':
+          return {
+            sourceName: activeWeeklySidebarFilter.name,
+          }
+      }
+    },
+    [activeWeeklySidebarFilter, portfolioSymbols],
+  )
   const {
     data: streamApiData,
     loading: streamLoading,
@@ -36,20 +89,13 @@ export function NewsPage() {
     refetch: refetchStream,
     totalElements,
     totalPages,
-  } = useNews(page, pageSize, i18n.language, appliedFilters, appliedSearch)
+  } = useNews(page, pageSize, i18n.language, appliedFilters, appliedSearch, newsRequestOptions)
   const [selectedNewsId, setSelectedNewsId] = useState<string | null>(null)
-  const [authenticated, setAuthenticated] = useState(isAuthenticated)
-  const [portfolioSymbols, setPortfolioSymbols] = useState<string[]>([])
-  const [portfolioOnlyFilter, setPortfolioOnlyFilter] = useState(false)
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
-  const [favoriteNewsIds, setFavoriteNewsIds] = useState<number[]>([])
-  const [favoriteNotice, setFavoriteNotice] = useState<string | null>(null)
-  const [favoritePendingIds, setFavoritePendingIds] = useState<number[]>([])
-  useDocumentTitle(t('titleDoc'))
 
   const { stats: sidebarStats, loading: sidebarLoading } = useNewsSidebarInsights(
     i18n.language,
     portfolioSymbols,
+    !authenticated || portfolioSymbolsHydrated,
   )
 
   useEffect(() => {
@@ -61,10 +107,13 @@ export function NewsPage() {
   useEffect(() => {
     if (!authenticated) {
       setPortfolioSymbols([])
-      setPortfolioOnlyFilter(false)
+      setPortfolioSymbolsHydrated(true)
+      setActiveWeeklySidebarFilter(null)
+      setWeeklyFilterSnapshot(null)
       return
     }
     let cancelled = false
+    setPortfolioSymbolsHydrated(false)
     void getMyPortfolioOverview()
       .then((overview) => {
         if (!cancelled) {
@@ -74,6 +123,11 @@ export function NewsPage() {
       .catch(() => {
         if (!cancelled) {
           setPortfolioSymbols([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setPortfolioSymbolsHydrated(true)
         }
       })
     return () => {
@@ -135,14 +189,11 @@ export function NewsPage() {
 
   const visibleNews = useMemo(() => {
     let rows = streamNews
-    if (portfolioOnlyFilter && portfolioSymbols.length > 0) {
-      rows = rows.filter((_, index) => isNewsRelatedToPortfolio(streamApiData[index]!, portfolioSymbols))
-    }
     if (showFavoritesOnly) {
       rows = rows.filter((item) => isNewsFavorite(item.id))
     }
     return rows
-  }, [favoriteNewsIds, portfolioOnlyFilter, portfolioSymbols, showFavoritesOnly, streamApiData, streamNews])
+  }, [favoriteNewsIds, showFavoritesOnly, streamNews])
 
   useEffect(() => {
     const trimmed = searchDraft.trim()
@@ -167,6 +218,58 @@ export function NewsPage() {
     setAppliedSearch('')
     setPage(0)
   }
+
+  const activateWeeklySidebarFilter = (nextFilter: Exclude<ActiveWeeklySidebarFilter, null>) => {
+    if (nextFilter.kind === 'portfolio' && portfolioSymbols.length === 0) {
+      return
+    }
+    if (!isWeeklySidebarFilterActive) {
+      setWeeklyFilterSnapshot({
+        filters: appliedFilters,
+        searchDraft,
+        appliedSearch,
+        showFavoritesOnly,
+      })
+    }
+    setActiveWeeklySidebarFilter(nextFilter)
+    setShowFavoritesOnly(false)
+    setSearchDraft('')
+    setAppliedSearch('')
+    const weeklyFilters: NewsFetchFilters = { category: 'all', range: '7d' }
+    setDraftFilters(weeklyFilters)
+    setAppliedFilters(weeklyFilters)
+    setPage(0)
+  }
+
+  const clearWeeklySidebarFilter = () => {
+    setActiveWeeklySidebarFilter(null)
+    if (weeklyFilterSnapshot) {
+      setDraftFilters(weeklyFilterSnapshot.filters)
+      setAppliedFilters(weeklyFilterSnapshot.filters)
+      setSearchDraft(weeklyFilterSnapshot.searchDraft)
+      setAppliedSearch(weeklyFilterSnapshot.appliedSearch)
+      setShowFavoritesOnly(weeklyFilterSnapshot.showFavoritesOnly)
+      setWeeklyFilterSnapshot(null)
+    } else {
+      setDraftFilters(defaultFilters)
+      setAppliedFilters(defaultFilters)
+    }
+    setPage(0)
+  }
+
+  const activeWeeklyFilterLabel = useMemo(() => {
+    if (activeWeeklySidebarFilter == null) return ''
+    switch (activeWeeklySidebarFilter.kind) {
+      case 'portfolio':
+        return t('sidebar.portfolioTitle')
+      case 'topic':
+        return t(`categories.${activeWeeklySidebarFilter.key}`)
+      case 'asset':
+        return activeWeeklySidebarFilter.symbol
+      case 'source':
+        return activeWeeklySidebarFilter.name
+    }
+  }, [activeWeeklySidebarFilter, t])
 
   return (
     <>
@@ -223,6 +326,7 @@ export function NewsPage() {
                             key={category}
                             type="button"
                             className={`fi-filter-chip${draftFilters.category === category ? ' fi-filter-chip-active' : ''}`}
+                            disabled={isWeeklySidebarFilterActive}
                             onClick={() => setDraftFilters((prev) => ({ ...prev, category }))}
                           >
                             {t(`categories.${category}`)}
@@ -233,14 +337,15 @@ export function NewsPage() {
                     <div className="fi-filter-group">
                       <span>{t('timeRangeTitle')}</span>
                       <div>
-                        {(['all', '1h', '6h', '24h'] as const).map((range) => (
+                        {(['all', '1h', '6h', '24h', '7d'] as const).map((range) => (
                           <button
                             key={range}
                             type="button"
                             className={`fi-filter-chip${draftFilters.range === range ? ' fi-filter-chip-active' : ''}`}
+                            disabled={isWeeklySidebarFilterActive && range !== '7d'}
                             onClick={() => setDraftFilters((prev) => ({ ...prev, range }))}
                           >
-                            {range === 'all' ? t('timeRangeAll') : range}
+                            {range === 'all' ? t('timeRangeAll') : range === '7d' ? t('timeRange7d') : range}
                           </button>
                         ))}
                       </div>
@@ -261,8 +366,11 @@ export function NewsPage() {
                         type="button"
                         className="fi-filter-chip"
                         onClick={() => {
-                          setDraftFilters(defaultFilters)
-                          setAppliedFilters(defaultFilters)
+                          const clearedFilters = isWeeklySidebarFilterActive
+                            ? { ...defaultFilters, range: '7d' as const }
+                            : defaultFilters
+                          setDraftFilters(clearedFilters)
+                          setAppliedFilters(clearedFilters)
                           setPage(0)
                           setFiltersOpen(false)
                         }}
@@ -280,15 +388,15 @@ export function NewsPage() {
                 <span>{favoriteNotice}</span>
               </div>
             ) : null}
-            {portfolioOnlyFilter ? (
+            {isWeeklySidebarFilterActive ? (
               <p className="fi-news-portfolio-filter-banner">
-                {t('sidebar.portfolioFilterActive')}
+                {t('sidebar.weeklyFilterActive', { label: activeWeeklyFilterLabel })}
                 <button
                   type="button"
                   className="fi-news-search-clear"
-                  onClick={() => setPortfolioOnlyFilter(false)}
+                  onClick={clearWeeklySidebarFilter}
                 >
-                  {t('sidebar.clearPortfolioFilter')}
+                  {t('sidebar.clearWeeklyFilter')}
                 </button>
               </p>
             ) : null}
@@ -327,8 +435,8 @@ export function NewsPage() {
                 <p className="fi-empty">
                   {showFavoritesOnly
                     ? t('noFavoriteNews')
-                    : portfolioOnlyFilter
-                      ? t('sidebar.noPortfolioNewsOnPage')
+                    : isWeeklySidebarFilterActive
+                      ? t('sidebar.noWeeklyFilterResults')
                       : appliedSearch
                         ? t('noSearchResults')
                         : t('noNews')}
@@ -368,10 +476,14 @@ export function NewsPage() {
           stats={sidebarStats}
           loading={sidebarLoading}
           authenticated={authenticated}
-          onPortfolioNewsClick={() => {
-            setPortfolioOnlyFilter(true)
-            setPage(0)
-          }}
+          activeTopicKey={activeWeeklySidebarFilter?.kind === 'topic' ? activeWeeklySidebarFilter.key : null}
+          activeAssetSymbol={activeWeeklySidebarFilter?.kind === 'asset' ? activeWeeklySidebarFilter.symbol : null}
+          activeSourceName={activeWeeklySidebarFilter?.kind === 'source' ? activeWeeklySidebarFilter.name : null}
+          portfolioActive={activeWeeklySidebarFilter?.kind === 'portfolio'}
+          onPortfolioNewsClick={() => activateWeeklySidebarFilter({ kind: 'portfolio' })}
+          onTopicClick={(key) => activateWeeklySidebarFilter({ kind: 'topic', key })}
+          onAssetClick={(symbol) => activateWeeklySidebarFilter({ kind: 'asset', symbol })}
+          onSourceClick={(name) => activateWeeklySidebarFilter({ kind: 'source', name })}
         />
         </div>
       </section>

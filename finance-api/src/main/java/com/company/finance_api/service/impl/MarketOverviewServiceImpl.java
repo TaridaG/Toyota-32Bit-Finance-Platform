@@ -69,6 +69,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private final ConcurrentHashMap<String, CachedUniverseSnapshot> universeCacheLocal =
       new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, CachedUniverseChanges> universeChangesCacheLocal =
+      new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, CachedSummaryMap> summaryCacheLocal =
       new ConcurrentHashMap<>();
   private volatile CachedInstrumentMap instrumentMapCache =
@@ -91,6 +93,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   @Override
   public MarketOverviewPageResponse getOverview(
       int page, int size, String category, String search, String targetCurrency, String sort) {
+    long totalStartedAt = System.nanoTime();
     int resolvedPage = Math.max(page, 0);
     int resolvedSize = Math.min(Math.max(size, 1), MAX_OVERVIEW_PAGE_SIZE);
     String normalizedCategory = normalize(category);
@@ -113,25 +116,33 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       return cached.get();
     }
 
+    long universeStartedAt = System.nanoTime();
     UniverseSnapshot universe =
         loadUniverseSnapshot(mdsSegment, normalizedCategory, normalizedSearch);
+    long universeMs = nanosToMillis(universeStartedAt);
     List<MarketBaseItem> merged = universe.merged();
     List<String> allSymbols = merged.stream().map(MarketBaseItem::symbol).toList();
 
     SortDirective sortDirective = SortDirective.parse(normalizedSort);
     boolean fullHorizonSort = sortRequiresFullHorizon(sortDirective);
 
+    long horizonStartedAt = System.nanoTime();
     Map<String, HistoricalChanges> changesForSort =
-        fullHorizonSort ? universe.changesBySymbol() : Map.of();
+        fullHorizonSort
+            ? loadUniverseHistoricalChanges(normalizedCategory, normalizedSearch, allSymbols)
+            : Map.of();
     Map<String, TrendEnrichment> contextualTrendsForSort =
         "trendscore".equals(sortDirective.field())
-            ? computeContextualTrendEnrichments(allSymbols, universe.changesBySymbol())
+            ? computeContextualTrendEnrichments(allSymbols, changesForSort)
             : Map.of();
+    long horizonMs = nanosToMillis(horizonStartedAt);
 
     List<MarketBaseItem> sorted = new ArrayList<>(merged);
+    long sortStartedAt = System.nanoTime();
     sorted.sort(
         baseItemComparator(
             sortDirective, changesForSort, normalizedCurrency, contextualTrendsForSort));
+    long sortMs = nanosToMillis(sortStartedAt);
 
     int totalElements = sorted.size();
     int totalPages =
@@ -149,16 +160,19 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     List<MarketBaseItem> currentPage = sorted.subList(start, end);
     List<String> pageSymbols = currentPage.stream().map(MarketBaseItem::symbol).toList();
 
+    long pageMetricsStartedAt = System.nanoTime();
     Map<String, HistoricalChanges> changesForEnrich =
         fullHorizonSort
-            ? universe.changesBySymbol()
+            ? changesForSort
             : enrichHistoricalChangesWithMdsSummary(Map.of(), pageSymbols);
     Map<String, TrendEnrichment> pageTrends =
-        contextualTrendsForSymbols(
-            allSymbols,
-            fullHorizonSort ? universe.changesBySymbol() : changesForEnrich,
-            pageSymbols);
+        !contextualTrendsForSort.isEmpty()
+            ? subsetTrendEnrichments(pageSymbols, contextualTrendsForSort)
+            : contextualTrendsForSymbols(
+                allSymbols, fullHorizonSort ? changesForSort : changesForEnrich, pageSymbols);
+    long pageMetricsMs = nanosToMillis(pageMetricsStartedAt);
 
+    long enrichStartedAt = System.nanoTime();
     List<CompletableFuture<MarketOverviewItemResponse>> futures =
         currentPage.stream()
             .map(
@@ -175,11 +189,28 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
     List<MarketOverviewItemResponse> content =
         futures.stream().map(CompletableFuture::join).toList();
+    long enrichMs = nanosToMillis(enrichStartedAt);
 
     MarketOverviewPageResponse response =
         new MarketOverviewPageResponse(
             content, resolvedPage, resolvedSize, totalElements, totalPages);
     jsonCacheService.put(cacheKey, response, CACHE_TTL);
+    log.info(
+        "MARKET_OVERVIEW_TIMING page={} size={} category={} search={} sort={} symbols={} pageSymbols={} universeMs={} horizonMs={} sortMs={} pageMetricsMs={} enrichMs={} totalMs={} totalElements={}",
+        resolvedPage,
+        resolvedSize,
+        normalizedCategory,
+        normalizedSearch,
+        normalizedSort,
+        allSymbols.size(),
+        pageSymbols.size(),
+        universeMs,
+        horizonMs,
+        sortMs,
+        pageMetricsMs,
+        enrichMs,
+        nanosToMillis(totalStartedAt),
+        totalElements);
     return response;
   }
 
@@ -226,13 +257,28 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                     MarketOverviewCategoryRules.matchesUiCategory(
                         item.symbol(), item.source(), normalizedCategory))
             .toList();
-    List<String> symbols = merged.stream().map(MarketBaseItem::symbol).toList();
-    Map<String, HistoricalChanges> changesBySymbol =
-        enrichHistoricalChangesWithMdsSummary(Map.of(), symbols);
-    UniverseSnapshot snapshot = new UniverseSnapshot(merged, changesBySymbol);
+    UniverseSnapshot snapshot = new UniverseSnapshot(merged);
     universeCacheLocal.put(
         cacheKey, new CachedUniverseSnapshot(snapshot, now.plus(UNIVERSE_CACHE_TTL)));
     return snapshot;
+  }
+
+  private Map<String, HistoricalChanges> loadUniverseHistoricalChanges(
+      String normalizedCategory, String normalizedSearch, List<String> symbols) {
+    if (symbols.isEmpty()) {
+      return Map.of();
+    }
+    String cacheKey = universeCacheKey(normalizedCategory, normalizedSearch);
+    Instant now = Instant.now();
+    CachedUniverseChanges cached = universeChangesCacheLocal.get(cacheKey);
+    if (cached != null && cached.expiresAt().isAfter(now)) {
+      return cached.changesBySymbol();
+    }
+    Map<String, HistoricalChanges> computed = enrichHistoricalChangesWithMdsSummary(Map.of(), symbols);
+    CachedUniverseChanges next =
+        new CachedUniverseChanges(Map.copyOf(computed), now.plus(SUMMARY_CACHE_TTL));
+    universeChangesCacheLocal.put(cacheKey, next);
+    return next.changesBySymbol();
   }
 
   private static String universeCacheKey(String normalizedCategory, String normalizedSearch) {
@@ -275,10 +321,31 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     return pageOnly;
   }
 
-  private record UniverseSnapshot(
-      List<MarketBaseItem> merged, Map<String, HistoricalChanges> changesBySymbol) {}
+  private Map<String, TrendEnrichment> subsetTrendEnrichments(
+      Collection<String> targetSymbols, Map<String, TrendEnrichment> allTrends) {
+    if (targetSymbols == null || targetSymbols.isEmpty() || allTrends == null || allTrends.isEmpty()) {
+      return Map.of();
+    }
+    Map<String, TrendEnrichment> out = new LinkedHashMap<>();
+    for (String symbol : targetSymbols) {
+      TrendEnrichment trend = allTrends.get(symbol);
+      if (trend != null) {
+        out.put(symbol, trend);
+      }
+    }
+    return out;
+  }
+
+  private static long nanosToMillis(long startedAt) {
+    return Math.max(0L, (System.nanoTime() - startedAt) / 1_000_000L);
+  }
+
+  private record UniverseSnapshot(List<MarketBaseItem> merged) {}
 
   private record CachedUniverseSnapshot(UniverseSnapshot snapshot, Instant expiresAt) {}
+
+  private record CachedUniverseChanges(
+      Map<String, HistoricalChanges> changesBySymbol, Instant expiresAt) {}
 
   private record CachedSummaryMap(Map<String, SummaryDto> payload, Instant expiresAt) {}
 

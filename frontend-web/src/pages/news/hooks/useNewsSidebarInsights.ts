@@ -1,41 +1,51 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fetchNews } from '../../../features/news/api/newsService'
-import { buildNewsSidebarStats, type NewsSidebarStats } from '../lib/buildNewsSidebarStats'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { fetchNewsWeeklySummary } from '../../../features/news/api/newsService'
+import type { NewsSidebarStats } from '../lib/buildNewsSidebarStats'
 
-const SIDEBAR_SAMPLE_SIZE = 120
-const SIDEBAR_MAX_AGE_MINUTES = 7 * 24 * 60
-
-export function useNewsSidebarInsights(language: string | undefined, portfolioSymbols: string[]) {
+export function useNewsSidebarInsights(
+  language: string | undefined,
+  portfolioSymbols: string[],
+  enabled = true,
+) {
   const [stats, setStats] = useState<NewsSidebarStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
 
   const portfolioKey = useMemo(() => portfolioSymbols.join(','), [portfolioSymbols])
 
   const load = useCallback(async () => {
-    setLoading(true)
+    if (!enabled) {
+      return
+    }
+    if (!hasLoadedOnceRef.current) {
+      setLoading(true)
+    }
     setError(false)
     try {
-      const response = await fetchNews(
-        0,
-        SIDEBAR_SAMPLE_SIZE,
-        language,
-        { category: 'all', range: 'all' },
-        undefined,
-        { maxAgeMinutes: SIDEBAR_MAX_AGE_MINUTES },
-      )
-      setStats(buildNewsSidebarStats(response.content ?? [], portfolioSymbols))
+      const response = await fetchNewsWeeklySummary(language, portfolioSymbols)
+      setStats({
+        totalSampled: response.totalCount,
+        topics: response.topics,
+        topAssets: response.topAssets,
+        sources: response.sources,
+        portfolioRelatedCount: response.portfolioRelatedCount,
+      })
     } catch {
       setError(true)
       setStats(null)
     } finally {
+      hasLoadedOnceRef.current = true
       setLoading(false)
     }
-  }, [language, portfolioKey, portfolioSymbols])
+  }, [enabled, language, portfolioKey, portfolioSymbols])
 
   useEffect(() => {
+    if (!enabled) {
+      return
+    }
     void load()
-  }, [load])
+  }, [enabled, load])
 
   return { stats, loading, error, reload: load }
 }

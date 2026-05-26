@@ -6,6 +6,7 @@ import type {
   Portfolio,
   PortfolioAllocation,
   PortfolioOverview,
+  PortfolioPerformanceSeries,
   PortfolioValueSnapshot,
   PortfolioTradeFlow,
   PortfolioSummary,
@@ -174,6 +175,23 @@ export async function getPortfolioTradeFlow(portfolioId: number | null, displayC
       : undefined
   const qs = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
   const response = await apiClient.get<ApiResponse<PortfolioTradeFlow>>(`/api/portfolio/trade-flow${qs}`, { headers })
+  return response.data.data
+}
+
+export async function getPortfolioPerformanceSeries(
+  portfolioId: number | null,
+  displayCurrency?: string | null,
+  range: '1w' | '1m' | '3m' | '6m' | '1y' | 'all' = 'all',
+) {
+  const headers =
+    displayCurrency != null && displayCurrency.trim().length > 0
+      ? { 'X-Currency': displayCurrency.trim().toUpperCase() }
+      : undefined
+  const params = new URLSearchParams()
+  params.set('range', range)
+  if (portfolioId != null) params.set('portfolioId', String(portfolioId))
+  const qs = `?${params.toString()}`
+  const response = await apiClient.get<ApiResponse<PortfolioPerformanceSeries>>(`/api/portfolio/performance-series${qs}`, { headers })
   return response.data.data
 }
 
