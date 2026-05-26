@@ -798,16 +798,16 @@
         "dotLabel": "Enriched news"
       },
       "portfolio": {
-        "dotLabel": "Portfolio PnL"
+        "dotLabel": "Bank rates"
       },
       "reporting": {
         "dotLabel": "Reporting"
       },
       "security": {
-        "dotLabel": "Security"
+        "dotLabel": "Financial literacy"
       },
       "final-cta": {
-        "dotLabel": "Final call to action"
+        "dotLabel": "Portfolio"
       }
     },
     "hero": {
@@ -879,15 +879,54 @@
       }
     },
     "news": {
-      "title": "Enriched news intelligence",
-      "subtitle": "Summaries, sentiment, and reaction values are streamed from backend enriched news."
+      "title": "Follow the news flow in a single workspace",
+      "subtitle": "The enriched news page combines visual cards, AI summaries, 3-language support, and starring flows in one experience.",
+      "cta": "Open the news page",
+      "points": {
+        "point1": "Narrow the flow quickly with category, search, and symbol-based filters.",
+        "point2": "Switch between TR, EN, and DE to read the same stream across multiple language layers.",
+        "point3": "Star important stories, scan visuals, and catch the first reaction at a glance."
+      },
+      "preview": {
+        "product": "News Workspace",
+        "statusLive": "Live flow",
+        "statusLoading": "Preparing preview",
+        "statusOffline": "Demo view",
+        "searchPlaceholder": "Search news",
+        "filters": {
+          "all": "All",
+          "crypto": "Crypto",
+          "macro": "Macro"
+        },
+        "favoriteBadge": "Starred",
+        "readMore": "Open detail",
+        "aiTitle": "AI digest",
+        "sentiment": {
+          "positive": "Positive flow leads",
+          "negative": "Negative flow leads",
+          "neutral": "Flow stays balanced"
+        },
+        "stats": {
+          "positive": "Positive",
+          "negative": "Negative",
+          "neutral": "Neutral",
+          "reaction": "1h reaction",
+          "none": "Preparing"
+        },
+        "languagesTitle": "3-language support",
+        "languagesBody": "Access the same news flow through TR, EN, and DE language layers.",
+        "favoriteTitle": "Star and save",
+        "favoriteBody": "Add important stories to favorites so you can reopen them later.",
+        "savedLabel": "Saved",
+        "visualLabel": "Visual feed"
+      }
     },
     "portfolio": {
-      "title": "Portfolio PnL and reporting",
-      "subtitle": "Monitor allocation, realized performance, and reporting cadence in one workflow.",
-      "cta": "Open portfolio workspace",
-      "visualTitle": "Security and observability",
-      "visualBody": "Built for enterprise controls with stable monitoring, auditability, and reliable delivery."
+      "title": "Track live bank rates instantly",
+      "subtitle": "Compare bank and institution buy/sell quotes, spreads, and best rates from a single screen.",
+      "cta": "Open bank rates page",
+      "visualTitle": "Bank rates",
+      "visualBody": "Monitor live snapshots and compare quoted prices across banks in a compact table view."
     },
     "reporting": {
       "title": "Decision-grade reporting",
@@ -896,16 +935,76 @@
       "visualBody": "Create reusable reporting views for operational and executive review."
     },
     "security": {
-      "title": "Security and observability",
-      "subtitle": "Track platform behavior with confidence and monitor risk-sensitive operations.",
-      "visualTitle": "Enterprise guardrails",
-      "visualBody": "Unified monitoring and auditability reduce blind spots in volatile markets."
+      "title": "Financial literacy and info cards",
+      "subtitle": "Learn core concepts, view page-specific explanations through info cards, and understand investment terms faster.",
+      "cta": "Open the financial literacy page",
+      "visualTitle": "Info cards",
+      "visualBody": "Bring learning into the workflow with term cards and in-product help buttons.",
+      "preview": {
+        "infoButton": "Suggest info card",
+        "learningAreas": "Learning areas",
+        "pagePill": "Financial Literacy",
+        "helpPill": "Open info card",
+        "stats": {
+          "terms": "Terms",
+          "charts": "Charts",
+          "tools": "Tools"
+        },
+        "areas": {
+          "markets": "Markets",
+          "technical": "Technical analysis",
+          "macro": "Macro",
+          "portfolio": "Portfolio"
+        },
+        "cards": {
+          "rsi": {
+            "title": "RSI",
+            "badge": "Indicator",
+            "difficulty": "Core",
+            "description": "Quickly explains how close momentum is to overbought and oversold zones."
+          },
+          "candles": {
+            "title": "Candlestick Chart",
+            "badge": "Chart",
+            "difficulty": "Beginner",
+            "description": "Makes it easier to read open, close, high, and low prices in a single view."
+          }
+        }
+      }
     },
     "finalCta": {
-      "title": "Deploy your team on one enterprise finance platform",
-      "subtitle": "Start with secure access and scale your market intelligence workflow.",
+      "title": "Create your portfolio and get started",
+      "subtitle": "Log in or sign up, create your first portfolio, and start tracking your assets from a single screen.",
       "login": "Log In",
-      "register": "Sign Up"
+      "register": "Sign Up",
+      "preview": {
+        "sidebarTitle": "Portfolios",
+        "portfolioName": "Main Portfolio",
+        "heading": "Portfolio Overview",
+        "subheading": "Total value, daily change, and allocation in one view.",
+        "status": "Demo view",
+        "positionsCount": "3 assets",
+        "nav": {
+          "overview": "Overview",
+          "markets": "Markets",
+          "allocation": "Allocation",
+          "goals": "Goals"
+        },
+        "stats": {
+          "value": "Total value",
+          "dailyChange": "Daily change",
+          "positions": "Positions"
+        },
+        "panels": {
+          "performance": "Performance",
+          "holdings": "Holdings"
+        },
+        "assets": {
+          "airlines": "Turkish Airlines",
+          "gold": "Gram Gold",
+          "eurobond": "USD Eurobond"
+        }
+      }
     }
   },
   "auth": {

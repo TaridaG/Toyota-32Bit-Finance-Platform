@@ -793,16 +793,16 @@
         "dotLabel": "Enriched News"
       },
       "portfolio": {
-        "dotLabel": "Portfolio GuV"
+        "dotLabel": "Bankkurse"
       },
       "reporting": {
         "dotLabel": "Reporting"
       },
       "security": {
-        "dotLabel": "Sicherheit"
+        "dotLabel": "Finanzbildung"
       },
       "final-cta": {
-        "dotLabel": "Finaler CTA"
+        "dotLabel": "Portfolio"
       }
     },
     "hero": {
@@ -874,15 +874,54 @@
       }
     },
     "news": {
-      "title": "Enriched News Intelligence",
-      "subtitle": "Zusammenfassungen, Sentiment und Reaktionswerte kommen aus dem Backend-News-Stream."
+      "title": "Verfolgen Sie den News-Flow in einem einzigen Workspace",
+      "subtitle": "Die Enriched-News-Seite vereint visuelle Karten, KI-Zusammenfassungen, 3-Sprachen-Support und Favorisieren in einem Erlebnis.",
+      "cta": "News-Seite oeffnen",
+      "points": {
+        "point1": "Reduzieren Sie den Flow schnell mit Kategorien, Suche und symbolbasierten Filtern.",
+        "point2": "Wechseln Sie zwischen TR, EN und DE, um denselben Stream in mehreren Sprachschichten zu lesen.",
+        "point3": "Markieren Sie wichtige Meldungen, scannen Sie Visuals und erfassen Sie die erste Reaktion auf einen Blick."
+      },
+      "preview": {
+        "product": "News Workspace",
+        "statusLive": "Live-Flow",
+        "statusLoading": "Vorschau wird vorbereitet",
+        "statusOffline": "Demo-Ansicht",
+        "searchPlaceholder": "News suchen",
+        "filters": {
+          "all": "Alle",
+          "crypto": "Krypto",
+          "macro": "Makro"
+        },
+        "favoriteBadge": "Markiert",
+        "readMore": "Details oeffnen",
+        "aiTitle": "KI-Digest",
+        "sentiment": {
+          "positive": "Positiver Flow fuehrt",
+          "negative": "Negativer Flow fuehrt",
+          "neutral": "Flow bleibt ausgewogen"
+        },
+        "stats": {
+          "positive": "Positiv",
+          "negative": "Negativ",
+          "neutral": "Neutral",
+          "reaction": "1h-Reaktion",
+          "none": "Wird vorbereitet"
+        },
+        "languagesTitle": "3-Sprachen-Support",
+        "languagesBody": "Greifen Sie ueber TR-, EN- und DE-Sprachschichten auf denselben News-Flow zu.",
+        "favoriteTitle": "Markieren und speichern",
+        "favoriteBody": "Legen Sie wichtige Meldungen in den Favoriten ab, um sie spaeter erneut zu oeffnen.",
+        "savedLabel": "Gespeichert",
+        "visualLabel": "Visueller Feed"
+      }
     },
     "portfolio": {
-      "title": "Portfolio GuV und Reporting",
-      "subtitle": "Allokation, realisierte Performance und Reporting-Rhythmus in einem Workflow überwachen.",
-      "cta": "Portfolio-Arbeitsbereich öffnen",
-      "visualTitle": "Sicherheit und Observability",
-      "visualBody": "Für Enterprise-Kontrollen mit stabiler Überwachung, Auditierbarkeit und verlässlicher Auslieferung."
+      "title": "Verfolgen Sie Live-Bankkurse sofort",
+      "subtitle": "Vergleichen Sie An- und Verkaufskurse, Spreads und Bestpreise von Banken und Instituten auf einem Bildschirm.",
+      "cta": "Bankkurs-Seite öffnen",
+      "visualTitle": "Bankkurse",
+      "visualBody": "Beobachten Sie Live-Snapshots und vergleichen Sie Kursangebote in einer kompakten Tabellenansicht."
     },
     "reporting": {
       "title": "Reporting für belastbare Entscheidungen",
@@ -891,16 +930,76 @@
       "visualBody": "Nutzen Sie wiederverwendbare Reporting-Ansichten für operative und strategische Reviews."
     },
     "security": {
-      "title": "Sicherheit und Observability",
-      "subtitle": "Überwachen Sie Plattformverhalten zuverlässig und behalten Sie risikokritische Abläufe im Blick.",
-      "visualTitle": "Enterprise-Leitplanken",
-      "visualBody": "Einheitliches Monitoring und Auditierbarkeit reduzieren blinde Flecken in volatilen Märkten."
+      "title": "Finanzbildung und Info-Karten",
+      "subtitle": "Lernen Sie Grundbegriffe, sehen Sie seitenspezifische Erklärungen über Info-Karten und verstehen Sie Investmentbegriffe schneller.",
+      "cta": "Finanzbildungsseite öffnen",
+      "visualTitle": "Info-Karten",
+      "visualBody": "Bringen Sie Lernen mit Begriffskarten und kontextuellen Hilfe-Buttons direkt in den Workflow.",
+      "preview": {
+        "infoButton": "Info-Karte vorschlagen",
+        "learningAreas": "Lernbereiche",
+        "pagePill": "Finanzbildung",
+        "helpPill": "Info-Karte öffnen",
+        "stats": {
+          "terms": "Begriffe",
+          "charts": "Charts",
+          "tools": "Tools"
+        },
+        "areas": {
+          "markets": "Märkte",
+          "technical": "Technische Analyse",
+          "macro": "Makro",
+          "portfolio": "Portfolio"
+        },
+        "cards": {
+          "rsi": {
+            "title": "RSI",
+            "badge": "Indikator",
+            "difficulty": "Basis",
+            "description": "Erklärt schnell, wie nah das Momentum an überkauften und überverkauften Bereichen ist."
+          },
+          "candles": {
+            "title": "Candlestick-Chart",
+            "badge": "Chart",
+            "difficulty": "Einstieg",
+            "description": "Erleichtert das Lesen von Eröffnung, Schluss, Hoch und Tief in einer Ansicht."
+          }
+        }
+      }
     },
     "finalCta": {
-      "title": "Führen Sie Ihr Team auf einer Enterprise-Finanzplattform zusammen",
-      "subtitle": "Starten Sie mit sicherem Zugriff und skalieren Sie Ihren Markt-Intelligence-Workflow.",
+      "title": "Erstellen Sie Ihr Portfolio und starten Sie",
+      "subtitle": "Melden Sie sich an oder registrieren Sie sich, erstellen Sie Ihr erstes Portfolio und verfolgen Sie Ihre Assets in einer Ansicht.",
       "login": "Anmelden",
-      "register": "Registrieren"
+      "register": "Registrieren",
+      "preview": {
+        "sidebarTitle": "Portfolios",
+        "portfolioName": "Hauptportfolio",
+        "heading": "Portfolio-Überblick",
+        "subheading": "Gesamtwert, Tagesänderung und Verteilung in einer Ansicht.",
+        "status": "Demo-Ansicht",
+        "positionsCount": "3 Assets",
+        "nav": {
+          "overview": "Überblick",
+          "markets": "Märkte",
+          "allocation": "Verteilung",
+          "goals": "Ziele"
+        },
+        "stats": {
+          "value": "Gesamtwert",
+          "dailyChange": "Tagesänderung",
+          "positions": "Positionen"
+        },
+        "panels": {
+          "performance": "Performance",
+          "holdings": "Assets"
+        },
+        "assets": {
+          "airlines": "Turkish Airlines",
+          "gold": "Gramm Gold",
+          "eurobond": "USD-Eurobond"
+        }
+      }
     }
   },
   "auth": {
