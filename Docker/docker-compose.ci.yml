@@ -71,6 +71,8 @@ services:
       SPRING_MAIL_PORT: "1025"
       SPRING_MAIL_USERNAME: ""
       SPRING_MAIL_PASSWORD: ""
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+      MANAGEMENT_TRACING_ENABLED: "false"
       APP_PORTAL_PUBLIC_URL: http://localhost:5173
       KEYCLOAK_SERVER_URL: http://localhost:8085
       KEYCLOAK_ADMIN_USERNAME: admin
