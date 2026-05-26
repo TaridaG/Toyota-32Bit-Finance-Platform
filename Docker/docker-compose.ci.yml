@@ -1,0 +1,87 @@
+name: finance-ci
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: finance
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: finance
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  kafka:
+    image: apache/kafka:3.7.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+
+  finance-api:
+    build:
+      context: ..
+      dockerfile: finance-api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker,kafka,cache-redis
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance
+      SPRING_DATASOURCE_USERNAME: finance
+      SPRING_DATASOURCE_PASSWORD: finance
+      SPRING_FLYWAY_TABLE: finance_flyway_schema_history
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRING_FLYWAY_BASELINE_VERSION: "0"
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_SECURITY_ALLOW_HEADER_USER_FALLBACK: "true"
+      APP_SECURITY_JWT_JWK_SET_URI: http://localhost/realms/finance/protocol/openid-connect/certs
+      CLIENTS_NEWS_BASE_URL: http://localhost:18082
+      APP_REGISTRATION_ENABLED: "false"
+      APP_REGISTRATION_VERIFICATION_ENABLED: "false"
+      APP_REGISTRATION_VERIFICATION_HASH_SECRET: finance-ci-hash-secret
+      SPRING_MAIL_HOST: localhost
+      SPRING_MAIL_PORT: "1025"
+      SPRING_MAIL_USERNAME: ""
+      SPRING_MAIL_PASSWORD: ""
+      APP_PORTAL_PUBLIC_URL: http://localhost:5173
+      KEYCLOAK_SERVER_URL: http://localhost:8085
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_PORTAL_CLIENT_SECRET: finance-ci-portal-secret
+      APP_MFA_ENCRYPTION_SECRET: finance-ci-mfa-encryption-secret-32!!
+      APP_MFA_ISSUER: Finance Portal CI
+      APP_TRUSTED_DEVICE_ENABLED: "false"
+      APP_TRUSTED_DEVICE_SIGNING_SECRET: finance-ci-trusted-device-secret!!
+      MARKET_TR_USD_EUROBOND_YAHOO_ENABLED: "false"
+      AI_ENABLED: "false"
+      PROFILE_AVATAR_STORAGE_ROOT: /tmp/photos
+    ports:
+      - "18080:8080"

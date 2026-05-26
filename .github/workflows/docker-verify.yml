@@ -1,0 +1,165 @@
+name: docker-verify
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.matrix.outputs.services }}
+      any_changed: ${{ steps.matrix.outputs.any_changed }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed Docker targets
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            finance-api:
+              - 'pom.xml'
+              - 'finance-api/**'
+              - 'finance-api/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            market-data-service:
+              - 'pom.xml'
+              - 'market-data-service/**'
+              - 'market-data-service/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            api-gateway:
+              - 'pom.xml'
+              - 'api-gateway/**'
+              - 'api-gateway/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            news-service:
+              - 'pom.xml'
+              - 'news-service/**'
+              - 'news-service/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            notification-service:
+              - 'pom.xml'
+              - 'notification-service/**'
+              - 'notification-service/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            analytics-service:
+              - 'pom.xml'
+              - 'analytics-service/**'
+              - 'analytics-service/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            log-consumer-service:
+              - 'pom.xml'
+              - 'log-consumer-service/**'
+              - 'log-consumer-service/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+            frontend-web:
+              - 'frontend-web/**'
+              - 'frontend-web/Dockerfile'
+              - '.github/workflows/docker-verify.yml'
+
+      - name: Build Docker matrix
+        id: matrix
+        uses: actions/github-script@v7
+        env:
+          FILTERS_JSON: ${{ toJSON(steps.filter.outputs) }}
+        with:
+          script: |
+            const filters = JSON.parse(process.env.FILTERS_JSON);
+            const services = [
+              {
+                service: 'finance-api',
+                context: '.',
+                dockerfile: 'finance-api/Dockerfile'
+              },
+              {
+                service: 'market-data-service',
+                context: '.',
+                dockerfile: 'market-data-service/Dockerfile'
+              },
+              {
+                service: 'api-gateway',
+                context: '.',
+                dockerfile: 'api-gateway/Dockerfile'
+              },
+              {
+                service: 'news-service',
+                context: '.',
+                dockerfile: 'news-service/Dockerfile'
+              },
+              {
+                service: 'notification-service',
+                context: '.',
+                dockerfile: 'notification-service/Dockerfile'
+              },
+              {
+                service: 'analytics-service',
+                context: '.',
+                dockerfile: 'analytics-service/Dockerfile'
+              },
+              {
+                service: 'log-consumer-service',
+                context: '.',
+                dockerfile: 'log-consumer-service/Dockerfile'
+              },
+              {
+                service: 'frontend-web',
+                context: 'frontend-web',
+                dockerfile: 'frontend-web/Dockerfile'
+              }
+            ].filter((entry) => filters[entry.service] === 'true');
+
+            core.setOutput('services', JSON.stringify(services));
+            core.setOutput('any_changed', services.length > 0 ? 'true' : 'false');
+
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate main Docker Compose file
+        run: docker compose -f Docker/docker-compose.yml config
+
+  build-images:
+    name: build-${{ matrix.service }}
+    needs:
+      - changes
+      - compose-config
+    if: needs.changes.outputs.any_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.changes.outputs.services) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          pull: true
+          push: false
+          provenance: false
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
