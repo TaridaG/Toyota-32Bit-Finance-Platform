@@ -39,7 +39,8 @@ jobs:
         shell: bash
         run: |
           for attempt in {1..60}; do
-            if curl -fsS http://localhost:18080/actuator/health | grep -q '"status":"UP"'; then
+            if curl -fsS http://localhost:18080/health | grep -q '"application":"UP"' && \
+               curl -fsS http://localhost:18080/health | grep -q '"database":"UP"'; then
               echo "finance-api is healthy"
               exit 0
             fi
