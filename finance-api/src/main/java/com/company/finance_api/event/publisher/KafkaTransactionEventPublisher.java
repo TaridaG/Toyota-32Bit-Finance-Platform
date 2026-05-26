@@ -1,7 +1,7 @@
 package com.company.finance_api.event.publisher;
 
 import com.company.finance_api.event.TransactionExecutedEvent;
-import com.company.finance_api.service.OutboxService;
+import com.company.finance_api.outbox.application.OutboxService;
 import com.company.finance_api.shared.kafka.KafkaTopics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;

@@ -13,7 +13,7 @@ import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.Exchange;
 import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.service.PriceService;
+import com.company.finance_api.pricing.application.PriceService;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Instant;

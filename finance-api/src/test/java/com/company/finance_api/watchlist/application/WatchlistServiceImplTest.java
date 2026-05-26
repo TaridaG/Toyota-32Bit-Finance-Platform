@@ -11,7 +11,7 @@ import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.watchlist.infrastructure.persistence.WatchlistItemRepository;
-import com.company.finance_api.service.OutboxService;
+import com.company.finance_api.outbox.application.OutboxService;
 import com.company.finance_api.watchlist.application.WatchlistServiceImpl;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;

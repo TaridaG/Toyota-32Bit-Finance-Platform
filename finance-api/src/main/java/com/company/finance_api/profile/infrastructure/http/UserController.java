@@ -1,10 +1,10 @@
 package com.company.finance_api.profile.infrastructure.http;
 
 import com.company.finance_api.domain.User;
-import com.company.finance_api.dto.BalanceResponse;
-import com.company.finance_api.dto.CreateUserRequest;
-import com.company.finance_api.dto.ResponseUser;
-import com.company.finance_api.service.UserService;
+import com.company.finance_api.profile.application.UserService;
+import com.company.finance_api.profile.infrastructure.http.dto.BalanceResponse;
+import com.company.finance_api.profile.infrastructure.http.dto.CreateUserRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.ResponseUser;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;

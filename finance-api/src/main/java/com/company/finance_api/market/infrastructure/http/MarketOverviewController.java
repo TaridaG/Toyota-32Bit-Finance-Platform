@@ -1,7 +1,7 @@
 package com.company.finance_api.market.infrastructure.http;
 
-import com.company.finance_api.dto.MarketOverviewPageResponse;
-import com.company.finance_api.service.MarketOverviewService;
+import com.company.finance_api.market.application.MarketOverviewService;
+import com.company.finance_api.market.infrastructure.http.dto.MarketOverviewPageResponse;
 import com.company.finance_api.shared.web.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;

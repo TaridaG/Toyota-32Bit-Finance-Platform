@@ -2,7 +2,7 @@ package com.company.finance_api.portfolio;
 
 import com.company.finance_api.domain.Instrument;
 import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.service.PriceService;
+import com.company.finance_api.pricing.application.PriceService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
