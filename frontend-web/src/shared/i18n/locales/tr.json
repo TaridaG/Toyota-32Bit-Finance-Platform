@@ -1678,7 +1678,9 @@
         "CRYPTO": "Kripto",
         "STOCK": "Hisse",
         "FX": "Döviz",
+        "METAL": "Maden",
         "FUND": "Fon",
+        "DEPOSIT": "TL Mevduat",
         "BOND": "Tahvil"
       },
       "ofPortfolio": "portföy içinde",
@@ -1735,6 +1737,87 @@
       "creating": "Oluşturuluyor…"
     },
     "marketsAdd": {
+      "title": "Portföye Yeni Enstrüman Ekle",
+      "assetTypeLabel": "Varlık Tipi",
+      "assetTypeAll": "Tüm Tipler",
+      "steps": {
+        "details": "Alım Detayları",
+        "preview": "Önizleme"
+      },
+      "searchLabel": "Enstrüman Ara",
+      "searchPlaceholder": "Şirket, sembol veya ISIN ara...",
+      "instrumentLabel": "Enstrüman",
+      "purchaseMode": {
+        "now": "Piyasadan Ekle",
+        "past": "Geçmiş Alım Ekle"
+      },
+      "inputMode": {
+        "lots": "Lot ile Gir",
+        "amount": "Tutar ile Gir"
+      },
+      "entryModeLabel": "Giriş Şekli",
+      "entryModePrincipal": "Anapara ile Gir",
+      "lotsLabel": "Lot Miktarı",
+      "lotLabel": "Lot",
+      "buyPriceLabel": "Alım Fiyatı",
+      "buyPricePlaceholder": "Aldığınız fiyatı girin",
+      "earliestPriceNotice": "En eski fiyat bilgisi {{date}} tarihindedir; alım bu tarihle kaydedilir.",
+      "manualPriceRequiredNotice": "Bu enstrüman için sistemde fiyat verisi bulunamadı. Farklı bir tarih veya enstrüman deneyin.",
+      "paymentCurrencyLabel": "Para Birimi",
+      "totalAmountLabel": "Toplam Tutar",
+      "acquiredAtLabel": "Alım Tarihi",
+      "confirmationTitle": "Alım Bilgileri",
+      "transactionTypeLabel": "İşlem Tipi",
+      "back": "Geri",
+      "saving": "Kaydediliyor...",
+      "submit": "Onayla ve Ekle",
+      "continue": "Devam Et",
+      "distributionTitle": "Portföy Dağılımı",
+      "costPerLotLabel": "Maliyet / Lot",
+      "totalLotsLabel": "Toplam Lot",
+      "instrumentCurrencyLabel": "Enstrüman PB",
+      "instrumentChangesTitle": "Enstrüman Değişimleri",
+      "previewNote": "İşlem anlık fiyat ve kur üzerinden hesaplanır.",
+      "fxPanel": {
+        "title": "Alımda Kullanılan Kur Paneli",
+        "sourcePast": "MDS (alım günü)",
+        "sourceNow": "Canlı Kaynak",
+        "pair": "Çift",
+        "mid": "Orta",
+        "note": "Geçmiş alımda kurlar alım gününe göre MDS'ten; bugünkü alımda güncel fiyat tablosundan gelir. Özet ve dağılım gösterimi üst menüdeki para biriminde canlı kurla devam eder."
+      },
+      "periods": {
+        "today": "Bugün",
+        "oneMonth": "1 Ay",
+        "threeMonths": "3 Ay",
+        "sixMonths": "6 Ay",
+        "oneYear": "1 Yıl"
+      },
+      "depositRateLabel": "Faiz Oranı",
+      "depositRateLoading": "Oran yükleniyor...",
+      "depositRateUnavailable": "Oran bulunamadı",
+      "depositPastDateRequired": "Mevduatta geçmiş alım için tarih zorunludur.",
+      "depositPrincipalLabel": "TRY Anapara",
+      "depositMaturity": {
+        "MT01": "TL Mevduat · 1 Aya Kadar",
+        "MT02": "TL Mevduat · 3 Aya Kadar",
+        "MT03": "TL Mevduat · 6 Aya Kadar",
+        "MT04": "TL Mevduat · 1 Yıla Kadar",
+        "MT05": "TL Mevduat · 1 Yıl ve Üzeri",
+        "MT06": "TL Mevduat"
+      },
+      "messages": {
+        "saved": "İşlem başarıyla kaydedildi."
+      },
+      "errors": {
+        "previewFailed": "Önizleme başarısız.",
+        "currentPriceUnavailable": "Güncel fiyat alınamadı (sunucu veya kur verisi).",
+        "pastPreviewFailed": "Geçmiş fiyat önizlemesi başarısız; başka tarih veya enstrüman deneyin.",
+        "pastDateRequired": "Geçmiş alımda tarih zorunludur.",
+        "pastDateAndPriceRequired": "Geçmiş alımda tarih ve birim fiyat zorunludur.",
+        "saveFailed": "İşlem kaydedilemedi.",
+        "instrumentListLoadFailed": "Enstrüman listesi yüklenemedi. API (/api/instruments, /api/market) ve gateway erişimini kontrol edin."
+      },
       "listingHintTry": "Bu portföy TRY bazlıdır. Yalnızca TL kotasyonlu enstrümanlar listelenir (ör. BIST, TL döviz çiftleri).",
       "listingHintUsd": "Bu portföy USD bazlıdır. Yalnızca dolar kotasyonlu enstrümanlar listelenir (ör. ABD hisseleri, USD kripto).",
       "listingHintNeutral": "Bu portföy döviz bazlı değildir. Özet ve liste, üst menüde seçtiğiniz görüntüleme para birimine ({{currency}}) göre kotasyon filtresiyle çalışır.",

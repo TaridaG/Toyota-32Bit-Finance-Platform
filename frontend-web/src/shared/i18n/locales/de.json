@@ -1675,7 +1675,9 @@
         "CRYPTO": "Krypto",
         "STOCK": "Aktien",
         "FX": "Devisen",
+        "METAL": "Metalle",
         "FUND": "Fonds",
+        "DEPOSIT": "TL-Einlage",
         "BOND": "Anleihen"
       },
       "ofPortfolio": "im Portfolio",
@@ -1732,6 +1734,87 @@
       "creating": "Wird angelegt…"
     },
     "marketsAdd": {
+      "title": "Neues Instrument zum Portfolio hinzufügen",
+      "assetTypeLabel": "Anlagetyp",
+      "assetTypeAll": "Alle Typen",
+      "steps": {
+        "details": "Kaufdetails",
+        "preview": "Vorschau"
+      },
+      "searchLabel": "Instrument suchen",
+      "searchPlaceholder": "Firma, Symbol oder ISIN suchen...",
+      "instrumentLabel": "Instrument",
+      "purchaseMode": {
+        "now": "Zum Marktpreis hinzufügen",
+        "past": "Historischen Kauf hinzufügen"
+      },
+      "inputMode": {
+        "lots": "Per Lots eingeben",
+        "amount": "Per Betrag eingeben"
+      },
+      "entryModeLabel": "Eingabeart",
+      "entryModePrincipal": "Per Kapital eingeben",
+      "lotsLabel": "Lot-Menge",
+      "lotLabel": "Lot",
+      "buyPriceLabel": "Kaufpreis",
+      "buyPricePlaceholder": "Ihren Kaufpreis eingeben",
+      "earliestPriceNotice": "Die frühesten Preisdaten stammen vom {{date}}; der Kauf wird mit diesem Datum gespeichert.",
+      "manualPriceRequiredNotice": "Für dieses Instrument wurden keine Preisdaten gefunden. Versuchen Sie ein anderes Datum oder Instrument.",
+      "paymentCurrencyLabel": "Zahlungswährung",
+      "totalAmountLabel": "Gesamtbetrag",
+      "acquiredAtLabel": "Kaufdatum",
+      "confirmationTitle": "Kaufdetails",
+      "transactionTypeLabel": "Transaktionstyp",
+      "back": "Zurück",
+      "saving": "Wird gespeichert...",
+      "submit": "Bestätigen und Hinzufügen",
+      "continue": "Weiter",
+      "distributionTitle": "Portfolioverteilung",
+      "costPerLotLabel": "Kosten / Lot",
+      "totalLotsLabel": "Gesamte Lots",
+      "instrumentCurrencyLabel": "Instrumentwährung",
+      "instrumentChangesTitle": "Instrumententwicklung",
+      "previewNote": "Die Transaktion wird mit Live-Preis- und FX-Daten berechnet.",
+      "fxPanel": {
+        "title": "Beim Kauf verwendete FX-Ansicht",
+        "sourcePast": "MDS (Kauftag)",
+        "sourceNow": "Live-Quelle",
+        "pair": "Paar",
+        "mid": "Mitte",
+        "note": "Bei historischen Käufen stammen die FX-Kurse aus MDS für den Kauftag; bei aktuellen Käufen aus der Live-Preistabelle. Zusammenfassung und Verteilung laufen in der Kopfzeilenwährung mit Live-FX weiter."
+      },
+      "periods": {
+        "today": "Heute",
+        "oneMonth": "1 Monat",
+        "threeMonths": "3 Monate",
+        "sixMonths": "6 Monate",
+        "oneYear": "1 Jahr"
+      },
+      "depositRateLabel": "Zinssatz",
+      "depositRateLoading": "Zinssatz wird geladen...",
+      "depositRateUnavailable": "Kein Zinssatz verfügbar",
+      "depositPastDateRequired": "Für Einlagen ist bei einem historischen Kauf ein Datum erforderlich.",
+      "depositPrincipalLabel": "TRY-Kapital",
+      "depositMaturity": {
+        "MT01": "TL-Einlage · Bis zu 1 Monat",
+        "MT02": "TL-Einlage · Bis zu 3 Monate",
+        "MT03": "TL-Einlage · Bis zu 6 Monate",
+        "MT04": "TL-Einlage · Bis zu 1 Jahr",
+        "MT05": "TL-Einlage · 1 Jahr und länger",
+        "MT06": "TL-Einlage"
+      },
+      "messages": {
+        "saved": "Transaktion erfolgreich gespeichert."
+      },
+      "errors": {
+        "previewFailed": "Vorschau fehlgeschlagen.",
+        "currentPriceUnavailable": "Der aktuelle Preis konnte nicht geladen werden (Server- oder FX-Datenproblem).",
+        "pastPreviewFailed": "Die historische Preisvorschau ist fehlgeschlagen; versuchen Sie ein anderes Datum oder Instrument.",
+        "pastDateRequired": "Für historische Käufe ist ein Kaufdatum erforderlich.",
+        "pastDateAndPriceRequired": "Für historische Käufe sind Kaufdatum und Stückpreis erforderlich.",
+        "saveFailed": "Die Transaktion konnte nicht gespeichert werden.",
+        "instrumentListLoadFailed": "Die Instrumentenliste konnte nicht geladen werden. Prüfen Sie API (/api/instruments, /api/market) und Gateway-Verbindung."
+      },
       "listingHintTry": "Dieses Portfolio ist TRY-basiert. Es werden nur in TRY kotierte Instrumente gelistet (z. B. BIST, FX in Lira).",
       "listingHintUsd": "Dieses Portfolio ist USD-basiert. Es werden nur in USD kotierte Instrumente gelistet (z. B. US-Aktien, USD-Krypto).",
       "listingHintNeutral": "Dieses Portfolio ist nicht währungsgebunden. Übersicht und Liste nutzen Ihre Kopfzeilen-Anzeigewährung ({{currency}}) für die Kotierungsfilterung.",

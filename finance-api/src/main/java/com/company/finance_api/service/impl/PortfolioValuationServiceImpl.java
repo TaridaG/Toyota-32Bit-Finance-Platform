@@ -123,6 +123,7 @@ public class PortfolioValuationServiceImpl implements PortfolioValuationService 
       case FUND -> "FUND";
       case BOND -> "BOND";
       case STOCK -> "STOCK";
+      case DEPOSIT -> "DEPOSIT";
     };
   }
 

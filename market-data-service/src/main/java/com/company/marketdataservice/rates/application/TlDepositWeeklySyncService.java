@@ -33,16 +33,19 @@ public class TlDepositWeeklySyncService {
     private final TlDepositWeeklyRepository tlDepositWeeklyRepository;
     private final TcmbBondEvdsClient tcmbBondEvdsClient;
     private final MarketEvdsProperties evdsProperties;
+    private final TlDepositDailyIndexSyncService tlDepositDailyIndexSyncService;
     private final AtomicBoolean asyncKickoffInFlight = new AtomicBoolean(false);
 
     public TlDepositWeeklySyncService(
             TlDepositWeeklyRepository tlDepositWeeklyRepository,
             TcmbBondEvdsClient tcmbBondEvdsClient,
-            MarketEvdsProperties evdsProperties
+            MarketEvdsProperties evdsProperties,
+            TlDepositDailyIndexSyncService tlDepositDailyIndexSyncService
     ) {
         this.tlDepositWeeklyRepository = tlDepositWeeklyRepository;
         this.tcmbBondEvdsClient = tcmbBondEvdsClient;
         this.evdsProperties = evdsProperties;
+        this.tlDepositDailyIndexSyncService = tlDepositDailyIndexSyncService;
     }
 
     /**
@@ -125,6 +128,7 @@ public class TlDepositWeeklySyncService {
             totalWeeks += byWeek.size();
             log.info("TL_DEPOSIT_WEEKLY_SYNC_DONE series={} maturity={} upsertedWeeks={}", series, maturity, byWeek.size());
         }
+        tlDepositDailyIndexSyncService.rebuildForMaturities(configuredMaturitySuffixes());
         log.info("TL_DEPOSIT_WEEKLY_SYNC_ALL_DONE totalUpsertWeeksAcrossSeries={}", totalWeeks);
     }
 

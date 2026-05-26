@@ -1682,7 +1682,9 @@
         "CRYPTO": "Crypto",
         "STOCK": "Stocks",
         "FX": "FX",
+        "METAL": "Metals",
         "FUND": "Funds",
+        "DEPOSIT": "TL deposit",
         "BOND": "Bonds"
       },
       "ofPortfolio": "of portfolio",
@@ -1739,6 +1741,87 @@
       "creating": "Creating…"
     },
     "marketsAdd": {
+      "title": "Add New Instrument to Portfolio",
+      "assetTypeLabel": "Asset type",
+      "assetTypeAll": "All types",
+      "steps": {
+        "details": "Trade Details",
+        "preview": "Preview"
+      },
+      "searchLabel": "Search Instrument",
+      "searchPlaceholder": "Search company, symbol or ISIN...",
+      "instrumentLabel": "Instrument",
+      "purchaseMode": {
+        "now": "Add at Market",
+        "past": "Add Past Purchase"
+      },
+      "inputMode": {
+        "lots": "Enter by Lots",
+        "amount": "Enter by Amount"
+      },
+      "entryModeLabel": "Entry Mode",
+      "entryModePrincipal": "Enter by Principal",
+      "lotsLabel": "Lot Quantity",
+      "lotLabel": "Lot",
+      "buyPriceLabel": "Buy Price",
+      "buyPricePlaceholder": "Enter your buy price",
+      "earliestPriceNotice": "The earliest price data is on {{date}}; the purchase will be saved with that date.",
+      "manualPriceRequiredNotice": "No price data was found for this instrument. Try a different date or instrument.",
+      "paymentCurrencyLabel": "Payment Currency",
+      "totalAmountLabel": "Total Amount",
+      "acquiredAtLabel": "Purchase Date",
+      "confirmationTitle": "Purchase Details",
+      "transactionTypeLabel": "Transaction Type",
+      "back": "Back",
+      "saving": "Saving...",
+      "submit": "Confirm and Add",
+      "continue": "Continue",
+      "distributionTitle": "Portfolio Distribution",
+      "costPerLotLabel": "Cost / Lot",
+      "totalLotsLabel": "Total Lots",
+      "instrumentCurrencyLabel": "Instrument Currency",
+      "instrumentChangesTitle": "Instrument Performance",
+      "previewNote": "The transaction is calculated using live price and FX data.",
+      "fxPanel": {
+        "title": "FX Snapshot Used at Purchase",
+        "sourcePast": "MDS (purchase day)",
+        "sourceNow": "Live Source",
+        "pair": "Pair",
+        "mid": "Mid",
+        "note": "For historical purchases, FX rates come from MDS for the purchase day; for current purchases, they come from the live pricing table. Summary and distribution continue in the header currency using live FX."
+      },
+      "periods": {
+        "today": "Today",
+        "oneMonth": "1 Month",
+        "threeMonths": "3 Months",
+        "sixMonths": "6 Months",
+        "oneYear": "1 Year"
+      },
+      "depositRateLabel": "Interest rate",
+      "depositRateLoading": "Loading rate...",
+      "depositRateUnavailable": "Rate unavailable",
+      "depositPastDateRequired": "A past purchase date is required for deposits.",
+      "depositPrincipalLabel": "TRY principal",
+      "depositMaturity": {
+        "MT01": "TL Deposit · Up to 1 Month",
+        "MT02": "TL Deposit · Up to 3 Months",
+        "MT03": "TL Deposit · Up to 6 Months",
+        "MT04": "TL Deposit · Up to 1 Year",
+        "MT05": "TL Deposit · 1 Year and Longer",
+        "MT06": "TL Deposit"
+      },
+      "messages": {
+        "saved": "Transaction saved successfully."
+      },
+      "errors": {
+        "previewFailed": "Preview failed.",
+        "currentPriceUnavailable": "Current price could not be loaded (server or FX data issue).",
+        "pastPreviewFailed": "Historical price preview failed; try another date or instrument.",
+        "pastDateRequired": "A purchase date is required for historical entries.",
+        "pastDateAndPriceRequired": "A purchase date and unit price are required for historical entries.",
+        "saveFailed": "Transaction could not be saved.",
+        "instrumentListLoadFailed": "The instrument list could not be loaded. Check API (/api/instruments, /api/market) and gateway connectivity."
+      },
       "listingHintTry": "This portfolio is TRY-based. Only TRY-quoted instruments are listed (e.g. BIST, FX in lira).",
       "listingHintUsd": "This portfolio is USD-based. Only USD-quoted instruments are listed (e.g. US equities, USD crypto).",
       "listingHintNeutral": "This portfolio is not currency-locked. Summary and list use your header display currency ({{currency}}) for quote filtering.",

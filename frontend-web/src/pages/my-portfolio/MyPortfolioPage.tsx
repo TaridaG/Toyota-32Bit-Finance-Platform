@@ -57,6 +57,8 @@ import { useAppPreferences } from '../../shared/preferences/useAppPreferences'
 import { MyAnalysisPanel } from '../my-analysis/MyAnalysisPanel'
 import { MyNewsPanel } from '../my-news/MyNewsPanel'
 import { PortfolioGoalsPanel } from './components/PortfolioGoalsPanel'
+import { fetchTlDepositIndexLatest, type TlDepositIndexLatestResponse } from '../faiz-vadeli/api/tlDepositApi'
+import { getTlDepositMaturityCodeFromInstrumentSymbol } from '../faiz-vadeli/lib/tlDepositMaturity'
 
 const MyPortfolioWatchlistSection = lazy(async () => {
   const mod = await import('./components/MyPortfolioWatchlistSection')
@@ -248,7 +250,7 @@ function inferInstrumentQuoteCurrency(symbol: string): 'TRY' | 'USD' | 'EUR' {
   return 'USD'
 }
 
-const RECENT_TX_PREVIEW_SIZE = 4
+const RECENT_TX_PREVIEW_SIZE = 8
 
 const EMPTY_TX_FILTERS: TransactionHistoryFilters = {
   symbol: '',
@@ -267,12 +269,16 @@ function sortTransactionsNewestFirst(rows: TransactionHistoryItem[]): Transactio
   })
 }
 
-const DISTRIBUTION_TOP_N = 4
+const DISTRIBUTION_TOP_N = 8
 const DISTRIBUTION_BAR_COLORS = [
   'my-portfolio-dot-blue',
   'my-portfolio-dot-purple',
   'my-portfolio-dot-pink',
   'my-portfolio-dot-green',
+  'my-portfolio-dot-amber',
+  'my-portfolio-dot-cyan',
+  'my-portfolio-dot-indigo',
+  'my-portfolio-dot-teal',
 ] as const
 
 type DistributionBarSeg = { key: string; widthPct: number; colorClass: string }
@@ -471,10 +477,14 @@ function computeCategoryDayMetrics(
   return { valueChange1dPct, weightChangePp1d }
 }
 
-function buildInstrumentDonutRows(fullList: DistributionRow[]): AllocationDonutRow[] {
+function buildInstrumentDonutRows(
+  fullList: DistributionRow[],
+  formatSymbolLabel: (symbol: string) => string,
+): AllocationDonutRow[] {
   return fullList.map((r) => ({
     rowKey: r.symbol,
     symbol: r.symbol,
+    displaySymbol: formatSymbolLabel(r.symbol),
     value: r.value,
     sharePct: r.sharePct,
     colorClass: r.colorClass,
@@ -506,11 +516,41 @@ function buildCategoryDonutRows(overview: PortfolioOverview | null, t: (key: str
 const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation'] as const
 const sidebarSecondaryKeys = ['news', 'analysis', 'targets', 'watchlist', 'settings'] as const
 const PORTFOLIO_SECTIONS = new Set<string>([...sidebarMainKeys, ...sidebarSecondaryKeys])
+type MarketOptionAssetType = 'STOCK' | 'FX' | 'METAL' | 'CRYPTO' | 'FUND' | 'DEPOSIT' | 'BOND'
+type MarketOptionAssetTypeFilter = 'ALL' | MarketOptionAssetType
+
+const MARKET_OPTION_ASSET_TYPE_ORDER: readonly MarketOptionAssetType[] = ['STOCK', 'FX', 'METAL', 'CRYPTO', 'FUND', 'DEPOSIT', 'BOND']
+
+function normalizeMarketOptionAssetType(raw: string | null | undefined, symbol: string): MarketOptionAssetType {
+  const type = (raw ?? '').trim().toUpperCase()
+  const sym = symbol.trim().toUpperCase()
+  if (sym.startsWith('TRBOND') || type === 'BOND' || type === 'EUROBOND' || type === 'BILL' || type === 'TBILL') {
+    return 'BOND'
+  }
+  if (sym.startsWith('FUND_') || type === 'FUND' || type === 'ETF' || type === 'MUTUAL_FUND' || type === 'MUTUAL FUND') {
+    return 'FUND'
+  }
+  if (type === 'DEPOSIT' || sym.startsWith('TLDEP_')) {
+    return 'DEPOSIT'
+  }
+  if (type === 'CRYPTO' || type === 'COIN' || type === 'TOKEN') {
+    return 'CRYPTO'
+  }
+  if (type === 'METAL' || type === 'COMMODITY' || /^(XAU|XAG|XPT|XPD|XCU)/.test(sym)) {
+    return 'METAL'
+  }
+  if (type === 'FX' || type === 'FOREX' || type === 'CURRENCY') {
+    return 'FX'
+  }
+  return 'STOCK'
+}
+
 type MarketOption = {
   instrumentId: number
   symbol: string
   name: string
   nativeQuote: string | null
+  assetType: MarketOptionAssetType
 }
 
 const TRADE_PAYMENT_CURRENCIES: readonly TradePaymentCurrency[] = ['TRY', 'USD', 'EUR', 'GBP', 'JPY', 'AED']
@@ -674,6 +714,18 @@ function extractApiErrorMessage(error: unknown): string {
   return ''
 }
 
+function formatDepositMaturityLabel(
+  symbol: string | null | undefined,
+  fallbackName: string | null | undefined,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  const maturityCode = getTlDepositMaturityCodeFromInstrumentSymbol(symbol)
+  if (!maturityCode) return fallbackName?.trim() || symbol?.trim() || '—'
+  return t(`marketsAdd.depositMaturity.${maturityCode}`, {
+    defaultValue: fallbackName?.trim() || symbol?.trim() || maturityCode,
+  })
+}
+
 function SidebarItemIcon({ item }: { item: string }) {
   switch (item) {
     case 'dashboard':
@@ -795,7 +847,8 @@ function AcquisitionFxPanel({
   snap: AcquisitionFxRatesSnapshot
   purchaseMode: PurchaseMode
 }) {
-  const fmt = useMemo(() => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 6 }), [])
+  const { t, i18n } = useTranslation('portfolio')
+  const fmt = useMemo(() => new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 }), [i18n.language])
   const rows: [string, number | null | undefined][] = [
     ['USDTRY', snap.usdTry],
     ['EURTRY', snap.eurTry],
@@ -808,16 +861,16 @@ function AcquisitionFxPanel({
   ]
   return (
     <div className="my-portfolio-acquisition-fx">
-      <h5>Alimda kullanilan kur paneli</h5>
+      <h5>{t('marketsAdd.fxPanel.title')}</h5>
       <div className="my-portfolio-acquisition-fx-asof">
-        <span>{purchaseMode === 'PAST' ? 'MDS (alim gunu)' : 'Canli kaynak'}</span>
+        <span>{purchaseMode === 'PAST' ? t('marketsAdd.fxPanel.sourcePast') : t('marketsAdd.fxPanel.sourceNow')}</span>
         <code>{snap.fxAsOfIso}</code>
       </div>
       <table className="my-portfolio-acquisition-fx-table">
         <thead>
           <tr>
-            <th>Cift</th>
-            <th>Mid</th>
+            <th>{t('marketsAdd.fxPanel.pair')}</th>
+            <th>{t('marketsAdd.fxPanel.mid')}</th>
           </tr>
         </thead>
         <tbody>
@@ -830,8 +883,7 @@ function AcquisitionFxPanel({
         </tbody>
       </table>
       <p className="my-portfolio-acquisition-fx-note">
-        Gecmis alimda kurlar alim gunune gore MDS&apos;ten; bugunku alimda guncel fiyat tablosundan. Ozet ve dagilim
-        gosterimi header para biriminde canli kurla devam eder.
+        {t('marketsAdd.fxPanel.note')}
       </p>
     </div>
   )
@@ -952,8 +1004,9 @@ export function MyPortfolioPage() {
   const [recentTxLoading, setRecentTxLoading] = useState(false)
   const [allocationSortKey, setAllocationSortKey] = useState<AllocationSortKey>('value')
   const [allocationSortDir, setAllocationSortDir] = useState<AllocationSortDir>('desc')
-  const [valueSnapshots, setValueSnapshots] = useState<PortfolioValueSnapshot[]>([])
+  const [, setValueSnapshots] = useState<PortfolioValueSnapshot[]>([])
   const [selectedInstrumentId, setSelectedInstrumentId] = useState<number | null>(null)
+  const [selectedAssetType, setSelectedAssetType] = useState<MarketOptionAssetTypeFilter>('ALL')
   const [instrumentQuery, setInstrumentQuery] = useState('')
   const [purchaseMode, setPurchaseMode] = useState<PurchaseMode>('NOW')
   const [inputMode, setInputMode] = useState<TradeInputMode>('LOTS')
@@ -965,6 +1018,9 @@ export function MyPortfolioPage() {
   const [unitPriceUsed, setUnitPriceUsed] = useState<number | null>(null)
   const [manualUnitPriceRequired, setManualUnitPriceRequired] = useState(false)
   const [pastDateRollNotice, setPastDateRollNotice] = useState<string | null>(null)
+  const [depositRatePreview, setDepositRatePreview] = useState<TlDepositIndexLatestResponse | null>(null)
+  const [depositRateLoading, setDepositRateLoading] = useState(false)
+  const [depositPastDateError, setDepositPastDateError] = useState<string | null>(null)
   const [lastEditedField, setLastEditedField] = useState<'lots' | 'amount'>('lots')
   const [isPreviewStep, setIsPreviewStep] = useState(false)
   const [instrumentPerformance, setInstrumentPerformance] = useState<InstrumentPerformance>({
@@ -1232,7 +1288,10 @@ export function MyPortfolioPage() {
     })
   }, [])
 
-  const instrumentDonutRows = useMemo(() => buildInstrumentDonutRows(distribution.fullList), [distribution.fullList])
+  const instrumentDonutRows = useMemo(
+    () => buildInstrumentDonutRows(distribution.fullList, (symbol) => formatDepositMaturityLabel(symbol, null, t)),
+    [distribution.fullList, t],
+  )
 
   const categoryDonutRows = useMemo(() => buildCategoryDonutRows(overview, t), [overview, t])
 
@@ -1346,6 +1405,7 @@ export function MyPortfolioPage() {
               symbol: inst.symbol,
               name: inst.name,
               nativeQuote,
+              assetType: normalizeMarketOptionAssetType(inst.type, inst.symbol),
             }
           })
         } else {
@@ -1360,6 +1420,7 @@ export function MyPortfolioPage() {
                   ? String(row.nativeQuote).trim().toUpperCase()
                   : null) ??
                 inferNativeQuote(row.symbol, row.category, null, row.exchange ?? null),
+              assetType: normalizeMarketOptionAssetType(row.category, row.symbol),
             }))
         }
 
@@ -1377,6 +1438,7 @@ export function MyPortfolioPage() {
             symbol: sym,
             name: row.name,
             nativeQuote,
+            assetType: normalizeMarketOptionAssetType(row.category, sym),
           })
         }
         options = Array.from(bySymbol.values())
@@ -1388,7 +1450,7 @@ export function MyPortfolioPage() {
           const hint = [catalogFail, overviewFail].filter(Boolean).join(' · ')
           setMarketCatalogError(
             hint ||
-              'Enstruman listesi yuklenemedi. API ( /api/instruments, /api/market ) ve gateway erisimini kontrol edin.',
+              t('marketsAdd.errors.instrumentListLoadFailed'),
           )
         } else {
           setMarketCatalogError(null)
@@ -1402,11 +1464,16 @@ export function MyPortfolioPage() {
     return () => {
       cancelled = true
     }
-  }, [activeSection, valuationCurrency])
+  }, [activeSection, valuationCurrency, t])
 
   const selectedInstrument = useMemo(
     () => marketOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null,
     [marketOptions, selectedInstrumentId],
+  )
+  const isTlDepositInstrument = selectedInstrument?.assetType === 'DEPOSIT'
+  const tlDepositMaturityCode = useMemo(
+    () => getTlDepositMaturityCodeFromInstrumentSymbol(selectedInstrument?.symbol),
+    [selectedInstrument?.symbol],
   )
 
   /** Enstrüman birim fiyatının kotasyon para birimi; önizleme sonrası API `instrumentQuoteCurrency` öncelikli. */
@@ -1438,6 +1505,62 @@ export function MyPortfolioPage() {
       setTradePaymentCurrency(instrumentDefaultPaymentCurrency)
     }
   }, [tradePaymentCurrencyOptions, tradePaymentCurrency, instrumentDefaultPaymentCurrency])
+
+  useEffect(() => {
+    if (isTlDepositInstrument && inputMode !== 'AMOUNT') {
+      setInputMode('AMOUNT')
+      setLastEditedField('amount')
+    }
+  }, [isTlDepositInstrument, inputMode])
+
+  useEffect(() => {
+    if (!isTlDepositInstrument) {
+      setDepositPastDateError(null)
+      setDepositRatePreview(null)
+      setDepositRateLoading(false)
+      return
+    }
+    setUnitPrice('')
+    setManualUnitPriceRequired(false)
+    if (purchaseMode !== 'PAST' || acquiredAt) {
+      setDepositPastDateError(null)
+    }
+  }, [isTlDepositInstrument, purchaseMode, acquiredAt])
+
+  useEffect(() => {
+    if (!isTlDepositInstrument || !tlDepositMaturityCode) {
+      setDepositRatePreview(null)
+      setDepositRateLoading(false)
+      return
+    }
+    const asOf = purchaseMode === 'PAST' ? acquiredAt || undefined : undefined
+    if (purchaseMode === 'PAST' && !asOf) {
+      setDepositRatePreview(null)
+      setDepositRateLoading(false)
+      return
+    }
+    let cancelled = false
+    setDepositRateLoading(true)
+    void fetchTlDepositIndexLatest(tlDepositMaturityCode, asOf)
+      .then((data) => {
+        if (!cancelled) {
+          setDepositRatePreview(data)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDepositRatePreview(null)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDepositRateLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isTlDepositInstrument, tlDepositMaturityCode, purchaseMode, acquiredAt])
 
   const loadHistoryPage = useCallback(
     async (page: number, filters: TransactionHistoryFilters, portfolioId: number | null) => {
@@ -1729,7 +1852,16 @@ export function MyPortfolioPage() {
     const missingPrimaryInput =
       (inputMode === 'LOTS' && payload.lots == null) || (inputMode === 'AMOUNT' && payload.amount == null)
 
-    if (purchaseMode === 'PAST' && normalizedAcquiredAt && missingPrimaryInput) {
+    if (purchaseMode === 'PAST' && !normalizedAcquiredAt) {
+      setTradePreviewError(null)
+      setPastDateRollNotice(null)
+      setManualUnitPriceRequired(false)
+      setUnitPriceUsed(null)
+      setLastTradePreview(null)
+      return
+    }
+
+    if (!isTlDepositInstrument && purchaseMode === 'PAST' && normalizedAcquiredAt && missingPrimaryInput) {
       const timer = window.setTimeout(() => {
         void previewTrade({
           instrumentId: selectedInstrumentId,
@@ -1745,7 +1877,7 @@ export function MyPortfolioPage() {
             setTradePreviewError(null)
             setLastTradePreview(preview)
             setUnitPriceUsed(preview.unitPriceUsed)
-            if (!unitPrice) {
+            if (!isTlDepositInstrument && !unitPrice) {
               setUnitPrice(String(preview.unitPriceUsed))
             }
             setManualUnitPriceRequired(preview.manualUnitPriceRequired)
@@ -1757,7 +1889,7 @@ export function MyPortfolioPage() {
             setManualUnitPriceRequired(false)
             setUnitPriceUsed(null)
             setLastTradePreview(null)
-            setTradePreviewError(raw || 'Onizleme basarisiz.')
+            setTradePreviewError(raw || t('marketsAdd.errors.previewFailed'))
           })
       }, 150)
       return () => window.clearTimeout(timer)
@@ -1773,7 +1905,7 @@ export function MyPortfolioPage() {
           setTradePreviewError(null)
           setLastTradePreview(preview)
           setUnitPriceUsed(preview.unitPriceUsed)
-          if (purchaseMode === 'PAST' && !unitPrice) {
+          if (!isTlDepositInstrument && purchaseMode === 'PAST' && !unitPrice) {
             setUnitPrice(String(preview.unitPriceUsed))
           }
           setManualUnitPriceRequired(preview.manualUnitPriceRequired)
@@ -1793,8 +1925,8 @@ export function MyPortfolioPage() {
           setTradePreviewError(
             raw ||
               (purchaseMode === 'NOW'
-                ? 'Guncel fiyat alinamadi (sunucu veya kur verisi).'
-                : 'Gecmis fiyat onizlemesi basarisiz; baska tarih veya enstruman deneyin.'),
+                ? t('marketsAdd.errors.currentPriceUnavailable')
+                : t('marketsAdd.errors.pastPreviewFailed')),
           )
         })
     }, 250)
@@ -1811,13 +1943,45 @@ export function MyPortfolioPage() {
     acquiredAt,
     unitPrice,
     lastEditedField,
+    isTlDepositInstrument,
+    t,
   ])
 
+  const availableAssetTypes = useMemo(
+    () => {
+      const seen = new Set<MarketOptionAssetType>()
+      marketOptions.forEach((item) => seen.add(item.assetType))
+      return MARKET_OPTION_ASSET_TYPE_ORDER.filter((type) => seen.has(type))
+    },
+    [marketOptions],
+  )
+
+  const assetTypeFilterOptions = useMemo(
+    () => [
+      { value: 'ALL' as const, label: t('marketsAdd.assetTypeAll') },
+      ...availableAssetTypes.map((type) => ({
+        value: type,
+        label: t(`allocation.instrumentType.${type}`, { defaultValue: type }),
+      })),
+    ],
+    [availableAssetTypes, t],
+  )
+
+  useEffect(() => {
+    if (selectedAssetType !== 'ALL' && !availableAssetTypes.includes(selectedAssetType)) {
+      setSelectedAssetType('ALL')
+    }
+  }, [availableAssetTypes, selectedAssetType])
+
   const filteredMarketOptions = useMemo(() => {
+    const typeFiltered =
+      selectedAssetType === 'ALL'
+        ? marketOptions
+        : marketOptions.filter((item) => item.assetType === selectedAssetType)
     const q = instrumentQuery.trim().toLowerCase()
-    if (!q) return marketOptions
-    return marketOptions.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
-  }, [instrumentQuery, marketOptions])
+    if (!q) return typeFiltered
+    return typeFiltered.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
+  }, [instrumentQuery, marketOptions, selectedAssetType])
 
   useEffect(() => {
     if (activeSection !== 'markets') return
@@ -1833,6 +1997,41 @@ export function MyPortfolioPage() {
   const parsedLots = Number(lots)
   const previewTotal = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
   const previewLots = Number.isFinite(parsedLots) && parsedLots > 0 ? parsedLots : 0
+  const depositPrincipalTry = useMemo(() => {
+    if (!isTlDepositInstrument || unitPriceUsed == null || previewLots <= 0) return null
+    return unitPriceUsed * previewLots
+  }, [isTlDepositInstrument, unitPriceUsed, previewLots])
+  const depositRateDisplay = useMemo(() => {
+    const rate = depositRatePreview?.annualRatePercent
+    if (depositRateLoading) return t('marketsAdd.depositRateLoading')
+    if (rate == null || !Number.isFinite(Number(rate))) return t('marketsAdd.depositRateUnavailable')
+    return `%${Number(rate).toLocaleString(i18n.language, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`
+  }, [depositRateLoading, depositRatePreview?.annualRatePercent, i18n.language, t])
+  const formatDepositInstrumentLabel = useCallback(
+    (symbol: string | null | undefined, fallbackName?: string | null) =>
+      formatDepositMaturityLabel(symbol, fallbackName, t),
+    [t],
+  )
+  const formatMarketOptionLabel = useCallback(
+    (item: MarketOption) => {
+      if (item.assetType === 'DEPOSIT') {
+        return formatDepositInstrumentLabel(item.symbol, item.name)
+      }
+      return item.symbol && item.name ? `${item.symbol} - ${item.name}` : item.symbol || item.name || '—'
+    },
+    [formatDepositInstrumentLabel],
+  )
+  const formatInstrumentSymbolLabel = useCallback(
+    (symbol: string) => formatDepositMaturityLabel(symbol, null, t),
+    [t],
+  )
+  const selectedInstrumentDisplayLabel = useMemo(
+    () => (selectedInstrument ? formatMarketOptionLabel(selectedInstrument) : '—'),
+    [formatMarketOptionLabel, selectedInstrument],
+  )
   const projectedDistribution = useMemo(() => {
     const baseItems = overview?.items ?? []
     const baseTotal = Number(overview?.totalValue ?? 0)
@@ -1858,6 +2057,17 @@ export function MyPortfolioPage() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
   }, [overview, selectedInstrument, previewTotal, previewLots, tradePaymentCurrency, unitPriceUsed])
+
+  const openTradePreview = useCallback(() => {
+    if (isTlDepositInstrument && purchaseMode === 'PAST' && !toUtcStartOfDay(acquiredAt)) {
+      setDepositPastDateError(t('marketsAdd.depositPastDateRequired'))
+      setTradeError(null)
+      setTradePreviewError(null)
+      return
+    }
+    setDepositPastDateError(null)
+    setIsPreviewStep(true)
+  }, [isTlDepositInstrument, purchaseMode, acquiredAt, t])
 
   const submitTrade = async () => {
     if (selectedInstrumentId == null || effectiveTradePortfolioId == null || effectiveTradePortfolioId <= 0) {
@@ -1895,17 +2105,23 @@ export function MyPortfolioPage() {
             unitPrice: pastUnitPayload,
           }
     if (purchaseMode === 'PAST' && !normalizedAcquiredAt) {
-      setTradeError('Onceden alimda tarih zorunludur.')
+      const message = isTlDepositInstrument
+        ? t('marketsAdd.depositPastDateRequired')
+        : t('marketsAdd.errors.pastDateRequired')
+      setTradeError(message)
+      if (isTlDepositInstrument) {
+        setDepositPastDateError(message)
+      }
       return
     }
     if (purchaseMode === 'PAST' && manualUnitPriceRequired && !unitPrice) {
-      setTradeError('Onceden alimda tarih ve birim fiyat zorunludur.')
+      setTradeError(t('marketsAdd.errors.pastDateAndPriceRequired'))
       return
     }
     setTradeSaving(true)
     try {
       await buyTrade(payload)
-      setTradeSuccess('Islem basariyla kaydedildi.')
+      setTradeSuccess(t('marketsAdd.messages.saved'))
       setLastTradePreview(null)
       setIsPreviewStep(false)
       await loadHistoryPage(0, appliedHistoryFilters, isAggregatePortfolioView ? null : selectedPortfolioId)
@@ -1916,7 +2132,7 @@ export function MyPortfolioPage() {
       setTradeFlow(await loadTradeFlowForPortfolio(overviewApiPortfolioId, valuationCurrency))
     } catch (error) {
       const message = extractApiErrorMessage(error)
-      setTradeError(message || 'Islem kaydedilemedi.')
+      setTradeError(message || t('marketsAdd.errors.saveFailed'))
     } finally {
       setTradeSaving(false)
     }
@@ -2123,8 +2339,7 @@ export function MyPortfolioPage() {
         <div className="my-portfolio-content">
           {activeSection === 'markets' ? (
             <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
-              <h2 className="my-portfolio-trade-title">Portfoye Yeni Enstruman Ekle</h2>
-              <p className="my-portfolio-trade-subtitle">Enstruman sec, lot veya tutar gir, aninda maliyet/lot hesapla.</p>
+              <h2 className="my-portfolio-trade-title">{t('marketsAdd.title')}</h2>
               {isAggregatePortfolioView && portfolios.length > 0 ? (
                 <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
                   <span>{t('sidebar.tradePickPortfolio')}</span>
@@ -2141,54 +2356,66 @@ export function MyPortfolioPage() {
                   </select>
                 </label>
               ) : null}
-              {(isAggregatePortfolioView || selectedPortfolio != null) && portfolios.length > 0 ? (
-                <p className="my-portfolio-trade-listing-hint" role="note">
-                  {t('marketsAdd.listingHintAll')}
-                </p>
-              ) : null}
 
               <div className={`my-portfolio-trade-shell${isPreviewStep ? ' is-preview' : ''}`}>
                 <div className="my-portfolio-trade-form-panel">
                   <ol className="my-portfolio-trade-steps">
-                    <li className={!isPreviewStep ? 'is-active' : ''}>Alim Detaylari</li>
-                    <li className={isPreviewStep ? 'is-active' : ''}>Onizleme</li>
+                    <li className={!isPreviewStep ? 'is-active' : ''}>{t('marketsAdd.steps.details')}</li>
+                    <li className={isPreviewStep ? 'is-active' : ''}>{t('marketsAdd.steps.preview')}</li>
                   </ol>
 
                   {!isPreviewStep ? (
                   <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
-                    <span>Enstruman Ara</span>
+                    <span>{t('marketsAdd.searchLabel')}</span>
                     <input
                       value={instrumentQuery}
                       onChange={(event) => setInstrumentQuery(event.target.value)}
-                      placeholder="Sirket, sembol veya ISIN ara..."
+                      placeholder={t('marketsAdd.searchPlaceholder')}
                       readOnly={isPreviewStep}
                     />
                   </label>
                   ) : null}
 
                   {!isPreviewStep ? (
-                  <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
-                    <span>Enstruman</span>
-                    <select
-                      value={selectedInstrumentId != null ? String(selectedInstrumentId) : ''}
-                      onChange={(event) => {
-                        const v = event.target.value
-                        setSelectedInstrumentId(v === '' ? null : Number(v))
-                      }}
-                      disabled={isPreviewStep || marketLoading || filteredMarketOptions.length === 0}
-                    >
-                      {filteredMarketOptions.map((item) => (
-                        <option key={item.instrumentId} value={String(item.instrumentId)}>
-                          {item.symbol} - {item.name}
-                        </option>
-                      ))}
-                    </select>
-                    {marketCatalogError ? (
-                      <small className="auth-error" role="alert">
-                        {marketCatalogError}
-                      </small>
-                    ) : null}
-                  </label>
+                  <div className="my-portfolio-trade-grid">
+                    <label className="my-portfolio-trade-field">
+                      <span>{t('marketsAdd.assetTypeLabel')}</span>
+                      <select
+                        value={selectedAssetType}
+                        onChange={(event) => setSelectedAssetType(event.target.value as MarketOptionAssetTypeFilter)}
+                        disabled={isPreviewStep || marketLoading || availableAssetTypes.length === 0}
+                      >
+                        {assetTypeFilterOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="my-portfolio-trade-field">
+                      <span>{t('marketsAdd.instrumentLabel')}</span>
+                      <select
+                        value={selectedInstrumentId != null ? String(selectedInstrumentId) : ''}
+                        onChange={(event) => {
+                          const v = event.target.value
+                          setSelectedInstrumentId(v === '' ? null : Number(v))
+                        }}
+                        disabled={isPreviewStep || marketLoading || filteredMarketOptions.length === 0}
+                      >
+                        {filteredMarketOptions.map((item) => (
+                          <option key={item.instrumentId} value={String(item.instrumentId)}>
+                            {formatMarketOptionLabel(item)}
+                          </option>
+                        ))}
+                      </select>
+                      {marketCatalogError ? (
+                        <small className="auth-error" role="alert">
+                          {marketCatalogError}
+                        </small>
+                      ) : null}
+                    </label>
+                  </div>
                   ) : null}
 
                   {!isPreviewStep ? (
@@ -2201,7 +2428,7 @@ export function MyPortfolioPage() {
                           onClick={() => setPurchaseMode('NOW')}
                           disabled={isPreviewStep}
                         >
-                          Piyasadan ekle
+                          {t('marketsAdd.purchaseMode.now')}
                         </button>
                         <button
                           type="button"
@@ -2212,11 +2439,12 @@ export function MyPortfolioPage() {
                           }}
                           disabled={isPreviewStep}
                         >
-                          Gecmis alim ekle
+                          {t('marketsAdd.purchaseMode.past')}
                         </button>
                       </div>
                     </div>
 
+                    {!isTlDepositInstrument ? (
                     <div>
                       <div className="my-portfolio-trade-toggle-group">
                         <button
@@ -2225,7 +2453,7 @@ export function MyPortfolioPage() {
                           onClick={() => setInputMode('LOTS')}
                           disabled={isPreviewStep}
                         >
-                          Lot ile gir
+                          {t('marketsAdd.inputMode.lots')}
                         </button>
                         <button
                           type="button"
@@ -2233,17 +2461,19 @@ export function MyPortfolioPage() {
                           onClick={() => setInputMode('AMOUNT')}
                           disabled={isPreviewStep}
                         >
-                          Tutar ile gir
+                          {t('marketsAdd.inputMode.amount')}
                         </button>
                       </div>
                     </div>
+                    ) : null}
                   </div>
                   ) : null}
 
                   {!isPreviewStep ? (
                   <div className="my-portfolio-trade-grid">
+                    {!isTlDepositInstrument ? (
                     <label className="my-portfolio-trade-field">
-                      <span>Lot Miktari</span>
+                      <span>{t('marketsAdd.lotsLabel')}</span>
                       <input
                         value={lots}
                         onChange={(event) => {
@@ -2255,48 +2485,55 @@ export function MyPortfolioPage() {
                         inputMode="decimal"
                       />
                     </label>
+                    ) : null}
+
+                    {isTlDepositInstrument ? (
+                      <label className="my-portfolio-trade-field">
+                        <span>{t('marketsAdd.depositRateLabel')}</span>
+                        <input value={depositRateDisplay} readOnly />
+                      </label>
+                    ) : (
+                      <label className="my-portfolio-trade-field">
+                        <span>{t('marketsAdd.buyPriceLabel')}</span>
+                        <div className="my-portfolio-trade-money-input">
+                          <span className="my-portfolio-trade-money-input__sym" aria-hidden>
+                            {currencySymbolPrefix(instrumentQuoteCurrencyCode)}
+                          </span>
+                          <input
+                            value={
+                              purchaseMode === 'NOW'
+                                ? (unitPriceUsed ?? '').toString()
+                                : manualUnitPriceRequired
+                                  ? unitPrice
+                                  : (unitPriceUsed ?? unitPrice ?? '').toString()
+                            }
+                            readOnly={isPreviewStep || purchaseMode === 'NOW' || (purchaseMode === 'PAST' && !manualUnitPriceRequired)}
+                            onChange={(event) => setUnitPrice(event.target.value)}
+                            inputMode="decimal"
+                            placeholder={manualUnitPriceRequired ? t('marketsAdd.buyPricePlaceholder') : ''}
+                          />
+                        </div>
+                        {purchaseMode === 'PAST' && pastDateRollNotice ? (
+                          <small className="my-portfolio-trade-note" role="status">
+                            {t('marketsAdd.earliestPriceNotice', { date: pastDateRollNotice })}
+                          </small>
+                        ) : null}
+                        {purchaseMode === 'PAST' && manualUnitPriceRequired ? (
+                          <small className="my-portfolio-trade-note" role="alert">
+                            {t('marketsAdd.manualPriceRequiredNotice')}
+                          </small>
+                        ) : null}
+                      </label>
+                    )}
 
                     <label className="my-portfolio-trade-field">
-                      <span>Alim Fiyati</span>
-                      <div className="my-portfolio-trade-money-input">
-                        <span className="my-portfolio-trade-money-input__sym" aria-hidden>
-                          {currencySymbolPrefix(instrumentQuoteCurrencyCode)}
-                        </span>
-                        <input
-                          value={
-                            purchaseMode === 'NOW'
-                              ? (unitPriceUsed ?? '').toString()
-                              : manualUnitPriceRequired
-                                ? unitPrice
-                                : (unitPriceUsed ?? unitPrice ?? '').toString()
-                          }
-                          readOnly={isPreviewStep || purchaseMode === 'NOW' || (purchaseMode === 'PAST' && !manualUnitPriceRequired)}
-                          onChange={(event) => setUnitPrice(event.target.value)}
-                          inputMode="decimal"
-                          placeholder={manualUnitPriceRequired ? 'Aldigin fiyati gir' : ''}
-                        />
-                      </div>
-                      {purchaseMode === 'PAST' && pastDateRollNotice ? (
-                        <small className="my-portfolio-trade-note" role="status">
-                          En eski fiyat bilgisi {pastDateRollNotice} tarihindedir; alim bu tarihle kaydedilir.
-                        </small>
-                      ) : null}
-                      {purchaseMode === 'PAST' && manualUnitPriceRequired ? (
-                        <small className="my-portfolio-trade-note" role="alert">
-                          Bu enstruman icin sistemde fiyat verisi bulunamadi. Farkli bir tarih veya enstruman deneyin.
-                        </small>
-                      ) : null}
-                    </label>
-
-                    <label className="my-portfolio-trade-field">
-                      <span>Para Birimi</span>
+                      <span>{t('marketsAdd.paymentCurrencyLabel')}</span>
                       <select
                         value={tradePaymentCurrency}
                         onChange={(event) =>
                           setTradePaymentCurrency(event.target.value as TradePaymentCurrency)
                         }
                         disabled={isPreviewStep}
-                        title="TRY, USD, EUR, GBP, JPY, AED — backend TRY hub uzerinden donusur; gecmis alimda MDS tarihsel kur."
                       >
                         {tradePaymentCurrencyOptions.map((c) => (
                           <option key={c} value={c}>
@@ -2304,14 +2541,10 @@ export function MyPortfolioPage() {
                           </option>
                         ))}
                       </select>
-                      <small className="my-portfolio-trade-note" role="note">
-                        Onerilen: {tradePaymentCurrencyLabel(instrumentDefaultPaymentCurrency)} — tum secenekler sunucu
-                        ile uyumlu; gecmis alimda kur, secilen para biriminden enstruman kotasyonuna MDS ile alinir.
-                      </small>
                     </label>
 
                     <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
-                      <span>Toplam Tutar</span>
+                      <span>{t('marketsAdd.totalAmountLabel')}</span>
                       <div className="my-portfolio-trade-money-input">
                         <span className="my-portfolio-trade-money-input__sym" aria-hidden>
                           {currencySymbolPrefix(tradePaymentCurrency)}
@@ -2330,12 +2563,13 @@ export function MyPortfolioPage() {
                     </label>
                     {purchaseMode === 'PAST' ? (
                       <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
-                        <span>Alim Tarihi</span>
+                        <span>{t('marketsAdd.acquiredAtLabel')}</span>
                         <input
                           type="date"
                           value={acquiredAt}
                           onChange={(event) => {
                             setAcquiredAt(event.target.value)
+                            setDepositPastDateError(null)
                             setUnitPrice('')
                             setManualUnitPriceRequired(false)
                             setUnitPriceUsed(null)
@@ -2343,6 +2577,11 @@ export function MyPortfolioPage() {
                           }}
                           disabled={isPreviewStep}
                         />
+                        {isTlDepositInstrument && depositPastDateError ? (
+                          <small className="auth-error" role="alert">
+                            {depositPastDateError}
+                          </small>
+                        ) : null}
                       </label>
                     ) : null}
                   </div>
@@ -2356,12 +2595,16 @@ export function MyPortfolioPage() {
 
                   {isPreviewStep ? (
                     <div className="my-portfolio-confirmation-box">
-                      <h5>Alim Bilgileri</h5>
-                      <p><span>Enstruman</span><strong>{selectedInstrument?.symbol ?? '-'}</strong></p>
-                      <p><span>Islem Tipi</span><strong>{purchaseMode === 'PAST' ? 'Gecmis alim ekle' : 'Piyasadan ekle'}</strong></p>
-                      <p><span>Giris Sekli</span><strong>{inputMode === 'LOTS' ? 'Lot ile gir' : 'Tutar ile gir'}</strong></p>
-                      <p><span>Lot</span><strong>{lots || '-'}</strong></p>
-                      <p><span>Toplam Tutar</span><strong>
+                      <h5>{t('marketsAdd.confirmationTitle')}</h5>
+                      <p><span>{t('marketsAdd.instrumentLabel')}</span><strong>{selectedInstrumentDisplayLabel}</strong></p>
+                      <p><span>{t('marketsAdd.transactionTypeLabel')}</span><strong>{purchaseMode === 'PAST' ? t('marketsAdd.purchaseMode.past') : t('marketsAdd.purchaseMode.now')}</strong></p>
+                      <p><span>{t('marketsAdd.entryModeLabel')}</span><strong>{isTlDepositInstrument ? t('marketsAdd.entryModePrincipal') : inputMode === 'LOTS' ? t('marketsAdd.inputMode.lots') : t('marketsAdd.inputMode.amount')}</strong></p>
+                      {isTlDepositInstrument ? (
+                        <p><span>{t('marketsAdd.depositRateLabel')}</span><strong>{depositRateDisplay}</strong></p>
+                      ) : (
+                        <p><span>{t('marketsAdd.lotLabel')}</span><strong>{lots || '-'}</strong></p>
+                      )}
+                      <p><span>{t('marketsAdd.totalAmountLabel')}</span><strong>
                         {(() => {
                           const n = Number(amount)
                           return amount.trim() === '' || !Number.isFinite(n)
@@ -2369,26 +2612,32 @@ export function MyPortfolioPage() {
                             : formatMoneyPrefixed(n, tradePaymentCurrency, i18n.language, 2)
                         })()}
                       </strong></p>
-                      <p><span>Alim Fiyati</span><strong>
-                        {(() => {
-                          const n =
-                            unitPriceUsed != null && Number.isFinite(unitPriceUsed)
-                              ? unitPriceUsed
+                      {isTlDepositInstrument ? (
+                        <p><span>{t('marketsAdd.depositPrincipalLabel')}</span><strong>
+                          {depositPrincipalTry == null ? '—' : formatMoneyPrefixed(depositPrincipalTry, 'TRY', i18n.language, 2)}
+                        </strong></p>
+                      ) : (
+                        <p><span>{t('marketsAdd.buyPriceLabel')}</span><strong>
+                          {(() => {
+                            const n =
+                              unitPriceUsed != null && Number.isFinite(unitPriceUsed)
+                                ? unitPriceUsed
+                                : unitPrice.trim() !== ''
+                                  ? Number(unitPrice)
+                                  : NaN
+                            return Number.isFinite(n)
+                              ? formatMoneyPrefixed(n, instrumentQuoteCurrencyCode, i18n.language, 6)
                               : unitPrice.trim() !== ''
-                                ? Number(unitPrice)
-                                : NaN
-                          return Number.isFinite(n)
-                            ? formatMoneyPrefixed(n, instrumentQuoteCurrencyCode, i18n.language, 6)
-                            : unitPrice.trim() !== ''
-                              ? unitPrice
-                              : '—'
-                        })()}
-                      </strong></p>
+                                ? unitPrice
+                                : '—'
+                          })()}
+                        </strong></p>
+                      )}
                       <p>
-                        <span>Para Birimi</span>
+                        <span>{t('marketsAdd.paymentCurrencyLabel')}</span>
                         <strong>{tradePaymentCurrencyLabel(tradePaymentCurrency)}</strong>
                       </p>
-                      {purchaseMode === 'PAST' ? <p><span>Alim Tarihi</span><strong>{acquiredAt || '-'}</strong></p> : null}
+                      {purchaseMode === 'PAST' ? <p><span>{t('marketsAdd.acquiredAtLabel')}</span><strong>{acquiredAt || '-'}</strong></p> : null}
                     </div>
                   ) : null}
 
@@ -2406,28 +2655,28 @@ export function MyPortfolioPage() {
                         }}
                         disabled={tradeSaving}
                       >
-                        Geri
+                        {t('marketsAdd.back')}
                       </button>
                     ) : null}
                     <button
                       type="button"
                       className="auth-submit my-portfolio-trade-submit"
-                      onClick={() => (isPreviewStep ? void submitTrade() : setIsPreviewStep(true))}
+                      onClick={() => (isPreviewStep ? void submitTrade() : openTradePreview())}
                       disabled={tradeSaving}
                     >
-                      {tradeSaving ? 'Kaydediliyor...' : isPreviewStep ? 'Onayla ve Ekle' : 'Devam Et'}
+                      {tradeSaving ? t('marketsAdd.saving') : isPreviewStep ? t('marketsAdd.submit') : t('marketsAdd.continue')}
                     </button>
                   </div>
                 </div>
 
                 <aside className={`my-portfolio-trade-preview-panel${isPreviewStep ? ' is-expanded' : ''}`}>
-                  <h4>Portfoy Dagilimi</h4>
+                  <h4>{t('marketsAdd.distributionTitle')}</h4>
                   <div className="my-portfolio-preview-ring" />
                   <div className="my-portfolio-preview-stats">
-                    <div><span>Toplam Tutar</span><strong>{formatMoneyPrefixed(previewTotal || 0, tradePaymentCurrency, i18n.language, 2)}</strong></div>
-                    <div><span>Maliyet / Lot</span><strong>{unitPriceUsed == null ? '—' : formatMoneyPrefixed(unitPriceUsed, instrumentQuoteCurrencyCode, i18n.language, 6)}</strong></div>
-                    <div><span>Toplam Lot</span><strong>{previewLots.toFixed(4)}</strong></div>
-                    <div><span>Enstruman PB</span><strong>{selectedInstrument?.nativeQuote ?? '—'}</strong></div>
+                    <div><span>{t('marketsAdd.totalAmountLabel')}</span><strong>{formatMoneyPrefixed(previewTotal || 0, tradePaymentCurrency, i18n.language, 2)}</strong></div>
+                    <div><span>{isTlDepositInstrument ? t('marketsAdd.depositRateLabel') : t('marketsAdd.costPerLotLabel')}</span><strong>{isTlDepositInstrument ? depositRateDisplay : unitPriceUsed == null ? '—' : formatMoneyPrefixed(unitPriceUsed, instrumentQuoteCurrencyCode, i18n.language, 6)}</strong></div>
+                    <div><span>{isTlDepositInstrument ? t('marketsAdd.depositPrincipalLabel') : t('marketsAdd.totalLotsLabel')}</span><strong>{isTlDepositInstrument ? (depositPrincipalTry == null ? '—' : formatMoneyPrefixed(depositPrincipalTry, 'TRY', i18n.language, 2)) : previewLots.toFixed(4)}</strong></div>
+                    <div><span>{t('marketsAdd.instrumentCurrencyLabel')}</span><strong>{selectedInstrument?.nativeQuote ?? '—'}</strong></div>
                   </div>
                   {isPreviewStep && lastTradePreview?.acquisitionFxRates ? (
                     <AcquisitionFxPanel
@@ -2438,47 +2687,47 @@ export function MyPortfolioPage() {
                   <ul className="my-portfolio-preview-distribution">
                     {projectedDistribution.map((item) => (
                       <li key={item.symbol}>
-                        <span>{item.symbol}</span>
+                        <span>{formatInstrumentSymbolLabel(item.symbol)}</span>
                         <strong>{item.weight.toFixed(2)}%</strong>
                       </li>
                     ))}
                   </ul>
                   {isPreviewStep ? (
                     <div className="my-portfolio-preview-performance">
-                      <h5>Enstruman Degisimleri</h5>
+                      <h5>{t('marketsAdd.instrumentChangesTitle')}</h5>
                       <div>
-                        <span>Bugun</span>
+                        <span>{t('marketsAdd.periods.today')}</span>
                         <strong className={Number(instrumentPerformance.change1D ?? 0) >= 0 ? 'is-up' : 'is-down'}>
                           {instrumentPerformance.change1D == null ? '—' : `${percentFormat.format(instrumentPerformance.change1D)}%`}
                         </strong>
                       </div>
                       <div>
-                        <span>1 Ay</span>
+                        <span>{t('marketsAdd.periods.oneMonth')}</span>
                         <strong className={Number(instrumentPerformance.change1M ?? 0) >= 0 ? 'is-up' : 'is-down'}>
                           {instrumentPerformance.change1M == null ? '—' : `${percentFormat.format(instrumentPerformance.change1M)}%`}
                         </strong>
                       </div>
                       <div>
-                        <span>3 Ay</span>
+                        <span>{t('marketsAdd.periods.threeMonths')}</span>
                         <strong className={Number(instrumentPerformance.change3M ?? 0) >= 0 ? 'is-up' : 'is-down'}>
                           {instrumentPerformance.change3M == null ? '—' : `${percentFormat.format(instrumentPerformance.change3M)}%`}
                         </strong>
                       </div>
                       <div>
-                        <span>6 Ay</span>
+                        <span>{t('marketsAdd.periods.sixMonths')}</span>
                         <strong className={Number(instrumentPerformance.change6M ?? 0) >= 0 ? 'is-up' : 'is-down'}>
                           {instrumentPerformance.change6M == null ? '—' : `${percentFormat.format(instrumentPerformance.change6M)}%`}
                         </strong>
                       </div>
                       <div>
-                        <span>1 Yil</span>
+                        <span>{t('marketsAdd.periods.oneYear')}</span>
                         <strong className={Number(instrumentPerformance.change1Y ?? 0) >= 0 ? 'is-up' : 'is-down'}>
                           {instrumentPerformance.change1Y == null ? '—' : `${percentFormat.format(instrumentPerformance.change1Y)}%`}
                         </strong>
                       </div>
                     </div>
                   ) : null}
-                  <p className="my-portfolio-preview-note">Islem anlik fiyat/kur uzerinden hesaplanir.</p>
+                  <p className="my-portfolio-preview-note">{t('marketsAdd.previewNote')}</p>
                 </aside>
               </div>
 
@@ -2581,7 +2830,7 @@ export function MyPortfolioPage() {
                           {isAggregatePortfolioView ? (
                             <td>{row.portfolioName?.trim() || (row.portfolioId != null ? `#${row.portfolioId}` : '—')}</td>
                           ) : null}
-                          <td>{row.instrumentSymbol}</td>
+                          <td>{formatInstrumentSymbolLabel(row.instrumentSymbol)}</td>
                           <td>{row.type}</td>
                           <td>
                             <span className={`my-portfolio-history-badge ${row.purchaseMode === 'PAST' ? 'is-past' : 'is-now'}`}>
@@ -2795,7 +3044,7 @@ export function MyPortfolioPage() {
                             <td>
                               <span className="my-portfolio-allocation-symbol">
                                 <span className={`my-portfolio-dot ${row.colorClass}`} />
-                                {row.symbol}
+                                {formatInstrumentSymbolLabel(row.symbol)}
                               </span>
                             </td>
                             <td className="my-portfolio-allocation-num my-portfolio-allocation-muted">
@@ -3222,7 +3471,7 @@ export function MyPortfolioPage() {
                           <li key={row.symbol} role="row">
                             <span className="my-portfolio-dist-list-symbol" role="cell">
                               <span className={`my-portfolio-dot ${row.colorClass}`} aria-hidden />
-                              <strong>{row.symbol}</strong>
+                              <strong>{formatInstrumentSymbolLabel(row.symbol)}</strong>
                             </span>
                             <span className="my-portfolio-dist-list-weight" role="cell">
                               {sharePctDisplay.format(row.sharePct)}%
@@ -3290,18 +3539,14 @@ export function MyPortfolioPage() {
                                 ? String(Math.round(qty))
                                 : new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 6 }).format(qty)
                               : '—'
-                            const fxLabel = formatTxFxLegLabel(row, i18n.language)
                             return (
                               <tr key={row.transactionId}>
                                 <td>
-                                  <span className="my-portfolio-dashboard-mini-symbol">{row.instrumentSymbol}</span>
+                                  <span className="my-portfolio-dashboard-mini-symbol">{formatInstrumentSymbolLabel(row.instrumentSymbol)}</span>
                                 </td>
                                 <td className="is-num is-muted">× {qtyStr}</td>
                                 <td className="is-num">
                                   <span className="my-portfolio-tx-preview-amt">{formatTxMoney(row)}</span>
-                                  {fxLabel !== '—' ? (
-                                    <span className="my-portfolio-tx-preview-fx">{fxLabel}</span>
-                                  ) : null}
                                 </td>
                                 <td className="is-tx-type">
                                   <span className={`my-portfolio-recent-tx-badge${isBuy ? ' is-buy' : ' is-sell'}`}>

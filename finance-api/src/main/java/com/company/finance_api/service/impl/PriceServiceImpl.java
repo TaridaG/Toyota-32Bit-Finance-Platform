@@ -25,14 +25,17 @@ public class PriceServiceImpl implements PriceService {
   private final InstrumentPriceRepository priceRepository;
   private final PriceCacheService priceCacheService;
   private final ApplicationEventPublisher eventPublisher;
+  private final TlDepositIndexQueryService tlDepositIndexQueryService;
 
   public PriceServiceImpl(
       InstrumentPriceRepository priceRepository,
       PriceCacheService priceCacheService,
-      ApplicationEventPublisher eventPublisher) {
+      ApplicationEventPublisher eventPublisher,
+      TlDepositIndexQueryService tlDepositIndexQueryService) {
     this.priceRepository = priceRepository;
     this.priceCacheService = priceCacheService;
     this.eventPublisher = eventPublisher;
+    this.tlDepositIndexQueryService = tlDepositIndexQueryService;
   }
 
   /** LatestPrice sorgusunu döner. */
@@ -59,6 +62,9 @@ public class PriceServiceImpl implements PriceService {
   /** LatestValuationPrice sorgusunu döner. */
   @Override
   public Optional<InstrumentPrice> getLatestValuationPrice(Instrument instrument) {
+    if (tlDepositIndexQueryService.supports(instrument)) {
+      return tlDepositIndexQueryService.getLatestPrice(instrument);
+    }
     for (PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<InstrumentPrice> found = getLatestPrice(instrument, priceType);
       if (found.isPresent()) {
@@ -72,6 +78,9 @@ public class PriceServiceImpl implements PriceService {
   @Override
   public Optional<InstrumentPrice> getLatestValuationPriceBefore(
       Instrument instrument, Instant exclusiveEnd) {
+    if (tlDepositIndexQueryService.supports(instrument)) {
+      return tlDepositIndexQueryService.getLatestPriceBefore(instrument, exclusiveEnd);
+    }
     for (PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<InstrumentPrice> fromDb =
           priceRepository.findFirstByInstrumentAndPriceTypeAndTimestampLessThanOrderByTimestampDesc(

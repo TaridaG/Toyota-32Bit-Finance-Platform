@@ -3,9 +3,11 @@ package com.company.marketdataservice.rates.infrastructure.http;
 import com.company.marketdataservice.rates.application.CpiHistoryService;
 import com.company.marketdataservice.rates.application.PolicyRateHistoryService;
 import com.company.marketdataservice.rates.application.RepoRateHistoryService;
+import com.company.marketdataservice.rates.application.TlDepositIndexService;
 import com.company.marketdataservice.rates.application.TlDepositHistoryService;
 import com.company.marketdataservice.rates.infrastructure.http.dto.BankRatesResponseDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.PolicyRateLatestDto;
+import com.company.marketdataservice.rates.infrastructure.http.dto.TlDepositIndexLatestDto;
 import com.company.marketdataservice.rates.infrastructure.provider.bank.BankRatesAsset;
 import com.company.marketdataservice.rates.infrastructure.provider.bank.DovizBankRatesService;
 import com.company.marketdataservice.shared.web.GlobalExceptionHandler;
@@ -33,6 +35,8 @@ class RatesControllerTest {
     @Mock
     private TlDepositHistoryService tlDepositHistoryService;
     @Mock
+    private TlDepositIndexService tlDepositIndexService;
+    @Mock
     private CpiHistoryService cpiHistoryService;
     @Mock
     private DovizBankRatesService dovizBankRatesService;
@@ -45,6 +49,7 @@ class RatesControllerTest {
                 policyRateHistoryService,
                 repoRateHistoryService,
                 tlDepositHistoryService,
+                tlDepositIndexService,
                 cpiHistoryService,
                 dovizBankRatesService
         );
@@ -90,6 +95,24 @@ class RatesControllerTest {
                 .expectStatus().isBadRequest()
                 .expectBody()
                 .jsonPath("$.error.message").isEqualTo("Unsupported maturity: bad");
+    }
+
+    @Test
+    void tlDepositIndexLatest_returnsIndexPayload() {
+        TlDepositIndexLatestDto dto = new TlDepositIndexLatestDto();
+        dto.setMaturityCode("MT04");
+        dto.setAsOfDate(LocalDate.of(2026, 5, 20));
+        dto.setIndexValue(new BigDecimal("1.1234567890"));
+        when(tlDepositIndexService.loadLatest("MT04", null)).thenReturn(dto);
+
+        webTestClient.get()
+                .uri("/api/rates/tl-deposit/index/latest?maturity=MT04")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.maturityCode").isEqualTo("MT04")
+                .jsonPath("$.asOfDate").isEqualTo("2026-05-20")
+                .jsonPath("$.indexValue").isEqualTo(1.1234567890);
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.company.marketdataservice.rates.infrastructure.http;
 import com.company.marketdataservice.rates.infrastructure.http.dto.CpiLatestDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.PolicyRateHistoryResponseDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.PolicyRateLatestDto;
+import com.company.marketdataservice.rates.infrastructure.http.dto.TlDepositIndexHistoryResponseDto;
+import com.company.marketdataservice.rates.infrastructure.http.dto.TlDepositIndexLatestDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.TlDepositLatestDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.BankRatesResponseDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.RepoRateLatestDto;
@@ -9,9 +11,11 @@ import com.company.marketdataservice.rates.application.CpiHistoryService;
 import com.company.marketdataservice.rates.domain.CpiMetric;
 import com.company.marketdataservice.rates.application.PolicyRateHistoryService;
 import com.company.marketdataservice.rates.application.RepoRateHistoryService;
+import com.company.marketdataservice.rates.application.TlDepositIndexService;
 import com.company.marketdataservice.rates.application.TlDepositHistoryService;
 import com.company.marketdataservice.rates.infrastructure.provider.bank.BankRatesAsset;
 import com.company.marketdataservice.rates.infrastructure.provider.bank.DovizBankRatesService;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +34,7 @@ public class RatesController {
     private final PolicyRateHistoryService policyRateHistoryService;
     private final RepoRateHistoryService repoRateHistoryService;
     private final TlDepositHistoryService tlDepositHistoryService;
+    private final TlDepositIndexService tlDepositIndexService;
     private final CpiHistoryService cpiHistoryService;
     private final DovizBankRatesService dovizBankRatesService;
 
@@ -37,12 +42,14 @@ public class RatesController {
             PolicyRateHistoryService policyRateHistoryService,
             RepoRateHistoryService repoRateHistoryService,
             TlDepositHistoryService tlDepositHistoryService,
+            TlDepositIndexService tlDepositIndexService,
             CpiHistoryService cpiHistoryService,
             DovizBankRatesService dovizBankRatesService
     ) {
         this.policyRateHistoryService = policyRateHistoryService;
         this.repoRateHistoryService = repoRateHistoryService;
         this.tlDepositHistoryService = tlDepositHistoryService;
+        this.tlDepositIndexService = tlDepositIndexService;
         this.cpiHistoryService = cpiHistoryService;
         this.dovizBankRatesService = dovizBankRatesService;
     }
@@ -149,6 +156,31 @@ public class RatesController {
         }
         try {
             return tlDepositHistoryService.loadFiveYearWeeklyFromDb(maturity);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @GetMapping("/tl-deposit/index/latest")
+    public TlDepositIndexLatestDto tlDepositIndexLatest(
+            @RequestParam(required = false) String maturity,
+            @RequestParam(required = false) LocalDate asOf
+    ) {
+        try {
+            return tlDepositIndexService.loadLatest(maturity, asOf);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @GetMapping("/tl-deposit/index/history")
+    public TlDepositIndexHistoryResponseDto tlDepositIndexHistory(
+            @RequestParam(required = false) String maturity,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to
+    ) {
+        try {
+            return tlDepositIndexService.loadHistory(maturity, from, to);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }

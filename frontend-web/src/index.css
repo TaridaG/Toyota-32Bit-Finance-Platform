@@ -8706,11 +8706,11 @@ button:disabled {
 .my-portfolio-trade-card {
   display: grid;
   gap: 0.75rem;
-  border: 1px solid rgba(124, 58, 237, 0.28);
+  border: 1px solid rgba(59, 130, 246, 0.18);
   background:
-    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.18), transparent 38%),
-    radial-gradient(circle at 85% 10%, rgba(168, 85, 247, 0.12), transparent 42%),
-    linear-gradient(135deg, rgba(5, 10, 35, 0.95), rgba(4, 15, 44, 0.94));
+    radial-gradient(circle at 12% 18%, rgba(59, 130, 246, 0.14), transparent 36%),
+    radial-gradient(circle at 88% 12%, rgba(56, 189, 248, 0.08), transparent 34%),
+    linear-gradient(135deg, rgba(11, 18, 32, 0.98), rgba(15, 23, 42, 0.96));
 }
 
 .my-portfolio-trade-title {
@@ -8741,7 +8741,7 @@ button:disabled {
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 14px;
   padding: 0.95rem;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.72);
   transition: transform 280ms ease, box-shadow 280ms ease;
   transform-origin: center right;
   align-self: stretch;
@@ -8752,7 +8752,7 @@ button:disabled {
 
 .my-portfolio-trade-preview-panel.is-expanded {
   transform: scale(1.02, 1.04);
-  box-shadow: 0 18px 32px rgba(99, 102, 241, 0.24);
+  box-shadow: 0 18px 32px rgba(30, 64, 175, 0.22);
 }
 
 .my-portfolio-acquisition-fx {
@@ -8832,9 +8832,9 @@ button:disabled {
 }
 
 .my-portfolio-trade-steps li.is-active {
-  border-color: rgba(139, 92, 246, 0.8);
-  color: #e2e8f0;
-  background: linear-gradient(90deg, rgba(79, 70, 229, 0.38), rgba(192, 38, 211, 0.3));
+  border-color: rgba(96, 165, 250, 0.6);
+  color: #eff6ff;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.34), rgba(14, 165, 233, 0.2));
 }
 
 .my-portfolio-trade-grid {
@@ -8862,7 +8862,7 @@ button:disabled {
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 8px;
   padding: 0.5rem 0.58rem;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(11, 18, 32, 0.78);
   color: #f8fafc;
   font: inherit;
 }
@@ -8912,14 +8912,15 @@ button:disabled {
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 10px;
   padding: 0.52rem;
-  background: rgba(15, 23, 42, 0.6);
-  color: #e2e8f0;
+  background: rgba(11, 18, 32, 0.68);
+  color: #cbd5e1;
   font-size: 0.83rem;
 }
 
 .my-portfolio-trade-toggle-group button.is-active {
-  border-color: rgba(139, 92, 246, 0.85);
-  background: linear-gradient(90deg, rgba(79, 70, 229, 0.45), rgba(192, 38, 211, 0.42));
+  border-color: rgba(96, 165, 250, 0.62);
+  color: #eff6ff;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.36), rgba(14, 165, 233, 0.24));
 }
 
 .my-portfolio-trade-submit {
@@ -10038,6 +10039,22 @@ button:disabled {
   background: #22c55e;
 }
 
+.my-portfolio-dot-amber {
+  background: #f59e0b;
+}
+
+.my-portfolio-dot-cyan {
+  background: #06b6d4;
+}
+
+.my-portfolio-dot-indigo {
+  background: #6366f1;
+}
+
+.my-portfolio-dot-teal {
+  background: #14b8a6;
+}
+
 .my-portfolio-dot-other {
   background: #64748b;
 }
@@ -10606,11 +10623,19 @@ col.my-portfolio-alloc-col-pnl {
   overflow: hidden;
 }
 
+.my-portfolio-dist-list-symbol .my-portfolio-dot {
+  flex: 0 0 8px;
+  min-width: 8px;
+  min-height: 8px;
+}
+
 .my-portfolio-dist-list-symbol strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 0.84rem;
   font-weight: 650;
+  line-height: 1.2;
 }
 
 .my-portfolio-dist-list-weight {

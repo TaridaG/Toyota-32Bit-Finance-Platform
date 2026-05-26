@@ -20,11 +20,15 @@ public final class InstrumentListingCurrency {
 
   /** Enstrüman için listeleme para birimini (TRY, EUR, USD) çözer. */
   public static String resolve(Instrument instrument) {
+    if (instrument.getType() == InstrumentType.DEPOSIT) {
+      return "TRY";
+    }
     if (instrument.getExchange() != null) {
       String ex = instrument.getExchange().name();
       if ("BIST".equalsIgnoreCase(ex)
           || "YAHOO".equalsIgnoreCase(ex)
-          || "TEFAS".equalsIgnoreCase(ex)) {
+          || "TEFAS".equalsIgnoreCase(ex)
+          || "TCMB".equalsIgnoreCase(ex)) {
         return "TRY";
       }
     }
