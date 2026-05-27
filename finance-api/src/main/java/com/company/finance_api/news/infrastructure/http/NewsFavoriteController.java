@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Kullanıcı haber favorileri endpoint'lerini sunar. */
 @RestController
-@RequestMapping("/api/news/favorites")
+@RequestMapping("/api/v1/news/favorites")
 public class NewsFavoriteController {
 
   private final NewsFavoriteService newsFavoriteService;

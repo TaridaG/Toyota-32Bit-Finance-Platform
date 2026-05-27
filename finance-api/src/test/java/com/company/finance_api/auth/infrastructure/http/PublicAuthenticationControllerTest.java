@@ -40,7 +40,7 @@ class PublicAuthenticationControllerTest {
 
     mockMvc
         .perform(
-            post("/api/public/login")
+            post("/api/v1/public/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -56,7 +56,7 @@ class PublicAuthenticationControllerTest {
   void login_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/public/login")
+            post("/api/v1/public/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """

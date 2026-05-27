@@ -23,6 +23,6 @@ class MarketDataProxyControllerTest {
 
   @Test
   void proxy_returnsBadGateway_whenUpstreamUnavailable() throws Exception {
-    mockMvc.perform(get("/api/market/prices")).andExpect(status().isBadGateway());
+    mockMvc.perform(get("/api/v1/market/prices")).andExpect(status().isBadGateway());
   }
 }

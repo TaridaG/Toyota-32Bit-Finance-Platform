@@ -28,16 +28,16 @@ function assertSuccessOnly(body: ApiEnvelope<unknown>): void {
 }
 
 export async function fetchWatchlist(): Promise<WatchlistItem[]> {
-  const { data } = await apiClient.get<ApiEnvelope<WatchlistItem[]>>('/api/watchlist')
+  const { data } = await apiClient.get<ApiEnvelope<WatchlistItem[]>>('/api/v1/watchlist')
   return assertSuccessData(data)
 }
 
 export async function addWatchlistItem(instrumentId: number): Promise<void> {
-  const { data } = await apiClient.post<ApiEnvelope<unknown>>('/api/watchlist', { instrumentId })
+  const { data } = await apiClient.post<ApiEnvelope<unknown>>('/api/v1/watchlist', { instrumentId })
   assertSuccessOnly(data)
 }
 
 export async function removeWatchlistItem(instrumentId: number): Promise<void> {
-  const { data } = await apiClient.delete<ApiEnvelope<unknown>>(`/api/watchlist/${instrumentId}`)
+  const { data } = await apiClient.delete<ApiEnvelope<unknown>>(`/api/v1/watchlist/${instrumentId}`)
   assertSuccessOnly(data)
 }

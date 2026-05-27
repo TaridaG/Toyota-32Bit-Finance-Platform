@@ -59,7 +59,7 @@ class TradeControllerTest {
 
     mockMvc
         .perform(
-            post("/api/trades/preview")
+            post("/api/v1/trades/preview")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -84,7 +84,7 @@ class TradeControllerTest {
                 7L, "AAPL", Instant.parse("2020-01-01T00:00:00Z"), Instant.now()));
 
     mockMvc
-        .perform(get("/api/trades/instruments/7/price-coverage"))
+        .perform(get("/api/v1/trades/instruments/7/price-coverage"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.instrumentId").value(7));
@@ -94,7 +94,7 @@ class TradeControllerTest {
   void buyOrder_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/trades/buy/order")
+            post("/api/v1/trades/buy/order")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
         .andExpect(status().isBadRequest())
@@ -110,7 +110,7 @@ class TradeControllerTest {
 
     mockMvc
         .perform(
-            post("/api/trades/buy")
+            post("/api/v1/trades/buy")
                 .param("instrumentId", "3")
                 .param("quantity", "1.5"))
         .andExpect(status().isOk())

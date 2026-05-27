@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Portal info-card ve literacy catalog REST endpoint'leri. */
 @RestController
-@RequestMapping("/api/portal/info-cards")
+@RequestMapping("/api/v1/portal/info-cards")
 public class PortalInfoCardsController {
 
   private final InfoCardService infoCardService;

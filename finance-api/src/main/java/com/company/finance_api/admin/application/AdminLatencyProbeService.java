@@ -29,7 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminLatencyProbeService {
 
   private static final List<String> PROBE_TARGETS =
-      List.of("/api/admin/metrics/portal-users", "/api/admin/metrics/portal-portfolios");
+      List.of("/api/v1/admin/metrics/portal-users", "/api/v1/admin/metrics/portal-portfolios");
 
   private static final Set<String> PROBE_TARGET_SET = Set.copyOf(PROBE_TARGETS);
 

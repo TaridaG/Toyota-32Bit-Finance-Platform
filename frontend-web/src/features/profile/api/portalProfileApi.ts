@@ -3,7 +3,7 @@ import { apiClient } from '../../../shared/api/client'
 import type { PortalLoginTokens } from '../../../shared/api/publicAuth'
 import type { ApiEnvelope, PortalProfile } from '../types'
 
-const BASE = '/api/portal/profile'
+const BASE = '/api/v1/portal/profile'
 const PORTAL_PROFILE_BOOTSTRAP_TTL_MS = 10_000
 
 let portalProfileBootstrapCache: PortalProfile | null = null

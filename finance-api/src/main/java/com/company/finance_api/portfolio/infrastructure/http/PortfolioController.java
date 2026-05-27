@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Portfolio özet, değerleme ve snapshot endpoint'lerini sunan controller. */
 @RestController
-@RequestMapping("/api/portfolio")
+@RequestMapping("/api/v1/portfolio")
 @RequiredArgsConstructor
 public class PortfolioController {
 

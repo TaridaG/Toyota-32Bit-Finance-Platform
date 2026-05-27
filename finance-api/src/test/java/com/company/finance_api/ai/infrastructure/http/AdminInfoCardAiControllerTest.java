@@ -40,7 +40,7 @@ class AdminInfoCardAiControllerTest {
 
     mockMvc
         .perform(
-            post("/api/admin/info-cards/ai/complete")
+            post("/api/v1/admin/info-cards/ai/complete")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """

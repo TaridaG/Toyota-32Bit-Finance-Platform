@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Kullanıcı fiyat alarmları CRUD endpoint'leri. */
 @RestController
-@RequestMapping("/api/alarms")
+@RequestMapping("/api/v1/alarms")
 public class AlarmController {
 
   private final AlarmService alarmService;

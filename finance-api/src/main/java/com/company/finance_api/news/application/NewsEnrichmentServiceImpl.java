@@ -598,7 +598,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             .get()
             .uri(
                 UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-                    .path("/api/news/{id}")
+                    .path("/api/v1/news/{id}")
                     .queryParam("includeOriginal", true)
                     .buildAndExpand(id)
                     .toUriString())
@@ -763,7 +763,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       Instant fromInclusive, Instant toInclusive, String language) {
     String url =
         UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-            .path("/api/news/chart")
+            .path("/api/v1/news/chart")
             .queryParam("from", fromInclusive)
             .queryParam("to", toInclusive)
             .queryParam("lang", language)
@@ -909,7 +909,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       int page, int size, String language, boolean includeOriginal, String search) {
     UriComponentsBuilder builder =
         UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-            .path("/api/news")
+            .path("/api/v1/news")
             .queryParam("page", page)
             .queryParam("size", size)
             .queryParam("lang", language)
@@ -1022,7 +1022,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
     String url =
         UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
-            .path("/api/market/prices/summary")
+            .path("/api/v1/market/prices/summary")
             .queryParam("symbols", String.join(",", symbols))
             .toUriString();
     try {
@@ -1038,7 +1038,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
   private NewsServiceNewsDetailItem fetchNewsDetail(Long id, String language) {
     String url =
         UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-            .path("/api/news/{id}")
+            .path("/api/v1/news/{id}")
             .queryParam("lang", language)
             .queryParam("includeOriginal", true)
             .buildAndExpand(id)
@@ -1058,7 +1058,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
   private List<AnalyticsCandleDto> fetchCandles(String symbol, LocalDate from, LocalDate to) {
     String url =
         UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
-            .path("/api/analytics/instruments/{symbol}/candles")
+            .path("/api/v1/analytics/instruments/{symbol}/candles")
             .queryParam("from", from)
             .queryParam("to", to)
             .buildAndExpand(symbol)

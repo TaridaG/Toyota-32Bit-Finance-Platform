@@ -24,7 +24,7 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- * Dedicated mapping so {@code GET /api/market/instruments/{symbol}/fundamentals} always resolves.
+ * Dedicated mapping so {@code GET /api/v1/market/instruments/{symbol}/fundamentals} always resolves.
  * TRY FX crosses have no equity-style fundamentals; return a stable payload without calling MDS.
  */
 @RestController
@@ -40,8 +40,8 @@ public class MarketFundamentalsPassthroughController {
     this.objectMapper = objectMapper;
   }
 
-  /** HTTP handler — `/api/market/instruments/{symbol}/fundamentals` endpoint'i. */
-  @GetMapping("/api/market/instruments/{symbol}/fundamentals")
+  /** HTTP handler — `/api/v1/market/instruments/{symbol}/fundamentals` endpoint'i. */
+  @GetMapping("/api/v1/market/instruments/{symbol}/fundamentals")
   public ResponseEntity<byte[]> fundamentals(
       @PathVariable String symbol,
       @RequestParam(defaultValue = "false") boolean forceRefresh,
@@ -56,7 +56,7 @@ public class MarketFundamentalsPassthroughController {
     String base = marketDataBaseUrl.replaceAll("/+$", "");
     URI uri =
         UriComponentsBuilder.fromUriString(base)
-            .path("/api/market/instruments/{s}/fundamentals")
+            .path("/api/v1/market/instruments/{s}/fundamentals")
             .queryParam("forceRefresh", forceRefresh)
             .buildAndExpand(normalized)
             .toUri();

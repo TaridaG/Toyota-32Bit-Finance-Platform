@@ -56,7 +56,7 @@ class AlarmControllerTest {
     when(alarmService.getActiveAlarmsForUser(userId)).thenReturn(List.of(rule));
 
     mockMvc
-        .perform(get("/api/alarms"))
+        .perform(get("/api/v1/alarms"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].instrumentSymbol").value("BTCUSDT"))
@@ -71,7 +71,7 @@ class AlarmControllerTest {
 
     mockMvc
         .perform(
-            post("/api/alarms")
+            post("/api/v1/alarms")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -94,7 +94,7 @@ class AlarmControllerTest {
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
 
     mockMvc
-        .perform(delete("/api/alarms/9"))
+        .perform(delete("/api/v1/alarms/9"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 

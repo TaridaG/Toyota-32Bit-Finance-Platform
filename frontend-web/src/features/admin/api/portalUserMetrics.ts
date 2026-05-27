@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios'
 import { apiClient } from '../../../shared/api/client'
 
-/** Combined payload from {@code GET /api/admin/metrics/portal-users} (users + external portfolios). */
+/** Combined payload from {@code GET /api/v1/admin/metrics/portal-users} (users + external portfolios). */
 export type PortalAdminDashboardMetrics = {
   totalUsers: number
   newUsersLast7Days: number
@@ -41,7 +41,7 @@ function describePortalMetricsFailure(e: unknown): string {
     const body = e.response?.data as MetricsEnvelope<unknown> | undefined
     const serverMsg = body?.error?.message
     if (status === 403) {
-      return serverMsg ?? 'Forbidden — ADMIN role required for /api/admin (check API gateway).'
+      return serverMsg ?? 'Forbidden — ADMIN role required for /api/v1/admin (check API gateway).'
     }
     if (status === 401) {
       return serverMsg ?? 'Unauthorized — sign in again.'
@@ -55,7 +55,7 @@ function describePortalMetricsFailure(e: unknown): string {
 
 export async function fetchPortalUserMetrics(): Promise<PortalAdminDashboardMetrics> {
   try {
-    const { data } = await apiClient.get<MetricsEnvelope<PortalAdminDashboardMetrics>>('/api/admin/metrics/portal-users')
+    const { data } = await apiClient.get<MetricsEnvelope<PortalAdminDashboardMetrics>>('/api/v1/admin/metrics/portal-users')
     if (!data.success || data.data == null) {
       const msg = data.error?.message ?? 'portal-users metrics unavailable'
       throw new Error(msg)

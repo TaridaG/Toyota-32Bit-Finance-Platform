@@ -69,7 +69,7 @@ class AdminPortalMetricsControllerTest {
         .thenReturn(List.of(1, 2));
 
     mockMvc
-        .perform(get("/api/admin/metrics/portal-users"))
+        .perform(get("/api/v1/admin/metrics/portal-users"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.totalUsers").value(10))

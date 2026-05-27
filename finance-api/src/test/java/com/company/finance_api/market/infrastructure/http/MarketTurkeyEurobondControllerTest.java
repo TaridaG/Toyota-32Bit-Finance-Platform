@@ -33,7 +33,7 @@ class MarketTurkeyEurobondControllerTest {
     when(trEurobondMarketService.listActiveInstruments()).thenReturn(List.of());
 
     mockMvc
-        .perform(get("/api/market/eurobonds/tr/instruments"))
+        .perform(get("/api/v1/market/eurobonds/tr/instruments"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());

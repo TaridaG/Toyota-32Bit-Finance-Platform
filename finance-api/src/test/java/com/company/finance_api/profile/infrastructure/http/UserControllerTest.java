@@ -36,7 +36,7 @@ class UserControllerTest {
         .thenReturn(new ResponseUser(userId, "trader@example.com", "trader"));
 
     mockMvc
-        .perform(get("/api/users/" + userId))
+        .perform(get("/api/v1/users/" + userId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.username").value("trader"));

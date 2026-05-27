@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** External portfolio ve pozisyon yönetimi için REST endpoint'leri sağlayan controller. */
 @RestController
-@RequestMapping("/api/external/portfolios")
+@RequestMapping("/api/v1/external/portfolios")
 @RequiredArgsConstructor
 public class ExternalPortfolioController {
 

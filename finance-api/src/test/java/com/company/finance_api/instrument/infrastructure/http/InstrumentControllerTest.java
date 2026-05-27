@@ -38,7 +38,7 @@ class InstrumentControllerTest {
     when(instrumentService.getAllActive()).thenReturn(List.of(instrument));
 
     mockMvc
-        .perform(get("/api/instruments"))
+        .perform(get("/api/v1/instruments"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].symbol").value("AAPL"));

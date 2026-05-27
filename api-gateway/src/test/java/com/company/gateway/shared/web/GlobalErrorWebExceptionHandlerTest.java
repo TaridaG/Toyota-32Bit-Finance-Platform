@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.reactive.resource.NoResourceFoundException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -27,7 +28,7 @@ class GlobalErrorWebExceptionHandlerTest {
     @Test
     void handle_returns502JsonWithCorrelationId() throws Exception {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/market/prices")
+                MockServerHttpRequest.get("/api/v1/market/prices")
                         .header(CorrelationIdGlobalFilter.CORRELATION_ID, "corr-502")
                         .build()
         );
@@ -45,7 +46,7 @@ class GlobalErrorWebExceptionHandlerTest {
     @Test
     void handle_generatesCorrelationIdWhenMissing() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/portfolio").build()
+                MockServerHttpRequest.get("/api/v1/portfolio").build()
         );
 
         handler.handle(exchange, new RuntimeException("boom")).block();
@@ -58,7 +59,7 @@ class GlobalErrorWebExceptionHandlerTest {
     @Test
     void handle_usesUnexpectedErrorWhenMessageNull() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/orders")
+                MockServerHttpRequest.get("/api/v1/orders")
                         .header(CorrelationIdGlobalFilter.CORRELATION_ID, "corr-null-msg")
                         .build()
         );
@@ -69,9 +70,23 @@ class GlobalErrorWebExceptionHandlerTest {
     }
 
     @Test
+    void handle_returns404ForMissingRoute() {
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/portfolio").build()
+        );
+
+        handler.handle(exchange, new NoResourceFoundException("/api/portfolio")).block();
+
+        assertEquals(HttpStatus.NOT_FOUND, exchange.getResponse().getStatusCode());
+        String body = exchange.getResponse().getBodyAsString().block();
+        assertTrue(body.contains("NOT_FOUND"));
+        assertTrue(body.contains("/api/portfolio"));
+    }
+
+    @Test
     void handle_propagatesWhenResponseAlreadyCommitted() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/trades").build()
+                MockServerHttpRequest.get("/api/v1/trades").build()
         );
         exchange.getResponse().setComplete().block();
         RuntimeException error = new RuntimeException("late failure");

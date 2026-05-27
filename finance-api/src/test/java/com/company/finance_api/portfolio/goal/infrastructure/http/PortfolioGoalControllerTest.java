@@ -35,7 +35,7 @@ class PortfolioGoalControllerTest {
         .thenReturn(new PortfolioGoalsViewResponse("ALL", null, "USD", null, null));
 
     mockMvc
-        .perform(get("/api/portfolio/goals"))
+        .perform(get("/api/v1/portfolio/goals"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.scope").value("ALL"));

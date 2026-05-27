@@ -59,7 +59,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 /** Admin portal metrics REST endpoint'leri: dashboard KPI, dizin, analytics ve latency probe. */
 @RestController
-@RequestMapping("/api/admin/metrics")
+@RequestMapping("/api/v1/admin/metrics")
 public class AdminPortalMetricsController {
 
   private static final Logger log = LoggerFactory.getLogger(AdminPortalMetricsController.class);

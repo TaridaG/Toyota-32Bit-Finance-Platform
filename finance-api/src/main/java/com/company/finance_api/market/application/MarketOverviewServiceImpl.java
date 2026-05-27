@@ -398,7 +398,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private List<MarketPriceDto> fetchFxRatesAsPrices() {
     String url =
-        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/market/fx").toUriString();
+        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/v1/market/fx").toUriString();
     try {
       List<FxRateWire> body =
           restClient.get().uri(url).retrieve().body(new ParameterizedTypeReference<>() {});
@@ -791,7 +791,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private List<TrendMetricWire> fetchTrendMetrics(String symbol) {
     String url =
         UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
-            .path("/api/analytics/instruments/{symbol}/trend")
+            .path("/api/v1/analytics/instruments/{symbol}/trend")
             .buildAndExpand(symbol)
             .toUriString();
     AnalyticsApiResponse<List<TrendMetricWire>> body =
@@ -991,7 +991,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private List<MarketPriceDto> fetchLatestPrices(String mdsSegment) {
     UriComponentsBuilder builder =
-        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/market/prices");
+        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/v1/market/prices");
     if (StringUtils.hasText(mdsSegment)) {
       builder.queryParam("segment", mdsSegment);
     }
@@ -1004,7 +1004,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private List<AnalyticsCandleDto> fetchCandles(String symbol) {
     String url =
         UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
-            .path("/api/analytics/instruments/{symbol}/candles")
+            .path("/api/v1/analytics/instruments/{symbol}/candles")
             .queryParam("from", LocalDate.now().minusDays(2))
             .queryParam("to", LocalDate.now())
             .buildAndExpand(symbol)
@@ -1195,7 +1195,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     // drops or mis-parses GC=F,SI=F so MDS summary never merges into overview 1M–1Y.
     URI uri =
         UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
-            .path("/api/market/prices/summary")
+            .path("/api/v1/market/prices/summary")
             .queryParam("symbols", String.join(",", symbols))
             .encode()
             .build()

@@ -30,7 +30,7 @@ export type BankRatesResponse = {
 }
 
 export async function fetchBankRates(asset: BankRatesAssetCode): Promise<BankRatesResponse> {
-  const { data } = await apiClient.get<BankRatesResponse>('/api/rates/bank-rates', {
+  const { data } = await apiClient.get<BankRatesResponse>('/api/v1/rates/bank-rates', {
     params: { asset },
   })
   return {

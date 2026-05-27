@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Portal kullanıcısının güvenilir cihaz listesi ve iptal işlemleri. */
 @RestController
-@RequestMapping("/api/portal/profile/trusted-devices")
+@RequestMapping("/api/v1/portal/profile/trusted-devices")
 public class PortalTrustedDevicesController {
 
   private final PortalTrustedDeviceService portalTrustedDeviceService;

@@ -92,7 +92,7 @@ public class FinanceInstrumentClient {
     private boolean loadCatalogFromFinanceApi() {
         try {
             RequestHeadersSpec<?> request = financeRestClient.get()
-                    .uri(financeBaseUrl + "/api/instruments");
+                    .uri(financeBaseUrl + "/api/v1/instruments");
             Map<String, Object> response = applyAuth(request)
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {

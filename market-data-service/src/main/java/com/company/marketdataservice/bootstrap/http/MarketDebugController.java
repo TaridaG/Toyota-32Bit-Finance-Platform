@@ -24,7 +24,7 @@ import java.util.UUID;
  * `uygulama bootstrap` REST endpoint'lerini expose eden HTTP controller.
  */
 @RestController
-@RequestMapping("/api/market/debug")
+@RequestMapping("/api/v1/market/debug")
 @RequiredArgsConstructor
 public class MarketDebugController {
 

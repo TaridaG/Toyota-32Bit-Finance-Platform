@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** TR eurobond listesi, geçmiş ve nakit akışı API'lerini sunar. */
 @RestController
-@RequestMapping("/api/market/eurobonds/tr")
+@RequestMapping("/api/v1/market/eurobonds/tr")
 public class MarketTurkeyEurobondController {
 
   private final TrEurobondMarketService trEurobondMarketService;

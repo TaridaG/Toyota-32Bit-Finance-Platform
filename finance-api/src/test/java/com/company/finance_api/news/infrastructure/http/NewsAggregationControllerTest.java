@@ -37,7 +37,7 @@ class NewsAggregationControllerTest {
         .thenReturn(new NewsEnrichedPageResponse(List.of(), 0, 20, 0, 0));
 
     mockMvc
-        .perform(get("/api/news/enriched"))
+        .perform(get("/api/v1/news/enriched"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.page").value(0));
@@ -49,7 +49,7 @@ class NewsAggregationControllerTest {
         .thenReturn(new NewsEnrichedPageResponse(List.of(), 0, 20, 0, 0));
 
     mockMvc
-        .perform(get("/api/news/enriched").param("relatedSymbols", "BTC,ETH"))
+        .perform(get("/api/v1/news/enriched").param("relatedSymbols", "BTC,ETH"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 
@@ -65,7 +65,7 @@ class NewsAggregationControllerTest {
 
     mockMvc
         .perform(
-            get("/api/news/enriched")
+            get("/api/v1/news/enriched")
                 .param("sourceName", "CoinTelegraph")
                 .param("assetKey", "BTC")
                 .param("primaryTopic", "crypto"))
@@ -82,7 +82,7 @@ class NewsAggregationControllerTest {
         .thenReturn(new NewsWeeklySummaryResponse(227, List.of(), List.of(), List.of(), 12));
 
     mockMvc
-        .perform(get("/api/news/enriched/weekly-summary").param("portfolioSymbols", "BTC,ETH"))
+        .perform(get("/api/v1/news/enriched/weekly-summary").param("portfolioSymbols", "BTC,ETH"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.totalCount").value(227))

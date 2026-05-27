@@ -72,7 +72,7 @@ function queryParams(q: NewsAnalyticsQuery): Record<string, string> {
 
 export async function fetchAdminNewsAnalytics(q: NewsAnalyticsQuery): Promise<AdminNewsAnalyticsDashboard> {
   try {
-    const { data } = await apiClient.get<Envelope<AdminNewsAnalyticsDashboard>>('/api/news/admin/metrics/analytics', {
+    const { data } = await apiClient.get<Envelope<AdminNewsAnalyticsDashboard>>('/api/v1/news/admin/metrics/analytics', {
       params: queryParams(q),
     })
     if (!data.success || data.data == null) {

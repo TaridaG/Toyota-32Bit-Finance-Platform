@@ -35,7 +35,7 @@ class AdminInfoCardsControllerTest {
         .thenReturn(new InfoCardsPageDto(List.of(), 0, 10, 0, 0));
 
     mockMvc
-        .perform(get("/api/admin/info-cards"))
+        .perform(get("/api/v1/admin/info-cards"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.page").value(0));

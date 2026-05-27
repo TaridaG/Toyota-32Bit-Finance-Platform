@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Tetiklenmiş alarm geçmişi zaman çizelgesi endpoint'i. */
 @RestController
-@RequestMapping("/api/history/alarms")
+@RequestMapping("/api/v1/history/alarms")
 @RequiredArgsConstructor
 public class AlarmHistoryController {
 

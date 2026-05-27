@@ -15,7 +15,7 @@ import java.util.List;
  * Enstrüman bazlı candle, moving average, RSI ve trend metric endpoint'lerini sunar.
  */
 @RestController
-@RequestMapping("/api/analytics")
+@RequestMapping("/api/v1/analytics")
 @RequiredArgsConstructor
 public class AnalyticsController {
 

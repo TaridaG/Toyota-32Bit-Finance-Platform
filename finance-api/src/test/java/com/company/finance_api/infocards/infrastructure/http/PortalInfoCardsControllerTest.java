@@ -33,7 +33,7 @@ class PortalInfoCardsControllerTest {
     when(infoCardService.listPortalCards(null, false, null)).thenReturn(List.of());
 
     mockMvc
-        .perform(get("/api/portal/info-cards"))
+        .perform(get("/api/v1/portal/info-cards"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());

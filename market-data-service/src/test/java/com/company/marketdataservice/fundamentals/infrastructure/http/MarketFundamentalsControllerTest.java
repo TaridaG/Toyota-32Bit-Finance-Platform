@@ -54,7 +54,7 @@ class MarketFundamentalsControllerTest {
         when(instrumentFundamentalsService.getFundamentals("AAPL", false)).thenReturn(dto);
 
         webTestClient.get()
-                .uri("/api/market/instruments/AAPL/fundamentals")
+                .uri("/api/v1/market/instruments/AAPL/fundamentals")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()

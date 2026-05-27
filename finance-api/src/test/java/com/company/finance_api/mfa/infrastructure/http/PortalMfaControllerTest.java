@@ -37,7 +37,7 @@ class PortalMfaControllerTest {
         .thenReturn(new PortalMfaStatusResponse(true, Instant.parse("2026-01-01T00:00:00Z")));
 
     mockMvc
-        .perform(get("/api/portal/profile/mfa"))
+        .perform(get("/api/v1/portal/profile/mfa"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.enabled").value(true));
@@ -47,7 +47,7 @@ class PortalMfaControllerTest {
   void confirm_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/portal/profile/mfa/confirm")
+            post("/api/v1/portal/profile/mfa/confirm")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"code\":\"abc\"}"))
         .andExpect(status().isBadRequest())

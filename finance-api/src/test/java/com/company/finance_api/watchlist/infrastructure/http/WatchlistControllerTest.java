@@ -43,7 +43,7 @@ class WatchlistControllerTest {
     when(watchlistService.getMyWatchlist()).thenReturn(List.of(item));
 
     mockMvc
-        .perform(get("/api/watchlist"))
+        .perform(get("/api/v1/watchlist"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].symbol").value("BTCUSDT"))
@@ -54,7 +54,7 @@ class WatchlistControllerTest {
   void addToWatchlist_delegatesToService() throws Exception {
     mockMvc
         .perform(
-            post("/api/watchlist")
+            post("/api/v1/watchlist")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"instrumentId\": 42}"))
         .andExpect(status().isOk())
@@ -66,7 +66,7 @@ class WatchlistControllerTest {
   @Test
   void removeFromWatchlist_delegatesToService() throws Exception {
     mockMvc
-        .perform(delete("/api/watchlist/7"))
+        .perform(delete("/api/v1/watchlist/7"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 

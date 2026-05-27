@@ -5,6 +5,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,6 +22,7 @@ public class OpenApiConfig {
                 .title("news-service")
                 .version("1.0")
                 .description("News feed, chart and admin metrics"))
+        .servers(List.of(new Server().url("/api/v1").description("API gateway (canonical)")))
         .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
         .components(
             new Components()

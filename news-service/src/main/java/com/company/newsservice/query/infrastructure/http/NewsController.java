@@ -18,7 +18,7 @@ import java.util.List;
  * Portal ve chart için haber REST endpoint'leri.
  */
 @RestController
-@RequestMapping("/api/news")
+@RequestMapping("/api/v1/news")
 @RequiredArgsConstructor
 public class NewsController {
 

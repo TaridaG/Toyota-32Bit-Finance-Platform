@@ -42,7 +42,7 @@ class ChartControllerTest {
 
     mockMvc
         .perform(
-            get("/api/charts/1/candles")
+            get("/api/v1/charts/1/candles")
                 .param("from", "2026-01-01T00:00:00Z")
                 .param("to", "2026-01-02T00:00:00Z")
                 .param("priceType", "MARKET"))

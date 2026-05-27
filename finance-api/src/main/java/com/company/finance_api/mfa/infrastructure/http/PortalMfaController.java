@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Portal TOTP MFA kurulum ve yönetim endpoint'leri. */
 @RestController
-@RequestMapping("/api/portal/profile/mfa")
+@RequestMapping("/api/v1/portal/profile/mfa")
 public class PortalMfaController {
 
   private final PortalMfaService portalMfaService;

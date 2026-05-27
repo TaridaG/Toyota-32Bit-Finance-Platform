@@ -66,7 +66,7 @@ class RatesControllerTest {
         when(policyRateHistoryService.loadLatest()).thenReturn(dto);
 
         webTestClient.get()
-                .uri("/api/rates/policy-rate/latest")
+                .uri("/api/v1/rates/policy-rate/latest")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -77,7 +77,7 @@ class RatesControllerTest {
     @Test
     void policyRateHistory_rejectsUnsupportedRange() {
         webTestClient.get()
-                .uri("/api/rates/policy-rate/history?range=1Y")
+                .uri("/api/v1/rates/policy-rate/history?range=1Y")
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
@@ -90,7 +90,7 @@ class RatesControllerTest {
                 .thenThrow(new IllegalArgumentException("Unsupported maturity: bad"));
 
         webTestClient.get()
-                .uri("/api/rates/tl-deposit/latest?maturity=bad")
+                .uri("/api/v1/rates/tl-deposit/latest?maturity=bad")
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
@@ -106,7 +106,7 @@ class RatesControllerTest {
         when(tlDepositIndexService.loadLatest("MT04", null)).thenReturn(dto);
 
         webTestClient.get()
-                .uri("/api/rates/tl-deposit/index/latest?maturity=MT04")
+                .uri("/api/v1/rates/tl-deposit/index/latest?maturity=MT04")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -123,7 +123,7 @@ class RatesControllerTest {
         when(dovizBankRatesService.load(BankRatesAsset.USD)).thenReturn(Mono.just(response));
 
         webTestClient.get()
-                .uri("/api/rates/bank-rates?asset=USD")
+                .uri("/api/v1/rates/bank-rates?asset=USD")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -133,7 +133,7 @@ class RatesControllerTest {
     @Test
     void bankRates_rejectsUnsupportedAsset() {
         webTestClient.get()
-                .uri("/api/rates/bank-rates?asset=CHF")
+                .uri("/api/v1/rates/bank-rates?asset=CHF")
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectBody()
@@ -146,7 +146,7 @@ class RatesControllerTest {
                 .thenReturn(Mono.error(new IllegalStateException("upstream timeout details")));
 
         webTestClient.get()
-                .uri("/api/rates/bank-rates?asset=USD")
+                .uri("/api/v1/rates/bank-rates?asset=USD")
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.BAD_GATEWAY)
                 .expectBody()

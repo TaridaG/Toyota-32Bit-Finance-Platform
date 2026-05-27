@@ -47,7 +47,7 @@ function enrichAxiosError(error: unknown): unknown {
 export async function completeInfoCardWithAi(payload: CompleteInfoCardAiRequest): Promise<InfoCardAiContent> {
   try {
     const { data } = await apiClient.post<ApiEnvelope<InfoCardAiContent>>(
-      '/api/admin/info-cards/ai/complete',
+      '/api/v1/admin/info-cards/ai/complete',
       payload,
       { timeout: AI_REQUEST_TIMEOUT_MS },
     )
@@ -60,7 +60,7 @@ export async function completeInfoCardWithAi(payload: CompleteInfoCardAiRequest)
 export async function translateInfoCardWithAi(payload: TranslateInfoCardAiRequest): Promise<InfoCardAiContent> {
   try {
     const { data } = await apiClient.post<ApiEnvelope<InfoCardAiContent>>(
-      '/api/admin/info-cards/ai/translate',
+      '/api/v1/admin/info-cards/ai/translate',
       payload,
       { timeout: AI_REQUEST_TIMEOUT_MS },
     )

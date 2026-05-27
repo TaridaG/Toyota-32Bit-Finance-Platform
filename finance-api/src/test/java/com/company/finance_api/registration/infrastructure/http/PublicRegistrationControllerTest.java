@@ -43,7 +43,7 @@ class PublicRegistrationControllerTest {
 
     mockMvc
         .perform(
-            post("/api/public/register/send-code")
+            post("/api/v1/public/register/send-code")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -60,7 +60,7 @@ class PublicRegistrationControllerTest {
         .thenReturn(new PublicUsernameAvailabilityResponse("trader", true, List.of()));
 
     mockMvc
-        .perform(get("/api/public/register/username-availability").param("username", "trader"))
+        .perform(get("/api/v1/public/register/username-availability").param("username", "trader"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.available").value(true));
@@ -70,7 +70,7 @@ class PublicRegistrationControllerTest {
   void register_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/public/register")
+            post("/api/v1/public/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
         .andExpect(status().isBadRequest())

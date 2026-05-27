@@ -43,7 +43,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 /** Portal profil REST API: tercihler, avatar, şifre, e-posta ve hesap silme. */
 @RestController
-@RequestMapping("/api/portal/profile")
+@RequestMapping("/api/v1/portal/profile")
 public class PortalProfileController {
 
   private static final Logger log = LoggerFactory.getLogger(PortalProfileController.class);

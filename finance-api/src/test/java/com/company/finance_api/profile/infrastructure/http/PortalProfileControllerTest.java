@@ -44,7 +44,7 @@ class PortalProfileControllerTest {
                 false));
 
     mockMvc
-        .perform(get("/api/portal/profile"))
+        .perform(get("/api/v1/portal/profile"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.username").value("trader"));

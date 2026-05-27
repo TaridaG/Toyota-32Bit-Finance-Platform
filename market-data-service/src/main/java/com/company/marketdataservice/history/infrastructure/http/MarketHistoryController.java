@@ -18,7 +18,7 @@ import java.util.Locale;
  * `geçmiş veri ve backfill` REST endpoint'lerini expose eden HTTP controller.
  */
 @RestController
-@RequestMapping("/api/market")
+@RequestMapping("/api/v1/market")
 public class MarketHistoryController {
 
     private final HistoricalMarketDataReadService historicalMarketDataReadService;

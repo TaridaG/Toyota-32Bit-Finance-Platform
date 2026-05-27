@@ -36,7 +36,7 @@ type EmailAvailabilityEnvelope = {
 }
 
 export async function registerPortalUser(body: PublicRegisterBody): Promise<void> {
-  const { data } = await apiClient.post<RegisterEnvelope>('/api/public/register', body)
+  const { data } = await apiClient.post<RegisterEnvelope>('/api/v1/public/register', body)
   if (!data.success) {
     const msg = data.error?.message ?? 'Registration failed'
     throw new Error(msg)
@@ -74,7 +74,7 @@ export async function sendRegistrationVerificationCode(
   email: string,
   locale?: string,
 ): Promise<{ expiresInSeconds: number; resendInSeconds: number }> {
-  const { data } = await apiClient.post<SendCodeEnvelope>('/api/public/register/send-code', {
+  const { data } = await apiClient.post<SendCodeEnvelope>('/api/v1/public/register/send-code', {
     email,
     locale: locale?.trim() || undefined,
   })
@@ -93,7 +93,7 @@ export async function checkEmailAvailability(email: string): Promise<{
   blocked: boolean
   suggestions: string[]
 }> {
-  const { data } = await apiClient.get<EmailAvailabilityEnvelope>('/api/public/register/email-availability', {
+  const { data } = await apiClient.get<EmailAvailabilityEnvelope>('/api/v1/public/register/email-availability', {
     params: { email },
   })
   if (!data.success || !data.data) {
@@ -112,7 +112,7 @@ export async function checkUsernameAvailability(username: string): Promise<{
   available: boolean
   suggestions: string[]
 }> {
-  const { data } = await apiClient.get<UsernameAvailabilityEnvelope>('/api/public/register/username-availability', {
+  const { data } = await apiClient.get<UsernameAvailabilityEnvelope>('/api/v1/public/register/username-availability', {
     params: { username },
   })
   if (!data.success || !data.data) {

@@ -105,7 +105,7 @@ function queryParams(q: UserAnalyticsQuery): Record<string, string> {
 
 export async function fetchAdminUserAnalytics(q: UserAnalyticsQuery): Promise<AdminUserAnalyticsDashboard> {
   try {
-    const { data } = await apiClient.get<Envelope<AdminUserAnalyticsDashboard>>('/api/admin/metrics/user-analytics', {
+    const { data } = await apiClient.get<Envelope<AdminUserAnalyticsDashboard>>('/api/v1/admin/metrics/user-analytics', {
       params: queryParams(q),
     })
     if (!data.success || data.data == null) {

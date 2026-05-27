@@ -74,7 +74,7 @@ class NewsControllerTest {
         when(newsQueryUseCase.getById(99L, "en", true))
                 .thenThrow(new ResourceNotFoundException("News article not found: 99"));
 
-        mockMvc.perform(get("/api/news/99").param("lang", "en"))
+        mockMvc.perform(get("/api/v1/news/99").param("lang", "en"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
     }
@@ -83,7 +83,7 @@ class NewsControllerTest {
     void ingestNow_returnsSavedCount() throws Exception {
         when(ingestLatestNewsUseCase.ingestLatest()).thenReturn(3);
 
-        mockMvc.perform(post("/api/news/admin/ingest"))
+        mockMvc.perform(post("/api/v1/news/admin/ingest"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value(3));
 

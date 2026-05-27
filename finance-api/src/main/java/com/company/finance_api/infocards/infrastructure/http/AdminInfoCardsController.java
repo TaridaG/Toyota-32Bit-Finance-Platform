@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Admin info-card yönetim REST endpoint'leri. */
 @RestController
-@RequestMapping("/api/admin/info-cards")
+@RequestMapping("/api/v1/admin/info-cards")
 public class AdminInfoCardsController {
 
   private final InfoCardService infoCardService;

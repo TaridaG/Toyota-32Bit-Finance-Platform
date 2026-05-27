@@ -70,7 +70,7 @@ function describeFailure(e: unknown): string {
   return 'admin user directory unavailable'
 }
 
-const USER_DIRECTORY_BASE = '/api/admin/metrics/user-directory'
+const USER_DIRECTORY_BASE = '/api/v1/admin/metrics/user-directory'
 
 export async function fetchAdminUserDirectory(q: AdminUserDirectoryQuery): Promise<AdminUserDirectoryPage> {
   const params = new URLSearchParams()

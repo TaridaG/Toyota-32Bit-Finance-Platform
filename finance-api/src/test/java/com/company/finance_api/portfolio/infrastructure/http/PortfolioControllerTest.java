@@ -48,7 +48,7 @@ class PortfolioControllerTest {
     when(portfolioService.getMyPortfolio()).thenReturn(Collections.emptyList());
 
     mockMvc
-        .perform(get("/api/portfolio"))
+        .perform(get("/api/v1/portfolio"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());
@@ -62,7 +62,7 @@ class PortfolioControllerTest {
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
 
     mockMvc
-        .perform(get("/api/portfolio/summary"))
+        .perform(get("/api/v1/portfolio/summary"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
   }
@@ -81,7 +81,7 @@ class PortfolioControllerTest {
                 List.of()));
 
     mockMvc
-        .perform(get("/api/portfolio/overview").header("X-Currency", "USD"))
+        .perform(get("/api/v1/portfolio/overview").header("X-Currency", "USD"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.currency").value("USD"));
@@ -94,7 +94,7 @@ class PortfolioControllerTest {
 
     mockMvc
         .perform(
-            get("/api/portfolio/performance-series")
+            get("/api/v1/portfolio/performance-series")
                 .param("portfolioId", "7")
                 .param("range", "1w")
                 .header("X-Currency", "USD"))

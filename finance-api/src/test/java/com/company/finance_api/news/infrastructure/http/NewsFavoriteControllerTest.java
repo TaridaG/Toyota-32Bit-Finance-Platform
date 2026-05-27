@@ -35,7 +35,7 @@ class NewsFavoriteControllerTest {
     when(newsFavoriteService.getMyFavorites()).thenReturn(List.of());
 
     mockMvc
-        .perform(get("/api/news/favorites"))
+        .perform(get("/api/v1/news/favorites"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());

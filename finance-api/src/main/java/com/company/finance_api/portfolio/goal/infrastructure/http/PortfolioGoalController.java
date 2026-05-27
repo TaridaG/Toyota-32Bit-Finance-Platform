@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Portfolio hedefleri için REST endpoint'leri sağlayan controller. */
 @RestController
-@RequestMapping("/api/portfolio/goals")
+@RequestMapping("/api/v1/portfolio/goals")
 public class PortfolioGoalController {
 
   private final PortfolioGoalService portfolioGoalService;

@@ -28,7 +28,7 @@ class UserContextHeaderFilterTest {
     @Test
     void filter_stripsSpoofedHeadersWhenUnauthenticated() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/market/prices")
+                MockServerHttpRequest.get("/api/v1/market/prices")
                         .header(UserContextHeaderFilter.HDR_USER_ID, "spoof-id")
                         .header(UserContextHeaderFilter.HDR_USERNAME, "spoof-name")
                         .header(UserContextHeaderFilter.HDR_USER_ROLES, "ADMIN")
@@ -57,7 +57,7 @@ class UserContextHeaderFilterTest {
         JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt);
 
         ServerWebExchange exchange = MockServerWebExchange.from(
-                        MockServerHttpRequest.get("/api/portfolio")
+                        MockServerHttpRequest.get("/api/v1/portfolio")
                                 .header(UserContextHeaderFilter.HDR_USER_ID, "spoof-id")
                                 .build())
                 .mutate()
@@ -93,7 +93,7 @@ class UserContextHeaderFilterTest {
         JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt);
 
         ServerWebExchange exchange = MockServerWebExchange.from(
-                        MockServerHttpRequest.get("/api/users/me").build())
+                        MockServerHttpRequest.get("/api/v1/users/me").build())
                 .mutate()
                 .principal(Mono.just(auth))
                 .build();
@@ -119,7 +119,7 @@ class UserContextHeaderFilterTest {
         JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt);
 
         ServerWebExchange exchange = MockServerWebExchange.from(
-                        MockServerHttpRequest.get("/api/portfolio").build())
+                        MockServerHttpRequest.get("/api/v1/portfolio").build())
                 .mutate()
                 .principal(Mono.just(auth))
                 .build();

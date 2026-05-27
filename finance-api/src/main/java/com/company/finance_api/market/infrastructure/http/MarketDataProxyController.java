@@ -21,10 +21,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * Forwards browser / SPA traffic for market-data-service routes through finance-api so local Vite
  * only needs {@code VITE_PROXY_TARGET} (:8080). API gateway sends {@code
- * /api/market/instruments/.../fundamentals} straight to market-data-service; finance still exposes
+ * /api/v1/market/instruments/.../fundamentals} straight to market-data-service; finance still exposes
  * {@link MarketFundamentalsPassthroughController} for direct finance calls. {@code
- * /api/market/overview} stays on {@link MarketOverviewController}.
- * Policy rate history ({@code /api/rates/**}) is proxied the same way as market prices.
+ * /api/v1/market/overview} stays on {@link MarketOverviewController}.
+ * Policy rate history ({@code /api/v1/rates/**}) is proxied the same way as market prices.
  */
 /** market-data-service'e HTTP proxy; portal isteklerini upstream'e iletir. */
 @RestController
@@ -40,17 +40,17 @@ public class MarketDataProxyController {
   @RequestMapping(
       method = {RequestMethod.GET, RequestMethod.HEAD},
       value = {
-        "/api/market/prices",
-        "/api/market/prices/**",
-        "/api/market/segments/**",
-        "/api/market/fx",
-        "/api/market/fx/**",
-        "/api/market/funds",
-        "/api/market/funds/**",
-        "/api/market/ingestion/**",
-        "/api/market/debug/**",
-        "/api/rates",
-        "/api/rates/**"
+        "/api/v1/market/prices",
+        "/api/v1/market/prices/**",
+        "/api/v1/market/segments/**",
+        "/api/v1/market/fx",
+        "/api/v1/market/fx/**",
+        "/api/v1/market/funds",
+        "/api/v1/market/funds/**",
+        "/api/v1/market/ingestion/**",
+        "/api/v1/market/debug/**",
+        "/api/v1/rates",
+        "/api/v1/rates/**"
       })
   public ResponseEntity<byte[]> proxy(HttpServletRequest request) {
     String base = marketDataBaseUrl.replaceAll("/+$", "");

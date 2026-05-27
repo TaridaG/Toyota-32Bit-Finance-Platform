@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Enstrüman arama ve detay REST endpoint'lerini sunar. */
 @RestController
-@RequestMapping("/api/instruments")
+@RequestMapping("/api/v1/instruments")
 public class InstrumentController {
 
   private final InstrumentService instrumentService;

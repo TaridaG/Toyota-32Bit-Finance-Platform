@@ -46,7 +46,7 @@ class ExternalPortfolioControllerTest {
     when(service.getUserPortfolios(userId)).thenReturn(List.of());
 
     mockMvc
-        .perform(get("/api/external/portfolios"))
+        .perform(get("/api/v1/external/portfolios"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());
@@ -67,7 +67,7 @@ class ExternalPortfolioControllerTest {
 
     mockMvc
         .perform(
-            post("/api/external/portfolios")
+            post("/api/v1/external/portfolios")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """

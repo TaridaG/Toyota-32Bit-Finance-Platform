@@ -53,45 +53,45 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
     }
     // Public self-service auth (no JWT yet; gateway must not forward spoofed X-USERNAME)
     if ("POST".equalsIgnoreCase(request.getMethod())
-        && (path.endsWith("/api/public/register")
-            || path.endsWith("/api/public/register/send-code")
-            || path.endsWith("/api/public/login")
-            || path.endsWith("/api/public/login/mfa")
-            || path.endsWith("/api/public/refresh"))) {
+        && (path.endsWith("/api/v1/public/register")
+            || path.endsWith("/api/v1/public/register/send-code")
+            || path.endsWith("/api/v1/public/login")
+            || path.endsWith("/api/v1/public/login/mfa")
+            || path.endsWith("/api/v1/public/refresh"))) {
       filterChain.doFilter(request, response);
       return;
     }
     if ("GET".equalsIgnoreCase(request.getMethod())
-        && (path.endsWith("/api/public/register/username-availability")
-            || path.endsWith("/api/public/register/email-availability"))) {
+        && (path.endsWith("/api/v1/public/register/username-availability")
+            || path.endsWith("/api/v1/public/register/email-availability"))) {
       filterChain.doFilter(request, response);
       return;
     }
     // Public instrument discovery is allowed for guest users.
-    if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/instruments")) {
+    if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/v1/instruments")) {
       filterChain.doFilter(request, response);
       return;
     }
     // TCMB policy rate (proxied to market-data-service); same guest access as public market reads.
-    if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/rates")) {
+    if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/v1/rates")) {
       filterChain.doFilter(request, response);
       return;
     }
     // Finansal Okuryazarlık + contextual help cards (public portal catalog).
-    if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/portal/info-cards")) {
+    if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/v1/portal/info-cards")) {
       filterChain.doFilter(request, response);
       return;
     }
     // Public market catalog pages (gateway forwards here; must not require X-USERNAME).
     if ("GET".equalsIgnoreCase(request.getMethod())
-        && (path.startsWith("/api/market/overview")
-            || path.startsWith("/api/market/eurobonds/"))) {
+        && (path.startsWith("/api/v1/market/overview")
+            || path.startsWith("/api/v1/market/eurobonds/"))) {
       filterChain.doFilter(request, response);
       return;
     }
     // Public MDS fundamentals (read-only; same data as unauthenticated market prices).
     if ("GET".equalsIgnoreCase(request.getMethod())
-        && path.startsWith("/api/market/instruments/")
+        && path.startsWith("/api/v1/market/instruments/")
         && path.endsWith("/fundamentals")) {
       filterChain.doFilter(request, response);
       return;
@@ -99,9 +99,9 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
     // Public news stream endpoints are allowed for guest users (not admin metrics / ingest /
     // favorites).
     if ("GET".equalsIgnoreCase(request.getMethod())
-        && path.startsWith("/api/news")
-        && !path.startsWith("/api/news/admin")
-        && !path.startsWith("/api/news/favorites")) {
+        && path.startsWith("/api/v1/news")
+        && !path.startsWith("/api/v1/news/admin")
+        && !path.startsWith("/api/v1/news/favorites")) {
       filterChain.doFilter(request, response);
       return;
     }

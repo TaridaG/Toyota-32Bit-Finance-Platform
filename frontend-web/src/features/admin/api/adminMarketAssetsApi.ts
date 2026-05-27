@@ -47,7 +47,7 @@ function readMessage(err: unknown): string {
 }
 
 export async function fetchMarketAssetDashboard(page = 0, size = 10): Promise<MarketAssetDashboard> {
-  const { data } = await apiClient.get<AdminEnvelope<MarketAssetDashboard>>('/api/admin/metrics/market-assets', {
+  const { data } = await apiClient.get<AdminEnvelope<MarketAssetDashboard>>('/api/v1/admin/metrics/market-assets', {
     params: { page, size },
   })
   if (!data.success || !data.data) {
@@ -58,7 +58,7 @@ export async function fetchMarketAssetDashboard(page = 0, size = 10): Promise<Ma
 
 export async function recomputeMarketAssets(): Promise<MarketAssetRecomputeResponse> {
   const { data } = await apiClient.post<AdminEnvelope<MarketAssetRecomputeResponse>>(
-    '/api/admin/metrics/market-assets/recompute',
+    '/api/v1/admin/metrics/market-assets/recompute',
   )
   if (!data.success || !data.data) {
     throw new Error(data.error?.message ?? 'Failed to start recompute')

@@ -62,8 +62,8 @@ class AdminLatencyProbeServiceTest {
         service.saveFromClientSamples(
             new AdminLatencySnapshotSaveRequest(
                 List.of(
-                    new LatencySampleDto("/api/admin/metrics/portal-users", 10.0),
-                    new LatencySampleDto("/api/admin/metrics/portal-portfolios", 20.0))));
+                    new LatencySampleDto("/api/v1/admin/metrics/portal-users", 10.0),
+                    new LatencySampleDto("/api/v1/admin/metrics/portal-portfolios", 20.0))));
 
     assertThat(dto.id()).isEqualTo(42L);
     assertThat(dto.sampleCount()).isEqualTo(2);

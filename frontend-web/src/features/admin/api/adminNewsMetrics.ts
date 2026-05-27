@@ -30,7 +30,7 @@ function describeFailure(e: unknown): string {
 
 export async function fetchAdminNewsDashboardMetrics(): Promise<AdminNewsDashboardMetrics> {
   try {
-    const { data } = await apiClient.get<MetricsEnvelope<AdminNewsDashboardMetrics>>('/api/news/admin/metrics/dashboard')
+    const { data } = await apiClient.get<MetricsEnvelope<AdminNewsDashboardMetrics>>('/api/v1/news/admin/metrics/dashboard')
     if (!data.success || data.data == null) {
       throw new Error(data.error?.message ?? 'news metrics unavailable')
     }

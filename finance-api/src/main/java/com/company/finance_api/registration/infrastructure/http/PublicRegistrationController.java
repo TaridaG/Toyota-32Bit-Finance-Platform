@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Kimlik doğrulama gerektirmeyen kayıt, doğrulama kodu ve müsaitlik endpoint'leri. */
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/api/v1/public")
 public class PublicRegistrationController {
 
   private final PortalRegistrationService portalRegistrationService;

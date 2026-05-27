@@ -36,7 +36,7 @@ function assertSuccessOnly(body: ApiEnvelope<unknown>): void {
 }
 
 export async function fetchActiveAlarms(): Promise<AlarmItem[]> {
-  const { data } = await apiClient.get<ApiEnvelope<AlarmItem[]>>('/api/alarms')
+  const { data } = await apiClient.get<ApiEnvelope<AlarmItem[]>>('/api/v1/alarms')
   return assertSuccessData(data)
 }
 
@@ -47,12 +47,12 @@ export type CreateAlarmPayload = {
 }
 
 export async function createAlarm(payload: CreateAlarmPayload): Promise<void> {
-  const { data } = await apiClient.post<ApiEnvelope<unknown>>('/api/alarms', payload)
+  const { data } = await apiClient.post<ApiEnvelope<unknown>>('/api/v1/alarms', payload)
   assertSuccessOnly(data)
 }
 
 export async function deactivateAlarm(alarmId: number): Promise<void> {
-  const { data } = await apiClient.delete<ApiEnvelope<unknown>>(`/api/alarms/${alarmId}`)
+  const { data } = await apiClient.delete<ApiEnvelope<unknown>>(`/api/v1/alarms/${alarmId}`)
   assertSuccessOnly(data)
 }
 

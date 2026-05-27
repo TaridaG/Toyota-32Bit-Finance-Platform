@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Transaction geçmişi sorguları için REST endpoint'leri sağlayan controller. */
 @RestController
-@RequestMapping("/api/history/transactions")
+@RequestMapping("/api/v1/history/transactions")
 @RequiredArgsConstructor
 public class TransactionHistoryController {
 

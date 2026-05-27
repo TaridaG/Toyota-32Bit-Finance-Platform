@@ -86,7 +86,7 @@ class GatewaySecurityTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.post()
-                .uri("/api/public/register")
+                .uri("/api/v1/public/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of(
                         "email", "newuser@example.com",
@@ -104,7 +104,7 @@ class GatewaySecurityTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.post()
-                .uri("/api/public/register")
+                .uri("/api/v1/public/register")
                 .headers(h -> h.setBearerAuth("not.a.valid.jwt.token"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of(
@@ -123,7 +123,7 @@ class GatewaySecurityTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.post()
-                .uri("/api/public/login")
+                .uri("/api/v1/public/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(Map.of(
                         "username", "user1",
@@ -140,7 +140,7 @@ class GatewaySecurityTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.get()
-                .uri("/market/crypto/latest")
+                .uri("/api/v1/market/crypto/latest")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
@@ -152,7 +152,7 @@ class GatewaySecurityTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.get()
-                .uri("/api/news/headlines")
+                .uri("/api/v1/news/headlines")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
@@ -161,7 +161,7 @@ class GatewaySecurityTests {
     @Test
     void news_admin_ingest_should_return_401_without_token() {
         webTestClient.post()
-                .uri("/api/news/admin/ingest")
+                .uri("/api/v1/news/admin/ingest")
                 .exchange()
                 .expectStatus().isUnauthorized();
     }
@@ -173,7 +173,7 @@ class GatewaySecurityTests {
                 .claim("realm_access", Map.of("roles", List.of("USER"))));
 
         webTestClient.post()
-                .uri("/api/news/admin/ingest")
+                .uri("/api/v1/news/admin/ingest")
                 .headers(h -> h.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isForbidden();
@@ -189,21 +189,21 @@ class GatewaySecurityTests {
                 .claim("realm_access", Map.of("roles", List.of("ADMIN"))));
 
         webTestClient.post()
-                .uri("/api/news/admin/ingest")
+                .uri("/api/v1/news/admin/ingest")
                 .headers(h -> h.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
 
         RecordedRequest recorded = newsMock.takeRequest();
-        Assertions.assertEquals("/api/news/admin/ingest", recorded.getPath());
+        Assertions.assertEquals("/api/v1/news/admin/ingest", recorded.getPath());
         Assertions.assertEquals("POST", recorded.getMethod());
     }
 
     @Test
     void should_return_401_without_token_for_protected_api() {
         webTestClient.get()
-                .uri("/api/admin/stats")
+                .uri("/api/v1/admin/stats")
                 .exchange()
                 .expectStatus().isUnauthorized();
     }
@@ -218,7 +218,7 @@ class GatewaySecurityTests {
                 .claim("realm_access", Map.of("roles", List.of("USER"))));
 
         webTestClient.get()
-                .uri("/api/instruments")
+                .uri("/api/v1/instruments")
                 .headers(h -> h.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isOk()
@@ -232,7 +232,7 @@ class GatewaySecurityTests {
                 .claim("realm_access", Map.of("roles", List.of("USER"))));
 
         webTestClient.get()
-                .uri("/api/admin/stats")
+                .uri("/api/v1/admin/stats")
                 .headers(h -> h.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isForbidden();
@@ -248,7 +248,7 @@ class GatewaySecurityTests {
                 .claim("realm_access", Map.of("roles", List.of("ADMIN"))));
 
         webTestClient.get()
-                .uri("/api/admin/stats")
+                .uri("/api/v1/admin/stats")
                 .headers(h -> h.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isOk()

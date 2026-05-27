@@ -26,7 +26,7 @@ class MarketFundamentalsPassthroughControllerTest {
   @Test
   void fundamentals_tryFxCross_returnsSyntheticPayloadWithoutMds() throws Exception {
     mockMvc
-        .perform(get("/api/market/instruments/USDTRY/fundamentals"))
+        .perform(get("/api/v1/market/instruments/USDTRY/fundamentals"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.symbol").value("USDTRY"))
         .andExpect(jsonPath("$.currency").value("TRY"));

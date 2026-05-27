@@ -148,7 +148,7 @@ public class TlDepositIndexQueryService {
     String base = marketDataBaseUrl.replaceAll("/+$", "");
     String uri =
         UriComponentsBuilder.fromUriString(base)
-            .path("/api/rates/tl-deposit/index/latest")
+            .path("/api/v1/rates/tl-deposit/index/latest")
             .queryParam("maturity", maturity)
             .build(true)
             .toUriString();

@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Kimlik doğrulama gerektirmeyen login, MFA doğrulama ve token refresh endpoint'leri. */
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/api/v1/public")
 public class PublicAuthenticationController {
 
   private final PortalLoginService portalLoginService;

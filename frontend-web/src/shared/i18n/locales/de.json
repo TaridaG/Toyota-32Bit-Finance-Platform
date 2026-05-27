@@ -379,7 +379,10 @@
         "deactivate": "Deaktivieren",
         "activate": "Aktivieren"
       },
-      "status": { "active": "Aktiv", "passive": "Passiv" },
+      "status": {
+        "active": "Aktiv",
+        "passive": "Passiv"
+      },
       "statusFilter": {
         "aria": "Statusfilter",
         "all": "Alle",
@@ -396,7 +399,9 @@
         "intermediate": "Mittel",
         "advanced": "Fortgeschritten"
       },
-      "sidebar": { "pages": "Seiten" },
+      "sidebar": {
+        "pages": "Seiten"
+      },
       "pages": {
         "TURKEY_ECONOMY": "Türkei-Wirtschaft",
         "FINANCIAL_LITERACY": "Finanzielle Bildung",

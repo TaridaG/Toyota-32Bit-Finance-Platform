@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/admin/info-cards/ai")
+@RequestMapping("/api/v1/admin/info-cards/ai")
 @PreAuthorize("hasRole('ADMIN')")
 /** Admin info-card AI tamamlama ve çeviri REST endpoint'leri. */
 public class AdminInfoCardAiController {
