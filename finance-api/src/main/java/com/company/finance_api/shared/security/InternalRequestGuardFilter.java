@@ -39,8 +39,8 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
 
     String path = request.getRequestURI();
 
-    // health endpoint serbest
-    if (path.startsWith("/health")) {
+    // health + actuator (Prometheus scrape, health probes) — kimlik gerektirmez
+    if (path.startsWith("/health") || path.startsWith("/actuator")) {
       filterChain.doFilter(request, response);
       return;
     }

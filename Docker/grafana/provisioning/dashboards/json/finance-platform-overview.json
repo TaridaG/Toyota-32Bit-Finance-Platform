@@ -4,32 +4,111 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Jaeger (Traces)",
+      "tooltip": "Trace arama ve timeline",
+      "type": "link",
+      "url": "http://localhost:16686"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": true,
+      "title": "OpenSearch Dashboards (Logs)",
+      "tooltip": "application-logs-* Discover",
+      "type": "link",
+      "url": "http://localhost:5601"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Prometheus Targets",
+      "tooltip": "Scrape target UP/DOWN",
+      "type": "link",
+      "url": "http://localhost:9090/targets"
+    }
+  ],
   "panels": [
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "id": 1,
-      "title": "HTTP istek hızı (finance-api)",
+      "title": "HTTP istek hızı ($job)",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{application=\"finance-api\"}[1m]))",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$job\", uri!=\"/actuator/prometheus\"}[5m]))",
           "legendFormat": "req/s"
         }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 4,
+      "title": "Ortalama cevap süresi ($job)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=~\"$job\", uri!=\"/actuator/prometheus\"}[5m])) / sum(rate(http_server_requests_seconds_count{job=~\"$job\", uri!=\"/actuator/prometheus\"}[5m]))",
+          "legendFormat": "avg s"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 5,
+      "title": "Hata oranı 5xx (platform)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\", uri!=\"/actuator/prometheus\"}[5m])) / sum(rate(http_server_requests_seconds_count{uri!=\"/actuator/prometheus\"}[5m]))",
+          "legendFormat": "5xx ratio"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 6,
+      "title": "Service health (up)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "id": 2,
       "title": "Log consumer — işlenen Kafka log olayları",
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(kafka_events_processed_total[1m]))",
+          "expr": "sum(rate(kafka_events_processed_total[5m]))",
           "legendFormat": "processed/s"
         }
       ]
@@ -37,7 +116,7 @@
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 8, "x": 12, "y": 16 },
       "id": 3,
       "title": "OpenSearch index hataları (log-consumer)",
       "type": "timeseries",
@@ -47,14 +126,111 @@
           "legendFormat": "failures/s"
         }
       ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "id": 7,
+      "title": "Log pipeline — DLQ",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_events_dlq_published_total[5m]))",
+          "legendFormat": "dlq/s"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "id": 8,
+      "title": "Log pipeline — atlanan / başarısız",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_events_skipped_total[5m]))",
+          "legendFormat": "skipped/s"
+        },
+        {
+          "expr": "sum(rate(kafka_events_failed_total[5m]))",
+          "legendFormat": "failed/s"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "id": 9,
+      "title": "JVM heap ($job)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{job=~\"$job\", area=\"heap\"}) by (job)",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 10,
+      "title": "Heap kullanım oranı ($job)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{job=~\"$job\", area=\"heap\"}) by (job) / sum(jvm_memory_max_bytes{job=~\"$job\", area=\"heap\"}) by (job)",
+          "legendFormat": "{{job}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 11,
+      "title": "GC pause (ortalama, $job)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(jvm_gc_pause_seconds_sum{job=~\"$job\"}[5m])) by (job) / sum(rate(jvm_gc_pause_seconds_count{job=~\"$job\"}[5m])) by (job)",
+          "legendFormat": "{{job}}"
+        }
+      ]
     }
   ],
   "schemaVersion": 39,
   "tags": ["finance-platform"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Servis",
+        "multi": false,
+        "name": "job",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up, job)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" }
+      }
+    ]
+  },
   "time": { "from": "now-1h", "to": "now" },
   "timezone": "browser",
   "title": "Finance Platform — Overview",
   "uid": "finance-platform-overview",
-  "version": 1
+  "version": 2
 }

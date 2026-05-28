@@ -142,26 +142,6 @@ services:
     networks:
       - finance-net
 
-  opensearch-dashboards-init:
-    image: curlimages/curl
-    container_name: opensearch-dashboards-init
-    restart: "no"
-    depends_on:
-      opensearch-dashboards:
-        condition: service_healthy
-    environment:
-      DASHBOARDS_URL: http://opensearch-dashboards:5601
-      DASHBOARDS_USERNAME: admin
-      DASHBOARDS_PASSWORD: "123456789"
-      INDEX_PATTERN_ID: application-logs
-      INDEX_PATTERN_TITLE: application-logs-*
-      INDEX_PATTERN_TIME_FIELD: "@timestamp"
-    volumes:
-      - ./opensearch-dashboards-init.sh:/bootstrap/opensearch-dashboards-init.sh:ro
-    command: ["sh", "/bootstrap/opensearch-dashboards-init.sh"]
-    networks:
-      - finance-net
-
   jaeger:
     image: jaegertracing/all-in-one:1.55
     container_name: jaeger
@@ -462,7 +442,7 @@ services:
       - finance-net
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0
     container_name: grafana
     ports:
       - "3000:3000"
@@ -470,6 +450,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/json/finance-platform-overview.json
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
