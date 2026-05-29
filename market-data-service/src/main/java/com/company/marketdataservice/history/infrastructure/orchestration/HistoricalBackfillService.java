@@ -292,6 +292,9 @@ public class HistoricalBackfillService {
                 .map(chunk -> chunk.getWindowEnd() == null ? null : chunk.getWindowEnd().plus(1, ChronoUnit.MILLIS))
                 .orElse(state.getLastFetchedAt());
         if (checkpoint == null) {
+            if (BackfillExecutionContext.isBootstrap()) {
+                return today.minusDays(effectiveStartupDepthDays());
+            }
             int years =
                     "FUND".equalsIgnoreCase(assetType) ? effectiveFundBackfillYears() : effectiveBackfillYears();
             return today.minusYears(years);
@@ -346,6 +349,14 @@ public class HistoricalBackfillService {
             return 90;
         }
         return chunkDays;
+    }
+
+    private int effectiveStartupDepthDays() {
+        int days = backfillProperties.getStartupDepthDays();
+        if (days <= 0) {
+            return 7;
+        }
+        return Math.min(days, 60);
     }
 
     private void sleepBetweenChunks() {
@@ -411,7 +422,9 @@ public class HistoricalBackfillService {
             marketHistoryWriteService.saveBatch(events);
         }
         if (!anyData) {
-            throw new IllegalStateException("No historical data returned for symbol=" + symbol + " window=" + chunkStart + ".." + chunkEnd);
+            throw new NoHistoricalDataException(
+                    "No historical data returned for symbol=" + symbol + " window=" + chunkStart + ".." + chunkEnd
+            );
         }
     }
 
@@ -474,7 +487,7 @@ public class HistoricalBackfillService {
             fundHistoryWriteService.saveBatch(events);
         }
         if (!anyData) {
-            throw new IllegalStateException(
+            throw new NoHistoricalDataException(
                     "No historical data returned for symbol=" + fundCode + " window=" + chunkStart + ".." + chunkEnd
             );
         }

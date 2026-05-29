@@ -1,6 +1,5 @@
 package com.company.marketdataservice.history.application;
 import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
-import com.company.marketdataservice.bootstrap.config.MetalFuturesSymbols;
 import com.company.marketdataservice.history.infrastructure.http.dto.HistoryPointDto;
 import com.company.marketdataservice.spot.application.MarketDataReadService;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceSummaryDto;
@@ -49,8 +48,6 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
      * while {@link #getPriceSummary} still showed the latest print.
      */
     private static final long MAX_TRBOND_RANGE_DAYS = 2000L;
-    /** Yahoo metal futures backfill spans multiple years (see {@link com.company.marketdataservice.history.infrastructure.orchestration.MetalFuturesHistoryBootstrapper}). */
-    private static final long MAX_METAL_FUTURES_RANGE_DAYS = 2000L;
     private static final String MARKET_PRICE_TYPE = "MARKET";
     private static final Logger log = LoggerFactory.getLogger(HistoricalMarketDataReadServiceImpl.class);
     private static final ZoneId TURKEY = ZoneId.of("Europe/Istanbul");
@@ -106,10 +103,6 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         }
         if (usesFxRateHistory(normalized)) {
             return fxRateHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
-        }
-        if (MetalFuturesSymbols.isFutures(normalized)) {
-            return marketPriceHistoryRepository.findHistoryPointsByPriceType(
-                    normalized, MARKET_PRICE_TYPE, fromInclusive, toExclusive);
         }
         return marketPriceHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
     }
@@ -486,8 +479,6 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         long maxAllowed = MAX_RANGE_DAYS;
         if (sym.startsWith("TRBOND") || sym.startsWith("TRGOVUSD")) {
             maxAllowed = MAX_TRBOND_RANGE_DAYS;
-        } else if (MetalFuturesSymbols.isFutures(sym)) {
-            maxAllowed = MAX_METAL_FUTURES_RANGE_DAYS;
         }
         return days <= maxAllowed;
     }

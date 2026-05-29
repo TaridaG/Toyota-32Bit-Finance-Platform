@@ -996,7 +996,7 @@ export function MyPortfolioPage() {
   const [overview, setOverview] = useState<PortfolioOverview | null>(null)
   const [performanceSeries, setPerformanceSeries] = useState<PortfolioPerformanceSeries | null>(null)
   const [performanceSeriesHydrated, setPerformanceSeriesHydrated] = useState(false)
-  const [valueChartMetric] = useState<PortfolioChartMetric>('performance')
+  const [valueChartMetric, setValueChartMetric] = useState<PortfolioChartMetric>('value')
   const [valueChartRange, setValueChartRange] = useState<ValueChartRange>('1w')
   const [tradeFlow, setTradeFlow] = useState<PortfolioTradeFlow | null>(null)
   const [tradeFlowHydrated, setTradeFlowHydrated] = useState(false)
@@ -1139,8 +1139,6 @@ export function MyPortfolioPage() {
     [hideMoney, dashboardDayChangeFormat],
   )
 
-  const activeValueChartMetricLabel =
-    valueChartMetric === 'performance' ? t('valueChart.metricPerformance') : t('valueChart.metricValue')
   const valueChartCurrencyCode = (performanceSeries?.currency ?? valuationCurrency).toUpperCase()
   const valueChartPointsLabel = useMemo(() => {
     const points = performanceSeries?.points ?? []
@@ -3201,19 +3199,35 @@ export function MyPortfolioPage() {
               </div>
               <div className="my-portfolio-dashboard-value-layout">
                 <div className="my-portfolio-dashboard-value-copy">
-                  <div className="my-portfolio-dashboard-value-badges">
-                    <span className="my-portfolio-dashboard-value-badge">
+                  <div
+                    className="my-portfolio-dashboard-value-badges"
+                    role="tablist"
+                    aria-label={t('valueChart.metricAria')}
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={valueChartMetric === 'value'}
+                      className={`my-portfolio-dashboard-value-badge${valueChartMetric === 'value' ? ' is-active' : ''}`}
+                      onClick={() => setValueChartMetric('value')}
+                    >
                       <span className="my-portfolio-dashboard-value-badge-icon">
                         <PortfolioDashboardGlyph kind="currency" />
                       </span>
                       {valueChartCurrencyCode}
-                    </span>
-                    <span className="my-portfolio-dashboard-value-badge is-muted">
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={valueChartMetric === 'performance'}
+                      className={`my-portfolio-dashboard-value-badge${valueChartMetric === 'performance' ? ' is-active' : ''}`}
+                      onClick={() => setValueChartMetric('performance')}
+                    >
                       <span className="my-portfolio-dashboard-value-badge-icon">
-                        <PortfolioDashboardGlyph kind={valueChartMetric === 'performance' ? 'performance' : 'value'} />
+                        <PortfolioDashboardGlyph kind="performance" />
                       </span>
-                      {activeValueChartMetricLabel}
-                    </span>
+                      {t('valueChart.metricPerformance')}
+                    </button>
                   </div>
                   <p className="my-portfolio-main-value">
                     {selectedPortfolioId == null

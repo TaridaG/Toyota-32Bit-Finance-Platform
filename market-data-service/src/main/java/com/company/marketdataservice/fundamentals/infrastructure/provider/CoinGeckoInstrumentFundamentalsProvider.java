@@ -1,6 +1,6 @@
 package com.company.marketdataservice.fundamentals.infrastructure.provider;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.company.marketdataservice.bootstrap.config.TrackedCryptoSymbols;
+import com.company.marketdataservice.catalog.registry.providers.CryptoRegistry;
 import com.company.marketdataservice.fundamentals.infrastructure.http.dto.InstrumentFundamentalsDto;
 import com.company.marketdataservice.catalog.infrastructure.persistence.InstrumentCatalogEntry;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +48,10 @@ public class CoinGeckoInstrumentFundamentalsProvider implements InstrumentFundam
     public InstrumentFundamentalsDto fetch(InstrumentCatalogEntry instrument, String providerSymbol) {
         String normalized = normalize(providerSymbol);
         String ticker = normalized.endsWith("USDT") ? normalized.substring(0, normalized.length() - 4) : normalized;
-        String id = TrackedCryptoSymbols.COINGECKO_ID_BY_BASE.getOrDefault(ticker, ticker.toLowerCase(Locale.ROOT));
+        String id = CryptoRegistry.coingeckoIdForBase(ticker);
+        if (id == null) {
+            id = ticker.toLowerCase(Locale.ROOT);
+        }
         JsonNode coin = getJson("/coins/" + id + "?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false");
         if (coin == null || coin.isMissingNode() || coin.path("id").isMissingNode()) {
             throw new IllegalStateException("CoinGecko metadata not found for symbol=" + providerSymbol);

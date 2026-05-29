@@ -15,9 +15,14 @@ public class MarketHistoryBackfillProperties {
     private Retry retry = new Retry();
     private int years = 5;
     private int chunkDays = 30;
+    private int startupDepthDays = 7;
     private int minPriceHistoryDays = 240;
     private int minRecentPriceHistoryDays = 120;
     private int minRecent30DayCoverageDays = 15;
+    /** When false, live spot publish proceeds while history backfill runs in the background. */
+    private boolean gateLiveUntilHistoryReady = false;
+    /** Parallel stock history bootstrap workers (Yahoo/Finnhub historical fetches). */
+    private int stockBootstrapParallelism = 4;
     private long sleepMs = 200L;
     private long scheduleInitialDelayMs = 30_000L;
     private long scheduleDelayMs = 900_000L;
@@ -54,6 +59,14 @@ public class MarketHistoryBackfillProperties {
         this.chunkDays = chunkDays;
     }
 
+    public int getStartupDepthDays() {
+        return startupDepthDays;
+    }
+
+    public void setStartupDepthDays(int startupDepthDays) {
+        this.startupDepthDays = startupDepthDays;
+    }
+
     public int getMinPriceHistoryDays() {
         return minPriceHistoryDays;
     }
@@ -76,6 +89,22 @@ public class MarketHistoryBackfillProperties {
 
     public void setMinRecent30DayCoverageDays(int minRecent30DayCoverageDays) {
         this.minRecent30DayCoverageDays = minRecent30DayCoverageDays;
+    }
+
+    public boolean isGateLiveUntilHistoryReady() {
+        return gateLiveUntilHistoryReady;
+    }
+
+    public void setGateLiveUntilHistoryReady(boolean gateLiveUntilHistoryReady) {
+        this.gateLiveUntilHistoryReady = gateLiveUntilHistoryReady;
+    }
+
+    public int getStockBootstrapParallelism() {
+        return stockBootstrapParallelism;
+    }
+
+    public void setStockBootstrapParallelism(int stockBootstrapParallelism) {
+        this.stockBootstrapParallelism = stockBootstrapParallelism;
     }
 
     public Kafka getKafka() {

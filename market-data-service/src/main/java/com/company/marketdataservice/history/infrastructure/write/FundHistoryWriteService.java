@@ -2,12 +2,13 @@ package com.company.marketdataservice.history.infrastructure.write;
 import com.company.marketdataservice.fund.domain.FundSnapshotUpdatedEvent;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryEntry;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.SQLException;
 import java.time.Instant;
@@ -21,40 +22,35 @@ import java.util.UUID;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FundHistoryWriteService {
 
     private static final int BATCH_SIZE = 250;
     private final FundNavHistoryRepository repository;
+    private final TransactionTemplate requiresNewTx;
+
+    public FundHistoryWriteService(FundNavHistoryRepository repository, PlatformTransactionManager transactionManager) {
+        this.repository = repository;
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.requiresNewTx = template;
+    }
 
     /**
      * Veriyi persist eder.
          * @param event girdi parametresi
          */
-    @Transactional
     public void save(FundSnapshotUpdatedEvent event) {
         FundNavHistoryEntry entry = toEntry(event);
         if (entry == null) {
             return;
         }
-        try {
-            repository.save(entry);
-        } catch (DataIntegrityViolationException ex) {
-            logDuplicateIgnored(event, ex);
-        } catch (DataAccessException ex) {
-            if (isDuplicateKey(ex)) {
-                logDuplicateIgnored(event, ex);
-            } else {
-                throw ex;
-            }
-        }
+        saveInNewTx(event, entry);
     }
 
     /**
      * Veriyi persist eder.
          * @param events girdi parametresi
          */
-    @Transactional
     public void saveBatch(List<FundSnapshotUpdatedEvent> events) {
         if (events == null || events.isEmpty()) {
             return;
@@ -74,7 +70,8 @@ public class FundHistoryWriteService {
         for (int i = 0; i < entries.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, entries.size());
             try {
-                repository.saveAll(entries.subList(i, end));
+                List<FundNavHistoryEntry> slice = entries.subList(i, end);
+                requiresNewTx.executeWithoutResult(status -> repository.saveAll(slice));
             } catch (DataIntegrityViolationException ex) {
                 saveEventsOneByOne(validEvents.subList(i, end));
             } catch (DataAccessException ex) {
@@ -96,6 +93,20 @@ public class FundHistoryWriteService {
     private void saveEventsOneByOne(List<FundSnapshotUpdatedEvent> slice) {
         for (FundSnapshotUpdatedEvent event : slice) {
             save(event);
+        }
+    }
+
+    private void saveInNewTx(FundSnapshotUpdatedEvent event, FundNavHistoryEntry entry) {
+        try {
+            requiresNewTx.executeWithoutResult(status -> repository.save(entry));
+        } catch (DataIntegrityViolationException ex) {
+            logDuplicateIgnored(event, ex);
+        } catch (DataAccessException ex) {
+            if (isDuplicateKey(ex)) {
+                logDuplicateIgnored(event, ex);
+            } else {
+                throw ex;
+            }
         }
     }
 

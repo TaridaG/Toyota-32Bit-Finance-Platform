@@ -1,6 +1,7 @@
 package com.company.marketdataservice.fundamentals.infrastructure.scheduler;
-import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
 import com.company.marketdataservice.bootstrap.config.FinnhubProperties;
+import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
+import com.company.marketdataservice.catalog.application.InstrumentIngestScopeService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.company.marketdataservice.fundamentals.infrastructure.persistence.InstrumentSharesOutstandingEntry;
 import com.company.marketdataservice.fundamentals.infrastructure.persistence.InstrumentSharesOutstandingRepository;
@@ -29,6 +30,7 @@ import java.util.Locale;
 @ConditionalOnProperty(name = "market.stock.shares-verification.enabled", havingValue = "true", matchIfMissing = true)
 public class SharesOutstandingWeeklyScheduler {
     private final MarketDataProperties marketDataProperties;
+    private final InstrumentIngestScopeService ingestScope;
     private final FinnhubProperties finnhubProperties;
     private final InstrumentCatalogRepository instrumentCatalogRepository;
     private final InstrumentSharesOutstandingRepository sharesRepository;
@@ -51,7 +53,7 @@ public class SharesOutstandingWeeklyScheduler {
     }
 
     private void refreshSharesOutstanding() {
-        List<String> stocks = marketDataProperties.getTrackedStocks();
+        List<String> stocks = ingestScope.resolveTrackedStockSymbols();
         if (stocks == null || stocks.isEmpty()) {
             return;
         }

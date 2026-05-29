@@ -9,7 +9,6 @@ import com.company.marketdataservice.history.infrastructure.persistence.FundNavH
 import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.shared.provider.tcmb.TcmbBondEvdsClient;
-import com.company.marketdataservice.spot.application.MetalFuturesMarketEnricher;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceDto;
 import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
 import java.math.BigDecimal;
@@ -41,9 +40,6 @@ class MarketDataReadServiceImplCryptoFallbackTest {
     @Mock
     private TcmbBondEvdsClient tcmbBondEvdsClient;
 
-    @Mock
-    private MetalFuturesMarketEnricher metalFuturesMarketEnricher;
-
     @Test
     void getLatestPrices_mergesCryptoFromDbWhenSnapshotWarm() {
         when(snapshotStore.listPrices())
@@ -53,8 +49,6 @@ class MarketDataReadServiceImplCryptoFallbackTest {
         when(marketPriceHistoryRepository.findLatestTrbondPricesPerSymbol()).thenReturn(List.of());
         when(marketPriceHistoryRepository.findLatestCryptoPricesPerSymbol())
                 .thenReturn(List.of(cryptoRow("BTCUSDT", "95000")));
-        when(metalFuturesMarketEnricher.enrich(org.mockito.ArgumentMatchers.anyList()))
-                .thenAnswer(inv -> inv.getArgument(0));
 
         MarketDataReadServiceImpl svc =
                 new MarketDataReadServiceImpl(
@@ -63,8 +57,7 @@ class MarketDataReadServiceImplCryptoFallbackTest {
                         fxRateHistoryRepository,
                         fundNavHistoryRepository,
                         bondMarketProperties,
-                        tcmbBondEvdsClient,
-                        metalFuturesMarketEnricher);
+                        tcmbBondEvdsClient);
 
         List<MarketPriceDto> crypto = svc.getLatestPrices("crypto");
         assertEquals(1, crypto.size());

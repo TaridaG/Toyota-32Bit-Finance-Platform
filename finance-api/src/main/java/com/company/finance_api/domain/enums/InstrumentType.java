@@ -7,5 +7,6 @@ public enum InstrumentType {
   FX,
   FUND,
   BOND,
+  EUROBOND,
   DEPOSIT
 }

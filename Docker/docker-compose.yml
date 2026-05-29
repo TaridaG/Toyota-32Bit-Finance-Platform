@@ -20,6 +20,7 @@ services:
       start_period: 5s
     volumes:
       - finance_pg_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     networks:
       - finance-net
 
@@ -204,6 +205,12 @@ services:
       - PROFILE_AVATAR_STORAGE_ROOT=/photos
     volumes:
       - ../photos:/photos
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 120s
     networks:
       - finance-net
 
@@ -218,7 +225,7 @@ services:
       postgres:
         condition: service_healthy
       finance-api:
-        condition: service_started
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_PROFILES_ACTIVE=docker
@@ -236,7 +243,9 @@ services:
       - PROVIDERS_FINNHUB_ENABLED=true
       - FINNHUB_API_KEY=d7r26q9r01qtpsm0phfgd7r26q9r01qtpsm0phg0
       - MARKET_HISTORY_BACKFILL_ENABLED=true
-      - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=false
+      - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=true
+      - MARKET_HISTORY_BACKFILL_GATE_LIVE_UNTIL_HISTORY_READY=false
+      - MARKET_HISTORY_BACKFILL_STOCK_BOOTSTRAP_PARALLELISM=4
       - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_ENABLED=true
       - MARKET_FUND_NAV_HISTORY_BOOTSTRAP_DELAY_MS=90000
       - MARKET_FUND_NAV_HISTORY_LOOKBACK_DAYS=365
@@ -259,7 +268,7 @@ services:
       kafka:
         condition: service_started
       finance-api:
-        condition: service_started
+        condition: service_healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/finance
@@ -268,7 +277,7 @@ services:
       - SPRING_FLYWAY_TABLE=analytics_flyway_schema_history
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
       - SPRING_FLYWAY_BASELINE_VERSION=0
-      - SPRING_FLYWAY_ENABLED=false
+      - SPRING_FLYWAY_ENABLED=true
       - SPRING_JPA_HIBERNATE_DDL_AUTO=none
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - FINANCE_BASE_URL=http://finance-api:8080
@@ -317,6 +326,8 @@ services:
       - DB_NAME=finance
       - DB_USERNAME=finance
       - DB_PASSWORD=${NEWS_DB_PASSWORD:?NEWS_DB_PASSWORD is required}
+      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+      - SPRING_FLYWAY_BASELINE_VERSION=0
       - APP_SECURITY_JWT_JWK_SET_URI=http://keycloak:8080/realms/finance/protocol/openid-connect/certs
       - NEWS_RSS_CONNECT_TIMEOUT_MS=${NEWS_RSS_CONNECT_TIMEOUT_MS:-5000}
       - NEWS_RSS_READ_TIMEOUT_MS=${NEWS_RSS_READ_TIMEOUT_MS:-10000}
@@ -464,7 +475,9 @@ networks:
     driver: bridge
 
 volumes:
+  # Kept so `docker volume ls` / rollback still see the previous cluster (not mounted).
   finance_pg_data:
+  finance_pg_data_v2:
   kafka_data:
   opensearch_data:
   frontend_web_node_modules:

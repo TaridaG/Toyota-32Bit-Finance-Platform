@@ -10,7 +10,6 @@ import com.company.marketdataservice.history.infrastructure.persistence.FxRateHi
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository.LatestMarketPriceView;
 import com.company.marketdataservice.shared.provider.tcmb.TcmbBondEvdsClient;
-import com.company.marketdataservice.spot.application.MetalFuturesMarketEnricher;
 import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -41,7 +40,6 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
     private final FundNavHistoryRepository fundNavHistoryRepository;
     private final TcmbBondMarketProperties bondMarketProperties;
     private final TcmbBondEvdsClient tcmbBondEvdsClient;
-    private final MetalFuturesMarketEnricher metalFuturesMarketEnricher;
 
     /** Kısa TTL: DB geçmişi boşken EVDS yapılandırılmışsa katalog satırlarını doldurur. */
     private volatile List<MarketPriceDto> bondEvdsOverlayCache = List.of();
@@ -99,7 +97,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             }
         }
         mergeTrackedBondsFromEvdsIfAbsent(merged);
-        List<MarketPriceDto> sorted = metalFuturesMarketEnricher.enrich(sortBySymbol(merged));
+        List<MarketPriceDto> sorted = sortBySymbol(merged);
         if (!StringUtils.hasText(segment)) {
             return sorted;
         }

@@ -1,4 +1,6 @@
 package com.company.marketdataservice.bootstrap.config;
+
+import com.company.marketdataservice.catalog.registry.providers.EurobondRegistry;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,9 +9,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * TR USD eurobond history settings. Tracked series are defined in {@link EurobondRegistry}.
  */
 @Getter
 @Setter
@@ -20,6 +21,20 @@ public class TrGovUsdEurobondProperties {
     private HistoryBootstrap historyBootstrap = new HistoryBootstrap();
     private HistoryRefresh historyRefresh = new HistoryRefresh();
     private List<TrackedSeries> tracked = new ArrayList<>();
+
+    public List<TrackedSeries> getTracked() {
+        if (tracked != null && !tracked.isEmpty()) {
+            return tracked;
+        }
+        return EurobondRegistry.ingestRows().stream()
+                .map(row -> {
+                    TrackedSeries series = new TrackedSeries();
+                    series.setCanonical(row.canonical());
+                    series.setYahooChartSymbol(row.yahooChartSymbol());
+                    return series;
+                })
+                .toList();
+    }
 
     @Getter
     @Setter
@@ -44,9 +59,7 @@ public class TrGovUsdEurobondProperties {
     @Getter
     @Setter
     public static class TrackedSeries {
-        /** Canonical instrument symbol stored in {@code mds_market_price_history.instrument_symbol}. */
         private String canonical;
-        /** Yahoo chart symbol (often {@code GTUSDTR5Y:GOV}). */
         private String yahooChartSymbol;
     }
 }

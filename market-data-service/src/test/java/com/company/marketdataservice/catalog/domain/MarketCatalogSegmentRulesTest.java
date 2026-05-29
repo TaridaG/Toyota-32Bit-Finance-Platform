@@ -40,11 +40,6 @@ class MarketCatalogSegmentRulesTest {
     }
 
     @Test
-    void pulseSegment_metalFuturesIsGlobalFutures() {
-        assertEquals("globalFutures", MarketCatalogSegmentRules.pulseSegment("GC=F", "METAL", "YAHOO"));
-    }
-
-    @Test
     void pulseSegment_unknownStockReturnsNull() {
         assertNull(MarketCatalogSegmentRules.pulseSegment("AAPL", "STOCK", "UNKNOWN"));
     }

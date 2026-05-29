@@ -5,6 +5,7 @@ package com.company.marketdataservice.history.infrastructure.orchestration;
 public final class BackfillExecutionContext {
 
     private static final ThreadLocal<Boolean> ACTIVE = ThreadLocal.withInitial(() -> false);
+    private static final ThreadLocal<Boolean> BOOTSTRAP = ThreadLocal.withInitial(() -> false);
 
     private BackfillExecutionContext() {
     }
@@ -16,11 +17,17 @@ public final class BackfillExecutionContext {
         ACTIVE.set(true);
     }
 
+    public static void activateBootstrap() {
+        ACTIVE.set(true);
+        BOOTSTRAP.set(true);
+    }
+
     /**
      * İş mantığı operasyonunu çalıştırır.
          */
     public static void clear() {
         ACTIVE.remove();
+        BOOTSTRAP.remove();
     }
 
     /**
@@ -29,5 +36,9 @@ public final class BackfillExecutionContext {
          */
     public static boolean isActive() {
         return Boolean.TRUE.equals(ACTIVE.get());
+    }
+
+    public static boolean isBootstrap() {
+        return Boolean.TRUE.equals(BOOTSTRAP.get());
     }
 }

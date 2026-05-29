@@ -119,7 +119,7 @@ public class PortfolioValuationServiceImpl implements PortfolioValuationService 
       case FX -> "FX";
       case CRYPTO -> "CRYPTO";
       case FUND -> "FUND";
-      case BOND -> "BOND";
+      case BOND, EUROBOND -> "BOND";
       case STOCK -> "STOCK";
       case DEPOSIT -> "DEPOSIT";
     };

@@ -40,7 +40,14 @@ public class BackfillOrchestrator {
             return;
         }
 
-        CompletableFuture.runAsync(this::runBackfillSafely);
+        CompletableFuture.runAsync(() -> {
+            BackfillExecutionContext.activateBootstrap();
+            try {
+                runBackfillSafely();
+            } finally {
+                BackfillExecutionContext.clear();
+            }
+        });
     }
 
     /**
