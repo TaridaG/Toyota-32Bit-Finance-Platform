@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.dto.PortalProfileResponse;
-import com.company.finance_api.profile.PortalProfileService;
+import com.company.finance_api.profile.application.PortalProfileService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import org.junit.jupiter.api.Test;

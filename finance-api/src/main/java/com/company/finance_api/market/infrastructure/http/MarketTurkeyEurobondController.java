@@ -1,8 +1,8 @@
 package com.company.finance_api.market.infrastructure.http;
 
-import com.company.finance_api.dto.market.eurobond.EurobondCashflowResponse;
-import com.company.finance_api.dto.market.eurobond.EurobondHistoryResponse;
-import com.company.finance_api.dto.market.eurobond.EurobondInstrumentDto;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondCashflowResponse;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondHistoryResponse;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondInstrumentDto;
 import com.company.finance_api.market.application.TrEurobondMarketService;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.math.BigDecimal;

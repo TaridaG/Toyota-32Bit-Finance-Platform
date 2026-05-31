@@ -1,7 +1,7 @@
 package com.company.finance_api.alarm.application;
 
-import com.company.finance_api.alarm.AlarmEvaluator;
-import com.company.finance_api.alarm.AlarmEvaluatorFactory;
+import com.company.finance_api.alarm.domain.evaluator.AlarmEvaluator;
+import com.company.finance_api.alarm.domain.evaluator.AlarmEvaluatorFactory;
 import com.company.finance_api.alarm.domain.AlarmHistory;
 import com.company.finance_api.alarm.domain.AlarmRule;
 import com.company.finance_api.domain.Instrument;

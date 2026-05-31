@@ -6,7 +6,7 @@ import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.TransactionType;
 import com.company.finance_api.dto.PortfolioTradeFlowPointResponse;
 import com.company.finance_api.dto.PortfolioTradeFlowResponse;
-import com.company.finance_api.portfolio.InstrumentListingCurrency;
+import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.repository.TransactionRepository;

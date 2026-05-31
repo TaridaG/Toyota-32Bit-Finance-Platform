@@ -3,7 +3,7 @@ package com.company.finance_api.portfolio.application;
 import com.company.finance_api.domain.Transaction;
 import com.company.finance_api.domain.enums.PurchaseMode;
 import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.portfolio.InstrumentListingCurrency;
+import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryPageResponse;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryResponse;

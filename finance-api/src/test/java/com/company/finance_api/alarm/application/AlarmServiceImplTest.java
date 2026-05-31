@@ -3,8 +3,8 @@ package com.company.finance_api.alarm.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-import com.company.finance_api.alarm.AlarmEvaluator;
-import com.company.finance_api.alarm.AlarmEvaluatorFactory;
+import com.company.finance_api.alarm.domain.evaluator.AlarmEvaluator;
+import com.company.finance_api.alarm.domain.evaluator.AlarmEvaluatorFactory;
 import com.company.finance_api.alarm.domain.AlarmRule;
 import com.company.finance_api.alarm.infrastructure.persistence.AlarmHistoryRepository;
 import com.company.finance_api.alarm.infrastructure.persistence.AlarmRuleRepository;

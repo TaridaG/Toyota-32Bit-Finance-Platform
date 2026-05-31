@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.company.finance_api.domain.EurobondInstrument;
 import com.company.finance_api.domain.EurobondQuote;
-import com.company.finance_api.dto.market.eurobond.EurobondInstrumentDto;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondInstrumentDto;
 import com.company.finance_api.repository.EurobondHistoryRepository;
 import com.company.finance_api.repository.EurobondInstrumentRepository;
 import com.company.finance_api.repository.EurobondQuoteRepository;

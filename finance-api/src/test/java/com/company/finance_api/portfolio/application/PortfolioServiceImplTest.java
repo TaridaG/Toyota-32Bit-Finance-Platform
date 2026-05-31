@@ -11,7 +11,7 @@ import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.Exchange;
 import com.company.finance_api.domain.enums.InstrumentType;
 import com.company.finance_api.dto.PortfolioPositionResponse;
-import com.company.finance_api.portfolio.PortfolioPositionBuilder;
+import com.company.finance_api.portfolio.domain.PortfolioPositionBuilder;
 import com.company.finance_api.repository.TransactionRepository;
 import com.company.finance_api.repository.UserRepository;
 import com.company.finance_api.pricing.application.PriceService;
@@ -42,7 +42,7 @@ class PortfolioServiceImplTest {
   void setUp() {
     PortfolioPositionBuilder builder =
         new PortfolioPositionBuilder(
-            new com.company.finance_api.portfolio.PositionCostBasisCalculator(), priceService);
+            new com.company.finance_api.portfolio.domain.PositionCostBasisCalculator(), priceService);
     service =
         new PortfolioServiceImpl(
             transactionRepository, currentUserResolver, userRepository, builder);

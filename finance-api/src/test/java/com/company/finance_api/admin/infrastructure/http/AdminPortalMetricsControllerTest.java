@@ -18,7 +18,7 @@ import com.company.finance_api.admin.application.AdminUserDirectoryService;
 import com.company.finance_api.admin.application.AdminUserPortfolioDetailsService;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortalPortfolioMetricsDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortalUserMetricsDto;
-import com.company.finance_api.profile.PortalProfileService;
+import com.company.finance_api.profile.application.PortalProfileService;
 import com.company.finance_api.repository.InstrumentRepository;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;

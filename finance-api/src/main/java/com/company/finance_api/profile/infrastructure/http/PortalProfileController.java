@@ -15,7 +15,7 @@ import com.company.finance_api.dto.PublicEmailAvailabilityResponse;
 import com.company.finance_api.dto.PublicLoginResponse;
 import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
 import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
-import com.company.finance_api.profile.PortalProfileService;
+import com.company.finance_api.profile.application.PortalProfileService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

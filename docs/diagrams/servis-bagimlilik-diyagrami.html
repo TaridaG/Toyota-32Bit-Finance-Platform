@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>32Bit Finance Platform — Servis Bağımlılık Diyagramı</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #1a2332;
+      --muted: #5c6b7a;
+      --client: #2563eb;
+      --edge: #7c3aed;
+      --core: #059669;
+      --svc: #0d9488;
+      --infra: #64748b;
+      --ext: #ea580c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(160deg, #eef2ff 0%, var(--bg) 40%, #f0fdf4 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 28px 20px 12px;
+    }
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      font-weight: 700;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .wrap {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 12px 20px 40px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+      padding: 24px 16px 8px;
+      overflow-x: auto;
+    }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+      font-size: 0.85rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 10px; }
+    .swatch {
+      width: 28px; height: 4px; border-radius: 2px; flex-shrink: 0;
+    }
+    .swatch.http { background: #2563eb; }
+    .swatch.kafka { background: repeating-linear-gradient(90deg, #d97706 0 6px, transparent 6px 10px); height: 3px; }
+    .swatch.jdbc { background: repeating-linear-gradient(90deg, #64748b 0 3px, transparent 3px 6px); height: 3px; }
+    .dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+    .note {
+      margin-top: 16px;
+      padding: 14px 18px;
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      border-radius: 0 10px 10px 0;
+      font-size: 0.84rem;
+      color: #78350f;
+    }
+    .mermaid { min-width: 1200px; }
+    @media print {
+      body { background: white; }
+      .card { box-shadow: none; border: 1px solid #e2e8f0; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>32Bit Finance Platform — Servis Bağımlılık Diyagramı</h1>
+    <p>Kod tabanı doğrulaması · Docker Compose topolojisi · SDD Bölüm 2.2</p>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <pre class="mermaid">
+flowchart TB
+  subgraph L1["① İstemci"]
+    WEB["frontend-web<br/><b>:5173</b><br/>React SPA + Vite"]
+  end
+
+  subgraph L2["② Edge"]
+    GW["api-gateway<br/><b>:8080</b> Docker · <b>:9090</b> dev"]
+    KC["Keycloak IAM<br/><b>:8085</b><br/>finance realm"]
+  end
+
+  subgraph L3["③ Backend Mikroservisleri"]
+    FA["finance-api<br/><b>:8080</b><br/>Portal BFF · portföy · alarm<br/>auth · MFA · outbox"]
+    MDS["market-data-service<br/><b>:8082</b> dev · <b>:8080</b> Docker<br/>ingestion · EVDS · Finnhub"]
+    NS["news-service<br/><b>:8082</b><br/>RSS · çeviri · sorgu API"]
+    AS["analytics-service<br/><b>:8080</b><br/>RSI · MA7/30/90 · candle"]
+    NOTIF["notification-service<br/><b>:8086</b><br/>e-posta · in-app inbox"]
+    LOG["log-consumer-service<br/><b>:8087</b><br/>log indeksleme"]
+  end
+
+  subgraph L4["④ Altyapı"]
+    PG[("PostgreSQL<br/><b>:5432</b><br/>Flyway / servis başına şema")]
+    KF{{"Apache Kafka<br/><b>:9092</b> KRaft"}}
+    RD[("Redis<br/><b>:6379</b>")]
+    OS[("OpenSearch<br/><b>:9200</b>")]
+  end
+
+  subgraph L5["⑤ Dış Sistemler"]
+    EXT_MDS["TCMB EVDS · Finnhub<br/>Yahoo · TEFAS · FMP"]
+    EXT_NS["RSS kaynakları<br/>MyMemory Çeviri API"]
+    SMTP["SMTP sunucusu"]
+    OAI["OpenAI API<br/>(opsiyonel · bilgi kartı AI)"]
+  end
+
+  WEB ==>|"HTTP /api<br/>(Docker → gateway)"| GW
+  WEB -.->|"HTTP /api<br/>(yerel dev varsayılan)"| FA
+
+  GW ==>|"HTTP routing"| FA
+  GW ==>|"HTTP /market /rates"| MDS
+  GW ==>|"HTTP ham /news"| NS
+  GW ==>|"HTTP /analytics"| AS
+  GW ==>|"HTTP JWKS"| KC
+  GW -.->|"Redis rate limit"| RD
+
+  FA ==>|"HTTP enrichment"| MDS
+  FA ==>|"HTTP haber"| NS
+  FA ==>|"HTTP analytics"| AS
+  FA ==>|"HTTP login · admin"| KC
+  FA -->|"JDBC"| PG
+  FA -.->|"Redis cache-redis"| RD
+  FA <-.->|"Kafka consume / outbox publish"| KF
+  FA -.->|"SMTP kayıt doğrulama"| SMTP
+  FA -.->|"HTTPS AI"| OAI
+
+  MDS -->|"JDBC mds_*"| PG
+  MDS -.->|"Kafka publish<br/>price · fx · fund"| KF
+  MDS -.->|"HTTPS"| EXT_MDS
+
+  NS -->|"JDBC news_*"| PG
+  NS -.->|"Kafka news.instrument.matched"| KF
+  NS -.->|"HTTPS"| EXT_NS
+
+  AS -->|"JDBC analytics_*"| PG
+  AS <-.->|"Kafka consume / insight publish"| KF
+  AS ==>|"HTTP /instruments"| FA
+
+  NOTIF -->|"JDBC"| PG
+  NOTIF <-.->|"Kafka 6 topic consume"| KF
+  NOTIF ==>|"HTTP lookup"| FA
+  NOTIF -.->|"SMTP alarm · güvenlik"| SMTP
+
+  LOG <-.->|"Kafka app.logs"| KF
+  LOG -->|"HTTPS indeks"| OS
+
+  KC -->|"JDBC keycloak DB"| PG
+
+  FA -.->|"Log4j2"| KF
+  MDS -.->|"Log4j2"| KF
+  NS -.->|"Log4j2"| KF
+  AS -.->|"Log4j2"| KF
+  NOTIF -.->|"Log4j2"| KF
+  GW -.->|"Log4j2"| KF
+
+  classDef client fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a
+  classDef edge fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#4c1d95
+  classDef core fill:#d1fae5,stroke:#059669,stroke-width:2.5px,color:#064e3b
+  classDef svc fill:#ccfbf1,stroke:#0d9488,stroke-width:2px,color:#134e4a
+  classDef infra fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#334155
+  classDef ext fill:#ffedd5,stroke:#ea580c,stroke-width:2px,stroke-dasharray:6 4,color:#7c2d12
+
+  class WEB client
+  class GW,KC edge
+  class FA core
+  class MDS,NS,AS,NOTIF,LOG svc
+  class PG,KF,RD,OS infra
+  class EXT_MDS,EXT_NS,SMTP,OAI ext
+      </pre>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="swatch http"></span> Kalın ok = HTTP / REST (senkron)</div>
+      <div class="legend-item"><span class="swatch kafka"></span> Kesik ok = Kafka (asenkron olay)</div>
+      <div class="legend-item"><span class="swatch jdbc"></span> Noktalı ok = JDBC / Redis / SMTP / HTTPS dış API</div>
+      <div class="legend-item"><span class="dot" style="background:#d1fae5;border:2px solid #059669"></span> finance-api = merkez BFF</div>
+      <div class="legend-item"><span class="dot" style="background:#ffedd5;border:2px dashed #ea580c"></span> Turuncu = harici sistem</div>
+      <div class="legend-item"><b>Yok:</b> portfolio-service, transaction-service, reporting-service</div>
+    </div>
+
+    <div class="note">
+      <strong>Not:</strong> Yerel geliştirmede <code>market-data-service</code> ve <code>news-service</code> ikisi de
+      <b>:8082</b> kullanır — aynı makinede birlikte çalıştırılamaz. Docker ağında hostname ile ayrılır.
+      SDD'ye eklemek için: tarayıcıda bu sayfayı aç → <kbd>Ctrl+P</kbd> → PDF kaydet veya ekran görüntüsü al.
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        fontFamily: "Segoe UI, system-ui, sans-serif",
+        fontSize: "13px",
+        lineColor: "#475569",
+        primaryTextColor: "#1a2332"
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: "basis",
+        padding: 16,
+        nodeSpacing: 40,
+        rankSpacing: 55
+      }
+    });
+  </script>
+</body>
+</html>
