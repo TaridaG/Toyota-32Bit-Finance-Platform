@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.company.marketdataservice.bootstrap.config.HotReadCacheProperties;
 import com.company.marketdataservice.bootstrap.config.TcmbBondMarketProperties;
+import com.company.marketdataservice.shared.cache.JsonCacheService;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
@@ -40,8 +42,13 @@ class MarketDataReadServiceImplCryptoFallbackTest {
     @Mock
     private TcmbBondEvdsClient tcmbBondEvdsClient;
 
+    @Mock
+    private JsonCacheService jsonCacheService;
+
     @Test
     void getLatestPrices_mergesCryptoFromDbWhenSnapshotWarm() {
+        HotReadCacheProperties hotReadCacheProperties = new HotReadCacheProperties();
+        hotReadCacheProperties.setEnabled(false);
         when(snapshotStore.listPrices())
                 .thenReturn(List.of(MarketPriceDto.basic("GARAN", new BigDecimal("410"), "YAHOO", Instant.now())));
         when(snapshotStore.listFunds()).thenReturn(List.of());
@@ -57,7 +64,9 @@ class MarketDataReadServiceImplCryptoFallbackTest {
                         fxRateHistoryRepository,
                         fundNavHistoryRepository,
                         bondMarketProperties,
-                        tcmbBondEvdsClient);
+                        tcmbBondEvdsClient,
+                        jsonCacheService,
+                        hotReadCacheProperties);
 
         List<MarketPriceDto> crypto = svc.getLatestPrices("crypto");
         assertEquals(1, crypto.size());

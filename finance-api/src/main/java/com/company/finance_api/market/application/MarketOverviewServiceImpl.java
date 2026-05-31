@@ -46,7 +46,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private static final Logger log = LoggerFactory.getLogger(MarketOverviewServiceImpl.class);
-  private static final Duration CACHE_TTL = Duration.ofSeconds(5);
+  private final Duration pageCacheTtl;
   private static final Duration UNIVERSE_CACHE_TTL = Duration.ofSeconds(5);
   private static final Duration SUMMARY_CACHE_TTL = Duration.ofSeconds(45);
   private static final Duration INSTRUMENT_CACHE_TTL = Duration.ofMinutes(5);
@@ -81,12 +81,14 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       InstrumentPriceRepository instrumentPriceRepository,
       CurrencyConversionService currencyConversionService,
       ObjectMapper objectMapper,
-      JsonCacheService jsonCacheService) {
+      JsonCacheService jsonCacheService,
+      @Value("${market.overview.page-cache-ttl-seconds:10}") int pageCacheTtlSeconds) {
     this.instrumentService = instrumentService;
     this.instrumentPriceRepository = instrumentPriceRepository;
     this.currencyConversionService = currencyConversionService;
     this.objectMapper = objectMapper;
     this.jsonCacheService = jsonCacheService;
+    this.pageCacheTtl = Duration.ofSeconds(Math.max(1, pageCacheTtlSeconds));
   }
 
   /** Sayfalanmış market overview sonucunu döner. */
@@ -153,7 +155,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       MarketOverviewPageResponse emptyPage =
           new MarketOverviewPageResponse(
               List.of(), resolvedPage, resolvedSize, totalElements, totalPages);
-      jsonCacheService.put(cacheKey, emptyPage, CACHE_TTL);
+      jsonCacheService.put(cacheKey, emptyPage, pageCacheTtl);
       return emptyPage;
     }
 
@@ -194,7 +196,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     MarketOverviewPageResponse response =
         new MarketOverviewPageResponse(
             content, resolvedPage, resolvedSize, totalElements, totalPages);
-    jsonCacheService.put(cacheKey, response, CACHE_TTL);
+    jsonCacheService.put(cacheKey, response, pageCacheTtl);
     log.info(
         "MARKET_OVERVIEW_TIMING page={} size={} category={} search={} sort={} symbols={} pageSymbols={} universeMs={} horizonMs={} sortMs={} pageMetricsMs={} enrichMs={} totalMs={} totalElements={}",
         resolvedPage,

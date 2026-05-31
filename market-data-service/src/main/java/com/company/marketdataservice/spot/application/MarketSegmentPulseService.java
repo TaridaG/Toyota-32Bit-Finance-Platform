@@ -1,6 +1,9 @@
 package com.company.marketdataservice.spot.application;
+import com.company.marketdataservice.bootstrap.config.HotReadCacheProperties;
 import com.company.marketdataservice.history.application.HistoricalMarketDataReadService;
 import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
+import com.company.marketdataservice.shared.cache.JsonCacheService;
+import com.company.marketdataservice.shared.cache.JsonCacheSupport;
 import com.company.marketdataservice.spot.infrastructure.http.dto.FxRateDto;
 import com.company.marketdataservice.history.infrastructure.http.dto.HistoryPointDto;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceDto;
@@ -18,7 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,18 +39,22 @@ public class MarketSegmentPulseService {
             List.of("crypto", "bist", "nasdaq", "forex", "metals", "globalFutures", "funds", "bonds");
 
     private static final int SUMMARY_CHUNK = 40;
-    private static final long CACHE_TTL_MS = 30_000L;
+    private static final String PULSE_CACHE_KEY = "mds:hot:pulse";
 
     private final MarketDataReadService marketDataReadService;
     private final HistoricalMarketDataReadService historicalMarketDataReadService;
-
-    private final AtomicReference<CacheEntry> cache = new AtomicReference<>();
+    private final JsonCacheService jsonCacheService;
+    private final HotReadCacheProperties hotReadCacheProperties;
 
     public MarketSegmentPulseService(
             MarketDataReadService marketDataReadService,
-            HistoricalMarketDataReadService historicalMarketDataReadService) {
+            HistoricalMarketDataReadService historicalMarketDataReadService,
+            JsonCacheService jsonCacheService,
+            HotReadCacheProperties hotReadCacheProperties) {
         this.marketDataReadService = marketDataReadService;
         this.historicalMarketDataReadService = historicalMarketDataReadService;
+        this.jsonCacheService = jsonCacheService;
+        this.hotReadCacheProperties = hotReadCacheProperties;
     }
 
     /**
@@ -54,14 +62,15 @@ public class MarketSegmentPulseService {
          * @return işlem sonucu
          */
     public MarketSegmentPulseResponse getPulse() {
-        long nowMs = System.currentTimeMillis();
-        CacheEntry existing = cache.get();
-        if (existing != null && existing.expiresAtMs > nowMs) {
-            return existing.response;
+        if (!hotReadCacheProperties.isEnabled()) {
+            return computePulse();
         }
-        MarketSegmentPulseResponse computed = computePulse();
-        cache.set(new CacheEntry(computed, nowMs + CACHE_TTL_MS));
-        return computed;
+        return JsonCacheSupport.getOrLoad(
+                jsonCacheService,
+                PULSE_CACHE_KEY,
+                Duration.ofMillis(hotReadCacheProperties.getPulseTtlMs()),
+                new TypeReference<>() {},
+                this::computePulse);
     }
 
     private MarketSegmentPulseResponse computePulse() {
@@ -212,5 +221,4 @@ public class MarketSegmentPulseService {
                 .doubleValue();
     }
 
-    private record CacheEntry(MarketSegmentPulseResponse response, long expiresAtMs) {}
 }
