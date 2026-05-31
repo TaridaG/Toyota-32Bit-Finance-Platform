@@ -1,7 +1,7 @@
 package com.company.finance_api.admin.application;
 
-import com.company.finance_api.domain.AdminPortalRosterCounters;
-import com.company.finance_api.repository.AdminPortalRosterCountersRepository;
+import com.company.finance_api.admin.domain.AdminPortalRosterCounters;
+import com.company.finance_api.admin.infrastructure.persistence.AdminPortalRosterCountersRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

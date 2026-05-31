@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.instrument.application.InstrumentService;
-import com.company.finance_api.repository.InstrumentPriceRepository;
-import com.company.finance_api.repository.NewsFavoriteRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
+import com.company.finance_api.news.infrastructure.persistence.NewsFavoriteRepository;
 import com.company.finance_api.shared.cache.JsonCacheService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.time.Instant;

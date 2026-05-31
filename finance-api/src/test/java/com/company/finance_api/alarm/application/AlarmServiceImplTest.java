@@ -8,13 +8,13 @@ import com.company.finance_api.alarm.domain.evaluator.AlarmEvaluatorFactory;
 import com.company.finance_api.alarm.domain.AlarmRule;
 import com.company.finance_api.alarm.infrastructure.persistence.AlarmHistoryRepository;
 import com.company.finance_api.alarm.infrastructure.persistence.AlarmRuleRepository;
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.AlarmCondition;
-import com.company.finance_api.event.publisher.AlarmEventPublisher;
-import com.company.finance_api.repository.InstrumentRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
+import com.company.finance_api.shared.messaging.event.publisher.AlarmEventPublisher;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -54,7 +54,7 @@ class AlarmServiceImplTest {
     InstrumentPrice price =
         new InstrumentPrice(
             instrument,
-            com.company.finance_api.domain.enums.PriceType.MARKET,
+            com.company.finance_api.pricing.domain.enums.PriceType.MARKET,
             BigDecimal.valueOf(200),
             Instant.now());
 

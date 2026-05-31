@@ -1,8 +1,8 @@
 package com.company.finance_api.profile.application;
 
-import com.company.finance_api.domain.DemoBalance;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.DemoBalanceRepository;
+import com.company.finance_api.profile.domain.DemoBalance;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.DemoBalanceRepository;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 

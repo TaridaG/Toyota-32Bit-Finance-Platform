@@ -1,9 +1,9 @@
 package com.company.finance_api.pricing.infrastructure.scheduler;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import com.company.finance_api.pricing.application.PriceService;
 import com.company.finance_api.pricing.infrastructure.provider.PriceProvider;
 import com.company.finance_api.pricing.infrastructure.provider.PriceProviderResolver;

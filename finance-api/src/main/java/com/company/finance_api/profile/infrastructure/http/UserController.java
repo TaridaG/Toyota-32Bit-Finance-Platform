@@ -1,6 +1,6 @@
 package com.company.finance_api.profile.infrastructure.http;
 
-import com.company.finance_api.domain.User;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.profile.application.UserService;
 import com.company.finance_api.profile.infrastructure.http.dto.BalanceResponse;
 import com.company.finance_api.profile.infrastructure.http.dto.CreateUserRequest;

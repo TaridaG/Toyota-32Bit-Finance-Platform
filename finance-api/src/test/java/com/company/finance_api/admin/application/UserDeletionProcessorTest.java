@@ -5,10 +5,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.User;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.profile.avatar.ProfileAvatarStorage;
-import com.company.finance_api.registration.EmailVerificationCodeRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.registration.infrastructure.persistence.EmailVerificationCodeRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.identity.KeycloakRealmAdminClient;
 import java.util.Optional;
 import java.util.UUID;

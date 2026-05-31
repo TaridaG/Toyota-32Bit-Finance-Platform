@@ -1,7 +1,7 @@
 package com.company.finance_api.shared.security;
 
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;

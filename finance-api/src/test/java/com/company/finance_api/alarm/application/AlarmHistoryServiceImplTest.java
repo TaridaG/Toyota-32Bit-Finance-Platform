@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.alarm.domain.AlarmHistory;
-import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
 import com.company.finance_api.alarm.infrastructure.persistence.AlarmHistoryRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;

@@ -7,9 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.InfoCardEntity;
+import com.company.finance_api.infocards.domain.InfoCardEntity;
 import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardInputDto;
-import com.company.finance_api.repository.InfoCardRepository;
+import com.company.finance_api.infocards.infrastructure.persistence.InfoCardRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;

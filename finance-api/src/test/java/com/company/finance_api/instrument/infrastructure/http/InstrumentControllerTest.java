@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.Exchange;
-import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.instrument.domain.enums.Exchange;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import com.company.finance_api.instrument.application.InstrumentService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;

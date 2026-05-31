@@ -6,12 +6,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.alarm.domain.AlarmRule;
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.AlarmCondition;
-import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.repository.InstrumentPriceRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;

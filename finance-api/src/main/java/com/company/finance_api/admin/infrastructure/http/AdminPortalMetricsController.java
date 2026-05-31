@@ -32,7 +32,7 @@ import com.company.finance_api.admin.infrastructure.http.dto.AdminUserAnalyticsD
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserDirectoryPageDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserPortfolioTreeDto;
 import com.company.finance_api.profile.application.PortalProfileService;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;

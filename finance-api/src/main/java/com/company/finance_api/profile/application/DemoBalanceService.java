@@ -1,7 +1,7 @@
 package com.company.finance_api.profile.application;
 
-import com.company.finance_api.domain.DemoBalance;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.profile.domain.DemoBalance;
+import com.company.finance_api.profile.domain.User;
 
 /** DemoBalanceService iş mantığını uygular (demo balance service). */
 public interface DemoBalanceService {

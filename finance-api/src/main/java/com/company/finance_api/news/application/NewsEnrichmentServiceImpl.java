@@ -1,7 +1,7 @@
 package com.company.finance_api.news.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedDetailResponse;
 import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedPageResponse;
 import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedResponse;
@@ -12,8 +12,8 @@ import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklySourceRowR
 import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklySummaryResponse;
 import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklyTopicRowResponse;
 import com.company.finance_api.instrument.application.InstrumentService;
-import com.company.finance_api.repository.InstrumentPriceRepository;
-import com.company.finance_api.repository.NewsFavoriteRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
+import com.company.finance_api.news.infrastructure.persistence.NewsFavoriteRepository;
 import com.company.finance_api.shared.cache.JsonCacheService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
@@ -387,7 +387,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     UUID userId = currentUserResolver.getCurrentUserId();
     List<Long> favoriteIds =
         newsFavoriteRepository.findByUserIdAndActiveTrue(userId).stream()
-            .map(com.company.finance_api.domain.NewsFavorite::getNewsId)
+            .map(com.company.finance_api.news.domain.NewsFavorite::getNewsId)
             .limit(FAVORITE_NEWS_FETCH_CAP)
             .toList();
 

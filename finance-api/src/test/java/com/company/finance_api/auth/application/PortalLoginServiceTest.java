@@ -11,12 +11,12 @@ import static org.mockito.Mockito.when;
 
 import com.company.finance_api.auth.domain.LoginCompletionResult;
 import com.company.finance_api.bootstrap.config.KeycloakAdminProperties;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.dto.PublicLoginRequest;
-import com.company.finance_api.dto.PublicLoginResponse;
-import com.company.finance_api.dto.PublicRefreshRequest;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicRefreshRequest;
 import com.company.finance_api.mfa.application.PortalMfaService;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.identity.KeycloakDirectGrantClient;
 import com.company.finance_api.shared.identity.KeycloakRealmAdminClient;
 import com.company.finance_api.shared.security.PortalAccountGuardService;

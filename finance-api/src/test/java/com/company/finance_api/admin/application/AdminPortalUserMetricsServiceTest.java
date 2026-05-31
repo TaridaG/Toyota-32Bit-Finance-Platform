@@ -2,8 +2,8 @@ package com.company.finance_api.admin.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

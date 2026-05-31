@@ -1,10 +1,10 @@
 package com.company.finance_api.auth.application;
 
 import com.company.finance_api.bootstrap.config.TrustedDeviceProperties;
-import com.company.finance_api.domain.TrustedLoginDevice;
-import com.company.finance_api.dto.PortalTrustedDeviceRowDto;
-import com.company.finance_api.dto.PortalTrustedDevicesResponseDto;
-import com.company.finance_api.repository.TrustedLoginDeviceRepository;
+import com.company.finance_api.auth.domain.TrustedLoginDevice;
+import com.company.finance_api.auth.infrastructure.http.dto.PortalTrustedDeviceRowDto;
+import com.company.finance_api.auth.infrastructure.http.dto.PortalTrustedDevicesResponseDto;
+import com.company.finance_api.auth.infrastructure.persistence.TrustedLoginDeviceRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;

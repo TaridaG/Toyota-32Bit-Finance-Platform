@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.company.finance_api.auth.domain.LoginCompletionResult;
 import com.company.finance_api.auth.application.PortalLoginService;
-import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import org.junit.jupiter.api.Test;

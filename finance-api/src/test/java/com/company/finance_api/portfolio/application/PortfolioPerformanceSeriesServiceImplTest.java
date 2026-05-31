@@ -7,12 +7,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.PortfolioDailyPerformance;
-import com.company.finance_api.dto.PortfolioPerformanceSeriesResponse;
+import com.company.finance_api.portfolio.domain.PortfolioDailyPerformance;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPerformanceSeriesResponse;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.repository.PortfolioDailyPerformanceRepository;
-import com.company.finance_api.repository.TransactionRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.PortfolioDailyPerformanceRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.pricing.application.PriceService;
 import com.company.finance_api.shared.security.CurrentUserResolver;

@@ -1,6 +1,6 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.PortfolioSnapshot;
+import com.company.finance_api.portfolio.domain.PortfolioSnapshot;
 import java.util.List;
 import java.util.UUID;
 

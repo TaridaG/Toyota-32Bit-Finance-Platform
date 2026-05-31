@@ -1,7 +1,7 @@
 package com.company.finance_api.outbox.application;
 
-import com.company.finance_api.domain.OutboxEvent;
-import com.company.finance_api.repository.OutboxEventRepository;
+import com.company.finance_api.outbox.domain.OutboxEvent;
+import com.company.finance_api.outbox.infrastructure.persistence.OutboxEventRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

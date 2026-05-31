@@ -1,7 +1,7 @@
 package com.company.finance_api.portfolio.domain;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import java.util.Locale;
 import java.util.Set;
 

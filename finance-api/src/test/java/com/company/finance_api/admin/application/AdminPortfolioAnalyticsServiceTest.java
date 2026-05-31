@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.admin.domain.AdminUserAnalyticsPreset;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.portfolio.external.repository.ExternalPositionLotRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPositionLotRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;

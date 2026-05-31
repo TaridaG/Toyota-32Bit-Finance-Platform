@@ -7,12 +7,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.enums.PurchaseMode;
-import com.company.finance_api.domain.enums.TradeInputMode;
-import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
-import com.company.finance_api.dto.TradePreviewResponse;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
+import com.company.finance_api.portfolio.domain.enums.TradeInputMode;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
+import com.company.finance_api.pricing.infrastructure.http.dto.InstrumentPriceCoverageResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradePreviewResponse;
 import com.company.finance_api.portfolio.application.TradeService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;

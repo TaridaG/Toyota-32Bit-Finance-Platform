@@ -1,16 +1,16 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.dto.PortfolioTradeFlowPointResponse;
-import com.company.finance_api.dto.PortfolioTradeFlowResponse;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioTradeFlowPointResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioTradeFlowResponse;
 import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.repository.TransactionRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;

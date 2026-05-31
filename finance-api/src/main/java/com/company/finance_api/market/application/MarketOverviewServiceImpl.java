@@ -1,11 +1,11 @@
 package com.company.finance_api.market.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import com.company.finance_api.market.domain.MarketOverviewCategoryRules;
 import com.company.finance_api.market.infrastructure.http.dto.MarketOverviewItemResponse;
 import com.company.finance_api.market.infrastructure.http.dto.MarketOverviewPageResponse;
-import com.company.finance_api.repository.InstrumentPriceRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.pricing.application.CurrencyConversionServiceImpl;
 import com.company.finance_api.instrument.application.InstrumentService;

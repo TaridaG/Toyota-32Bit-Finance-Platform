@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.admin.domain.AdminUserAnalyticsPreset;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;

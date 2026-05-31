@@ -10,11 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.alarm.domain.AlarmRule;
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.AlarmCondition;
-import com.company.finance_api.domain.enums.Exchange;
-import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
+import com.company.finance_api.instrument.domain.enums.Exchange;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import com.company.finance_api.alarm.application.AlarmService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;

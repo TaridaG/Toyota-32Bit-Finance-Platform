@@ -1,8 +1,8 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.dto.InsightDto;
-import com.company.finance_api.dto.InsightSeverity;
-import com.company.finance_api.dto.PortfolioValuationAssetDto;
+import com.company.finance_api.portfolio.infrastructure.http.dto.InsightDto;
+import com.company.finance_api.portfolio.infrastructure.http.dto.InsightSeverity;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioValuationAssetDto;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import java.math.BigDecimal;

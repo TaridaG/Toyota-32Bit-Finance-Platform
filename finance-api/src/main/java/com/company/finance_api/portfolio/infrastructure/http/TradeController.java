@@ -1,10 +1,10 @@
 package com.company.finance_api.portfolio.infrastructure.http;
 
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
-import com.company.finance_api.dto.TradeExecutionRequest;
-import com.company.finance_api.dto.TradeExecutionResponse;
-import com.company.finance_api.dto.TradePreviewResponse;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.pricing.infrastructure.http.dto.InstrumentPriceCoverageResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradeExecutionRequest;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradeExecutionResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradePreviewResponse;
 import com.company.finance_api.portfolio.application.TradeService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;

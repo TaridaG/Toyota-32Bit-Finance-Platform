@@ -1,7 +1,7 @@
 package com.company.finance_api.auth.infrastructure.http;
 
 import com.company.finance_api.auth.application.PortalTrustedDeviceService;
-import com.company.finance_api.dto.PortalTrustedDevicesResponseDto;
+import com.company.finance_api.auth.infrastructure.http.dto.PortalTrustedDevicesResponseDto;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;

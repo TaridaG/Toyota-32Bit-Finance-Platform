@@ -1,6 +1,6 @@
 package com.company.finance_api.infocards.application;
 
-import com.company.finance_api.domain.InfoCardEntity;
+import com.company.finance_api.infocards.domain.InfoCardEntity;
 import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardLocaleContentDto;
 import java.util.List;
 import java.util.Locale;

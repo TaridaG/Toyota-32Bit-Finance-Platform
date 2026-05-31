@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.bootstrap.config.TrustedDeviceProperties;
-import com.company.finance_api.repository.TrustedLoginDeviceRepository;
+import com.company.finance_api.auth.infrastructure.persistence.TrustedLoginDeviceRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,7 +1,7 @@
 package com.company.finance_api.instrument.infrastructure.http;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.dto.InstrumentResponse;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.instrument.infrastructure.http.dto.InstrumentResponse;
 import com.company.finance_api.instrument.application.InstrumentService;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.util.List;

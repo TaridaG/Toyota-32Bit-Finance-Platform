@@ -1,7 +1,7 @@
 package com.company.finance_api.shared.identity;
 
 import com.company.finance_api.bootstrap.config.KeycloakAdminProperties;
-import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;

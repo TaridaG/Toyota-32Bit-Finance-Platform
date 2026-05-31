@@ -19,7 +19,7 @@ import com.company.finance_api.admin.application.AdminUserPortfolioDetailsServic
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortalPortfolioMetricsDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortalUserMetricsDto;
 import com.company.finance_api.profile.application.PortalProfileService;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.time.Instant;

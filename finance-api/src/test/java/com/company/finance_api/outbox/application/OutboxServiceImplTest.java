@@ -7,8 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.OutboxEvent;
-import com.company.finance_api.repository.OutboxEventRepository;
+import com.company.finance_api.outbox.domain.OutboxEvent;
+import com.company.finance_api.outbox.infrastructure.persistence.OutboxEventRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

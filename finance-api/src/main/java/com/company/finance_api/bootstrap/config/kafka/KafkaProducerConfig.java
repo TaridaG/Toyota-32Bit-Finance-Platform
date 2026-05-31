@@ -1,7 +1,7 @@
 package com.company.finance_api.bootstrap.config.kafka;
 
-import com.company.finance_api.event.AlarmTriggeredEvent;
-import com.company.finance_api.event.TransactionExecutedEvent;
+import com.company.finance_api.shared.messaging.event.AlarmTriggeredEvent;
+import com.company.finance_api.shared.messaging.event.TransactionExecutedEvent;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerConfig;

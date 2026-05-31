@@ -1,9 +1,9 @@
 package com.company.finance_api.alarm.application;
 
 import com.company.finance_api.alarm.domain.AlarmRule;
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
 import com.company.finance_api.alarm.infrastructure.http.dto.AlarmResponse;
 import java.math.BigDecimal;
 import java.util.List;

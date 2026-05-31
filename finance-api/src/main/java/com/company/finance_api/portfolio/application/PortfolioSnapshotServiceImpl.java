@@ -1,13 +1,13 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.PortfolioSnapshot;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.portfolio.domain.PortfolioSnapshot;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
-import com.company.finance_api.portfolio.external.dto.ExternalPortfolioSummaryResponse;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.portfolio.external.service.ExternalPortfolioValuationService;
-import com.company.finance_api.repository.PortfolioSnapshotRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.ExternalPortfolioSummaryResponse;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.external.application.ExternalPortfolioValuationService;
+import com.company.finance_api.portfolio.infrastructure.persistence.PortfolioSnapshotRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.time.Instant;
 import java.util.List;

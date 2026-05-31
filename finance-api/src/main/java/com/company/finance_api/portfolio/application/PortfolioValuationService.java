@@ -1,6 +1,6 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.dto.PortfolioValuationResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioValuationResponse;
 
 /** PortfolioValuationService iş mantığını uygular (portfolio valuation service). */
 public interface PortfolioValuationService {

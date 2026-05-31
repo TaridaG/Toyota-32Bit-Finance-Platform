@@ -8,10 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.portfolio.external.dto.CreateExternalPortfolioRequest;
-import com.company.finance_api.portfolio.external.dto.ExternalPortfolioResponse;
-import com.company.finance_api.portfolio.external.service.ExternalPortfolioService;
-import com.company.finance_api.portfolio.external.service.ExternalPortfolioValuationService;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.CreateExternalPortfolioRequest;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.ExternalPortfolioResponse;
+import com.company.finance_api.portfolio.external.application.ExternalPortfolioService;
+import com.company.finance_api.portfolio.external.application.ExternalPortfolioValuationService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;

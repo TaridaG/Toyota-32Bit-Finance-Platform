@@ -1,12 +1,14 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.*;
-import com.company.finance_api.dto.PortfolioPositionResponse;
-import com.company.finance_api.dto.PortfolioSummaryResponse;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPositionResponse;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioSummaryResponse;
 import com.company.finance_api.portfolio.domain.PortfolioPosition;
 import com.company.finance_api.portfolio.domain.PortfolioPositionBuilder;
-import com.company.finance_api.repository.TransactionRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;
 import java.math.RoundingMode;

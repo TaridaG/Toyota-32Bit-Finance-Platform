@@ -1,9 +1,9 @@
 package com.company.finance_api.profile.application;
 
-import com.company.finance_api.domain.User;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.profile.infrastructure.http.dto.BalanceResponse;
 import com.company.finance_api.profile.infrastructure.http.dto.ResponseUser;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.math.BigDecimal;
 import java.util.UUID;
 import org.springframework.stereotype.Service;

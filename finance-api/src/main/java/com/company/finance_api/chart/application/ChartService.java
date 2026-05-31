@@ -1,6 +1,6 @@
 package com.company.finance_api.chart.application;
 
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import com.company.finance_api.alarm.infrastructure.http.dto.AlarmLineResponse;
 import com.company.finance_api.chart.infrastructure.http.dto.CandlestickResponse;
 import com.company.finance_api.chart.infrastructure.http.dto.TradeMarkerResponse;

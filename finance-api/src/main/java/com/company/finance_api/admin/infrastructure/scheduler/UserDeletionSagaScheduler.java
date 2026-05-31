@@ -1,12 +1,12 @@
 package com.company.finance_api.admin.infrastructure.scheduler;
 
 import com.company.finance_api.admin.application.UserDeletionProcessor;
-import com.company.finance_api.domain.OutboxEvent;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.OutboxStatus;
-import com.company.finance_api.event.UserDeletionRequestedEvent;
-import com.company.finance_api.repository.OutboxEventRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.outbox.domain.OutboxEvent;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.outbox.domain.enums.OutboxStatus;
+import com.company.finance_api.shared.messaging.event.UserDeletionRequestedEvent;
+import com.company.finance_api.outbox.infrastructure.persistence.OutboxEventRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.kafka.KafkaTopics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;

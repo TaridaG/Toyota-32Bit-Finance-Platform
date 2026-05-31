@@ -1,6 +1,6 @@
 package com.company.finance_api.infocards.application;
 
-import com.company.finance_api.domain.InfoCardEntity;
+import com.company.finance_api.infocards.domain.InfoCardEntity;
 import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardDto;
 import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardInputDto;
 import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardLocaleContentDto;

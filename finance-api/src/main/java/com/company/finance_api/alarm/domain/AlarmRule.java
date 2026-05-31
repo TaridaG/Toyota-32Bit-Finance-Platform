@@ -1,8 +1,8 @@
 package com.company.finance_api.alarm.domain;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;

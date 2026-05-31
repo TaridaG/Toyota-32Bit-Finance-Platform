@@ -1,7 +1,7 @@
 package com.company.finance_api.portfolio.domain;
 
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.enums.TransactionType;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;

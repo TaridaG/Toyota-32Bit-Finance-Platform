@@ -2,9 +2,9 @@ package com.company.finance_api.auth.application;
 
 import com.company.finance_api.auth.domain.LoginAttemptContext;
 import com.company.finance_api.auth.domain.LoginSecurityAlertType;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.event.LoginSecurityAlertEvent;
-import com.company.finance_api.event.publisher.LoginSecurityEventPublisher;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.shared.messaging.event.LoginSecurityAlertEvent;
+import com.company.finance_api.shared.messaging.event.publisher.LoginSecurityEventPublisher;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;

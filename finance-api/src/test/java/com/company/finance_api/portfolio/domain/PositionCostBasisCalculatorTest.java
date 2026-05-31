@@ -3,9 +3,9 @@ package com.company.finance_api.portfolio.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.profile.domain.User;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Instant;

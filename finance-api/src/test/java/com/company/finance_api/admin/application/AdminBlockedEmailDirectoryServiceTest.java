@@ -8,10 +8,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.auth.application.LoginSecurityNotificationService;
-import com.company.finance_api.domain.BlockedRegistrationEmail;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.BlockedRegistrationEmailRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.registration.domain.BlockedRegistrationEmail;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.registration.infrastructure.persistence.BlockedRegistrationEmailRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
 import java.time.Instant;
 import java.util.List;

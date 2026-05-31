@@ -3,9 +3,9 @@ package com.company.finance_api.portfolio.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.Exchange;
-import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.instrument.domain.enums.Exchange;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 

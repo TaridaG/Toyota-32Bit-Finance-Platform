@@ -1,7 +1,7 @@
 package com.company.finance_api.portfolio.domain;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.Transaction;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.Transaction;
 import com.company.finance_api.pricing.application.PriceService;
 import java.math.BigDecimal;
 import java.util.List;

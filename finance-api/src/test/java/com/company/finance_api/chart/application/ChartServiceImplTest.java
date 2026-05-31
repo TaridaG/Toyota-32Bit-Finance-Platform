@@ -4,18 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.chart.infrastructure.http.dto.CandlestickResponse;
-import com.company.finance_api.domain.enums.Exchange;
-import com.company.finance_api.domain.enums.InstrumentType;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.instrument.domain.enums.Exchange;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import com.company.finance_api.alarm.infrastructure.persistence.AlarmRuleRepository;
-import com.company.finance_api.repository.InstrumentPriceRepository;
-import com.company.finance_api.repository.InstrumentRepository;
-import com.company.finance_api.repository.TransactionRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -81,9 +81,9 @@ class ChartServiceImplTest {
     when(transactionRepository.findByUserOrderByCreatedAtDesc(user))
         .thenReturn(
             List.of(
-                com.company.finance_api.domain.Transaction.buy(
+                com.company.finance_api.portfolio.domain.Transaction.buy(
                     user, btc, BigDecimal.TEN, BigDecimal.ONE),
-                com.company.finance_api.domain.Transaction.buy(
+                com.company.finance_api.portfolio.domain.Transaction.buy(
                     user, eth, BigDecimal.ONE, BigDecimal.ONE)));
 
     var trades = chartService.getMyTrades(1L);

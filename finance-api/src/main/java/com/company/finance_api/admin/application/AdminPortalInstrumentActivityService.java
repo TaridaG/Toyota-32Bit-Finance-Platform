@@ -1,6 +1,6 @@
 package com.company.finance_api.admin.application;
 
-import com.company.finance_api.repository.InstrumentPriceRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;

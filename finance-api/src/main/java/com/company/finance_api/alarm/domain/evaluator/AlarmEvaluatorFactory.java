@@ -1,6 +1,6 @@
 package com.company.finance_api.alarm.domain.evaluator;
 
-import com.company.finance_api.domain.enums.AlarmCondition;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -1,6 +1,6 @@
 package com.company.finance_api.auth.domain;
 
-import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
 import java.util.Optional;
 
 /** Login sonucu: token response ve isteğe bağlı Set-Cookie (trusted device). */

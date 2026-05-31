@@ -1,6 +1,6 @@
 package com.company.finance_api.portfolio.external.domain;
 
-import com.company.finance_api.domain.Instrument;
+import com.company.finance_api.instrument.domain.Instrument;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

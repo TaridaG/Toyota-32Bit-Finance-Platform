@@ -7,12 +7,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.EurobondInstrument;
-import com.company.finance_api.domain.EurobondQuote;
+import com.company.finance_api.market.domain.EurobondInstrument;
+import com.company.finance_api.market.domain.EurobondQuote;
 import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondInstrumentDto;
-import com.company.finance_api.repository.EurobondHistoryRepository;
-import com.company.finance_api.repository.EurobondInstrumentRepository;
-import com.company.finance_api.repository.EurobondQuoteRepository;
+import com.company.finance_api.market.infrastructure.persistence.EurobondHistoryRepository;
+import com.company.finance_api.market.infrastructure.persistence.EurobondInstrumentRepository;
+import com.company.finance_api.market.infrastructure.persistence.EurobondQuoteRepository;
 import java.math.BigDecimal;
 import java.lang.reflect.Constructor;
 import java.time.Instant;

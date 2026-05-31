@@ -1,13 +1,13 @@
 package com.company.finance_api.watchlist.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.watchlist.domain.WatchlistItem;
 import com.company.finance_api.watchlist.infrastructure.http.dto.WatchlistItemDto;
 import com.company.finance_api.watchlist.domain.event.WatchlistItemAddedEvent;
 import com.company.finance_api.watchlist.domain.event.WatchlistItemRemovedEvent;
-import com.company.finance_api.repository.InstrumentRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.watchlist.infrastructure.persistence.WatchlistItemRepository;
 import com.company.finance_api.outbox.application.OutboxService;
 import com.company.finance_api.watchlist.application.WatchlistService;

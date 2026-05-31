@@ -8,8 +8,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -59,7 +59,7 @@ class RedisPriceCacheServiceTest {
   }
 
   private static InstrumentPrice price(Long instrumentId, PriceType priceType) {
-    com.company.finance_api.domain.Instrument instrument = mock(com.company.finance_api.domain.Instrument.class);
+    com.company.finance_api.instrument.domain.Instrument instrument = mock(com.company.finance_api.instrument.domain.Instrument.class);
     InstrumentPrice price = mock(InstrumentPrice.class);
     when(instrument.getId()).thenReturn(instrumentId);
     when(price.getInstrument()).thenReturn(instrument);

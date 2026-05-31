@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.dto.PortfolioOverviewResponse;
-import com.company.finance_api.dto.PortfolioPerformanceSeriesResponse;
-import com.company.finance_api.dto.PortfolioSummaryResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioOverviewResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPerformanceSeriesResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioSummaryResponse;
 import com.company.finance_api.portfolio.application.PortfolioOverviewService;
 import com.company.finance_api.portfolio.application.PortfolioPerformanceSeriesService;
 import com.company.finance_api.portfolio.application.PortfolioService;

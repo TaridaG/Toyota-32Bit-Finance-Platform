@@ -1,8 +1,8 @@
 package com.company.finance_api.alarm.infrastructure.persistence;
 
 import com.company.finance_api.alarm.domain.AlarmRule;
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.profile.domain.User;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

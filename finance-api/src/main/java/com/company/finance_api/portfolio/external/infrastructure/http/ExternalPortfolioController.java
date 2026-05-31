@@ -1,13 +1,13 @@
 package com.company.finance_api.portfolio.external.infrastructure.http;
 
-import com.company.finance_api.portfolio.external.dto.CreateExternalPortfolioRequest;
-import com.company.finance_api.portfolio.external.dto.CreateExternalPositionRequest;
-import com.company.finance_api.portfolio.external.dto.ExternalPortfolioAllocationResponse;
-import com.company.finance_api.portfolio.external.dto.ExternalPortfolioResponse;
-import com.company.finance_api.portfolio.external.dto.ExternalPortfolioSummaryResponse;
-import com.company.finance_api.portfolio.external.dto.PatchExternalPortfolioRequest;
-import com.company.finance_api.portfolio.external.service.ExternalPortfolioService;
-import com.company.finance_api.portfolio.external.service.ExternalPortfolioValuationService;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.CreateExternalPortfolioRequest;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.CreateExternalPositionRequest;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.ExternalPortfolioAllocationResponse;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.ExternalPortfolioResponse;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.ExternalPortfolioSummaryResponse;
+import com.company.finance_api.portfolio.external.infrastructure.http.dto.PatchExternalPortfolioRequest;
+import com.company.finance_api.portfolio.external.application.ExternalPortfolioService;
+import com.company.finance_api.portfolio.external.application.ExternalPortfolioValuationService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;

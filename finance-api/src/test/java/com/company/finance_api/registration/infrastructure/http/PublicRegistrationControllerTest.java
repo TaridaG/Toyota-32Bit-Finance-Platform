@@ -8,10 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
-import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
-import com.company.finance_api.registration.PortalRegistrationService;
-import com.company.finance_api.registration.RegistrationEmailVerificationService;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicUsernameAvailabilityResponse;
+import com.company.finance_api.registration.application.PortalRegistrationService;
+import com.company.finance_api.registration.application.RegistrationEmailVerificationService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;

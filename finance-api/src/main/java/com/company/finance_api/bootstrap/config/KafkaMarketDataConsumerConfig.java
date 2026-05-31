@@ -1,8 +1,8 @@
 package com.company.finance_api.bootstrap.config;
 
-import com.company.finance_api.kafka.event.FundSnapshotUpdatedEvent;
-import com.company.finance_api.kafka.event.FxSnapshotUpdatedEvent;
-import com.company.finance_api.kafka.event.MarketPriceUpdatedEvent;
+import com.company.finance_api.shared.messaging.kafka.event.FundSnapshotUpdatedEvent;
+import com.company.finance_api.shared.messaging.kafka.event.FxSnapshotUpdatedEvent;
+import com.company.finance_api.shared.messaging.kafka.event.MarketPriceUpdatedEvent;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
