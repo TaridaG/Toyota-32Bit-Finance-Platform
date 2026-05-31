@@ -1,4 +1,4 @@
-package com.company.marketdataservice.eurobond.infrastructure.application;
+package com.company.marketdataservice.eurobond.application;
 import com.company.marketdataservice.bootstrap.config.TrGovUsdEurobondProperties;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;

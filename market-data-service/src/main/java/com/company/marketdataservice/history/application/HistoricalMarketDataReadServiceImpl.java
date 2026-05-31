@@ -6,7 +6,7 @@ import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceSum
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryEntry;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryRepository;
-import com.company.marketdataservice.fund.infrastructure.provider.TefasFundNavHistoryRehydrationService;
+import com.company.marketdataservice.fund.application.TefasFundNavHistoryRehydrationService;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository.DebugHistoryRowView;
 import org.slf4j.Logger;

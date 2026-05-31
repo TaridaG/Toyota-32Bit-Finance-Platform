@@ -1,5 +1,5 @@
 package com.company.marketdataservice.eurobond.infrastructure.scheduler;
-import com.company.marketdataservice.eurobond.infrastructure.application.TrGovUsdEurobondHistoryService;
+import com.company.marketdataservice.eurobond.application.TrGovUsdEurobondHistoryService;
 import com.company.marketdataservice.bootstrap.config.TrGovUsdEurobondProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

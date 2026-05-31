@@ -1,4 +1,4 @@
-package com.company.marketdataservice.spot.infrastructure.scheduler;
+package com.company.marketdataservice.bond.infrastructure.scheduler;
 import com.company.marketdataservice.bootstrap.config.TcmbBondMarketProperties;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;

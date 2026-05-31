@@ -14,7 +14,7 @@ import java.util.Optional;
 /**
  * `fon (TEFAS NAV)` infrastructure katmanı adaptörü.
  */
-final class TefasBindHistoryParsing {
+public final class TefasBindHistoryParsing {
 
     private TefasBindHistoryParsing() {
     }
@@ -83,7 +83,7 @@ final class TefasBindHistoryParsing {
     /**
      * All daily NAV points for the requested fund code. De-duplicates by {@code observedAt} (keeps last row per instant).
      */
-    static List<ParsedLatest> allNavPointsSorted(JsonNode root, String normalizedFundCodeFallback) {
+    public static List<ParsedLatest> allNavPointsSorted(JsonNode root, String normalizedFundCodeFallback) {
         if (root == null || root.isNull()) {
             return List.of();
         }

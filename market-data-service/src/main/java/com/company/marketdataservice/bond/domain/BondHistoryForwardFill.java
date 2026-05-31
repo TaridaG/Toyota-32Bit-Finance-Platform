@@ -1,4 +1,4 @@
-package com.company.marketdataservice.bond.infrastructure.application;
+package com.company.marketdataservice.bond.domain;
 import com.company.marketdataservice.shared.provider.tcmb.BondEodPoint;
 
 import java.math.BigDecimal;

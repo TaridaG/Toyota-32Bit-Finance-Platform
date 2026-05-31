@@ -1,7 +1,9 @@
-package com.company.marketdataservice.fund.infrastructure.provider;
+package com.company.marketdataservice.fund.application;
 import com.company.marketdataservice.bootstrap.config.FundMarketProperties;
 import com.company.marketdataservice.history.infrastructure.http.dto.HistoryPointDto;
 import com.company.marketdataservice.fund.domain.FundSnapshotUpdatedEvent;
+import com.company.marketdataservice.fund.infrastructure.provider.TefasBindHistoryClient;
+import com.company.marketdataservice.fund.infrastructure.provider.TefasBindHistoryParsing;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryEntry;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryRepository;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;
