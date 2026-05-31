@@ -50,7 +50,7 @@ class FinanceInstrumentLookupClientTest {
         String json = """
                 {"data":[{"id":42,"symbol":"btcusdt"},{"id":99,"symbol":"ETHUSDT"}]}
                 """;
-        when(restTemplate.getForObject(eq("http://finance-api:8080/api/instruments"), eq(String.class)))
+        when(restTemplate.getForObject(eq("http://finance-api:8080/api/v1/instruments"), eq(String.class)))
                 .thenReturn(json);
 
         assertEquals(Optional.of(42L), client.resolveInstrumentId("BTCUSDT"));
@@ -62,7 +62,7 @@ class FinanceInstrumentLookupClientTest {
         String json = """
                 {"data":[{"id":1,"symbol":"AAPL"}]}
                 """;
-        when(restTemplate.getForObject(eq("http://finance-api:8080/api/instruments"), eq(String.class)))
+        when(restTemplate.getForObject(eq("http://finance-api:8080/api/v1/instruments"), eq(String.class)))
                 .thenReturn(json);
 
         assertTrue(client.resolveInstrumentId("MISSING").isEmpty());
@@ -70,7 +70,7 @@ class FinanceInstrumentLookupClientTest {
 
     @Test
     void resolveInstrumentId_returns_empty_on_http_failure() {
-        when(restTemplate.getForObject(eq("http://finance-api:8080/api/instruments"), eq(String.class)))
+        when(restTemplate.getForObject(eq("http://finance-api:8080/api/v1/instruments"), eq(String.class)))
                 .thenThrow(new RestClientException("timeout"));
 
         assertTrue(client.resolveInstrumentId("BTCUSDT").isEmpty());
@@ -78,7 +78,7 @@ class FinanceInstrumentLookupClientTest {
 
     @Test
     void resolveInstrumentId_returns_empty_on_invalid_json() {
-        when(restTemplate.getForObject(eq("http://finance-api:8080/api/instruments"), eq(String.class)))
+        when(restTemplate.getForObject(eq("http://finance-api:8080/api/v1/instruments"), eq(String.class)))
                 .thenReturn("not-json");
 
         assertTrue(client.resolveInstrumentId("BTCUSDT").isEmpty());
