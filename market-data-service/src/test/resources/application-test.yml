@@ -14,9 +14,8 @@ spring:
       enabled: false
 
 market:
-  tracked-symbols:
-    - ""
-  tracked-stocks: []
+  price-bootstrap:
+    enabled: false
   scheduler:
     enabled: false
   fx:

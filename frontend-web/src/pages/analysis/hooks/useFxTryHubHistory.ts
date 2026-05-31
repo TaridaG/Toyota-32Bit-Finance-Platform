@@ -64,7 +64,7 @@ function isRecentIsoDay(isoDay: string, slackDays = 1): boolean {
 
 async function fetchFxHistoryWindow(symbol: string, fromDay: string, toDay: string): Promise<ParsedFxPoint[]> {
   try {
-    const response = await apiClient.get<FxHistoryPoint[]>('/api/market/fx/history', {
+    const response = await apiClient.get<FxHistoryPoint[]>('/api/v1/market/fx/history', {
       params: { symbol, from: fromDay, to: toDay },
     })
     const rows = Array.isArray(response.data) ? response.data : []
@@ -76,7 +76,7 @@ async function fetchFxHistoryWindow(symbol: string, fromDay: string, toDay: stri
 
 async function fetchLiveFxMidRows(): Promise<FxMidRow[]> {
   try {
-    const response = await apiClient.get<FxMidRow[] | { data?: FxMidRow[] }>('/api/market/fx')
+    const response = await apiClient.get<FxMidRow[] | { data?: FxMidRow[] }>('/api/v1/market/fx')
     const rows = Array.isArray(response.data)
       ? response.data
       : Array.isArray(response.data?.data)

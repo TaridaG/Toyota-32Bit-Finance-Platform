@@ -1,15 +1,15 @@
 package com.company.finance_api.market.application;
 
-import com.company.finance_api.domain.EurobondHistory;
-import com.company.finance_api.domain.EurobondInstrument;
-import com.company.finance_api.domain.EurobondQuote;
-import com.company.finance_api.dto.market.eurobond.EurobondCashflowResponse;
-import com.company.finance_api.dto.market.eurobond.EurobondHistoryPointDto;
-import com.company.finance_api.dto.market.eurobond.EurobondHistoryResponse;
-import com.company.finance_api.dto.market.eurobond.EurobondInstrumentDto;
-import com.company.finance_api.repository.EurobondHistoryRepository;
-import com.company.finance_api.repository.EurobondInstrumentRepository;
-import com.company.finance_api.repository.EurobondQuoteRepository;
+import com.company.finance_api.market.domain.EurobondHistory;
+import com.company.finance_api.market.domain.EurobondInstrument;
+import com.company.finance_api.market.domain.EurobondQuote;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondCashflowResponse;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondHistoryPointDto;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondHistoryResponse;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondInstrumentDto;
+import com.company.finance_api.market.infrastructure.persistence.EurobondHistoryRepository;
+import com.company.finance_api.market.infrastructure.persistence.EurobondInstrumentRepository;
+import com.company.finance_api.market.infrastructure.persistence.EurobondQuoteRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;

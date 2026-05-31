@@ -51,7 +51,7 @@ function mapCard(raw: InfoCard): InfoCard {
 }
 
 export async function fetchPortalInfoCards(pageKey?: PortalPageKey, includeAdminOnly = false): Promise<InfoCard[]> {
-  const { data } = await apiClient.get<ApiEnvelope<InfoCard[]>>('/api/portal/info-cards', {
+  const { data } = await apiClient.get<ApiEnvelope<InfoCard[]>>('/api/v1/portal/info-cards', {
     params: { page: pageKey, includeAdminOnly },
   })
   return unwrap(data).map(mapCard)
@@ -69,7 +69,7 @@ export async function fetchLiteracyCatalogPage(params: {
   includeAdminOnly?: boolean
 }): Promise<LiteracyCatalogPageResponse> {
   const { data } = await apiClient.get<ApiEnvelope<LiteracyCatalogPageResponse>>(
-    '/api/portal/info-cards/literacy-catalog',
+    '/api/v1/portal/info-cards/literacy-catalog',
     {
       params: {
         page: params.page,
@@ -91,7 +91,7 @@ export async function lookupPortalInfoCard(
   pageKey: PortalPageKey,
   options: { term?: string; elementId?: string; instrumentSymbol?: string },
 ): Promise<InfoCard | undefined> {
-  const { data } = await apiClient.get<ApiEnvelope<InfoCard | null>>('/api/portal/info-cards/lookup', {
+  const { data } = await apiClient.get<ApiEnvelope<InfoCard | null>>('/api/v1/portal/info-cards/lookup', {
     params: {
       page: pageKey,
       term: options.term,
@@ -116,7 +116,7 @@ export async function fetchAdminInfoCardsPage(params: {
   query?: string
   status?: 'ALL' | 'ACTIVE' | 'PASSIVE'
 }): Promise<InfoCardsPageResponse> {
-  const { data } = await apiClient.get<ApiEnvelope<InfoCardsPageResponse>>('/api/admin/info-cards', {
+  const { data } = await apiClient.get<ApiEnvelope<InfoCardsPageResponse>>('/api/v1/admin/info-cards', {
     params: {
       page: params.page,
       size: params.size,
@@ -130,26 +130,26 @@ export async function fetchAdminInfoCardsPage(params: {
 }
 
 export async function fetchAdminInfoCardsDashboard(): Promise<InfoCardsDashboard> {
-  const { data } = await apiClient.get<ApiEnvelope<InfoCardsDashboard>>('/api/admin/info-cards/dashboard')
+  const { data } = await apiClient.get<ApiEnvelope<InfoCardsDashboard>>('/api/v1/admin/info-cards/dashboard')
   return unwrap(data)
 }
 
 export async function createAdminInfoCard(input: InfoCardInput): Promise<InfoCard> {
-  const { data } = await apiClient.post<ApiEnvelope<InfoCard>>('/api/admin/info-cards', input)
+  const { data } = await apiClient.post<ApiEnvelope<InfoCard>>('/api/v1/admin/info-cards', input)
   return mapCard(unwrap(data))
 }
 
 export async function updateAdminInfoCard(id: string, input: InfoCardInput): Promise<InfoCard> {
-  const { data } = await apiClient.put<ApiEnvelope<InfoCard>>(`/api/admin/info-cards/${id}`, input)
+  const { data } = await apiClient.put<ApiEnvelope<InfoCard>>(`/api/v1/admin/info-cards/${id}`, input)
   return mapCard(unwrap(data))
 }
 
 export async function toggleAdminInfoCardStatus(id: string): Promise<InfoCard> {
-  const { data } = await apiClient.patch<ApiEnvelope<InfoCard>>(`/api/admin/info-cards/${id}/status`)
+  const { data } = await apiClient.patch<ApiEnvelope<InfoCard>>(`/api/v1/admin/info-cards/${id}/status`)
   return mapCard(unwrap(data))
 }
 
 export async function deleteAdminInfoCard(id: string): Promise<void> {
-  await apiClient.delete(`/api/admin/info-cards/${id}`)
+  await apiClient.delete(`/api/v1/admin/info-cards/${id}`)
 }
 

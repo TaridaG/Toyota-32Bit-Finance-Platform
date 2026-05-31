@@ -50,7 +50,7 @@ function describeFailure(e: unknown, fallback: string): string {
 
 export async function fetchAdminLatencySnapshot(): Promise<AdminLatencySnapshot | null> {
   try {
-    const { data } = await apiClient.get<MetricsEnvelope<AdminLatencySnapshot>>('/api/admin/metrics/latency-snapshot')
+    const { data } = await apiClient.get<MetricsEnvelope<AdminLatencySnapshot>>('/api/v1/admin/metrics/latency-snapshot')
     if (!data.success) {
       throw new Error(data.error?.message ?? 'latency-snapshot failed')
     }
@@ -62,7 +62,7 @@ export async function fetchAdminLatencySnapshot(): Promise<AdminLatencySnapshot 
 
 export async function fetchAdminLatencyRunsPage(page: number, size: number): Promise<LatencyRunsPage> {
   try {
-    const { data } = await apiClient.get<MetricsEnvelope<LatencyRunsPage>>('/api/admin/metrics/latency-runs', {
+    const { data } = await apiClient.get<MetricsEnvelope<LatencyRunsPage>>('/api/v1/admin/metrics/latency-runs', {
       params: { page, size },
     })
     if (!data.success || data.data == null) {
@@ -77,7 +77,7 @@ export async function fetchAdminLatencyRunsPage(page: number, size: number): Pro
 export async function fetchLatencyRunSamples(runId: number): Promise<LatencyProbeSampleItem[]> {
   try {
     const { data } = await apiClient.get<MetricsEnvelope<LatencyProbeSampleItem[]>>(
-      `/api/admin/metrics/latency-runs/${runId}/samples`,
+      `/api/v1/admin/metrics/latency-runs/${runId}/samples`,
     )
     if (!data.success || data.data == null) {
       throw new Error(data.error?.message ?? 'latency samples failed')
@@ -91,7 +91,7 @@ export async function fetchLatencyRunSamples(runId: number): Promise<LatencyProb
 export async function fetchAdminLatencyProbeTargets(): Promise<string[]> {
   try {
     const { data } = await apiClient.get<MetricsEnvelope<{ paths: string[] }>>(
-      '/api/admin/metrics/latency-probe-targets',
+      '/api/v1/admin/metrics/latency-probe-targets',
     )
     if (!data.success || !data.data?.paths?.length) {
       throw new Error(data.error?.message ?? 'latency-probe-targets failed')
@@ -107,7 +107,7 @@ export type LatencySample = { path: string; durationMs: number }
 export async function saveAdminLatencySnapshot(samples: LatencySample[]): Promise<AdminLatencySnapshot> {
   try {
     const { data } = await apiClient.post<MetricsEnvelope<AdminLatencySnapshot>>(
-      '/api/admin/metrics/latency-snapshot',
+      '/api/v1/admin/metrics/latency-snapshot',
       { samples },
     )
     if (!data.success || data.data == null) {

@@ -34,7 +34,7 @@ class PortalNotificationControllerTest {
     when(notificationService.getUnreadCount()).thenReturn(3L);
 
     mockMvc
-        .perform(get("/api/notifications/unread-count"))
+        .perform(get("/api/v1/notifications/unread-count"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").value(3));
@@ -46,7 +46,7 @@ class PortalNotificationControllerTest {
         .thenReturn(new PortalNotificationPageResponse(List.of(), 0, 20, 0, 0, 0));
 
     mockMvc
-        .perform(get("/api/notifications"))
+        .perform(get("/api/v1/notifications"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.page").value(0));

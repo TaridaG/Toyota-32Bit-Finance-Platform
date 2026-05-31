@@ -8,8 +8,8 @@ import com.company.finance_api.admin.infrastructure.http.dto.AdminUserDailyRegis
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserHeatmapDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserInteractionMetricsDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserSegmentsDto;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;

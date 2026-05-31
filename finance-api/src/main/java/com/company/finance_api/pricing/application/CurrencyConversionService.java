@@ -1,6 +1,6 @@
 package com.company.finance_api.pricing.application;
 
-import com.company.finance_api.dto.AcquisitionFxRatesSnapshot;
+import com.company.finance_api.portfolio.infrastructure.http.dto.AcquisitionFxRatesSnapshot;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;

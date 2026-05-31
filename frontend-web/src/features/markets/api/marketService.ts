@@ -277,7 +277,7 @@ async function fetchInstrumentMetadataBySymbolMap(): Promise<Record<string, Inst
     return instrumentMetadataBySymbolPromise
   }
   instrumentMetadataBySymbolPromise = apiClient
-    .get<{ success?: boolean; data?: InstrumentCatalogItem[] } | InstrumentCatalogItem[]>('/api/instruments')
+    .get<{ success?: boolean; data?: InstrumentCatalogItem[] } | InstrumentCatalogItem[]>('/api/v1/instruments')
     .then(({ data }) => {
       const items = toInstrumentMapPayload(data)
       const map: Record<string, InstrumentMetadata> = {}
@@ -547,7 +547,7 @@ export async function fetchHistory(symbol: string, days: number): Promise<Histor
   const to = new Date()
   const from = rangeStartForDays(to, days)
 
-  const response = await apiClient.get<HistoryPoint[]>('/api/market/prices/history', {
+  const response = await apiClient.get<HistoryPoint[]>('/api/v1/market/prices/history', {
     params: {
       symbol,
       from: toDateParam(from),
@@ -562,7 +562,7 @@ async function fetchFxHistory(symbol: string, days: number): Promise<HistoryPoin
   const to = new Date()
   const from = rangeStartForDays(to, days)
 
-  const response = await apiClient.get<HistoryPoint[]>('/api/market/fx/history', {
+  const response = await apiClient.get<HistoryPoint[]>('/api/v1/market/fx/history', {
     params: {
       symbol,
       from: toDateParam(from),
@@ -622,7 +622,7 @@ export async function fetchMarketPricesSummary(
   for (let i = 0; i < symbols.length; i += SUMMARY_REQUEST_CHUNK) {
     const chunk = symbols.slice(i, i + SUMMARY_REQUEST_CHUNK)
     try {
-      const response = await apiClient.get<Record<string, SummaryItem>>('/api/market/prices/summary', {
+      const response = await apiClient.get<Record<string, SummaryItem>>('/api/v1/market/prices/summary', {
         // Encode '=' in symbols (e.g. BRK.B) — raw query strings split on '=' otherwise.
         params: { symbols: chunk.join(',') },
         paramsSerializer: (params) => {
@@ -794,7 +794,7 @@ export async function fetchMarketOverviewPage(params: FetchMarketsParams): Promi
     requestParams.sort = sort
   }
   const { data: root } = await apiClient.get<{ success?: boolean; data?: MarketOverviewWirePage }>(
-    '/api/market/overview',
+    '/api/v1/market/overview',
     {
       params: requestParams,
       headers: params.displayCurrency ? { 'X-Currency': params.displayCurrency } : undefined,
@@ -824,7 +824,7 @@ export async function fetchLiveFxMidRows(forceRefresh = false): Promise<FxMidRow
     return marketFxRowsInFlight
   }
   marketFxRowsInFlight = (async () => {
-    const response = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/market/fx')
+    const response = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/v1/market/fx')
     const rows = Array.isArray(response.data)
       ? response.data
       : Array.isArray(response.data?.data)
@@ -893,7 +893,7 @@ async function fetchMarketCatalogSnapshotImpl(params: {
 
   let responseItems: MarketPriceApiItem[] = []
   try {
-    const response = await apiClient.get<MarketPriceApiItem[] | { data?: MarketPriceApiItem[] }>('/api/market/prices')
+    const response = await apiClient.get<MarketPriceApiItem[] | { data?: MarketPriceApiItem[] }>('/api/v1/market/prices')
     responseItems = Array.isArray(response.data)
       ? response.data
       : Array.isArray(response.data?.data)
@@ -905,7 +905,7 @@ async function fetchMarketCatalogSnapshotImpl(params: {
 
   let fxResponseItems: FxRateApiItem[] = []
   try {
-    const fxResponse = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/market/fx')
+    const fxResponse = await apiClient.get<FxRateApiItem[] | { data?: FxRateApiItem[] }>('/api/v1/market/fx')
     fxResponseItems = Array.isArray(fxResponse.data)
       ? fxResponse.data
       : Array.isArray(fxResponse.data?.data)
@@ -918,8 +918,8 @@ async function fetchMarketCatalogSnapshotImpl(params: {
   const [instrumentMetadataBySymbol, normalizedRows] = await Promise.all([
     fetchInstrumentMetadataBySymbolMap(),
     Promise.resolve([
-    ...normalizeMarketRows(responseItems),
-    ...normalizeFxRows(fxResponseItems),
+      ...normalizeMarketRows(responseItems),
+      ...normalizeFxRows(fxResponseItems),
     ]),
   ])
   const normalizedRowsWithInstrumentId: CatalogRow[] = normalizedRows.map((row) => {
@@ -1251,7 +1251,7 @@ function mapOverall(raw: SegmentPulseApiOverall | null | undefined): MarketCateg
 
 /** Delegates to market-data-service; do not poll more aggressively than the UI hook (~45s). */
 export async function fetchMarketsCategoryPulse(): Promise<MarketCategoryPulsePayload> {
-  const { data } = await apiClient.get<SegmentPulseApiResponse>('/api/market/segments/pulse')
+  const { data } = await apiClient.get<SegmentPulseApiResponse>('/api/v1/market/segments/pulse')
   const rows = Array.isArray(data?.segments) ? data.segments : []
   const bySeg = new Map(rows.map((r) => [r.segment, r]))
   const segments = MARKETS_PULSE_CATEGORIES.map((category) => {
@@ -1375,7 +1375,7 @@ export async function fetchInstrumentFundamentals(symbol: string, forceRefresh =
     void forceRefresh
     return syntheticYahooFuturesFundamentals(symbol)
   }
-  const response = await apiClient.get<InstrumentFundamentals>(`/api/market/instruments/${encodeURIComponent(symbol.trim())}/fundamentals`, {
+  const response = await apiClient.get<InstrumentFundamentals>(`/api/v1/market/instruments/${encodeURIComponent(symbol.trim())}/fundamentals`, {
     params: { forceRefresh },
   })
   return response.data

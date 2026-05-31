@@ -35,12 +35,12 @@ public class SecurityConfig {
    */
   private static final RequestMatcher PUBLIC_ANONYMOUS_READ_PATHS =
       new OrRequestMatcher(
-          new AntPathRequestMatcher("/api/instruments"),
-          new AntPathRequestMatcher("/api/instruments/**"),
-          new AntPathRequestMatcher("/api/rates"),
-          new AntPathRequestMatcher("/api/rates/**"),
-          new AntPathRequestMatcher("/api/portal/info-cards"),
-          new AntPathRequestMatcher("/api/portal/info-cards/**"));
+          new AntPathRequestMatcher("/api/v1/instruments"),
+          new AntPathRequestMatcher("/api/v1/instruments/**"),
+          new AntPathRequestMatcher("/api/v1/rates"),
+          new AntPathRequestMatcher("/api/v1/rates/**"),
+          new AntPathRequestMatcher("/api/v1/portal/info-cards"),
+          new AntPathRequestMatcher("/api/v1/portal/info-cards/**"));
 
   private final ObjectProvider<JwtDecoder> jwtDecoder;
   private final JwtAuthenticationConverter jwtAuthenticationConverter;
@@ -93,20 +93,20 @@ public class SecurityConfig {
                       "/v3/api-docs",
                       "/v3/api-docs/**")
                   .permitAll()
-                  .requestMatchers("/health")
+                  .requestMatchers("/health", "/actuator", "/actuator/**")
                   .permitAll()
                   .requestMatchers(
                       HttpMethod.POST,
-                      "/api/public/register",
-                      "/api/public/register/send-code",
-                      "/api/public/login",
-                      "/api/public/login/mfa",
-                      "/api/public/refresh")
+                      "/api/v1/public/register",
+                      "/api/v1/public/register/send-code",
+                      "/api/v1/public/login",
+                      "/api/v1/public/login/mfa",
+                      "/api/v1/public/refresh")
                   .permitAll();
               if (oauth2Enabled) {
-                auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                auth.requestMatchers("/api/v1/admin/**").hasRole("ADMIN");
               } else {
-                auth.requestMatchers("/api/admin/**").permitAll();
+                auth.requestMatchers("/api/v1/admin/**").permitAll();
               }
               auth.anyRequest().permitAll();
             })

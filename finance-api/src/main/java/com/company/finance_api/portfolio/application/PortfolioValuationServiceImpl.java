@@ -1,15 +1,15 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.dto.InsightDto;
-import com.company.finance_api.dto.PortfolioValuationAssetDto;
-import com.company.finance_api.dto.PortfolioValuationResponse;
-import com.company.finance_api.portfolio.PortfolioPosition;
-import com.company.finance_api.portfolio.PortfolioPositionBuilder;
-import com.company.finance_api.repository.TransactionRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.portfolio.infrastructure.http.dto.InsightDto;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioValuationAssetDto;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioValuationResponse;
+import com.company.finance_api.portfolio.domain.PortfolioPosition;
+import com.company.finance_api.portfolio.domain.PortfolioPositionBuilder;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
@@ -119,7 +119,7 @@ public class PortfolioValuationServiceImpl implements PortfolioValuationService 
       case FX -> "FX";
       case CRYPTO -> "CRYPTO";
       case FUND -> "FUND";
-      case BOND -> "BOND";
+      case BOND, EUROBOND -> "BOND";
       case STOCK -> "STOCK";
       case DEPOSIT -> "DEPOSIT";
     };

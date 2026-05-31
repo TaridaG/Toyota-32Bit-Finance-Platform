@@ -1,6 +1,9 @@
 package com.company.marketdataservice.spot.application;
 import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
+import com.company.marketdataservice.bootstrap.config.HotReadCacheProperties;
 import com.company.marketdataservice.bootstrap.config.TcmbBondMarketProperties;
+import com.company.marketdataservice.shared.cache.JsonCacheService;
+import com.company.marketdataservice.shared.cache.JsonCacheSupport;
 import com.company.marketdataservice.spot.infrastructure.http.dto.FundDto;
 import com.company.marketdataservice.spot.infrastructure.http.dto.FxRateDto;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceDto;
@@ -10,7 +13,6 @@ import com.company.marketdataservice.history.infrastructure.persistence.FxRateHi
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository.LatestMarketPriceView;
 import com.company.marketdataservice.shared.provider.tcmb.TcmbBondEvdsClient;
-import com.company.marketdataservice.spot.application.MetalFuturesMarketEnricher;
 import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -18,7 +20,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -41,7 +45,8 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
     private final FundNavHistoryRepository fundNavHistoryRepository;
     private final TcmbBondMarketProperties bondMarketProperties;
     private final TcmbBondEvdsClient tcmbBondEvdsClient;
-    private final MetalFuturesMarketEnricher metalFuturesMarketEnricher;
+    private final JsonCacheService jsonCacheService;
+    private final HotReadCacheProperties hotReadCacheProperties;
 
     /** Kısa TTL: DB geçmişi boşken EVDS yapılandırılmışsa katalog satırlarını doldurur. */
     private volatile List<MarketPriceDto> bondEvdsOverlayCache = List.of();
@@ -63,6 +68,18 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
          */
     @Override
     public List<MarketPriceDto> getLatestPrices(String segment) {
+        if (!hotReadCacheProperties.isEnabled()) {
+            return loadLatestPricesUncached(segment);
+        }
+        return JsonCacheSupport.getOrLoad(
+                jsonCacheService,
+                pricesCacheKey(segment),
+                Duration.ofMillis(hotReadCacheProperties.getPricesTtlMs()),
+                new TypeReference<>() {},
+                () -> loadLatestPricesUncached(segment));
+    }
+
+    private List<MarketPriceDto> loadLatestPricesUncached(String segment) {
         LinkedHashMap<String, MarketPriceDto> merged = new LinkedHashMap<>();
         for (MarketPriceDto p : snapshotStore.listPrices()) {
             merged.put(norm(p.symbol()), p);
@@ -99,7 +116,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             }
         }
         mergeTrackedBondsFromEvdsIfAbsent(merged);
-        List<MarketPriceDto> sorted = metalFuturesMarketEnricher.enrich(sortBySymbol(merged));
+        List<MarketPriceDto> sorted = sortBySymbol(merged);
         if (!StringUtils.hasText(segment)) {
             return sorted;
         }
@@ -197,6 +214,13 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
     /**
      * Aligns TEFAS {@code fundCode} (e.g. TI2) with finance {@code instruments.symbol} (FUND_TI2).
      */
+    private static String pricesCacheKey(String segment) {
+        if (!StringUtils.hasText(segment)) {
+            return "mds:hot:prices:all";
+        }
+        return "mds:hot:prices:seg:" + segment.trim().toLowerCase(Locale.ROOT);
+    }
+
     static String canonicalFundInstrumentSymbol(String fundCode) {
         String c = norm(fundCode);
         if (c.isEmpty()) {
@@ -211,6 +235,18 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
          */
     @Override
     public List<FxRateDto> getFxRates() {
+        if (!hotReadCacheProperties.isEnabled()) {
+            return loadFxRatesUncached();
+        }
+        return JsonCacheSupport.getOrLoad(
+                jsonCacheService,
+                "mds:hot:fx",
+                Duration.ofMillis(hotReadCacheProperties.getFxTtlMs()),
+                new TypeReference<>() {},
+                this::loadFxRatesUncached);
+    }
+
+    private List<FxRateDto> loadFxRatesUncached() {
         List<FxRateDto> live = snapshotStore.listFx();
         if (!live.isEmpty()) {
             return live;

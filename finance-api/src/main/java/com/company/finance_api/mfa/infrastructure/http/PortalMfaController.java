@@ -1,10 +1,10 @@
 package com.company.finance_api.mfa.infrastructure.http;
 
-import com.company.finance_api.dto.PortalMfaConfirmRequest;
-import com.company.finance_api.dto.PortalMfaDisableRequest;
-import com.company.finance_api.dto.PortalMfaSetupResponse;
-import com.company.finance_api.dto.PortalMfaStatusResponse;
-import com.company.finance_api.mfa.PortalMfaService;
+import com.company.finance_api.mfa.infrastructure.http.dto.PortalMfaConfirmRequest;
+import com.company.finance_api.mfa.infrastructure.http.dto.PortalMfaDisableRequest;
+import com.company.finance_api.mfa.infrastructure.http.dto.PortalMfaSetupResponse;
+import com.company.finance_api.mfa.infrastructure.http.dto.PortalMfaStatusResponse;
+import com.company.finance_api.mfa.application.PortalMfaService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Portal TOTP MFA kurulum ve yönetim endpoint'leri. */
 @RestController
-@RequestMapping("/api/portal/profile/mfa")
+@RequestMapping("/api/v1/portal/profile/mfa")
 public class PortalMfaController {
 
   private final PortalMfaService portalMfaService;

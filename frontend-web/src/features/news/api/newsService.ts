@@ -102,7 +102,7 @@ export type FetchChartNewsParams = {
 export async function fetchNewsForChart(params: FetchChartNewsParams): Promise<NewsApiItem[]> {
   const from = new Date(params.fromSec * 1000).toISOString()
   const to = new Date(params.toSec * 1000).toISOString()
-  const response = await apiClient.get<ApiResponse<NewsApiItem[]>>('/api/news/enriched/chart', {
+  const response = await apiClient.get<ApiResponse<NewsApiItem[]>>('/api/v1/news/enriched/chart', {
     params: {
       symbol: params.symbol.replace('/', '').toUpperCase(),
       category: params.categoryUi,
@@ -128,7 +128,7 @@ export async function fetchNews(
     .map((symbol) => symbol.trim())
     .filter(Boolean)
     .join(',')
-  const response = await apiClient.get<ApiResponse<PageResponse<NewsApiItem>>>('/api/news/enriched', {
+  const response = await apiClient.get<ApiResponse<PageResponse<NewsApiItem>>>('/api/v1/news/enriched', {
     params: {
       page,
       size,
@@ -153,7 +153,7 @@ export async function fetchNewsWeeklySummary(
     .map((symbol) => symbol.trim())
     .filter(Boolean)
     .join(',')
-  const response = await apiClient.get<ApiResponse<NewsWeeklySummaryResponse>>('/api/news/enriched/weekly-summary', {
+  const response = await apiClient.get<ApiResponse<NewsWeeklySummaryResponse>>('/api/v1/news/enriched/weekly-summary', {
     params: {
       portfolioSymbols: normalizedPortfolioSymbols || undefined,
     },
@@ -163,7 +163,7 @@ export async function fetchNewsWeeklySummary(
 }
 
 export async function fetchNewsOriginal(id: number): Promise<NewsOriginalResponse> {
-  const response = await apiClient.get<ApiResponse<NewsOriginalResponse>>(`/api/news/enriched/${id}/original`)
+  const response = await apiClient.get<ApiResponse<NewsOriginalResponse>>(`/api/v1/news/enriched/${id}/original`)
   return response.data.data
 }
 
@@ -200,7 +200,7 @@ export type NewsDetailApi = {
 }
 
 export async function fetchNewsDetail(id: number, language?: string): Promise<NewsDetailApi> {
-  const response = await apiClient.get<ApiResponse<NewsDetailApi>>(`/api/news/enriched/${id}`, {
+  const response = await apiClient.get<ApiResponse<NewsDetailApi>>(`/api/v1/news/enriched/${id}`, {
     headers: language ? { 'X-Language': language } : undefined,
   })
   return response.data.data

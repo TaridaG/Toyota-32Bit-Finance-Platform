@@ -42,7 +42,7 @@ class IngestionStatusControllerTest {
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/market/ingestion/status")
+                        .path("/api/v1/market/ingestion/status")
                         .queryParam("assetType", "STOCK")
                         .queryParam("status", "RUNNING")
                         .queryParam("symbolPrefix", "AAP")

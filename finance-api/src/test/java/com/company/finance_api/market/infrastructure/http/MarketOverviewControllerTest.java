@@ -35,7 +35,7 @@ class MarketOverviewControllerTest {
         .thenReturn(new MarketOverviewPageResponse(List.of(), 0, 10, 0, 0));
 
     mockMvc
-        .perform(get("/api/market/overview").header("X-Currency", "USD"))
+        .perform(get("/api/v1/market/overview").header("X-Currency", "USD"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.page").value(0));

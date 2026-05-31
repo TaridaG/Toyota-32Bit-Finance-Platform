@@ -1,7 +1,7 @@
 package com.company.finance_api.news.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedDetailResponse;
 import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedPageResponse;
 import com.company.finance_api.news.infrastructure.http.dto.NewsEnrichedResponse;
@@ -12,8 +12,8 @@ import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklySourceRowR
 import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklySummaryResponse;
 import com.company.finance_api.news.infrastructure.http.dto.NewsWeeklyTopicRowResponse;
 import com.company.finance_api.instrument.application.InstrumentService;
-import com.company.finance_api.repository.InstrumentPriceRepository;
-import com.company.finance_api.repository.NewsFavoriteRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
+import com.company.finance_api.news.infrastructure.persistence.NewsFavoriteRepository;
 import com.company.finance_api.shared.cache.JsonCacheService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
@@ -387,7 +387,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     UUID userId = currentUserResolver.getCurrentUserId();
     List<Long> favoriteIds =
         newsFavoriteRepository.findByUserIdAndActiveTrue(userId).stream()
-            .map(com.company.finance_api.domain.NewsFavorite::getNewsId)
+            .map(com.company.finance_api.news.domain.NewsFavorite::getNewsId)
             .limit(FAVORITE_NEWS_FETCH_CAP)
             .toList();
 
@@ -598,7 +598,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
             .get()
             .uri(
                 UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-                    .path("/api/news/{id}")
+                    .path("/api/v1/news/{id}")
                     .queryParam("includeOriginal", true)
                     .buildAndExpand(id)
                     .toUriString())
@@ -763,7 +763,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       Instant fromInclusive, Instant toInclusive, String language) {
     String url =
         UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-            .path("/api/news/chart")
+            .path("/api/v1/news/chart")
             .queryParam("from", fromInclusive)
             .queryParam("to", toInclusive)
             .queryParam("lang", language)
@@ -909,7 +909,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
       int page, int size, String language, boolean includeOriginal, String search) {
     UriComponentsBuilder builder =
         UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-            .path("/api/news")
+            .path("/api/v1/news")
             .queryParam("page", page)
             .queryParam("size", size)
             .queryParam("lang", language)
@@ -1022,7 +1022,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
     }
     String url =
         UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
-            .path("/api/market/prices/summary")
+            .path("/api/v1/market/prices/summary")
             .queryParam("symbols", String.join(",", symbols))
             .toUriString();
     try {
@@ -1038,7 +1038,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
   private NewsServiceNewsDetailItem fetchNewsDetail(Long id, String language) {
     String url =
         UriComponentsBuilder.fromHttpUrl(newsBaseUrl)
-            .path("/api/news/{id}")
+            .path("/api/v1/news/{id}")
             .queryParam("lang", language)
             .queryParam("includeOriginal", true)
             .buildAndExpand(id)
@@ -1058,7 +1058,7 @@ public class NewsEnrichmentServiceImpl implements NewsEnrichmentService {
   private List<AnalyticsCandleDto> fetchCandles(String symbol, LocalDate from, LocalDate to) {
     String url =
         UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
-            .path("/api/analytics/instruments/{symbol}/candles")
+            .path("/api/v1/analytics/instruments/{symbol}/candles")
             .queryParam("from", from)
             .queryParam("to", to)
             .buildAndExpand(symbol)

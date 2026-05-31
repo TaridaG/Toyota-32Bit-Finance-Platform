@@ -1,8 +1,6 @@
 package com.company.gateway.bootstrap.config;
 
-/**
- * Spring Security path patterns for legacy {@code /api/**} and canonical {@code /api/v1/**} routes.
- */
+/** Spring Security path patterns for canonical {@code /api/v1/**} routes. */
 final class GatewaySecurityPaths {
 
     private static final String V1 = ApiVersionPathSupport.EXTERNAL_API_VERSION_PREFIX;
@@ -10,93 +8,67 @@ final class GatewaySecurityPaths {
     private GatewaySecurityPaths() {}
 
     static String[] publicAuthPosts() {
-        return dual(
-                "/api/public/register",
-                "/api/public/register/send-code",
-                "/api/public/login",
-                "/api/public/login/mfa",
-                "/api/public/refresh");
+        return new String[] {
+                V1 + "/public/register",
+                V1 + "/public/register/send-code",
+                V1 + "/public/login",
+                V1 + "/public/login/mfa",
+                V1 + "/public/refresh"
+        };
     }
 
     static String[] publicAuthGets() {
-        return dual("/api/public/**");
+        return new String[] {V1 + "/public/**"};
     }
 
     static String[] publicAnonymousGets() {
-        return dual(
-                "/api/market/**",
-                "/api/rates/**",
-                "/market/**");
+        return new String[] {V1 + "/market/**", V1 + "/rates/**"};
     }
 
     static String[] newsFavorites() {
-        return dual("/api/news/favorites", "/api/news/favorites/**");
+        return new String[] {V1 + "/news/favorites", V1 + "/news/favorites/**"};
     }
 
     static String[] publicNews() {
-        return dual("/api/news/**");
+        return new String[] {V1 + "/news/**"};
     }
 
     static String[] instruments() {
-        return dual("/api/instruments", "/api/instruments/", "/api/instruments/**");
+        return new String[] {V1 + "/instruments", V1 + "/instruments/", V1 + "/instruments/**"};
     }
 
     static String[] analytics() {
-        return dual("/api/analytics/**");
+        return new String[] {V1 + "/analytics/**"};
     }
 
     static String[] portalInfoCards() {
-        return dual("/api/portal/info-cards", "/api/portal/info-cards/**");
+        return new String[] {V1 + "/portal/info-cards", V1 + "/portal/info-cards/**"};
     }
 
     static String[] newsAdmin() {
-        return dual("/api/news/admin/**");
+        return new String[] {V1 + "/news/admin/**"};
     }
 
     static String[] admin() {
-        return dual("/api/admin/**");
+        return new String[] {V1 + "/admin/**"};
     }
 
     static String[] userProfile() {
-        return dual("/api/users/me/**", "/api/profile/**");
+        return new String[] {V1 + "/users/me/**", V1 + "/profile/**"};
     }
 
     static String[] portfolioWrites() {
-        return dual(
-                "/api/portfolio/**",
-                "/api/accounts/**",
-                "/api/balances/**",
-                "/api/transactions/**",
-                "/api/trades/**",
-                "/api/orders/**");
+        return new String[] {
+                V1 + "/portfolio/**",
+                V1 + "/accounts/**",
+                V1 + "/balances/**",
+                V1 + "/transactions/**",
+                V1 + "/trades/**",
+                V1 + "/orders/**"
+        };
     }
 
     static String[] versionedApi() {
         return new String[] {V1, V1 + "/**"};
-    }
-
-    static String[] legacyApi() {
-        return new String[] {"/api/**"};
-    }
-
-    private static String[] dual(String... legacyPatterns) {
-        int n = legacyPatterns.length;
-        String[] all = new String[n * 2];
-        for (int i = 0; i < n; i++) {
-            String legacy = legacyPatterns[i];
-            all[i] = legacy;
-            all[i + n] = toV1(legacy);
-        }
-        return all;
-    }
-
-    private static String toV1(String legacyPath) {
-        if (legacyPath.startsWith("/api/")) {
-            return V1 + legacyPath.substring(4);
-        }
-        if (legacyPath.equals("/api")) {
-            return V1;
-        }
-        return legacyPath;
     }
 }

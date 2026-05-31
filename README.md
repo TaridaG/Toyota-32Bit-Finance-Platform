@@ -1,0 +1,324 @@
+<p align="center">
+  <img src="docs/assets/32bit.gif" alt="32bit" height="72" align="middle">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/author.gif" alt="Abdulkadir Kılıç" height="80" align="middle">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/brand.png" alt="32 Bit Finance" height="110" align="middle">
+</p>
+
+<h1 align="center">32 BİT FİNANCE PLATFORM</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=white" alt="Java">
+  <img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot">
+  <img src="https://img.shields.io/badge/Hibernate-59666C?logo=hibernate&logoColor=white" alt="Hibernate">
+  <img src="https://img.shields.io/badge/JPA-6DB33F?logo=spring&logoColor=white" alt="JPA">
+  <img src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker">
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white" alt="Redis">
+  <img src="https://img.shields.io/badge/Kafka-231F20?logo=apachekafka&logoColor=white" alt="Kafka">
+  <img src="https://img.shields.io/badge/Keycloak-4D4DFF?logo=keycloak&logoColor=white" alt="Keycloak">
+  <img src="https://img.shields.io/badge/OpenTelemetry-000000?logo=opentelemetry&logoColor=white" alt="OpenTelemetry">
+  <img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus">
+  <img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana">
+  <img src="https://img.shields.io/badge/OpenSearch-005EB8?logo=opensearch&logoColor=white" alt="OpenSearch">
+</p>
+
+<p align="center">
+  <strong>Türkiye odaklı, üç dilde finans portalı</strong> — portföyünüzü oluşturun, piyasaları ve haberleri tek ekrandan izleyin.
+  Arayüz ve içerik <strong>Türkçe</strong>, <strong>İngilizce</strong> ve <strong>Almanca</strong> destekler; dil değiştirdiğinizde menüler, kartlar ve mesajlar seçtiğiniz dile uyumlanır.
+</p>
+
+<p align="center">
+  Canlı fiyatlarla hisse, fon, kripto, döviz, tahvil ve eurobond takibi; işlem geçmişi, hedefler ve harici portföy görünümü.
+  Haberlerde önemli gelişmeleri <strong>yıldızlayın</strong>, teknik analizde çizim ve notlarınızı <strong>kaydedip</strong> sonra yeniden açın.
+  Faiz/vadeli ürünler, banka kurları, RSI ve diğer göstergeler, alarmlar, izleme listesi ve finansal okuryazarlık — portföylerinizi yönetmek için tek platform.
+</p>
+
+<h2 align="center">Ekranlar</h2>
+
+<p>
+  <a id="ekran-ana-sayfa"></a>
+  <a id="ekran-piyasalar"></a>
+  <a id="ekran-portfoyum"></a>
+  <a id="ekran-faiz-vadeli"></a>
+  <a id="ekran-analiz"></a>
+  <a id="ekran-haberler"></a>
+  <a id="ekran-banka-kurlari"></a>
+  <a id="ekran-finansal-okuryazarlik"></a>
+</p>
+
+<table align="center" border="0" cellpadding="8" cellspacing="0" width="100%">
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <strong>Ana Sayfa</strong><br>
+      <img src="docs/assets/screens/anasayfa.gif" alt="Ana Sayfa" width="100%">
+    </td>
+    <td align="center" valign="top" width="50%">
+      <strong>Piyasalar</strong><br>
+      <img src="docs/assets/screens/piyasalar.gif" alt="Piyasalar" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <strong>Portföyüm</strong><br>
+      <img src="docs/assets/screens/portfoyum.gif" alt="Portföyüm" width="100%">
+    </td>
+    <td align="center" valign="top" width="50%">
+      <strong>Faiz / Vadeli</strong><br>
+      <img src="docs/assets/screens/faizvadeli.gif" alt="Faiz / Vadeli" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <strong>Analiz</strong><br>
+      <img src="docs/assets/screens/analiz.gif" alt="Analiz" width="100%">
+    </td>
+    <td align="center" valign="top" width="50%">
+      <strong>Haberler</strong><br>
+      <img src="docs/assets/screens/haberler.gif" alt="Haberler" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <strong>Banka kurları</strong><br>
+      <img src="docs/assets/screens/bankakurlari.gif" alt="Banka kurları" width="100%">
+    </td>
+    <td align="center" valign="top" width="50%">
+      <strong>Finansal Okuryazarlık</strong><br>
+      <img src="docs/assets/screens/finansalokuryazarlik.gif" alt="Finansal Okuryazarlık" width="100%">
+    </td>
+  </tr>
+</table>
+
+## İçindekiler
+
+- [Ekranlar](#ekranlar)
+- [Proje yapısı](#proje-yapısı)
+- [Hızlı başlat](#hızlı-başlat)
+- [Hızlı başlangıç (Docker)](#hızlı-başlangıç-docker--önerilen)
+- [Yerel geliştirme (özet)](#yerel-geliştirme-özet)
+- [Dokümantasyon](#dokümantasyon)
+- [Lisans](#lisans)
+
+## Proje yapısı
+
+**32 Bit Finance Platform**, mikroservis mimarisiyle çalışan bir finans portalıdır. Kullanıcı **React** arayüzünden tek adrese (**api-gateway**) istek atar; gateway kimliği **Keycloak** ile doğrular ve isteği ilgili servise yönlendirir. Portföy, alarm, kayıt ve MFA gibi portal iş kuralları **finance-api**’de toplanır; piyasa fiyatları, haber, teknik analiz ve bildirimler kendi servislerinde uzmanlaşmıştır. Servisler birbirini gerektiğinde **HTTP** ile çağırır; fiyat güncellemesi, alarm ve log gibi akışlar **Kafka** üzerinden asenkron ilerler. Kalıcı veriler **PostgreSQL**’de tutulur; her servisin şeması **Flyway** ile ayrı yönetilir.
+
+<h3 align="center">
+  <a href="docs/architecture.md" style="color: inherit; text-decoration: none;">PROJE MİMARİSİ</a>
+</h3>
+
+<p align="center">
+  <a href="docs/architecture.md">
+    <img src="docs/diagrams/genelmimari.png" alt="Proje mimarisi diyagramı" width="900">
+  </a>
+</p>
+
+<table align="center" border="0" cellpadding="20" cellspacing="0">
+  <tr>
+    <td valign="top" width="48%">
+      <h4>api-gateway</h4>
+      <p>Tarayıcı ve mobil istemcilerin backend’e ulaştığı <strong>tek kapı</strong>dır. Gelen her <code>/api/v1/...</code> isteğinde JWT’yi Keycloak üzerinden doğrular, kullanıcı kimliğini arka servislere güvenli header’larla iletir. İstek yoluna göre <code>finance-api</code>, <code>market-data-service</code>, <code>news-service</code> veya <code>analytics-service</code>’e yönlendirir; Redis ile hız sınırlama ve Resilience4j ile devre kesici uygular. Geliştirici ve entegrasyon ekipleri için tüm servislerin OpenAPI dokümantasyonunu tek Swagger arayüzünde toplar. Ayrıntılı route listesi: <a href="docs/api.md">docs/api.md</a>.</p>
+    </td>
+    <td valign="top" width="48%">
+      <h4>finance-api</h4>
+      <p>Portalın <strong>kalbi</strong> ve Backend-for-Frontend (BFF) katmanıdır. Portföy, işlem geçmişi, hedefler, fiyat alarmları, izleme listesi, grafik çizim kayıtları ve profil gibi kullanıcıya özel iş kuralları burada yaşar. Kayıt, e-posta doğrulama, TOTP tabanlı MFA ve güvenilir cihaz yönetimi ile birlikte admin KPI’ları, bilgi kartları ve haber favorileri de bu serviste toplanır. Piyasa verisi için <code>market-data-service</code>’e HTTP ile gider; güncel fiyat ve FX snapshot’larını Kafka’dan dinler. Kritik domain olaylarını transactional outbox ile Kafka’ya yazar; veriler PostgreSQL’de Flyway ile yönetilir.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="48%">
+      <h4>market-data-service</h4>
+      <p>Platformun <strong>piyasa verisi motoru</strong>dur. BIST, Nasdaq, kripto, fon, döviz, tahvil ve eurobond enstrümanlarını kataloglar; scheduler’larla canlı ve geçmiş fiyatları günceller. TCMB EVDS, Finnhub, Yahoo, CoinGecko ve Stooq gibi kaynaklardan veri çeker; politika faizi, banka kurları ve temel enstrüman bilgilerini sağlar. İlk kurulumda geçmiş fiyat backfill çalıştırabilir; sık okunan uçlar için hibrit JSON önbellek kullanır. Fiyat değişimlerini <code>market.price.updated</code> gibi Kafka topic’lerine yayınlayarak analitik ve portal katmanını besler.</p>
+    </td>
+    <td valign="top" width="48%">
+      <h4>analytics-service</h4>
+      <p>Canlı fiyat akışını <strong>teknik analiz</strong>e dönüştüren uzman servistir. <code>market-data-service</code>’in yayınladığı fiyat olaylarını Kafka üzerinden tüketir; RSI ve benzeri göstergeleri hesaplar, insight ve politika metriklerini üretir. Hesaplanan sonuçları kendi PostgreSQL şemasında saklar ve gateway üzerinden HTTP API ile sunar. Böylece ağır gösterge işleri portal BFF’inden ayrılır; analiz sayfası ve ilgili kartlar güncel metrikleri buradan alır.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="48%">
+      <h4>news-service</h4>
+      <p>Finans haberlerinin <strong>toplandığı ve sunulduğu</strong> servistir. Tanımlı RSS kaynaklarını zamanlanmış görevlerle tarar, haberleri veritabanına yazar ve portalın listeleme/filtreleme API’sini besler. Gerekli içeriklerde MyMemory ile çeviri desteği sunar; gateway üzerinden <code>/api/v1/news/**</code> uçlarıyla erişilir. Haber akışı portal deneyiminden bağımsız ölçeklenir; Docker ortamında sıkı dosya sistemi ve ayrı veritabanı parolası ile çalışacak şekilde yapılandırılır.</p>
+    </td>
+    <td valign="top" width="48%">
+      <h4>notification-service</h4>
+      <p>Kullanıcıya giden <strong>e-posta bildirimlerinin</strong> merkezidir. Kafka’dan alarm tetiklenmesi, şüpheli giriş, izleme listesi değişikliği ve analitik insight gibi olayları dinler. Olay tipine göre SMTP ile şablonlu e-posta üretir; portalın anlık UI yükünü arka plana taşır. <code>finance-api</code> iş kuralı üretir, bu servis iletir; böylece bildirim kanalı değişse bile domain kodu sade kalır.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="48%">
+      <h4>log-consumer-service</h4>
+      <p>Tüm backend servislerinin <strong>merkezi log arşivleyicisidir</strong>. Uygulamalar Log4j2 ile JSON formatında <code>app.logs</code> Kafka topic’ine yazar; bu servis mesajları tüketip OpenSearch’e indeksler. Operasyon ekibi Grafana, OpenSearch Dashboards veya doğrudan arama ile hata ve iz süzme yapabilir. Uygulama pod’ları log depolamak zorunda kalmaz; log pipeline platform genelinde tek noktadan yönetilir.</p>
+    </td>
+    <td valign="top" width="48%">
+      <h4>frontend-web</h4>
+      <p>Kullanıcının gördüğü <strong>React 19</strong> tabanlı tek sayfa uygulamasıdır (Vite + TypeScript). Landing, piyasalar, analiz, haberler, banka kurları ve finansal okuryazarlık sayfaları herkese açıkken; portföy, faiz/vadeli, dashboard ve harici portföy görünümü oturum gerektirir. Keycloak ile giriş ve kayıt akışını yönetir; TR, EN ve DE dil desteği sunar. Tüm API çağrıları <code>api-gateway</code> üzerinden gider; admin ve bilgi kartları yönetimi için ayrı <code>/admin</code> alanı bulunur.</p>
+    </td>
+  </tr>
+</table>
+
+> **Not — piyasa verisi ve zamanlayıcılar**  
+> Stack ayağa kalktıktan sonra `market-data-service`, geçmiş fiyat backfill ile canlı güncellemeleri arka planda birleştirir. Katalog ve geçmiş serilerin tamamlanması — enstrüman sayısına ve sağlayıcı yanıt sürelerine bağlı olarak — **yaklaşık 30 dakika** sürebilir; portal bu süreçte kademeli olarak dolar, ilk dakikalarda eksik grafik veya boş liste görmek normaldir.  
+> Demo yapılandırmadaki zamanlayıcı aralıkları (ör. hisse ~1 dk, FX/tahvil ~5 dk) ve backfill adımları, **ücretsiz kota** sunan harici kaynaklara (TCMB EVDS, Yahoo, CoinGecko, compose’daki demo Finnhub anahtarı vb.) göre ayarlanmıştır; istekler arası bekleme süreleri rate limit ihlallerini önler. Ücretli API planına veya daha yüksek kotaya geçildiğinde `scheduler.*.delay-ms`, backfill `sleep-ms` ve ilgili cron ifadeleri [docs/configuration.md](docs/configuration.md) üzerinden sıklaştırılabilir.  
+> İlerlemeyi izlemek için: `docker compose logs -f market-data-service`
+
+### Hızlı başlat
+
+Depoyu klonlayıp **Docker Compose** ile tüm platformu tek komutla ayağa kaldırabilirsiniz.
+
+**Gereksinimler:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose v2), yaklaşık **8 GB RAM**.
+
+```bash
+git clone https://github.com/TaridaG/Toyota-32Bit-Finance-Platform.git
+cd Toyota-32Bit-Finance-Platform/Docker
+cp .env.example .env
+```
+
+`.env.example` dosyasını `.env` olarak kopyalamanız yeterlidir. `NEWS_DB_PASSWORD` ve RSS ayarları şablonda hazır gelir (`123456` — PostgreSQL şifresiyle aynı olmalı; compose içinde sabit). **Ekstra bir şifre yazmanıza gerek yok.** Şifreyi değiştirirseniz `docker-compose.yml` içindeki `POSTGRES_PASSWORD` ile birlikte güncellemeniz gerekir.
+
+**İsteğe bağlı — `.env` içinde yorum satırını açıp doldurun** (boş bırakılırsa demo/compose varsayılanları kullanılır):
+
+| Değişken | Ne zaman? | Not |
+|----------|-----------|-----|
+| `MARKET_EVDS_API_KEY` | TCMB EVDS için ayrı anahtar | Tanımlamazsanız compose’daki `TCMB_API_KEY` kullanılır. **Boş satır (`KEY=`) yazmayın** |
+| `OPENAI_API_KEY` | Admin bilgi kartı AI | Compose’da `AI_ENABLED=true`; anahtar yoksa AI çalışmaz |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | Kendi e-postanızdan alarm ve kayıt maili | Tanımlamazsanız compose demo Gmail kullanır |
+| `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Üretim ortamı | Demo’da compose varsayılanları yeterli |
+
+Demo için `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerleri `docker-compose.yml` içinde tanımlıdır; `.env`’e yazmanız gerekmez. Üretimde kendi anahtarlarınızı `.env`’e ekleyin. Tüm değişkenler: [docs/configuration.md](docs/configuration.md).
+
+**1 · Projeyi ayağa kaldır**
+
+```bash
+docker compose up -d --build
+```
+
+<p align="center"><strong>2 · Hızlı ulaş</strong><br><sub>Stack ayaktayken logolara tıklayın</sub></p>
+
+<p align="center">
+  <a href="http://localhost:5173" title="Web arayüzü — http://localhost:5173"><img src="https://cdn.simpleicons.org/react/61DAFB" height="32" alt="Web arayüzü"></a>&nbsp;
+  <a href="http://localhost:8080" title="API Gateway — http://localhost:8080"><img src="https://cdn.simpleicons.org/springboot/6DB33F" height="32" alt="API Gateway"></a>&nbsp;
+  <a href="http://localhost:8080/swagger-ui.html" title="Swagger UI — http://localhost:8080/swagger-ui.html"><img src="https://cdn.simpleicons.org/swagger/85EA2D" height="32" alt="Swagger UI"></a>&nbsp;
+  <a href="http://localhost:8085" title="Keycloak OIDC (realm: finance) — http://localhost:8085"><img src="https://cdn.simpleicons.org/keycloak/4D4DFF" height="32" alt="Keycloak"></a>&nbsp;
+  <a href="http://localhost:8085/admin" title="Keycloak Admin (admin / admin) — http://localhost:8085/admin"><img src="https://cdn.simpleicons.org/keycloak/FFFFFF" height="32" alt="Keycloak Admin"></a>
+</p>
+<p align="center">
+  <a href="http://localhost:3000" title="Grafana (admin / admin) — http://localhost:3000"><img src="https://cdn.simpleicons.org/grafana/F46800" height="32" alt="Grafana"></a>&nbsp;
+  <a href="http://localhost:9090" title="Prometheus — http://localhost:9090"><img src="https://cdn.simpleicons.org/prometheus/E6522C" height="32" alt="Prometheus"></a>&nbsp;
+  <a href="http://localhost:16686" title="Jaeger — http://localhost:16686"><img src="https://cdn.simpleicons.org/opentelemetry/FFFFFF" height="32" alt="Jaeger"></a>&nbsp;
+  <a href="http://localhost:5601" title="OpenSearch Dashboards — http://localhost:5601"><img src="https://cdn.simpleicons.org/opensearch/005EB8" height="32" alt="OpenSearch Dashboards"></a>&nbsp;
+  <a href="https://localhost:9200" title="OpenSearch REST API (admin / 123456789) — https://localhost:9200"><img src="https://cdn.simpleicons.org/opensearch/FFFFFF" height="32" alt="OpenSearch API"></a>&nbsp;
+  <span title="PostgreSQL — localhost:5432"><img src="https://cdn.simpleicons.org/postgresql/4169E1" height="32" alt="PostgreSQL"></span>&nbsp;
+  <span title="Redis — localhost:6379"><img src="https://cdn.simpleicons.org/redis/DC382D" height="32" alt="Redis"></span>&nbsp;
+  <span title="Kafka — localhost:9092"><img src="https://cdn.simpleicons.org/apachekafka/FFFFFF" height="32" alt="Kafka"></span>
+</p>
+
+**Demo giriş:** `user1` veya `admin1` — şifre: `123456` (Keycloak realm import).
+
+Yerel geliştirme (IDE + kısmi Docker) ve ayrıntılı adımlar: [docs/getting-started.md](docs/getting-started.md).
+
+### Kafka olayları
+
+| Topic | Üreten (ör.) | Tüketen (ör.) |
+|-------|----------------|----------------|
+| `market.price.updated` | market-data-service | analytics-service, finance-api |
+| `market.fx.snapshot.updated` | market-data-service | finance-api |
+| `alarm-triggered` | finance-api (outbox) | notification-service |
+| `watchlist.item.added` / `removed` | finance-api | notification-service |
+| `login-security.alert` | finance-api | notification-service |
+| `app.logs` | Tüm servisler | log-consumer-service |
+
+### Altyapı bileşenleri
+
+Docker Compose (`Docker/`) ile gelen paylaşımlı bileşenler:
+
+| Bileşen | Host port | Rol |
+|---------|-----------|-----|
+| PostgreSQL | 5432 | `finance` + `keycloak` veritabanları |
+| Redis | 6379 | Gateway rate limit, finance-api önbellek |
+| Kafka | 9092 | Olay bus |
+| Keycloak | 8085 | OIDC / realm import |
+| OpenSearch | 9200 | Log arama |
+| OpenSearch Dashboards | 5601 | Log UI |
+| Jaeger | 16686 | Dağıtık iz |
+| Prometheus | 9090 | Metrik scrape |
+| Grafana | 3000 | Panolar |
+
+### Destekleyici dizinler
+
+| Dizin | İçerik |
+|-------|--------|
+| `Docker/` | `docker-compose`, Keycloak realm, observability stack |
+| `docs/` | Mimari, servisler, API, kurulum, gözlemlenebilirlik |
+| `photos/` | Profil avatar dosyaları (yerel / volume) |
+
+## Hızlı başlangıç (Docker — önerilen)
+
+**Gereksinimler:** Docker Desktop, en az ~8 GB RAM (OpenSearch + tüm servisler için).
+
+`.env.example` kopyalandığında `NEWS_DB_PASSWORD=123456` hazır gelir; demo için `.env`’de başka bir değişiklik gerekmez.
+
+**1 · Projeyi ayağa kaldır**
+
+```bash
+cd Docker
+cp .env.example .env
+docker compose up -d --build
+```
+
+<p align="center"><strong>2 · Hızlı ulaş</strong><br><sub>Stack ayaktayken logolara tıklayın — portal, API, kimlik, gözlemlenebilirlik ve altyapı (TCP portları için üzerine gelin)</sub></p>
+
+<p align="center">
+  <a href="http://localhost:5173" title="Web arayüzü — http://localhost:5173"><img src="https://cdn.simpleicons.org/react/61DAFB" height="32" alt="Web arayüzü"></a>&nbsp;
+  <a href="http://localhost:8080" title="API Gateway — http://localhost:8080"><img src="https://cdn.simpleicons.org/springboot/6DB33F" height="32" alt="API Gateway"></a>&nbsp;
+  <a href="http://localhost:8080/swagger-ui.html" title="Swagger UI — http://localhost:8080/swagger-ui.html"><img src="https://cdn.simpleicons.org/swagger/85EA2D" height="32" alt="Swagger UI"></a>&nbsp;
+  <a href="http://localhost:8085" title="Keycloak OIDC (realm: finance) — http://localhost:8085"><img src="https://cdn.simpleicons.org/keycloak/4D4DFF" height="32" alt="Keycloak"></a>&nbsp;
+  <a href="http://localhost:8085/admin" title="Keycloak Admin (admin / admin) — http://localhost:8085/admin"><img src="https://cdn.simpleicons.org/keycloak/FFFFFF" height="32" alt="Keycloak Admin"></a>
+</p>
+<p align="center">
+  <a href="http://localhost:3000" title="Grafana (admin / admin) — http://localhost:3000"><img src="https://cdn.simpleicons.org/grafana/F46800" height="32" alt="Grafana"></a>&nbsp;
+  <a href="http://localhost:9090" title="Prometheus — http://localhost:9090"><img src="https://cdn.simpleicons.org/prometheus/E6522C" height="32" alt="Prometheus"></a>&nbsp;
+  <a href="http://localhost:16686" title="Jaeger — http://localhost:16686"><img src="https://cdn.simpleicons.org/opentelemetry/FFFFFF" height="32" alt="Jaeger"></a>&nbsp;
+  <a href="http://localhost:5601" title="OpenSearch Dashboards — http://localhost:5601"><img src="https://cdn.simpleicons.org/opensearch/005EB8" height="32" alt="OpenSearch Dashboards"></a>&nbsp;
+  <a href="https://localhost:9200" title="OpenSearch REST API (admin / 123456789) — https://localhost:9200"><img src="https://cdn.simpleicons.org/opensearch/FFFFFF" height="32" alt="OpenSearch API"></a>&nbsp;
+  <span title="PostgreSQL — localhost:5432"><img src="https://cdn.simpleicons.org/postgresql/4169E1" height="32" alt="PostgreSQL"></span>&nbsp;
+  <span title="Redis — localhost:6379"><img src="https://cdn.simpleicons.org/redis/DC382D" height="32" alt="Redis"></span>&nbsp;
+  <span title="Kafka — localhost:9092"><img src="https://cdn.simpleicons.org/apachekafka/FFFFFF" height="32" alt="Kafka"></span>
+</p>
+
+### Demo kullanıcılar
+
+Keycloak realm import: `user1` / `admin1` — şifre: `123456`
+
+Piyasa verisi backfill ve zamanlayıcılar hakkında ayrıntılı not: [Hızlı başlat](#hızlı-başlat) bölümü. Log: `docker compose logs -f market-data-service`
+
+## Yerel geliştirme (özet)
+
+1. Altyapı: `cd Docker && docker compose up -d postgres redis kafka keycloak`
+2. Backend: `mvn -pl finance-api,market-data-service -am spring-boot:run` (servis başına ayrı terminal; portlar için [docs/services.md](docs/services.md))
+3. Frontend: `cd frontend-web && cp .env.example .env.development && npm install && npm run dev`
+
+Ayrıntılar: [docs/getting-started.md](docs/getting-started.md)
+
+## Dokümantasyon
+
+| Dosya | İçerik |
+|-------|--------|
+| [docs/README.md](docs/README.md) | Dokümantasyon indeksi |
+| [docs/architecture.md](docs/architecture.md) | Mimari ve veri akışı |
+| [docs/services.md](docs/services.md) | Servisler, portlar, sorumluluklar |
+| [docs/api.md](docs/api.md) | Gateway rotaları ve OpenAPI |
+| [docs/getting-started.md](docs/getting-started.md) | Kurulum adımları |
+| [docs/development.md](docs/development.md) | Geliştirme, test, profiller |
+| [docs/configuration.md](docs/configuration.md) | Ortam değişkenleri |
+| [docs/observability.md](docs/observability.md) | Metrik, trace, log |
+
+## Lisans
+
+Bu depo için lisans dosyası tanımlı değilse, dağıtım öncesi ekleyin.

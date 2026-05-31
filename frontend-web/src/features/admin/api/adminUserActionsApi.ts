@@ -3,7 +3,7 @@ import { apiClient } from '../../../shared/api/client'
 
 type AdminEnvelope = { success: boolean; error?: { message?: string } }
 
-const BASE = '/api/admin/metrics/user-directory'
+const BASE = '/api/v1/admin/metrics/user-directory'
 
 function describeFailure(e: unknown): string {
   if (isAxiosError(e)) {

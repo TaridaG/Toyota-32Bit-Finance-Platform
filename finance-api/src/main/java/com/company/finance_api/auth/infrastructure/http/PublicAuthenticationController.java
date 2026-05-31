@@ -1,12 +1,12 @@
 package com.company.finance_api.auth.infrastructure.http;
 
-import com.company.finance_api.auth.LoginAttemptContext;
-import com.company.finance_api.auth.LoginCompletionResult;
-import com.company.finance_api.auth.PortalLoginService;
-import com.company.finance_api.dto.PublicLoginMfaRequest;
-import com.company.finance_api.dto.PublicLoginRequest;
-import com.company.finance_api.dto.PublicLoginResponse;
-import com.company.finance_api.dto.PublicRefreshRequest;
+import com.company.finance_api.auth.domain.LoginAttemptContext;
+import com.company.finance_api.auth.domain.LoginCompletionResult;
+import com.company.finance_api.auth.application.PortalLoginService;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginMfaRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicRefreshRequest;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Kimlik doğrulama gerektirmeyen login, MFA doğrulama ve token refresh endpoint'leri. */
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/api/v1/public")
 public class PublicAuthenticationController {
 
   private final PortalLoginService portalLoginService;

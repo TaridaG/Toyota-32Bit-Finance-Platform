@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.chart.infrastructure.http.dto.CandlestickResponse;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import com.company.finance_api.chart.application.ChartService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
@@ -42,7 +42,7 @@ class ChartControllerTest {
 
     mockMvc
         .perform(
-            get("/api/charts/1/candles")
+            get("/api/v1/charts/1/candles")
                 .param("from", "2026-01-01T00:00:00Z")
                 .param("to", "2026-01-02T00:00:00Z")
                 .param("priceType", "MARKET"))

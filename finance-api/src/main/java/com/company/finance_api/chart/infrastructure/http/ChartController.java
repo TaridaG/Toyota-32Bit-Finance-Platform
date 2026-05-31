@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Mum grafik (candlestick) ve trade marker REST endpoint'lerini sunar. */
 @RestController
-@RequestMapping("/api/charts")
+@RequestMapping("/api/v1/charts")
 @RequiredArgsConstructor
 public class ChartController {
 

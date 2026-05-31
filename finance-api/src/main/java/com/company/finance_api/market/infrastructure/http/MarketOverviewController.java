@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Piyasa özeti ve insight REST endpoint'lerini sunar. */
 @RestController
-@RequestMapping("/api/market")
+@RequestMapping("/api/v1/market")
 public class MarketOverviewController {
 
   private final MarketOverviewService marketOverviewService;

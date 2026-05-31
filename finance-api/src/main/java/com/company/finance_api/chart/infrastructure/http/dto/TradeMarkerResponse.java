@@ -1,6 +1,6 @@
 package com.company.finance_api.chart.infrastructure.http.dto;
 
-import com.company.finance_api.domain.enums.TransactionType;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
 import java.math.BigDecimal;
 import java.time.Instant;
 

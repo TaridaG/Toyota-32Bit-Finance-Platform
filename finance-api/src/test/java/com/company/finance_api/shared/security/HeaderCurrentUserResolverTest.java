@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;

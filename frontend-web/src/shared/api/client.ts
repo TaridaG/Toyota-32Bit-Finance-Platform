@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { API_VERSION_PREFIX, withApiVersion } from './apiVersion'
+import { API_VERSION_PREFIX } from './apiVersion'
 import { isAccountFrozenApiError, isAccountRemovedApiError, logoutFrozenAccount, logoutRemovedAccount } from '../auth/accountFrozen'
 import {
   clearAuthSession,
@@ -133,26 +133,26 @@ export async function ensureFreshAccessToken(minComfortableTtlMs = 600_000): Pro
 
 /** Guest-readable news stream only — not user favorites (require JWT). */
 function isPublicNewsCatalogUrl(url: string): boolean {
-  if (url.includes('/api/news/favorites')) {
+  if (url.includes('/api/v1/news/favorites')) {
     return false
   }
-  return url.includes('/api/news') && !url.includes('/api/news/admin')
+  return url.includes('/api/v1/news') && !url.includes('/api/v1/news/admin')
 }
 
 function isPublicPortalInfoCardsUrl(url: string): boolean {
-  return url.includes('/api/portal/info-cards')
+  return url.includes('/api/v1/portal/info-cards')
 }
 
 /** 401 on these URLs should not force logout (public catalog / auth endpoints). */
 function isPublicDataOrAuthUrl(url: string): boolean {
   return (
-    url.includes('/api/public/') ||
-    url.includes('/api/market') ||
-    url.includes('/api/rates') ||
+    url.includes('/api/v1/public/') ||
+    url.includes('/api/v1/market') ||
+    url.includes('/api/v1/rates') ||
     isPublicNewsCatalogUrl(url) ||
     isPublicPortalInfoCardsUrl(url) ||
-    url.includes('/api/instruments') ||
-    url.includes('/api/analytics')
+    url.includes('/api/v1/instruments') ||
+    url.includes('/api/v1/analytics')
   )
 }
 
@@ -160,9 +160,9 @@ function isPublicDataOrAuthUrl(url: string): boolean {
 function isPublicAnonymousApiRequest(config: { baseURL?: string; url?: string }): boolean {
   const path = (config.baseURL ?? '') + (config.url ?? '')
   return (
-    path.includes('/api/public/register') ||
-    path.includes('/api/public/login') ||
-    path.includes('/api/public/refresh')
+    path.includes('/api/v1/public/register') ||
+    path.includes('/api/v1/public/login') ||
+    path.includes('/api/v1/public/refresh')
   )
 }
 
@@ -170,17 +170,12 @@ function requestPathForPublicRule(config: { baseURL?: string; url?: string }): s
   const raw = `${config.baseURL ?? ''}${config.url ?? ''}`
   try {
     if (/^https?:\/\//i.test(raw)) {
-      return normalizeApiPathForRules(new URL(raw).pathname)
+      return new URL(raw).pathname
     }
   } catch {
     /* ignore */
   }
-  return normalizeApiPathForRules(raw)
-}
-
-/** Align public-route rules with gateway rewrite (/api/v1 → /api). */
-function normalizeApiPathForRules(path: string): string {
-  return path.replace(/\/api\/v1\//g, '/api/').replace(/\/api\/v1$/g, '/api')
+  return raw
 }
 
 /** Public catalog GETs: never send Bearer (stale JWT breaks gateway/resource-server before permitAll). */
@@ -191,13 +186,12 @@ function isPublicCatalogGetRequest(config: InternalAxiosRequestConfig): boolean 
   }
   const path = requestPathForPublicRule(config)
   return (
-    path.includes('/api/market') ||
-    path.includes('/api/rates') ||
-    path.includes('api/rates') ||
+    path.includes('/api/v1/market') ||
+    path.includes('/api/v1/rates') ||
     isPublicNewsCatalogUrl(path) ||
     isPublicPortalInfoCardsUrl(path) ||
-    path.includes('/api/instruments') ||
-    path.includes('/api/analytics')
+    path.includes('/api/v1/instruments') ||
+    path.includes('/api/v1/analytics')
   )
 }
 
@@ -242,9 +236,6 @@ function attachLocaleHeaders(config: InternalAxiosRequestConfig) {
 }
 
 apiClient.interceptors.request.use((config) => {
-  if (config.url) {
-    config.url = withApiVersion(config.url)
-  }
   attachLocaleHeaders(config)
 
   if (isPublicAnonymousApiRequest(config)) {
@@ -277,7 +268,7 @@ apiClient.interceptors.response.use(
     const status = error.response?.status
     if (status === 403 && original) {
       const url = `${original.baseURL ?? ''}${original.url ?? ''}`
-      if (!url.includes('/api/admin/')) {
+      if (!url.includes('/api/v1/admin/')) {
         if (isAccountFrozenApiError(error)) {
           logoutFrozenAccount()
           return Promise.reject(error)
@@ -294,9 +285,9 @@ apiClient.interceptors.response.use(
 
     const url = `${original.baseURL ?? ''}${original.url ?? ''}`
     if (
-      url.includes('/api/public/login') ||
-      url.includes('/api/public/register') ||
-      url.includes('/api/public/refresh')
+      url.includes('/api/v1/public/login') ||
+      url.includes('/api/v1/public/register') ||
+      url.includes('/api/v1/public/refresh')
     ) {
       return Promise.reject(error)
     }

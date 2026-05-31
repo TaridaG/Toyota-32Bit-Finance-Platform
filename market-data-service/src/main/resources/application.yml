@@ -21,6 +21,10 @@ spring:
     enabled: true
     table: mds_flyway_schema_history
     locations: classpath:db/migration
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     template:
@@ -52,24 +56,6 @@ providers:
     stock-financials-reported-path: /api/v1/stock/financials-reported
     stock-metric-path: /api/v1/stock/metric
     api-key: ${FINNHUB_API_KEY:}
-    symbols:
-      - AAPL
-      - AMZN
-      - NVDA
-      - MSFT
-      - GOOGL
-      - TSLA
-      - META
-      - AVGO
-      - AMD
-      - NFLX
-      - INTC
-      - CSCO
-      - VOO
-      - VTI
-      - QQQ
-      - IVV
-      - SPY
 
 scheduler:
   market:
@@ -96,6 +82,11 @@ management:
       endpoint: http://jaeger:4318/v1/traces
 
 market:
+  hot-read-cache:
+    enabled: ${MARKET_HOT_READ_CACHE_ENABLED:true}
+    prices-ttl-ms: ${MARKET_HOT_READ_CACHE_PRICES_TTL_MS:3000}
+    fx-ttl-ms: ${MARKET_HOT_READ_CACHE_FX_TTL_MS:5000}
+    pulse-ttl-ms: ${MARKET_HOT_READ_CACHE_PULSE_TTL_MS:30000}
   bank-rates:
     cache-ttl-ms: ${MARKET_BANK_RATES_CACHE_TTL_MS:60000}
     user-agent: Mozilla/5.0 (compatible; FinanceMarketDataService/1.0)
@@ -151,76 +142,28 @@ market:
       weekly-cron: ${MARKET_TL_DEPOSIT_WEEKLY_SYNC_CRON:0 25 7 * * MON}
   ingestion:
     env: ${MARKET_INGESTION_ENV:dev}
-  metal-futures:
-    history-bootstrap:
-      enabled: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_ENABLED:true}
-      startup-delay-ms: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_DELAY_MS:90000}
-      years: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_YEARS:5}
-      periodic-delay-ms: ${MARKET_METAL_FUTURES_HISTORY_BOOTSTRAP_PERIODIC_MS:3600000}
   history:
     backfill:
       enabled: ${MARKET_HISTORY_BACKFILL_ENABLED:false}
       run-on-startup: ${MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP:false}
+      startup-depth-days: ${MARKET_HISTORY_BACKFILL_STARTUP_DEPTH_DAYS:7}
       schedule-initial-delay-ms: 10000
-      schedule-delay-ms: 60000
+      schedule-delay-ms: 900000
       kafka:
         enabled: false
       retry:
-        initial-delay-ms: 1000
+        initial-delay-ms: 30000
         multiplier: 2.0
-        max-delay-ms: 300000
+        max-delay-ms: 3600000
         max-attempts: 8
       years: 5
-      chunk-days: 365
+      chunk-days: 90
       min-price-history-days: 900
       min-recent-price-history-days: 120
       min-recent30-day-coverage-days: 15
+      gate-live-until-history-ready: ${MARKET_HISTORY_BACKFILL_GATE_LIVE_UNTIL_HISTORY_READY:false}
+      stock-bootstrap-parallelism: ${MARKET_HISTORY_BACKFILL_STOCK_BOOTSTRAP_PARALLELISM:4}
       sleep-ms: 200
-  tracked-funds: &mds-tracked-funds
-    # TI2/AFT/… + TP2 (Metro Portföy vb. — TEFAS kodu TP2). YAT dışı tip gerekiyorsa market.fund.tefas-fontip ile EMK/BYF denenebilir.
-    - TI2
-    - TP2
-    - AFT
-    - AFA
-    - AFO
-    - GTA
-  # tracked-symbols: defaults to TrackedCryptoSymbols.SYMBOLS (10 USDT pairs). Override here to subset.
-  tracked-symbols: []
-  tracked-stocks:
-    - GARAN
-    - THYAO
-    - ASELS
-    - AKBNK
-    - AVGYO
-    - EREGL
-    - BIMAS
-    - TUPRS
-    - ISCTR
-    - SAHOL
-    - AVPGY
-    - SARKY
-    - AAPL
-    - AMZN
-    - NVDA
-    - MSFT
-    - GOOGL
-    - TSLA
-    - META
-    - AVGO
-    - AMD
-    - NFLX
-    - INTC
-    - CSCO
-    - VOO
-    - VTI
-    - QQQ
-    - IVV
-    - SPY
-    - GC=F
-    - SI=F
-    - HG=F
-    - PA=F
-    - PL=F
   provider: composite
   fundamentals:
     cache-ttl-hours: ${MARKET_FUNDAMENTALS_CACHE_TTL_HOURS:24}
@@ -250,7 +193,6 @@ market:
   fund:
     scheduler-enabled: false
     delay-ms: 3600000
-    tracked-fund-codes: *mds-tracked-funds
     http-url-template: ""
     # Legacy form POST (often 404 after TEFAS site migration); prefer tefas-fon-gnl-blg-url.
     tefas-bind-history-url: https://www.tefas.gov.tr/api/DB/BindHistoryInfo
@@ -282,18 +224,7 @@ market:
       lookback-days: ${MARKET_BOND_HISTORY_REFRESH_LOOKBACK_DAYS:60}
       chunk-spacing-ms: ${MARKET_BOND_HISTORY_REFRESH_CHUNK_SPACING_MS:400}
       cron: ${MARKET_BOND_HISTORY_REFRESH_CRON:0 15 8 * * *}
-    tracked:
-      - symbol: TRBOND1Y
-        evds-series: TP.KTF10
-      - symbol: TRBOND2Y
-        evds-series: TP.KTF11
-      - symbol: TRBOND3Y
-        evds-series: TP.KTF12
-      - symbol: TRBOND5Y
-        evds-series: TP.KTF13
-      - symbol: TRBOND10Y
-        evds-series: TP.KTF14
-  # Türkiye USD Hazine benchmark (BloombergHT / Yahoo: GTUSDTR{n}Y:GOV) → canonical TRGOVUSD*
+  # Türkiye USD Hazine benchmark — tracked series: catalog.registry.providers.EurobondRegistry
   tr-gov-usd-eurobond:
     history-bootstrap:
       enabled: ${MARKET_TRGOVUSD_HISTORY_BOOTSTRAP_ENABLED:false}
@@ -307,23 +238,6 @@ market:
       chart-range: ${MARKET_TRGOVUSD_REFRESH_CHART_RANGE:5y}
       chart-interval: ${MARKET_TRGOVUSD_REFRESH_CHART_INTERVAL:1d}
       chunk-spacing-ms: ${MARKET_TRGOVUSD_REFRESH_CHUNK_SPACING_MS:400}
-    tracked:
-      - canonical: TRGOVUSD1Y
-        yahoo-chart-symbol: GTUSDTR1Y:GOV
-      - canonical: TRGOVUSD2Y
-        yahoo-chart-symbol: GTUSDTR2Y:GOV
-      - canonical: TRGOVUSD3Y
-        yahoo-chart-symbol: GTUSDTR3Y:GOV
-      - canonical: TRGOVUSD4Y
-        yahoo-chart-symbol: GTUSDTR4Y:GOV
-      - canonical: TRGOVUSD5Y
-        yahoo-chart-symbol: GTUSDTR5Y:GOV
-      - canonical: TRGOVUSD6Y
-        yahoo-chart-symbol: GTUSDTR6Y:GOV
-      - canonical: TRGOVUSD8Y
-        yahoo-chart-symbol: GTUSDTR8Y:GOV
-      - canonical: TRGOVUSD15Y
-        yahoo-chart-symbol: GTUSDTR15Y:GOV
   stock:
     shares-verification:
       enabled: ${MARKET_STOCK_SHARES_VERIFICATION_ENABLED:true}

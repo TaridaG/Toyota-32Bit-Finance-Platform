@@ -39,7 +39,7 @@ export async function fetchNotificationsPage(
   page = 0,
   size = 20,
 ): Promise<NotificationPage> {
-  const { data } = await apiClient.get<ApiEnvelope<NotificationPage>>('/api/notifications', {
+  const { data } = await apiClient.get<ApiEnvelope<NotificationPage>>('/api/v1/notifications', {
     params: { page, size },
   })
   const body = unwrap(data)
@@ -59,17 +59,17 @@ export async function fetchNotificationPreview(limit = 8): Promise<NotificationP
 
 export async function markNotificationRead(id: number): Promise<PortalNotification | null> {
   const { data } = await apiClient.patch<ApiEnvelope<PortalNotification>>(
-    `/api/notifications/${id}/read`,
+    `/api/v1/notifications/${id}/read`,
   )
   return unwrap(data)
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await apiClient.patch('/api/notifications/read-all')
+  await apiClient.patch('/api/v1/notifications/read-all')
 }
 
 export async function deleteNotification(id: number): Promise<void> {
-  await apiClient.delete(`/api/notifications/${id}`)
+  await apiClient.delete(`/api/v1/notifications/${id}`)
 }
 
 /** Header bell preview listens for this after inbox changes. */

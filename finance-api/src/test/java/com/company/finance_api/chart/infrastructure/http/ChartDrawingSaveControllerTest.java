@@ -35,7 +35,7 @@ class ChartDrawingSaveControllerTest {
         .thenReturn(new ChartDrawingSavePageResponse(List.of(), 0, 10, 0, 0));
 
     mockMvc
-        .perform(get("/api/chart-drawings/mine"))
+        .perform(get("/api/v1/chart-drawings/mine"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.page").value(0));

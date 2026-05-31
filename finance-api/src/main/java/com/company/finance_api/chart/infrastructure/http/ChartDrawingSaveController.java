@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Kullanıcı grafik çizim kayıtlarının CRUD endpoint'lerini sunar. */
 @RestController
-@RequestMapping("/api/chart-drawings")
+@RequestMapping("/api/v1/chart-drawings")
 public class ChartDrawingSaveController {
 
   private final ChartDrawingSaveService chartDrawingSaveService;

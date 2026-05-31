@@ -4,12 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.company.marketdataservice.bootstrap.config.HotReadCacheProperties;
 import com.company.marketdataservice.bootstrap.config.TcmbBondMarketProperties;
+import com.company.marketdataservice.shared.cache.JsonCacheService;
 import com.company.marketdataservice.history.infrastructure.persistence.FundNavHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.shared.provider.tcmb.TcmbBondEvdsClient;
-import com.company.marketdataservice.spot.application.MetalFuturesMarketEnricher;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceDto;
 import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
 import java.math.BigDecimal;
@@ -42,10 +43,12 @@ class MarketDataReadServiceImplCryptoFallbackTest {
     private TcmbBondEvdsClient tcmbBondEvdsClient;
 
     @Mock
-    private MetalFuturesMarketEnricher metalFuturesMarketEnricher;
+    private JsonCacheService jsonCacheService;
 
     @Test
     void getLatestPrices_mergesCryptoFromDbWhenSnapshotWarm() {
+        HotReadCacheProperties hotReadCacheProperties = new HotReadCacheProperties();
+        hotReadCacheProperties.setEnabled(false);
         when(snapshotStore.listPrices())
                 .thenReturn(List.of(MarketPriceDto.basic("GARAN", new BigDecimal("410"), "YAHOO", Instant.now())));
         when(snapshotStore.listFunds()).thenReturn(List.of());
@@ -53,8 +56,6 @@ class MarketDataReadServiceImplCryptoFallbackTest {
         when(marketPriceHistoryRepository.findLatestTrbondPricesPerSymbol()).thenReturn(List.of());
         when(marketPriceHistoryRepository.findLatestCryptoPricesPerSymbol())
                 .thenReturn(List.of(cryptoRow("BTCUSDT", "95000")));
-        when(metalFuturesMarketEnricher.enrich(org.mockito.ArgumentMatchers.anyList()))
-                .thenAnswer(inv -> inv.getArgument(0));
 
         MarketDataReadServiceImpl svc =
                 new MarketDataReadServiceImpl(
@@ -64,7 +65,8 @@ class MarketDataReadServiceImplCryptoFallbackTest {
                         fundNavHistoryRepository,
                         bondMarketProperties,
                         tcmbBondEvdsClient,
-                        metalFuturesMarketEnricher);
+                        jsonCacheService,
+                        hotReadCacheProperties);
 
         List<MarketPriceDto> crypto = svc.getLatestPrices("crypto");
         assertEquals(1, crypto.size());

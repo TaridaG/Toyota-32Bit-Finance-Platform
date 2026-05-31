@@ -1,10 +1,10 @@
 package com.company.finance_api.infocards.infrastructure.http;
 
-import com.company.finance_api.infocards.InfoCardService;
-import com.company.finance_api.infocards.dto.InfoCardDto;
-import com.company.finance_api.infocards.dto.InfoCardInputDto;
-import com.company.finance_api.infocards.dto.InfoCardsDashboardDto;
-import com.company.finance_api.infocards.dto.InfoCardsPageDto;
+import com.company.finance_api.infocards.application.InfoCardService;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardDto;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardInputDto;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardsDashboardDto;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardsPageDto;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Admin info-card yönetim REST endpoint'leri. */
 @RestController
-@RequestMapping("/api/admin/info-cards")
+@RequestMapping("/api/v1/admin/info-cards")
 public class AdminInfoCardsController {
 
   private final InfoCardService infoCardService;

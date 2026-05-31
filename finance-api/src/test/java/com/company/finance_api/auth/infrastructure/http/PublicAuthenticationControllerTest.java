@@ -6,9 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.auth.LoginCompletionResult;
-import com.company.finance_api.auth.PortalLoginService;
-import com.company.finance_api.dto.PublicLoginResponse;
+import com.company.finance_api.auth.domain.LoginCompletionResult;
+import com.company.finance_api.auth.application.PortalLoginService;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class PublicAuthenticationControllerTest {
 
     mockMvc
         .perform(
-            post("/api/public/login")
+            post("/api/v1/public/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -56,7 +56,7 @@ class PublicAuthenticationControllerTest {
   void login_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/public/login")
+            post("/api/v1/public/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """

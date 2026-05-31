@@ -6,9 +6,9 @@ import com.company.finance_api.admin.infrastructure.http.dto.AdminPortfolioAnaly
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortfolioDailyCreationDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminRecentPortfolioRowDto;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.portfolio.external.repository.ExternalPositionLotRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPositionLotRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.sql.Timestamp;
 import java.time.DayOfWeek;
 import java.time.Instant;

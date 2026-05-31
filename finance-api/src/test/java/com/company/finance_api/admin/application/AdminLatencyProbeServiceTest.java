@@ -8,10 +8,10 @@ import static org.mockito.Mockito.when;
 
 import com.company.finance_api.admin.infrastructure.http.dto.AdminLatencySnapshotSaveRequest;
 import com.company.finance_api.admin.infrastructure.http.dto.LatencySampleDto;
-import com.company.finance_api.domain.AdminLatencyProbeRun;
-import com.company.finance_api.domain.AdminLatencyProbeSample;
-import com.company.finance_api.repository.AdminLatencyProbeRunRepository;
-import com.company.finance_api.repository.AdminLatencyProbeSampleRepository;
+import com.company.finance_api.admin.domain.AdminLatencyProbeRun;
+import com.company.finance_api.admin.domain.AdminLatencyProbeSample;
+import com.company.finance_api.admin.infrastructure.persistence.AdminLatencyProbeRunRepository;
+import com.company.finance_api.admin.infrastructure.persistence.AdminLatencyProbeSampleRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -62,8 +62,8 @@ class AdminLatencyProbeServiceTest {
         service.saveFromClientSamples(
             new AdminLatencySnapshotSaveRequest(
                 List.of(
-                    new LatencySampleDto("/api/admin/metrics/portal-users", 10.0),
-                    new LatencySampleDto("/api/admin/metrics/portal-portfolios", 20.0))));
+                    new LatencySampleDto("/api/v1/admin/metrics/portal-users", 10.0),
+                    new LatencySampleDto("/api/v1/admin/metrics/portal-portfolios", 20.0))));
 
     assertThat(dto.id()).isEqualTo(42L);
     assertThat(dto.sampleCount()).isEqualTo(2);

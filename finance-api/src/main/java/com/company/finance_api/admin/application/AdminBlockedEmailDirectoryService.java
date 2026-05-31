@@ -2,11 +2,11 @@ package com.company.finance_api.admin.application;
 
 import com.company.finance_api.admin.infrastructure.http.dto.AdminBlockedEmailRowDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminBlockedEmailsPageDto;
-import com.company.finance_api.auth.LoginSecurityNotificationService;
-import com.company.finance_api.domain.BlockedRegistrationEmail;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.BlockedRegistrationEmailRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.auth.application.LoginSecurityNotificationService;
+import com.company.finance_api.registration.domain.BlockedRegistrationEmail;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.registration.infrastructure.persistence.BlockedRegistrationEmailRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
 import java.util.UUID;
 import org.springframework.data.domain.Page;

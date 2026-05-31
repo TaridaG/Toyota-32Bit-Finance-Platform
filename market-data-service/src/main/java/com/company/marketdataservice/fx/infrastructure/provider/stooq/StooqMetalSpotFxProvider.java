@@ -1,5 +1,7 @@
 package com.company.marketdataservice.fx.infrastructure.provider.stooq;
 import com.company.marketdataservice.fx.domain.FxSnapshot;
+import com.company.marketdataservice.spot.infrastructure.provider.yahoo.YahooFinanceClient;
+import com.company.marketdataservice.spot.infrastructure.provider.yahoo.YahooFinanceResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -48,17 +50,21 @@ public class StooqMetalSpotFxProvider {
             "XCUUSD", "XCUTRY"
     );
 
+    private static final String YAHOO_COPPER_FUTURES = "HG=F";
+
     private final WebClient fxWebClient;
     private final ObjectMapper objectMapper;
+    private final YahooFinanceClient yahooFinanceClient;
     private final String mintedMetalUrl;
     private final String stooqUrlTemplate;
 
     @Autowired
     public StooqMetalSpotFxProvider(
             @Qualifier("fxWebClient") WebClient fxWebClient,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            YahooFinanceClient yahooFinanceClient
     ) {
-        this(fxWebClient, objectMapper, MINTED_METAL_URL, STOOQ_URL_TEMPLATE);
+        this(fxWebClient, objectMapper, yahooFinanceClient, MINTED_METAL_URL, STOOQ_URL_TEMPLATE);
     }
 
     StooqMetalSpotFxProvider(
@@ -67,8 +73,19 @@ public class StooqMetalSpotFxProvider {
             String mintedMetalUrl,
             String stooqUrlTemplate
     ) {
+        this(fxWebClient, objectMapper, null, mintedMetalUrl, stooqUrlTemplate);
+    }
+
+    StooqMetalSpotFxProvider(
+            WebClient fxWebClient,
+            ObjectMapper objectMapper,
+            YahooFinanceClient yahooFinanceClient,
+            String mintedMetalUrl,
+            String stooqUrlTemplate
+    ) {
         this.fxWebClient = fxWebClient;
         this.objectMapper = objectMapper;
+        this.yahooFinanceClient = yahooFinanceClient;
         this.mintedMetalUrl = mintedMetalUrl;
         this.stooqUrlTemplate = stooqUrlTemplate;
     }
@@ -84,8 +101,8 @@ public class StooqMetalSpotFxProvider {
         List<FxSnapshot> mintedSnapshots = fetchMintedMetalRates(usdTry, observedAtFallback);
         if (!mintedSnapshots.isEmpty()) {
             List<FxSnapshot> out = new ArrayList<>(mintedSnapshots);
-            fetchStooqQuote("XCUUSD")
-                    .map(quote -> toSnapshot("XCUTRY", quote.priceUsd(), usdTry, quote.timestamp(), "STOOQ_SPOT"))
+            fetchCopperQuote()
+                    .map(quote -> toSnapshot("XCUTRY", quote.priceUsd(), usdTry, quote.timestamp(), quote.source()))
                     .ifPresent(out::add);
             return out;
         }
@@ -137,6 +154,42 @@ public class StooqMetalSpotFxProvider {
         }
     }
 
+    private Optional<SpotQuote> fetchCopperQuote() {
+        Optional<SpotQuote> stooq = fetchStooqQuote("XCUUSD");
+        if (stooq.isPresent()) {
+            return Optional.of(new SpotQuote(stooq.get().priceUsd(), stooq.get().timestamp(), "STOOQ_SPOT"));
+        }
+        return fetchYahooCopperQuote();
+    }
+
+    private Optional<SpotQuote> fetchYahooCopperQuote() {
+        if (yahooFinanceClient == null) {
+            return Optional.empty();
+        }
+        try {
+            YahooFinanceResponse response = yahooFinanceClient.fetchSpotChart(YAHOO_COPPER_FUTURES);
+            if (response == null || response.chart() == null || response.chart().result() == null) {
+                return Optional.empty();
+            }
+            for (YahooFinanceResponse.Result result : response.chart().result()) {
+                if (result == null || result.meta() == null || result.meta().regularMarketPrice() == null) {
+                    continue;
+                }
+                Double price = result.meta().regularMarketPrice();
+                if (price <= 0d) {
+                    continue;
+                }
+                Instant ts = result.meta().regularMarketTime() == null
+                        ? Instant.now()
+                        : Instant.ofEpochSecond(result.meta().regularMarketTime());
+                return Optional.of(new SpotQuote(BigDecimal.valueOf(price), ts, "YAHOO_DERIVED_SPOT"));
+            }
+        } catch (Exception ex) {
+            log.debug("YAHOO_COPPER_SPOT_FAILED reason={}", ex.getMessage());
+        }
+        return Optional.empty();
+    }
+
     private Optional<SpotQuote> fetchStooqQuote(String symbol) {
         String url = stooqUrlTemplate.formatted(symbol.toLowerCase());
         try {
@@ -159,7 +212,7 @@ public class StooqMetalSpotFxProvider {
             BigDecimal close = new BigDecimal(parts[6].trim());
             LocalDate date = LocalDate.parse(parts[1].trim(), STOOQ_DATE);
             Instant ts = date.atStartOfDay().toInstant(java.time.ZoneOffset.UTC);
-            return Optional.of(new SpotQuote(close, ts));
+            return Optional.of(new SpotQuote(close, ts, "STOOQ_SPOT"));
         } catch (Exception ex) {
             log.debug("STOOQ_SPOT_FETCH_FAILED symbol={} reason={}", symbol, ex.getMessage());
             return Optional.empty();
@@ -169,12 +222,14 @@ public class StooqMetalSpotFxProvider {
     private List<FxSnapshot> fetchLegacyStooqRates(BigDecimal usdTry) {
         List<FxSnapshot> out = new ArrayList<>();
         for (Map.Entry<String, String> entry : STOOQ_SPOT_TO_CANONICAL.entrySet()) {
-            Optional<SpotQuote> quoteOpt = fetchStooqQuote(entry.getKey());
+            Optional<SpotQuote> quoteOpt = "XCUUSD".equals(entry.getKey())
+                    ? fetchCopperQuote()
+                    : fetchStooqQuote(entry.getKey());
             if (quoteOpt.isEmpty()) {
                 continue;
             }
             SpotQuote quote = quoteOpt.get();
-            out.add(toSnapshot(entry.getValue(), quote.priceUsd(), usdTry, quote.timestamp(), "STOOQ_SPOT"));
+            out.add(toSnapshot(entry.getValue(), quote.priceUsd(), usdTry, quote.timestamp(), quote.source()));
         }
         return out;
     }
@@ -213,6 +268,6 @@ public class StooqMetalSpotFxProvider {
         }
     }
 
-    private record SpotQuote(BigDecimal priceUsd, Instant timestamp) {
+    private record SpotQuote(BigDecimal priceUsd, Instant timestamp, String source) {
     }
 }

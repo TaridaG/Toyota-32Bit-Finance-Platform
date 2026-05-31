@@ -5,8 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.dto.PortalProfileResponse;
-import com.company.finance_api.profile.PortalProfileService;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalProfileResponse;
+import com.company.finance_api.profile.application.PortalProfileService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,7 @@ class PortalProfileControllerTest {
                 false));
 
     mockMvc
-        .perform(get("/api/portal/profile"))
+        .perform(get("/api/v1/portal/profile"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.username").value("trader"));

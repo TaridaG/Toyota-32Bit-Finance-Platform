@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.auth.PortalTrustedDeviceService;
-import com.company.finance_api.dto.PortalTrustedDevicesResponseDto;
+import com.company.finance_api.auth.application.PortalTrustedDeviceService;
+import com.company.finance_api.auth.infrastructure.http.dto.PortalTrustedDevicesResponseDto;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
@@ -43,7 +43,7 @@ class PortalTrustedDevicesControllerTest {
         .thenReturn(new PortalTrustedDevicesResponseDto(true, List.of()));
 
     mockMvc
-        .perform(get("/api/portal/profile/trusted-devices"))
+        .perform(get("/api/v1/portal/profile/trusted-devices"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.devices").isArray());
@@ -56,7 +56,7 @@ class PortalTrustedDevicesControllerTest {
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
 
     mockMvc
-        .perform(delete("/api/portal/profile/trusted-devices/" + deviceId))
+        .perform(delete("/api/v1/portal/profile/trusted-devices/" + deviceId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 

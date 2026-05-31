@@ -58,7 +58,7 @@ function parseLoginEnvelope(data: LoginEnvelope): PortalLoginResult {
 }
 
 export async function loginWithPortalPassword(username: string, password: string): Promise<PortalLoginResult> {
-  const { data } = await apiClient.post<LoginEnvelope>('/api/public/login', { username, password })
+  const { data } = await apiClient.post<LoginEnvelope>('/api/v1/public/login', { username, password })
   return parseLoginEnvelope(data)
 }
 
@@ -67,7 +67,7 @@ export async function verifyPortalLoginMfa(
   code: string,
   trustDevice: boolean,
 ): Promise<PortalLoginTokens> {
-  const { data } = await apiClient.post<LoginEnvelope>('/api/public/login/mfa', {
+  const { data } = await apiClient.post<LoginEnvelope>('/api/v1/public/login/mfa', {
     challengeId,
     code,
     trustDevice,

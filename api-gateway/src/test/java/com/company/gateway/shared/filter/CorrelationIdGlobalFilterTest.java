@@ -17,7 +17,7 @@ class CorrelationIdGlobalFilterTest {
     @Test
     void filter_preservesIncomingCorrelationId() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/market/prices")
+                MockServerHttpRequest.get("/api/v1/market/prices")
                         .header(CorrelationIdGlobalFilter.CORRELATION_ID, "corr-existing")
                         .build()
         );
@@ -35,7 +35,7 @@ class CorrelationIdGlobalFilterTest {
     @Test
     void filter_generatesCorrelationIdWhenMissing() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/news").build()
+                MockServerHttpRequest.get("/api/v1/news").build()
         );
         AtomicReference<String> forwarded = new AtomicReference<>();
 

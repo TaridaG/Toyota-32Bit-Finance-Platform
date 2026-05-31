@@ -1,22 +1,31 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.*;
-import com.company.finance_api.domain.enums.PurchaseMode;
-import com.company.finance_api.domain.enums.TradeInputMode;
-import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.dto.AcquisitionFxRatesSnapshot;
-import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
-import com.company.finance_api.dto.TradeExecutionRequest;
-import com.company.finance_api.dto.TradePreviewResponse;
-import com.company.finance_api.event.TransactionExecutedEvent;
-import com.company.finance_api.event.publisher.TransactionEventPublisher;
-import com.company.finance_api.portfolio.FxHistoricalAnchor;
-import com.company.finance_api.portfolio.InstrumentListingCurrency;
-import com.company.finance_api.portfolio.MdsInstrumentSymbolAliases;
-import com.company.finance_api.portfolio.TlDepositInstruments;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.TransactionAcquisitionFx;
+import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
+import com.company.finance_api.portfolio.domain.enums.TradeInputMode;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
+import com.company.finance_api.portfolio.infrastructure.http.dto.AcquisitionFxRatesSnapshot;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionAcquisitionFxRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.pricing.infrastructure.http.dto.InstrumentPriceCoverageResponse;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradeExecutionRequest;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradePreviewResponse;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
+import com.company.finance_api.shared.messaging.event.TransactionExecutedEvent;
+import com.company.finance_api.shared.messaging.event.publisher.TransactionEventPublisher;
+import com.company.finance_api.portfolio.domain.FxHistoricalAnchor;
+import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
+import com.company.finance_api.portfolio.domain.MdsInstrumentSymbolAliases;
+import com.company.finance_api.portfolio.domain.TlDepositInstruments;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.repository.*;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.pricing.infrastructure.query.TlDepositIndexQueryService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
@@ -53,11 +62,8 @@ public class TradeServiceImpl implements TradeService {
   private final ExternalPortfolioRepository externalPortfolioRepository;
   private final TransactionEventPublisher transactionEventPublisher;
   private final TlDepositIndexQueryService tlDepositIndexQueryService;
-  private static final List<com.company.finance_api.domain.enums.PriceType> VALUATION_PRICE_TYPES =
-      List.of(
-          com.company.finance_api.domain.enums.PriceType.MARKET,
-          com.company.finance_api.domain.enums.PriceType.FX_MID,
-          com.company.finance_api.domain.enums.PriceType.FUND_NAV);
+  private static final List<PriceType> VALUATION_PRICE_TYPES =
+      List.of(PriceType.MARKET, PriceType.FX_MID, PriceType.FUND_NAV);
 
   /** buy işlemini gerçekleştirir. */
   @Override
@@ -432,7 +438,7 @@ public class TradeServiceImpl implements TradeService {
           .map(InstrumentPrice::getPrice)
           .orElseThrow(() -> new IllegalStateException("Price not available"));
     }
-    for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
+    for (PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<BigDecimal> found =
           instrumentPriceRepository
               .findTopByInstrumentAndPriceTypeOrderByTimestampDesc(instrument, priceType)
@@ -476,7 +482,7 @@ public class TradeServiceImpl implements TradeService {
     if (symbols.isEmpty()) {
       return Optional.empty();
     }
-    for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
+    for (PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<BigDecimal> found =
           instrumentPriceRepository
               .findLatestPricesAtOrBefore(symbols, priceType.name(), target)
@@ -653,7 +659,7 @@ public class TradeServiceImpl implements TradeService {
     if (TlDepositInstruments.isTlDeposit(instrument)) {
       return tlDepositIndexQueryService.getFirstAvailableInstant(instrument);
     }
-    for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
+    for (PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<Instant> found =
           instrumentPriceRepository
               .findTopByInstrumentAndPriceTypeOrderByTimestampAsc(instrument, priceType)
@@ -669,7 +675,7 @@ public class TradeServiceImpl implements TradeService {
     if (TlDepositInstruments.isTlDeposit(instrument)) {
       return tlDepositIndexQueryService.getLastAvailableInstant(instrument);
     }
-    for (com.company.finance_api.domain.enums.PriceType priceType : VALUATION_PRICE_TYPES) {
+    for (PriceType priceType : VALUATION_PRICE_TYPES) {
       Optional<Instant> found =
           instrumentPriceRepository
               .findTopByInstrumentAndPriceTypeOrderByTimestampDesc(instrument, priceType)

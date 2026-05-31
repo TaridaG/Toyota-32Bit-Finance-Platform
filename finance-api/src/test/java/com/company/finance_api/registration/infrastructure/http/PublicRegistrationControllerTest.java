@@ -8,10 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
-import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
-import com.company.finance_api.registration.PortalRegistrationService;
-import com.company.finance_api.registration.RegistrationEmailVerificationService;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicUsernameAvailabilityResponse;
+import com.company.finance_api.registration.application.PortalRegistrationService;
+import com.company.finance_api.registration.application.RegistrationEmailVerificationService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;
@@ -43,7 +43,7 @@ class PublicRegistrationControllerTest {
 
     mockMvc
         .perform(
-            post("/api/public/register/send-code")
+            post("/api/v1/public/register/send-code")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -60,7 +60,7 @@ class PublicRegistrationControllerTest {
         .thenReturn(new PublicUsernameAvailabilityResponse("trader", true, List.of()));
 
     mockMvc
-        .perform(get("/api/public/register/username-availability").param("username", "trader"))
+        .perform(get("/api/v1/public/register/username-availability").param("username", "trader"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.available").value(true));
@@ -70,7 +70,7 @@ class PublicRegistrationControllerTest {
   void register_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/public/register")
+            post("/api/v1/public/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
         .andExpect(status().isBadRequest())

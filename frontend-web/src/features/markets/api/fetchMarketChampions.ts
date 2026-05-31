@@ -23,7 +23,7 @@ async function fetchPricesSummaryChange1W(symbols: string[]): Promise<Record<str
   for (let i = 0; i < symbols.length; i += SUMMARY_REQUEST_CHUNK) {
     const chunk = symbols.slice(i, i + SUMMARY_REQUEST_CHUNK)
     try {
-      const response = await apiClient.get<Record<string, { change1W?: number }>>('/api/market/prices/summary', {
+      const response = await apiClient.get<Record<string, { change1W?: number }>>('/api/v1/market/prices/summary', {
         params: { symbols: chunk.join(',') },
       })
       const data = response.data ?? {}

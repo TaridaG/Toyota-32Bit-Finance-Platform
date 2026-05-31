@@ -7,9 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-/**
- * Test profili için sadeleştirilmiş Gateway route tanımları (v1 + legacy {@code /api/**}).
- */
+/** Test profili için sadeleştirilmiş gateway route tanımları. */
 @Configuration
 @Profile("test")
 public class TestGatewayRoutesConfig {
@@ -31,91 +29,34 @@ public class TestGatewayRoutesConfig {
         return builder.routes()
                 .route("v1-finance-api-public", r -> r.order(-2)
                         .path("/api/v1/public/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(financeBaseUri))
                 .route("v1-finance-market-overview-insights", r -> r.order(-13)
                         .path(
                                 "/api/v1/market/overview", "/api/v1/market/overview/",
                                 "/api/v1/market/insights", "/api/v1/market/insights/")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(financeBaseUri))
                 .route("v1-finance-market-eurobonds-tr", r -> r.order(-14)
                         .path("/api/v1/market/eurobonds/tr", "/api/v1/market/eurobonds/tr/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(financeBaseUri))
                 .route("v1-market-data-service-api", r -> r.order(-8)
                         .path("/api/v1/market/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(marketBaseUri))
                 .route("v1-market-data-service-rates", r -> r.order(-12)
                         .path("/api/v1/rates/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(marketBaseUri))
                 .route("v1-finance-api-news-enriched", r -> r.order(-11)
                         .path(
                                 "/api/v1/news/enriched", "/api/v1/news/enriched/", "/api/v1/news/enriched/**",
                                 "/api/v1/news/favorites", "/api/v1/news/favorites/", "/api/v1/news/favorites/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(financeBaseUri))
                 .route("v1-news-service", r -> r.order(-10)
                         .path("/api/v1/news/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(newsBaseUri))
                 .route("v1-analytics-service", r -> r.order(-6)
                         .path("/api/v1/analytics/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
                         .uri(analyticsBaseUri))
                 .route("v1-finance-api", r -> r.order(-3)
-                        .path("/api/v1/**")
-                        .filters(f -> f.rewritePath(
-                                ApiVersionPathSupport.REWRITE_API_V1_PATTERN,
-                                ApiVersionPathSupport.REWRITE_API_V1_REPLACEMENT))
-                        .uri(financeBaseUri))
-                .route("finance-api-public", r -> r.order(-1)
-                        .path("/api/public/**")
-                        .uri(financeBaseUri))
-                .route("finance-market-overview", r -> r.order(-12)
-                        .path("/api/market/overview", "/api/market/overview/")
-                        .uri(financeBaseUri))
-                .route("finance-market-eurobonds-tr", r -> r.order(-13)
-                        .path("/api/market/eurobonds/tr", "/api/market/eurobonds/tr/**")
-                        .uri(financeBaseUri))
-                .route("market-data-service-api", r -> r.path("/api/market/**")
-                        .uri(marketBaseUri))
-                .route("market-data-service-rates", r -> r.order(-11)
-                        .path("/api/rates/**")
-                        .uri(marketBaseUri))
-                .route("market-data-service-legacy", r -> r.path("/market/**")
-                        .filters(f -> f
-                                .rewritePath("/market/(?<segment>.*)", "/api/market/${segment}"))
-                        .uri(marketBaseUri))
-                .route("finance-api-news-enriched", r -> r.order(-10)
-                        .path(
-                                "/api/news/enriched", "/api/news/enriched/", "/api/news/enriched/**",
-                                "/api/news/favorites", "/api/news/favorites/", "/api/news/favorites/**")
-                        .uri(financeBaseUri))
-                .route("news-service", r -> r.order(-9).path("/api/news/**")
-                        .uri(newsBaseUri))
-                .route("analytics-service", r -> r.path("/api/analytics/**")
-                        .uri(analyticsBaseUri))
-                .route("finance-api", r -> r.path("/api/**", "/health")
-                        .and().not(p -> p.path("/api/v1/**"))
+                        .path("/api/v1/**", "/health")
                         .uri(financeBaseUri))
                 .build();
     }

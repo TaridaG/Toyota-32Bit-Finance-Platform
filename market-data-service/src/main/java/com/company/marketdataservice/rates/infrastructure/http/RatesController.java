@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
  * `makro oran` REST endpoint'lerini expose eden HTTP controller.
  */
 @RestController
-@RequestMapping("/api/rates")
+@RequestMapping("/api/v1/rates")
 public class RatesController {
 
     private final PolicyRateHistoryService policyRateHistoryService;

@@ -32,7 +32,7 @@ class AnalyticsControllerTest {
     void getCandles_returnsSuccessEnvelope() throws Exception {
         when(analyticsQueryService.getCandles("BTCUSDT", null, null)).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/analytics/instruments/BTCUSDT/candles"))
+        mockMvc.perform(get("/api/v1/analytics/instruments/BTCUSDT/candles"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray());
@@ -40,7 +40,7 @@ class AnalyticsControllerTest {
 
     @Test
     void getCandles_invalidInterval_returnsBadRequestEnvelope() throws Exception {
-        mockMvc.perform(get("/api/analytics/instruments/BTCUSDT/candles")
+        mockMvc.perform(get("/api/v1/analytics/instruments/BTCUSDT/candles")
                         .param("interval", "INVALID"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))

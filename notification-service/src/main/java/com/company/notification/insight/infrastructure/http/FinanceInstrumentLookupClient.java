@@ -36,7 +36,7 @@ public class FinanceInstrumentLookupClient {
         if (base.isEmpty()) {
             return Optional.empty();
         }
-        String url = base.endsWith("/") ? base + "api/instruments" : base + "/api/instruments";
+        String url = base.endsWith("/") ? base + "api/v1/instruments" : base + "/api/v1/instruments";
         try {
             String body = restTemplate.getForObject(url, String.class);
             if (body == null || body.isBlank()) {

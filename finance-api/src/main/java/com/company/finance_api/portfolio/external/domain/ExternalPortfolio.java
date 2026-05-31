@@ -1,6 +1,6 @@
 package com.company.finance_api.portfolio.external.domain;
 
-import com.company.finance_api.domain.User;
+import com.company.finance_api.profile.domain.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Locale;

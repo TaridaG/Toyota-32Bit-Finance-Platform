@@ -30,7 +30,7 @@ export type CpiHistoryResponse = {
 
 export async function fetchCpiLatest(metric: CpiMetricCode = 'YEARLY_PCT'): Promise<CpiLatestResponse> {
   return getCachedOrLoad(`faiz-vadeli:cpi:latest:${metric}`, LATEST_TTL_MS, async () => {
-    const { data } = await apiClient.get<CpiLatestResponse>('/api/rates/cpi/latest', { params: { metric } })
+    const { data } = await apiClient.get<CpiLatestResponse>('/api/v1/rates/cpi/latest', { params: { metric } })
     return data
   })
 }
@@ -40,7 +40,7 @@ export async function fetchCpiHistory(
   range: '5Y' = '5Y',
 ): Promise<CpiHistoryResponse> {
   return getCachedOrLoad(`faiz-vadeli:cpi:history:${metric}:${range}`, HISTORY_TTL_MS, async () => {
-    const { data } = await apiClient.get<CpiHistoryResponse>('/api/rates/cpi/history', {
+    const { data } = await apiClient.get<CpiHistoryResponse>('/api/v1/rates/cpi/history', {
       params: { metric, range },
     })
     return data

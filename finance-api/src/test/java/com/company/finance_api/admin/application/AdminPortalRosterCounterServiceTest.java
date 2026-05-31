@@ -6,8 +6,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.AdminPortalRosterCounters;
-import com.company.finance_api.repository.AdminPortalRosterCountersRepository;
+import com.company.finance_api.admin.domain.AdminPortalRosterCounters;
+import com.company.finance_api.admin.infrastructure.persistence.AdminPortalRosterCountersRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

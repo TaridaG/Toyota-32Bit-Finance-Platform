@@ -1,14 +1,14 @@
 package com.company.marketdataservice.spot.infrastructure.scheduler;
-import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
+
 import com.company.marketdataservice.bootstrap.config.FinnhubProperties;
-import com.company.marketdataservice.bootstrap.config.MetalFuturesSymbols;
-import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceDto;
-import com.company.marketdataservice.spot.infrastructure.provider.yahoo.YahooSpotQuote;
-import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
+import com.company.marketdataservice.catalog.application.InstrumentIngestScopeService;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;
-import com.company.marketdataservice.spot.infrastructure.kafka.MarketEventPublisher;
+import com.company.marketdataservice.catalog.registry.IngestInstrumentDef;
+import com.company.marketdataservice.catalog.registry.IngestProvider;
 import com.company.marketdataservice.shared.observation.MarketPriceObservation;
-import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
+import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
+import com.company.marketdataservice.spot.infrastructure.kafka.MarketEventPublisher;
+import com.company.marketdataservice.history.infrastructure.orchestration.StockHistoryBootstrapGuard;
 import com.company.marketdataservice.spot.infrastructure.provider.finnhub.FinnhubClient;
 import com.company.marketdataservice.spot.infrastructure.provider.yahoo.YahooFinanceProvider;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,11 +24,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Locale;
-import java.util.stream.Collectors;
 
 /**
- * `spot fiyat` verisini periyodik olarak fetch edip snapshot/Kafka'ya publish eden scheduler.
+ * Polls BIST and US equity definitions from the platform registry.
  */
 @Slf4j
 @Component
@@ -36,136 +34,89 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(name = "market.stock.scheduler.enabled", havingValue = "true", matchIfMissing = true)
 public class StockPriceScheduler {
 
-    private final MarketDataProperties properties;
+    private final InstrumentIngestScopeService ingestScope;
+    private final StockHistoryBootstrapGuard stockHistoryBootstrapGuard;
     private final FinnhubProperties finnhubProperties;
     private final FinnhubClient finnhubClient;
     private final YahooFinanceProvider yahooFinanceProvider;
     private final MarketEventPublisher publisher;
     private final InstrumentMappingService instrumentMappingService;
     private final MeterRegistry meterRegistry;
-    private final MarketSnapshotStore marketSnapshotStore;
 
     private final Set<String> mappingMissWarnFirstSeen = ConcurrentHashMap.newKeySet();
     private final Set<String> mappingHitCanonicalFirstSeen = ConcurrentHashMap.newKeySet();
 
-    /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
     @Scheduled(fixedDelayString = "${scheduler.stock.delay-ms:30000}")
     public void pullStockPrices() {
         log.info("STOCK SCHEDULER RUNNING");
-        List<String> stocks = properties.getTrackedStocks();
-        if (stocks == null || stocks.isEmpty()) {
+        List<IngestInstrumentDef> equities = ingestScope.resolvePolledEquityDefinitions();
+        if (equities.isEmpty()) {
             return;
         }
-        for (String symbol : stocks) {
+        for (IngestInstrumentDef def : equities) {
             try {
-                boolean finnhubOwned = isOwnedByFinnhub(symbol);
-                boolean metalFuture = !finnhubOwned && MetalFuturesSymbols.isFutures(symbol);
-                String source = finnhubOwned ? "FINNHUB" : yahooFinanceProvider.source();
+                String symbol = def.symbol();
+                if (!stockHistoryBootstrapGuard.isLiveAllowed(symbol)) {
+                    log.info("STOCK_DATA_WAITING_FOR_HISTORY symbol={}", symbol);
+                    continue;
+                }
+                String source;
                 BigDecimal price;
-                if (finnhubOwned) {
+                if (def.provider() == IngestProvider.FINNHUB && finnhubProperties.isEnabled()) {
+                    source = IngestProvider.FINNHUB.name();
                     price = finnhubClient.fetchLiveQuotePrice(symbol);
-                } else if (metalFuture) {
-                    YahooSpotQuote quote = yahooFinanceProvider.fetchSpotQuote(symbol);
-                    price = quote.price();
-                    marketSnapshotStore.recordMarketPriceDto(toMarketPriceDto(quote));
-                } else {
+                } else if (def.provider() == IngestProvider.YAHOO) {
+                    source = yahooFinanceProvider.source();
                     price = yahooFinanceProvider.fetchPrice(symbol);
-                }
-
-                var observation = new MarketPriceObservation(
-                        source,
-                        symbol,
-                        price,
-                        Instant.now()
-                );
-
-                Long instrumentId = instrumentMappingService
-                        .resolveInstrument(source, symbol)
-                        .orElse(null);
-
-                String provider = observation.provider() == null ? "" : observation.provider();
-                String mappingKey = provider + "|" + symbol;
-                if (instrumentId == null) {
-                    meterRegistry.counter(
-                            "market_data_mapping_miss_total",
-                            Tags.of(
-                                    "service", "market-data-service",
-                                    "provider", provider.isEmpty() ? "UNKNOWN" : provider,
-                                    "symbol", symbol,
-                                    "reason", "mapping_not_found"
-                            )
-                    ).increment();
-                    if (mappingMissWarnFirstSeen.add(mappingKey)) {
-                        log.warn(
-                                "mapping_miss_first_seen service=market-data-service provider={} symbol={} reason=mapping_not_found event_contract=instrumentSymbol_only event_canonical_instrument_id=absent domain=stock",
-                                provider,
-                                symbol
-                        );
-                    } else {
-                        log.debug(
-                                "mapping_miss_repeat service=market-data-service provider={} symbol={} reason=mapping_not_found domain=stock",
-                                provider,
-                                symbol
-                        );
-                    }
                 } else {
-                    if (mappingHitCanonicalFirstSeen.add(mappingKey)) {
-                        log.info(
-                                "canonical_mapping_hit_first_seen service=market-data-service provider={} symbol={} instrumentId={} contract_note=instrumentId_is_canonical_finance_identity_when_seed_aligned event_canonical_instrument_id=present domain=stock",
-                                provider,
-                                symbol,
-                                instrumentId
-                        );
-                    }
+                    log.debug("STOCK_SCHEDULER_SKIP symbol={} provider={}", symbol, def.provider());
+                    continue;
                 }
 
+                var observation = new MarketPriceObservation(source, symbol, price, Instant.now());
+                Long instrumentId = instrumentMappingService.resolveInstrument(source, symbol).orElse(null);
+                recordMappingMetrics(source, symbol, instrumentId);
                 publisher.publishMarketPriceUpdated(
-                        MarketPriceUpdatedEvent.of(
-                                symbol,
-                                price,
-                                "MARKET",
-                                source,
-                                instrumentId
-                        )
-                );
-
+                        MarketPriceUpdatedEvent.of(symbol, price, "MARKET", source, instrumentId));
                 log.info(
                         "STOCK_DATA_PUBLISHED source={}, symbol={}, price={}, instrumentId={}, observation={}",
                         observation.provider(),
                         observation.symbol(),
                         observation.price(),
                         instrumentId,
-                        observation
-                );
+                        observation);
             } catch (Exception e) {
-                log.error("STOCK_DATA_ERROR symbol={}, error={}", symbol, e.getMessage());
+                log.error("STOCK_DATA_ERROR symbol={}, error={}", def.symbol(), e.getMessage());
             }
         }
     }
 
-    private static MarketPriceDto toMarketPriceDto(YahooSpotQuote quote) {
-        String linkedSpot = MetalFuturesSymbols.linkedSpotTry(quote.symbol());
-        return new MarketPriceDto(
-                quote.symbol(),
-                quote.price(),
-                quote.source(),
-                quote.timestamp(),
-                quote.volume24h(),
-                quote.openInterest(),
-                quote.dayOpen(),
-                quote.dayHigh(),
-                quote.dayLow(),
-                quote.exchangeName(),
-                quote.underlyingSymbol(),
-                quote.contractExpiry(),
-                linkedSpot,
-                null,
-                null);
-    }
-
-    private boolean isOwnedByFinnhub(String symbol) {
-        return finnhubProperties.ownsSymbol(symbol);
+    private void recordMappingMetrics(String provider, String symbol, Long instrumentId) {
+        String mappingKey = provider + "|" + symbol;
+        if (instrumentId == null) {
+            meterRegistry.counter(
+                    "market_data_mapping_miss_total",
+                    Tags.of(
+                            "service", "market-data-service",
+                            "provider", provider.isEmpty() ? "UNKNOWN" : provider,
+                            "symbol", symbol,
+                            "reason", "mapping_not_found"
+                    )
+            ).increment();
+            if (mappingMissWarnFirstSeen.add(mappingKey)) {
+                log.warn(
+                        "mapping_miss_first_seen service=market-data-service provider={} symbol={} reason=mapping_not_found event_contract=instrumentSymbol_only event_canonical_instrument_id=absent domain=stock",
+                        provider,
+                        symbol
+                );
+            }
+        } else if (mappingHitCanonicalFirstSeen.add(mappingKey)) {
+            log.info(
+                    "canonical_mapping_hit_first_seen service=market-data-service provider={} symbol={} instrumentId={} contract_note=instrumentId_is_canonical_finance_identity_when_seed_aligned event_canonical_instrument_id=present domain=stock",
+                    provider,
+                    symbol,
+                    instrumentId
+            );
+        }
     }
 }

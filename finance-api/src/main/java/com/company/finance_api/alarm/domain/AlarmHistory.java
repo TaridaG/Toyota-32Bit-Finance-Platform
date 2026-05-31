@@ -1,7 +1,7 @@
 package com.company.finance_api.alarm.domain;
 
-import com.company.finance_api.domain.enums.AlarmCondition;
-import com.company.finance_api.domain.enums.NotificationType;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
+import com.company.finance_api.notification.domain.enums.NotificationType;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;

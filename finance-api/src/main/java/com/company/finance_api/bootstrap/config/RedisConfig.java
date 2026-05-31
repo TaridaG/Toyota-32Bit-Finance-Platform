@@ -1,6 +1,6 @@
 package com.company.finance_api.bootstrap.config;
 
-import com.company.finance_api.domain.InstrumentPrice;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

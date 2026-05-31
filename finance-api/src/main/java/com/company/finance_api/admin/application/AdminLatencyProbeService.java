@@ -6,10 +6,10 @@ import com.company.finance_api.admin.infrastructure.http.dto.AdminLatencyRunsPag
 import com.company.finance_api.admin.infrastructure.http.dto.AdminLatencySnapshotDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminLatencySnapshotSaveRequest;
 import com.company.finance_api.admin.infrastructure.http.dto.LatencySampleDto;
-import com.company.finance_api.domain.AdminLatencyProbeRun;
-import com.company.finance_api.domain.AdminLatencyProbeSample;
-import com.company.finance_api.repository.AdminLatencyProbeRunRepository;
-import com.company.finance_api.repository.AdminLatencyProbeSampleRepository;
+import com.company.finance_api.admin.domain.AdminLatencyProbeRun;
+import com.company.finance_api.admin.domain.AdminLatencyProbeSample;
+import com.company.finance_api.admin.infrastructure.persistence.AdminLatencyProbeRunRepository;
+import com.company.finance_api.admin.infrastructure.persistence.AdminLatencyProbeSampleRepository;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,7 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminLatencyProbeService {
 
   private static final List<String> PROBE_TARGETS =
-      List.of("/api/admin/metrics/portal-users", "/api/admin/metrics/portal-portfolios");
+      List.of("/api/v1/admin/metrics/portal-users", "/api/v1/admin/metrics/portal-portfolios");
 
   private static final Set<String> PROBE_TARGET_SET = Set.copyOf(PROBE_TARGETS);
 

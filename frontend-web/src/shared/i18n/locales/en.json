@@ -384,7 +384,10 @@
         "deactivate": "Deactivate",
         "activate": "Activate"
       },
-      "status": { "active": "Active", "passive": "Passive" },
+      "status": {
+        "active": "Active",
+        "passive": "Passive"
+      },
       "statusFilter": {
         "aria": "Status filter",
         "all": "All",
@@ -401,7 +404,9 @@
         "intermediate": "Intermediate",
         "advanced": "Advanced"
       },
-      "sidebar": { "pages": "Pages" },
+      "sidebar": {
+        "pages": "Pages"
+      },
       "pages": {
         "TURKEY_ECONOMY": "Turkey economy",
         "FINANCIAL_LITERACY": "Financial literacy",

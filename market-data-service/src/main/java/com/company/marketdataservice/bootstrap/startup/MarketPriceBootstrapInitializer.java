@@ -1,11 +1,13 @@
 package com.company.marketdataservice.bootstrap.startup;
 import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
+import com.company.marketdataservice.catalog.application.InstrumentIngestScopeService;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.history.infrastructure.persistence.MarketPriceHistoryRepository;
 import com.company.marketdataservice.history.infrastructure.write.MarketHistoryWriteService;
 import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -23,6 +25,7 @@ import java.util.UUID;
  * `uygulama bootstrap` için uygulama açılışında veya gecikmeli tetiklenen bootstrap listener.
  */
 @Component
+@ConditionalOnProperty(prefix = "market.price-bootstrap", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class MarketPriceBootstrapInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(MarketPriceBootstrapInitializer.class);
@@ -31,17 +34,20 @@ public class MarketPriceBootstrapInitializer {
     private final MarketHistoryWriteService marketHistoryWriteService;
     private final MarketSnapshotStore marketSnapshotStore;
     private final MarketDataProperties marketDataProperties;
+    private final InstrumentIngestScopeService ingestScope;
 
     public MarketPriceBootstrapInitializer(
             MarketPriceHistoryRepository marketPriceHistoryRepository,
             MarketHistoryWriteService marketHistoryWriteService,
             MarketSnapshotStore marketSnapshotStore,
-            MarketDataProperties marketDataProperties
+            MarketDataProperties marketDataProperties,
+            InstrumentIngestScopeService ingestScope
     ) {
         this.marketPriceHistoryRepository = marketPriceHistoryRepository;
         this.marketHistoryWriteService = marketHistoryWriteService;
         this.marketSnapshotStore = marketSnapshotStore;
         this.marketDataProperties = marketDataProperties;
+        this.ingestScope = ingestScope;
     }
 
     /**
@@ -53,12 +59,8 @@ public class MarketPriceBootstrapInitializer {
             return;
         }
         Set<String> symbols = new LinkedHashSet<>();
-        if (marketDataProperties.getTrackedSymbols() != null) {
-            symbols.addAll(marketDataProperties.getTrackedSymbols());
-        }
-        if (marketDataProperties.getTrackedStocks() != null) {
-            symbols.addAll(marketDataProperties.getTrackedStocks());
-        }
+        symbols.addAll(ingestScope.resolveTrackedCryptoSymbols());
+        symbols.addAll(ingestScope.resolveTrackedStockSymbols());
         if (symbols.isEmpty()) {
             return;
         }

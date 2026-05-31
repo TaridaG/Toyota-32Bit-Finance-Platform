@@ -2,6 +2,7 @@ package com.company.marketdataservice.history.infrastructure.orchestration;
 import com.company.marketdataservice.bootstrap.config.FundMarketProperties;
 import com.company.marketdataservice.bootstrap.config.FxMarketProperties;
 import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
+import com.company.marketdataservice.catalog.application.InstrumentIngestScopeService;
 import com.company.marketdataservice.bootstrap.config.MarketHistoryBackfillProperties;
 import com.company.marketdataservice.history.infrastructure.persistence.BackfillChunkEntry;
 import com.company.marketdataservice.history.infrastructure.persistence.BackfillChunkRepository;
@@ -42,6 +43,7 @@ public class IngestionOrchestrator {
     private final MarketPriceHistoryRepository marketPriceHistoryRepository;
     private final MarketHistoryBackfillProperties backfillProperties;
     private final MarketDataProperties marketDataProperties;
+    private final InstrumentIngestScopeService ingestScope;
     private final FxMarketProperties fxMarketProperties;
     private final FundMarketProperties fundMarketProperties;
 
@@ -54,6 +56,7 @@ public class IngestionOrchestrator {
             MarketPriceHistoryRepository marketPriceHistoryRepository,
             MarketHistoryBackfillProperties backfillProperties,
             MarketDataProperties marketDataProperties,
+            InstrumentIngestScopeService ingestScope,
             FxMarketProperties fxMarketProperties,
             FundMarketProperties fundMarketProperties
     ) {
@@ -65,6 +68,7 @@ public class IngestionOrchestrator {
         this.marketPriceHistoryRepository = marketPriceHistoryRepository;
         this.backfillProperties = backfillProperties;
         this.marketDataProperties = marketDataProperties;
+        this.ingestScope = ingestScope;
         this.fxMarketProperties = fxMarketProperties;
         this.fundMarketProperties = fundMarketProperties;
     }
@@ -179,24 +183,24 @@ public class IngestionOrchestrator {
     private BackfillChunkEntry createPendingChunk(IngestionTask task, HistoricalBackfillService.ChunkWindow window) {
         Instant windowStart = window.start().atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant windowEnd = window.end().atStartOfDay().toInstant(ZoneOffset.UTC);
-        BackfillChunkEntry chunk = new BackfillChunkEntry();
-        chunk.setAssetType(task.assetType());
-        chunk.setSymbol(task.symbol());
-        chunk.setProvider(task.provider());
-        chunk.setWindowStart(windowStart);
-        chunk.setWindowEnd(windowEnd);
-        chunk.setStatus("PENDING");
-        chunk.setAttemptCount(0L);
         Instant now = Instant.now();
-        chunk.setCreatedAt(now);
-        chunk.setUpdatedAt(now);
-        try {
-            return backfillChunkRepository.save(chunk);
-        } catch (DataIntegrityViolationException ex) {
-            return backfillChunkRepository.findByAssetTypeAndSymbolAndProviderAndWindowStartAndWindowEnd(
-                            task.assetType(), task.symbol(), task.provider(), windowStart, windowEnd)
-                    .orElseThrow(() -> ex);
-        }
+        backfillChunkRepository.insertIgnore(
+                task.assetType(),
+                task.symbol(),
+                task.provider(),
+                windowStart,
+                windowEnd,
+                "PENDING",
+                0L,
+                now,
+                now
+        );
+        return backfillChunkRepository.findByAssetTypeAndSymbolAndProviderAndWindowStartAndWindowEnd(
+                        task.assetType(), task.symbol(), task.provider(), windowStart, windowEnd)
+                .orElseThrow(() -> new DataIntegrityViolationException(
+                        "Failed to insert/find backfill chunk for assetType=%s symbol=%s provider=%s window=%s..%s"
+                                .formatted(task.assetType(), task.symbol(), task.provider(), window.start(), window.end())
+                ));
     }
 
     private void handleFailure(IngestionTask task, Long chunkId, Exception ex) {
@@ -217,7 +221,7 @@ public class IngestionOrchestrator {
     }
 
     private static boolean isRetryable(Exception ex) {
-        return !(ex instanceof IllegalArgumentException);
+        return !(ex instanceof IllegalArgumentException) && !(ex instanceof NoHistoricalDataException);
     }
 
     private static String chunkExecutionKey(IngestionTask task, HistoricalBackfillService.ChunkWindow window) {
@@ -256,12 +260,8 @@ public class IngestionOrchestrator {
     private List<IngestionTask> collectUniverse() {
         List<IngestionTask> tasks = new ArrayList<>();
         Set<String> priceSymbols = new LinkedHashSet<>();
-        if (marketDataProperties.getTrackedSymbols() != null) {
-            priceSymbols.addAll(marketDataProperties.getTrackedSymbols());
-        }
-        if (marketDataProperties.getTrackedStocks() != null) {
-            priceSymbols.addAll(marketDataProperties.getTrackedStocks());
-        }
+        priceSymbols.addAll(ingestScope.resolveTrackedCryptoSymbols());
+        priceSymbols.addAll(ingestScope.resolveTrackedStockSymbols());
         for (String symbol : priceSymbols) {
             if (symbol != null && !symbol.isBlank()) {
                 tasks.add(new IngestionTask("PRICE", symbol.trim().toUpperCase(Locale.ROOT)));
@@ -286,7 +286,7 @@ public class IngestionOrchestrator {
 
         Set<String> funds = new LinkedHashSet<>();
         if (fundMarketProperties.getTrackedFundCodes() != null) {
-            funds.addAll(fundMarketProperties.getTrackedFundCodes());
+            funds.addAll(ingestScope.resolveTrackedFundCodes());
         }
         for (String code : funds) {
             if (code != null && !code.isBlank()) {

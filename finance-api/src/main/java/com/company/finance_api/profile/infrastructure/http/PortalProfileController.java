@@ -1,21 +1,21 @@
 package com.company.finance_api.profile.infrastructure.http;
 
-import com.company.finance_api.auth.LoginAttemptContext;
-import com.company.finance_api.dto.PortalChangePasswordRequest;
-import com.company.finance_api.dto.PortalChangeUsernameRequest;
-import com.company.finance_api.dto.PortalConfirmEmailChangeRequest;
-import com.company.finance_api.dto.PortalDeleteAccountRequest;
-import com.company.finance_api.dto.PortalEmailChangeRequest;
-import com.company.finance_api.dto.PortalForgotPasswordResetRequest;
-import com.company.finance_api.dto.PortalProfileResponse;
-import com.company.finance_api.dto.PortalUpdateNotificationsRequest;
-import com.company.finance_api.dto.PortalUpdatePhoneRequest;
-import com.company.finance_api.dto.PortalUpdatePreferencesRequest;
-import com.company.finance_api.dto.PublicEmailAvailabilityResponse;
-import com.company.finance_api.dto.PublicLoginResponse;
-import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
-import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
-import com.company.finance_api.profile.PortalProfileService;
+import com.company.finance_api.auth.domain.LoginAttemptContext;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalChangePasswordRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalChangeUsernameRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalConfirmEmailChangeRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalDeleteAccountRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalEmailChangeRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalForgotPasswordResetRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalProfileResponse;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalUpdateNotificationsRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalUpdatePhoneRequest;
+import com.company.finance_api.profile.infrastructure.http.dto.PortalUpdatePreferencesRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicEmailAvailabilityResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicUsernameAvailabilityResponse;
+import com.company.finance_api.profile.application.PortalProfileService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -43,7 +43,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 /** Portal profil REST API: tercihler, avatar, şifre, e-posta ve hesap silme. */
 @RestController
-@RequestMapping("/api/portal/profile")
+@RequestMapping("/api/v1/portal/profile")
 public class PortalProfileController {
 
   private static final Logger log = LoggerFactory.getLogger(PortalProfileController.class);

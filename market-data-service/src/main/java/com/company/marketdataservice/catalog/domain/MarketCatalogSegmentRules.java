@@ -1,6 +1,4 @@
 package com.company.marketdataservice.catalog.domain;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -13,14 +11,7 @@ public final class MarketCatalogSegmentRules {
     private static final Set<String> FUND_SYMBOLS = Set.of("VOO", "VTI", "QQQ", "IVV", "SPY");
     private static final Set<String> SPOT_METAL_SYMBOLS =
             Set.of("XAUTRY", "XAGTRY", "XPTTRY", "XPDTRY", "XCUTRY");
-    private static final Set<String> METAL_FUTURES_SYMBOLS = Set.of("GC=F", "SI=F", "HG=F", "PA=F", "PL=F");
-    private static final Set<String> METAL_SYMBOLS;
-
-    static {
-        var union = new HashSet<>(SPOT_METAL_SYMBOLS);
-        union.addAll(METAL_FUTURES_SYMBOLS);
-        METAL_SYMBOLS = Collections.unmodifiableSet(union);
-    }
+    private static final Set<String> METAL_SYMBOLS = SPOT_METAL_SYMBOLS;
 
     private MarketCatalogSegmentRules() {}
 
@@ -85,17 +76,11 @@ public final class MarketCatalogSegmentRules {
             if (SPOT_METAL_SYMBOLS.contains(s)) {
                 return "metals";
             }
-            if (METAL_FUTURES_SYMBOLS.contains(s)) {
-                return "globalFutures";
-            }
             return null;
         }
         if ("FX".equals(cat)) {
             if (SPOT_METAL_SYMBOLS.contains(s)) {
                 return "metals";
-            }
-            if (METAL_FUTURES_SYMBOLS.contains(s)) {
-                return "globalFutures";
             }
             return "forex";
         }

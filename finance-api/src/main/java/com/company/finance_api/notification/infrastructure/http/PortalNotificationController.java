@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Portal bildirim inbox REST endpoint'leri (okuma, okundu işaretleme, silme). */
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 public class PortalNotificationController {
 

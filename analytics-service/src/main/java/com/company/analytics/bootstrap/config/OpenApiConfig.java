@@ -2,6 +2,8 @@ package com.company.analytics.bootstrap.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,6 +18,7 @@ public class OpenApiConfig {
             new Info()
                 .title("analytics-service")
                 .version("1.0")
-                .description("Portfolio analytics queries"));
+                .description("Portfolio analytics queries"))
+        .servers(List.of(new Server().url("/api/v1").description("API gateway (canonical)")));
   }
 }

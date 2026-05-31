@@ -40,7 +40,7 @@ class AlarmHistoryControllerTest {
                     "BTCUSDT", "GREATER_THAN", BigDecimal.valueOf(50000), Instant.now())));
 
     mockMvc
-        .perform(get("/api/history/alarms"))
+        .perform(get("/api/v1/history/alarms"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].instrumentSymbol").value("BTCUSDT"));

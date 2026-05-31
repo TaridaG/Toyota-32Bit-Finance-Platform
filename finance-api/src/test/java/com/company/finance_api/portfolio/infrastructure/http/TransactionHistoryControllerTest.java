@@ -55,7 +55,7 @@ class TransactionHistoryControllerTest {
                     "USD")));
 
     mockMvc
-        .perform(get("/api/history/transactions"))
+        .perform(get("/api/v1/history/transactions"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].instrumentSymbol").value("AAPL"));

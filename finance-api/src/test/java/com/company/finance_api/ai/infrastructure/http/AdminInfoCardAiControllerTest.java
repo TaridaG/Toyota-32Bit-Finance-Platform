@@ -6,8 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.ai.dto.InfoCardAiContentResponse;
-import com.company.finance_api.ai.service.AdminInfoCardAiService;
+import com.company.finance_api.ai.infrastructure.http.dto.InfoCardAiContentResponse;
+import com.company.finance_api.ai.application.AdminInfoCardAiService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;
@@ -40,7 +40,7 @@ class AdminInfoCardAiControllerTest {
 
     mockMvc
         .perform(
-            post("/api/admin/info-cards/ai/complete")
+            post("/api/v1/admin/info-cards/ai/complete")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """

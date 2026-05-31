@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.DemoBalance;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.repository.DemoBalanceRepository;
+import com.company.finance_api.profile.domain.DemoBalance;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.profile.infrastructure.persistence.DemoBalanceRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

@@ -13,7 +13,7 @@ import java.util.Optional;
 /**
  * `geçmiş veri ve backfill` verisi için Spring Data JPA repository.
  */
-public interface BackfillChunkRepository extends JpaRepository<BackfillChunkEntry, Long> {
+public interface BackfillChunkRepository extends JpaRepository<BackfillChunkEntry, Long>, BackfillChunkRepositoryCustom {
 
     @Modifying
     @Transactional

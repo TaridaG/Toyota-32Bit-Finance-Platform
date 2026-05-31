@@ -1,16 +1,16 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.PortfolioDailyPerformance;
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.dto.PortfolioPerformancePointResponse;
-import com.company.finance_api.dto.PortfolioPerformanceSeriesResponse;
-import com.company.finance_api.portfolio.InstrumentListingCurrency;
-import com.company.finance_api.portfolio.PortfolioPerformanceMath;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
-import com.company.finance_api.repository.PortfolioDailyPerformanceRepository;
-import com.company.finance_api.repository.TransactionRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.PortfolioDailyPerformance;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPerformancePointResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPerformanceSeriesResponse;
+import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
+import com.company.finance_api.portfolio.domain.PortfolioPerformanceMath;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.PortfolioDailyPerformanceRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.pricing.application.PriceService;
 import com.company.finance_api.shared.security.CurrentUserResolver;

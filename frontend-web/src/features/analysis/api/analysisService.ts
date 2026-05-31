@@ -79,7 +79,7 @@ export function normalizeAnalysisInstrumentSymbol(symbol: string): string {
 
 /**
  * Symbol as stored in market-data history tables / catalog (keeps Yahoo-style "." e.g. BRK.B).
- * Using this for `/api/market/prices/history` is required — stripping "=" breaks futures lookups.
+ * Using this for `/api/v1/market/prices/history` is required — stripping "=" breaks futures lookups.
  */
 function wireCatalogSymbol(symbol: string): string {
   return symbol.trim().toUpperCase()
@@ -129,12 +129,12 @@ function resolveHistoryKind(catalogSymbol: string, wireCategory: string | null |
 
 function historyUrl(kind: AnalysisHistoryKind): string {
   if (kind === 'fx') {
-    return '/api/market/fx/history'
+    return '/api/v1/market/fx/history'
   }
   if (kind === 'fund') {
-    return '/api/market/funds/history'
+    return '/api/v1/market/funds/history'
   }
-  return '/api/market/prices/history'
+  return '/api/v1/market/prices/history'
 }
 
 function historyFundCode(symbol: string): string {
@@ -277,7 +277,7 @@ async function fetchAnalyticsCandlesForRange(
     }
     const pathSeg = encodeURIComponent(sym)
     try {
-      const response = await apiClient.get<ApiResponse<AnalyticsCandleDto[]>>(`/api/analytics/instruments/${pathSeg}/candles`, {
+      const response = await apiClient.get<ApiResponse<AnalyticsCandleDto[]>>(`/api/v1/analytics/instruments/${pathSeg}/candles`, {
         params: { interval, from, to },
       })
       const points = (response.data.data ?? [])

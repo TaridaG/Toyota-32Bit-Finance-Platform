@@ -1,10 +1,10 @@
 package com.company.finance_api.news.application;
 
-import com.company.finance_api.domain.NewsFavorite;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.news.domain.NewsFavorite;
+import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.news.infrastructure.http.dto.NewsFavoriteItemDto;
-import com.company.finance_api.repository.NewsFavoriteRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.news.infrastructure.persistence.NewsFavoriteRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
 import java.util.List;

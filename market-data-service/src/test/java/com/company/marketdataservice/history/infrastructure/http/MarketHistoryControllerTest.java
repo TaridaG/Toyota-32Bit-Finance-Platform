@@ -45,7 +45,7 @@ class MarketHistoryControllerTest {
 
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/market/prices/history")
+                        .path("/api/v1/market/prices/history")
                         .queryParam("symbol", "AAPL")
                         .queryParam("from", "2026-05-01")
                         .queryParam("to", "2026-05-07")

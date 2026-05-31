@@ -1,10 +1,10 @@
 package com.company.finance_api.pricing.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.dto.AcquisitionFxRatesSnapshot;
-import com.company.finance_api.repository.InstrumentPriceRepository;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.portfolio.infrastructure.http.dto.AcquisitionFxRatesSnapshot;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;

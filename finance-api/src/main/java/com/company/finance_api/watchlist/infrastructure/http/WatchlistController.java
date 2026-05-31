@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Kullanıcı izleme listesi (watchlist) endpoint'leri. */
 @RestController
-@RequestMapping("/api/watchlist")
+@RequestMapping("/api/v1/watchlist")
 public class WatchlistController {
 
   private final WatchlistService watchlistService;

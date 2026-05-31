@@ -18,7 +18,7 @@ export type BlockedEmailsPage = {
   size: number
 }
 
-const BASE = '/api/admin/metrics/blocked-emails'
+const BASE = '/api/v1/admin/metrics/blocked-emails'
 
 export function readBlockedEmailsApiError(e: unknown): string {
   if (isAxiosError(e)) {

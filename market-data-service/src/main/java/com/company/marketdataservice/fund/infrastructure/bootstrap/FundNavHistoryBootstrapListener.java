@@ -1,5 +1,5 @@
 package com.company.marketdataservice.fund.infrastructure.bootstrap;
-import com.company.marketdataservice.fund.infrastructure.provider.TefasFundNavHistoryRehydrationService;
+import com.company.marketdataservice.fund.application.TefasFundNavHistoryRehydrationService;
 import com.company.marketdataservice.bootstrap.config.FundMarketProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

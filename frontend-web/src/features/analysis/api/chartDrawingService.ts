@@ -130,7 +130,7 @@ export async function createChartDrawingSave(input: {
   name: string
   drawings: DrawingItem[]
 }): Promise<ChartDrawingSaveDetail> {
-  const { data } = await apiClient.post<ApiEnvelope<ChartDrawingSaveDetail>>('/api/chart-drawings', {
+  const { data } = await apiClient.post<ApiEnvelope<ChartDrawingSaveDetail>>('/api/v1/chart-drawings', {
     assetKey: input.assetKey,
     assetSymbol: input.assetSymbol,
     assetType: input.assetType,
@@ -141,7 +141,7 @@ export async function createChartDrawingSave(input: {
 }
 
 export async function fetchChartDrawingSaves(assetKey: string): Promise<ChartDrawingSaveSummary[]> {
-  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSaveSummary[]>>('/api/chart-drawings', {
+  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSaveSummary[]>>('/api/v1/chart-drawings', {
     params: { assetKey },
   })
   return data.data
@@ -151,17 +151,17 @@ export async function fetchChartDrawingSavesPage(
   page: number,
   size: number,
 ): Promise<ChartDrawingSavePage> {
-  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSavePage>>('/api/chart-drawings/mine', {
+  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSavePage>>('/api/v1/chart-drawings/mine', {
     params: { page, size },
   })
   return data.data
 }
 
 export async function fetchChartDrawingSave(id: number): Promise<ChartDrawingSaveDetail> {
-  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSaveDetail>>(`/api/chart-drawings/${id}`)
+  const { data } = await apiClient.get<ApiEnvelope<ChartDrawingSaveDetail>>(`/api/v1/chart-drawings/${id}`)
   return data.data
 }
 
 export async function deleteChartDrawingSave(id: number): Promise<void> {
-  await apiClient.delete(`/api/chart-drawings/${id}`)
+  await apiClient.delete(`/api/v1/chart-drawings/${id}`)
 }

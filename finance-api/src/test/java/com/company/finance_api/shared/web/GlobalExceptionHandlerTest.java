@@ -8,7 +8,7 @@ import com.company.finance_api.ai.config.AiConfigurationException;
 import com.company.finance_api.ai.config.AiDisabledException;
 import com.company.finance_api.ai.config.AiOpenAiException;
 import com.company.finance_api.ai.config.AiOpenAiQuotaException;
-import com.company.finance_api.registration.EmailAvailabilityException;
+import com.company.finance_api.registration.domain.EmailAvailabilityException;
 import jakarta.servlet.ServletException;
 import jakarta.transaction.RollbackException;
 import java.io.IOException;

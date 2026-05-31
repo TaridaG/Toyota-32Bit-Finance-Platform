@@ -87,7 +87,9 @@ public class FxScheduler {
             lastPublishedRateCount.set(snapshots.size());
 
             for (FxSnapshot s : snapshots) {
-                boolean bypassHistoryGate = "STOOQ_SPOT".equalsIgnoreCase(s.source());
+                boolean bypassHistoryGate = "STOOQ_SPOT".equalsIgnoreCase(s.source())
+                        || "YAHOO_DERIVED_SPOT".equalsIgnoreCase(s.source())
+                        || "MINTED_METAL_LBMA".equalsIgnoreCase(s.source());
                 if (!bypassHistoryGate && !fxHistoryBootstrapGuard.isLiveAllowed(s.canonicalSymbol())) {
                     log.info("FX_DATA_WAITING_FOR_HISTORY symbol={}", s.canonicalSymbol());
                     continue;

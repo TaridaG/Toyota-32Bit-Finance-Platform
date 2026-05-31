@@ -23,7 +23,7 @@ public class OpenApiConfig {
                 .version("1.0")
                 .description(
                     "Portal, portfolio, auth, admin and market proxy endpoints. "
-                        + "Call via API gateway using the /api/v1 prefix (paths below are downstream /api)."))
+                        + "Call via API gateway using the canonical /api/v1 prefix."))
         .servers(List.of(new Server().url("/api/v1").description("API gateway (canonical)")))
         .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
         .components(

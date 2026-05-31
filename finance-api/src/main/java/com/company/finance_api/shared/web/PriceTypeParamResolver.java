@@ -1,6 +1,6 @@
 package com.company.finance_api.shared.web;
 
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import java.util.Locale;
 
 /**

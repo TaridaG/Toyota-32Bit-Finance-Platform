@@ -43,25 +43,24 @@ public class WebSecurityConfig {
         if (path == null || path.isBlank()) {
             return false;
         }
-        String p = ApiVersionPathSupport.normalizeForSecurity(path);
+        String p = path;
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
-        return p.equals("/api/market") || p.startsWith("/api/market/")
-                || p.equals("/api/rates") || p.startsWith("/api/rates/")
-                || p.equals("/market") || p.startsWith("/market/")
+        return p.equals("/api/v1/market") || p.startsWith("/api/v1/market/")
+                || p.equals("/api/v1/rates") || p.startsWith("/api/v1/rates/")
                 || isPublicGuestNewsPath(p)
-                || p.equals("/api/instruments") || p.startsWith("/api/instruments/")
-                || p.equals("/api/analytics") || p.startsWith("/api/analytics/")
-                || p.equals("/api/portal/info-cards") || p.startsWith("/api/portal/info-cards/");
+                || p.equals("/api/v1/instruments") || p.startsWith("/api/v1/instruments/")
+                || p.equals("/api/v1/analytics") || p.startsWith("/api/v1/analytics/")
+                || p.equals("/api/v1/portal/info-cards") || p.startsWith("/api/v1/portal/info-cards/");
     }
 
     /** Public news feed/chart/enriched — not authenticated favorites. */
     private static boolean isPublicGuestNewsPath(String p) {
-        if (!p.equals("/api/news") && !p.startsWith("/api/news/")) {
+        if (!p.equals("/api/v1/news") && !p.startsWith("/api/v1/news/")) {
             return false;
         }
-        return !p.startsWith("/api/news/favorites");
+        return !p.startsWith("/api/v1/news/favorites");
     }
 
     /**
@@ -96,11 +95,11 @@ public class WebSecurityConfig {
         if (path == null || path.isBlank()) {
             return false;
         }
-        String p = ApiVersionPathSupport.normalizeForSecurity(path);
+        String p = path;
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
-        return p.startsWith("/api/public/");
+        return p.startsWith("/api/v1/public/");
     }
 
     /** Swagger UI + springdoc config (proxied to finance-api; must ignore stale Bearer tokens). */
@@ -136,15 +135,15 @@ public class WebSecurityConfig {
         if (path == null || path.isBlank()) {
             return false;
         }
-        String p = ApiVersionPathSupport.normalizeForSecurity(path);
+        String p = path;
         if (p.endsWith("/") && p.length() > 1) {
             p = p.substring(0, p.length() - 1);
         }
-        return "/api/public/register".equals(p)
-                || "/api/public/register/send-code".equals(p)
-                || "/api/public/login".equals(p)
-                || "/api/public/login/mfa".equals(p)
-                || "/api/public/refresh".equals(p);
+        return "/api/v1/public/register".equals(p)
+                || "/api/v1/public/register/send-code".equals(p)
+                || "/api/v1/public/login".equals(p)
+                || "/api/v1/public/login/mfa".equals(p)
+                || "/api/v1/public/refresh".equals(p);
     }
 
     /**
@@ -155,8 +154,6 @@ public class WebSecurityConfig {
     public SecurityWebFilterChain publicAnonymousCatalogSecurityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers(
-                        "/api/rates", "/api/rates/**",
-                        "/api/portal/info-cards", "/api/portal/info-cards/**",
                         "/api/v1/rates", "/api/v1/rates/**",
                         "/api/v1/portal/info-cards", "/api/v1/portal/info-cards/**"))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -180,8 +177,6 @@ public class WebSecurityConfig {
         return http
                 .securityMatcher(new NegatedServerWebExchangeMatcher(
                         ServerWebExchangeMatchers.pathMatchers(
-                                "/api/rates", "/api/rates/**",
-                                "/api/portal/info-cards", "/api/portal/info-cards/**",
                                 "/api/v1/rates", "/api/v1/rates/**",
                                 "/api/v1/portal/info-cards", "/api/v1/portal/info-cards/**")))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -222,7 +217,6 @@ public class WebSecurityConfig {
                         .pathMatchers("/public/**").permitAll()
                         .pathMatchers("/fallback/**").permitAll()
                         .pathMatchers(GatewaySecurityPaths.versionedApi()).hasAnyRole("USER", "ADMIN")
-                        .pathMatchers(GatewaySecurityPaths.legacyApi()).hasAnyRole("USER", "ADMIN")
                         .pathMatchers("/actuator/**").authenticated()
                         .anyExchange().authenticated()
                 )

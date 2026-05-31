@@ -1,7 +1,7 @@
 package com.company.finance_api.admin.application;
 
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortalUserMetricsDto;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;

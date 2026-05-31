@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
   }
 
   /**
-   * Default: all `/api` → finance-api; finance-api proxies /api/market/* to market-data-service
+   * Default: all `/api` → finance-api; finance-api proxies /api/v1/market/* to market-data-service
    * (see MarketDataProxyController). Optional direct MDS routing for debugging only.
    */
   const useDirectMarketProxy =
@@ -32,23 +32,23 @@ export default defineConfig(({ mode }) => {
 
   const splitApiProxy = useDirectMarketProxy
     ? {
-        '/api/market/overview': {
+        '/api/v1/market/overview': {
           target: financeTarget,
           changeOrigin: true,
           secure: false,
         },
         // Fundamentals are proxied by finance-api; direct MDS would 404 on catalog gaps.
-        '/api/market/instruments': {
+        '/api/v1/market/instruments': {
           target: financeTarget,
           changeOrigin: true,
           secure: false,
         },
-        '/api/market': {
+        '/api/v1/market': {
           target: marketTarget,
           changeOrigin: true,
           secure: false,
         },
-        '/api/rates': {
+        '/api/v1/rates': {
           target: marketTarget,
           changeOrigin: true,
           secure: false,
@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
       useSingleApiProxy
         ? ' (gateway mode)'
         : useDirectMarketProxy
-          ? `, /api/market (except overview/insights) → ${marketTarget} (direct MDS)`
+          ? `, /api/v1/market (except overview/insights) → ${marketTarget} (direct MDS)`
           : ' (market via finance-api BFF)'
     }`,
   )

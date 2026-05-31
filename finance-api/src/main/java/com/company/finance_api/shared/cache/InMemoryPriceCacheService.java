@@ -1,7 +1,7 @@
 package com.company.finance_api.shared.cache;
 
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.enums.PriceType;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.pricing.domain.enums.PriceType;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

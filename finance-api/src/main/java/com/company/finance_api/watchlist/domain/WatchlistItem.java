@@ -1,7 +1,7 @@
 package com.company.finance_api.watchlist.domain;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.User;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.profile.domain.User;
 import jakarta.persistence.*;
 import java.time.Instant;
 

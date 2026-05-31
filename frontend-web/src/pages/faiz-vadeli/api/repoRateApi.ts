@@ -16,14 +16,14 @@ export type RepoRateLatestResponse = {
 
 export async function fetchRepoRateLatest(): Promise<RepoRateLatestResponse> {
   return getCachedOrLoad('faiz-vadeli:repo:latest', LATEST_TTL_MS, async () => {
-    const { data } = await apiClient.get<RepoRateLatestResponse>('/api/rates/repo/latest')
+    const { data } = await apiClient.get<RepoRateLatestResponse>('/api/v1/rates/repo/latest')
     return data
   })
 }
 
 export async function fetchRepoRateHistory(): Promise<PolicyRateHistoryResponse> {
   return getCachedOrLoad('faiz-vadeli:repo:history:5Y', HISTORY_TTL_MS, async () => {
-    const { data } = await apiClient.get<PolicyRateHistoryResponse>('/api/rates/repo/history', {
+    const { data } = await apiClient.get<PolicyRateHistoryResponse>('/api/v1/rates/repo/history', {
       params: { range: '5Y' },
     })
     return data

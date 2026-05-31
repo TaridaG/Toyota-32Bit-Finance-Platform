@@ -54,7 +54,7 @@ class AdminNewsMetricsControllerTest {
                 Instant.parse("2026-05-23T10:00:00Z")
         ));
 
-        mockMvc.perform(get("/api/news/admin/metrics/dashboard"))
+        mockMvc.perform(get("/api/v1/news/admin/metrics/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.totalArticles").value(120));
@@ -62,7 +62,7 @@ class AdminNewsMetricsControllerTest {
 
     @Test
     void analytics_returnsBadRequestWhenOnlyFromProvided() throws Exception {
-        mockMvc.perform(get("/api/news/admin/metrics/analytics")
+        mockMvc.perform(get("/api/v1/news/admin/metrics/analytics")
                         .param("from", "2026-05-01"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
@@ -75,7 +75,7 @@ class AdminNewsMetricsControllerTest {
         LocalDate to = LocalDate.of(2026, 5, 7);
         when(adminNewsAnalyticsService.dashboardCustom(from, to)).thenReturn(sampleAnalyticsDashboard());
 
-        mockMvc.perform(get("/api/news/admin/metrics/analytics")
+        mockMvc.perform(get("/api/v1/news/admin/metrics/analytics")
                         .param("from", "2026-05-01")
                         .param("to", "2026-05-07"))
                 .andExpect(status().isOk())
@@ -88,7 +88,7 @@ class AdminNewsMetricsControllerTest {
         when(adminNewsAnalyticsService.dashboardCustom(any(), any()))
                 .thenThrow(new IllegalArgumentException("from must be on or before to"));
 
-        mockMvc.perform(get("/api/news/admin/metrics/analytics")
+        mockMvc.perform(get("/api/v1/news/admin/metrics/analytics")
                         .param("from", "2026-05-10")
                         .param("to", "2026-05-01"))
                 .andExpect(status().isBadRequest())

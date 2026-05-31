@@ -1,9 +1,9 @@
 package com.company.finance_api.pricing.infrastructure.query;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.portfolio.TlDepositInstruments;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.portfolio.domain.TlDepositInstruments;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.Instant;
@@ -148,7 +148,7 @@ public class TlDepositIndexQueryService {
     String base = marketDataBaseUrl.replaceAll("/+$", "");
     String uri =
         UriComponentsBuilder.fromUriString(base)
-            .path("/api/rates/tl-deposit/index/latest")
+            .path("/api/v1/rates/tl-deposit/index/latest")
             .queryParam("maturity", maturity)
             .build(true)
             .toUriString();

@@ -1,9 +1,9 @@
 package com.company.finance_api.ai.infrastructure.http;
 
-import com.company.finance_api.ai.dto.CompleteInfoCardAiRequest;
-import com.company.finance_api.ai.dto.InfoCardAiContentResponse;
-import com.company.finance_api.ai.dto.TranslateInfoCardAiRequest;
-import com.company.finance_api.ai.service.AdminInfoCardAiService;
+import com.company.finance_api.ai.infrastructure.http.dto.CompleteInfoCardAiRequest;
+import com.company.finance_api.ai.infrastructure.http.dto.InfoCardAiContentResponse;
+import com.company.finance_api.ai.infrastructure.http.dto.TranslateInfoCardAiRequest;
+import com.company.finance_api.ai.application.AdminInfoCardAiService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/admin/info-cards/ai")
+@RequestMapping("/api/v1/admin/info-cards/ai")
 @PreAuthorize("hasRole('ADMIN')")
 /** Admin info-card AI tamamlama ve çeviri REST endpoint'leri. */
 public class AdminInfoCardAiController {

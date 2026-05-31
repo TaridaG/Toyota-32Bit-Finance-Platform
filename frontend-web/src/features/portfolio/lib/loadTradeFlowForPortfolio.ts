@@ -5,10 +5,10 @@ function normalizeTradeFlowApi(data: PortfolioTradeFlow | null | undefined, fall
   if (!data) return { currency: fallbackCurrency, points: [] }
   const points: PortfolioTradeFlowPoint[] = Array.isArray(data.points)
     ? data.points.map((p) => ({
-        transactionId: Number(p.transactionId),
-        createdAt: String(p.createdAt),
-        signedAmount: typeof p.signedAmount === 'number' ? p.signedAmount : Number(p.signedAmount),
-      }))
+      transactionId: Number(p.transactionId),
+      createdAt: String(p.createdAt),
+      signedAmount: typeof p.signedAmount === 'number' ? p.signedAmount : Number(p.signedAmount),
+    }))
     : []
   return {
     currency: data.currency || fallbackCurrency,

@@ -3,8 +3,8 @@ package com.company.finance_api.chart.application;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.repository.ChartDrawingSaveRepository;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.chart.infrastructure.persistence.ChartDrawingSaveRepository;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;

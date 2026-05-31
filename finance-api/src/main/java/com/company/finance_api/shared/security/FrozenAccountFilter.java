@@ -37,13 +37,13 @@ public class FrozenAccountFilter extends OncePerRequestFilter {
     if (path == null) {
       return false;
     }
-    if ("/health".equals(path)) {
+    if ("/health".equals(path) || path.startsWith("/actuator")) {
       return true;
     }
-    if (path.startsWith("/api/public/")) {
+    if (path.startsWith("/api/v1/public/")) {
       return true;
     }
-    if (path.startsWith("/api/admin/")) {
+    if (path.startsWith("/api/v1/admin/")) {
       return true;
     }
     return false;

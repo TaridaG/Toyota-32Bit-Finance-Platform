@@ -1,11 +1,11 @@
 package com.company.finance_api.market.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.market.MarketOverviewCategoryRules;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.market.domain.MarketOverviewCategoryRules;
 import com.company.finance_api.market.infrastructure.http.dto.MarketOverviewItemResponse;
 import com.company.finance_api.market.infrastructure.http.dto.MarketOverviewPageResponse;
-import com.company.finance_api.repository.InstrumentPriceRepository;
+import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPriceRepository;
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.pricing.application.CurrencyConversionServiceImpl;
 import com.company.finance_api.instrument.application.InstrumentService;
@@ -46,7 +46,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private static final Logger log = LoggerFactory.getLogger(MarketOverviewServiceImpl.class);
-  private static final Duration CACHE_TTL = Duration.ofSeconds(5);
+  private final Duration pageCacheTtl;
   private static final Duration UNIVERSE_CACHE_TTL = Duration.ofSeconds(5);
   private static final Duration SUMMARY_CACHE_TTL = Duration.ofSeconds(45);
   private static final Duration INSTRUMENT_CACHE_TTL = Duration.ofMinutes(5);
@@ -81,12 +81,14 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       InstrumentPriceRepository instrumentPriceRepository,
       CurrencyConversionService currencyConversionService,
       ObjectMapper objectMapper,
-      JsonCacheService jsonCacheService) {
+      JsonCacheService jsonCacheService,
+      @Value("${market.overview.page-cache-ttl-seconds:10}") int pageCacheTtlSeconds) {
     this.instrumentService = instrumentService;
     this.instrumentPriceRepository = instrumentPriceRepository;
     this.currencyConversionService = currencyConversionService;
     this.objectMapper = objectMapper;
     this.jsonCacheService = jsonCacheService;
+    this.pageCacheTtl = Duration.ofSeconds(Math.max(1, pageCacheTtlSeconds));
   }
 
   /** Sayfalanmış market overview sonucunu döner. */
@@ -153,7 +155,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       MarketOverviewPageResponse emptyPage =
           new MarketOverviewPageResponse(
               List.of(), resolvedPage, resolvedSize, totalElements, totalPages);
-      jsonCacheService.put(cacheKey, emptyPage, CACHE_TTL);
+      jsonCacheService.put(cacheKey, emptyPage, pageCacheTtl);
       return emptyPage;
     }
 
@@ -194,7 +196,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     MarketOverviewPageResponse response =
         new MarketOverviewPageResponse(
             content, resolvedPage, resolvedSize, totalElements, totalPages);
-    jsonCacheService.put(cacheKey, response, CACHE_TTL);
+    jsonCacheService.put(cacheKey, response, pageCacheTtl);
     log.info(
         "MARKET_OVERVIEW_TIMING page={} size={} category={} search={} sort={} symbols={} pageSymbols={} universeMs={} horizonMs={} sortMs={} pageMetricsMs={} enrichMs={} totalMs={} totalElements={}",
         resolvedPage,
@@ -398,7 +400,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private List<MarketPriceDto> fetchFxRatesAsPrices() {
     String url =
-        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/market/fx").toUriString();
+        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/v1/market/fx").toUriString();
     try {
       List<FxRateWire> body =
           restClient.get().uri(url).retrieve().body(new ParameterizedTypeReference<>() {});
@@ -791,7 +793,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private List<TrendMetricWire> fetchTrendMetrics(String symbol) {
     String url =
         UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
-            .path("/api/analytics/instruments/{symbol}/trend")
+            .path("/api/v1/analytics/instruments/{symbol}/trend")
             .buildAndExpand(symbol)
             .toUriString();
     AnalyticsApiResponse<List<TrendMetricWire>> body =
@@ -991,7 +993,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private List<MarketPriceDto> fetchLatestPrices(String mdsSegment) {
     UriComponentsBuilder builder =
-        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/market/prices");
+        UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl).path("/api/v1/market/prices");
     if (StringUtils.hasText(mdsSegment)) {
       builder.queryParam("segment", mdsSegment);
     }
@@ -1004,7 +1006,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private List<AnalyticsCandleDto> fetchCandles(String symbol) {
     String url =
         UriComponentsBuilder.fromHttpUrl(analyticsBaseUrl)
-            .path("/api/analytics/instruments/{symbol}/candles")
+            .path("/api/v1/analytics/instruments/{symbol}/candles")
             .queryParam("from", LocalDate.now().minusDays(2))
             .queryParam("to", LocalDate.now())
             .buildAndExpand(symbol)
@@ -1195,7 +1197,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     // drops or mis-parses GC=F,SI=F so MDS summary never merges into overview 1M–1Y.
     URI uri =
         UriComponentsBuilder.fromHttpUrl(marketDataBaseUrl)
-            .path("/api/market/prices/summary")
+            .path("/api/v1/market/prices/summary")
             .queryParam("symbols", String.join(",", symbols))
             .encode()
             .build()

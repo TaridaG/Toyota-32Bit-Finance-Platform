@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import com.company.marketdataservice.bootstrap.config.DovizBankRatesProperties;
 import com.company.marketdataservice.bootstrap.config.FundMarketProperties;
 import com.company.marketdataservice.bootstrap.config.FxMarketProperties;
+import com.company.marketdataservice.bootstrap.config.HotReadCacheProperties;
 import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
 
 /**
@@ -17,7 +18,8 @@ import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
         MarketDataProperties.class,
         FxMarketProperties.class,
         FundMarketProperties.class,
-        DovizBankRatesProperties.class
+        DovizBankRatesProperties.class,
+        HotReadCacheProperties.class
 })
 public class MarketDataServiceApplication {
 

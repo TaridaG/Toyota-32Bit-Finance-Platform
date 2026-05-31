@@ -47,7 +47,7 @@ class MarketDataControllerTest {
         when(marketDataReadService.getLatestPrices("crypto")).thenReturn(List.of(price));
 
         webTestClient.get()
-                .uri("/api/market/prices?segment=crypto")
+                .uri("/api/v1/market/prices?segment=crypto")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -66,7 +66,7 @@ class MarketDataControllerTest {
         ));
 
         webTestClient.get()
-                .uri("/api/market/segments/pulse")
+                .uri("/api/v1/market/segments/pulse")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -88,7 +88,7 @@ class MarketDataControllerTest {
         ));
 
         webTestClient.get()
-                .uri("/api/market/fx")
+                .uri("/api/v1/market/fx")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()

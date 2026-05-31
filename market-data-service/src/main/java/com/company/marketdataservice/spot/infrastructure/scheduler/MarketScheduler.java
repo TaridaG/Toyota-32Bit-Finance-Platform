@@ -1,5 +1,6 @@
 package com.company.marketdataservice.spot.infrastructure.scheduler;
 import com.company.marketdataservice.bootstrap.config.MarketDataProperties;
+import com.company.marketdataservice.catalog.application.InstrumentIngestScopeService;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;
 import com.company.marketdataservice.spot.infrastructure.kafka.MarketEventPublisher;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MarketScheduler {
 
     private final MarketDataProperties properties;
+    private final InstrumentIngestScopeService ingestScope;
     private final PriceProvider priceProvider;
     private final MarketEventPublisher publisher;
     private final InstrumentMappingService instrumentMappingService;
@@ -46,7 +48,7 @@ public class MarketScheduler {
     public void pullMarketData() {
 
 
-        for (String symbol : properties.getTrackedSymbols()) {
+        for (String symbol : ingestScope.resolveTrackedCryptoSymbols()) {
             if (!cryptoHistoryBootstrapGuard.isLiveAllowed(symbol)) {
                 log.info("MARKET_DATA_WAITING_FOR_HISTORY symbol={}", symbol);
                 continue;

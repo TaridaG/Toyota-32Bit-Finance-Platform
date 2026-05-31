@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
  * `geçmiş veri ve backfill` REST endpoint'lerini expose eden HTTP controller.
  */
 @RestController
-@RequestMapping("/api/market/ingestion")
+@RequestMapping("/api/v1/market/ingestion")
 @RequiredArgsConstructor
 public class IngestionStatusController {
 

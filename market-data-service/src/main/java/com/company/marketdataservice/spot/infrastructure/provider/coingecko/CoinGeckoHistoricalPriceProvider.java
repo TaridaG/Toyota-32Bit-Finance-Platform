@@ -1,5 +1,5 @@
 package com.company.marketdataservice.spot.infrastructure.provider.coingecko;
-import com.company.marketdataservice.bootstrap.config.TrackedCryptoSymbols;
+import com.company.marketdataservice.catalog.registry.providers.CryptoRegistry;
 import com.company.marketdataservice.history.domain.HistoricalPricePoint;
 import com.company.marketdataservice.history.domain.HistoricalPriceProvider;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;
@@ -216,7 +216,7 @@ public class CoinGeckoHistoricalPriceProvider implements HistoricalPriceProvider
                 .map(String::toLowerCase)
                 .orElseGet(() -> {
                     String baseAsset = extractBaseAsset(normalizedSymbol);
-                    String mapped = TrackedCryptoSymbols.COINGECKO_ID_BY_BASE.get(baseAsset);
+                    String mapped = CryptoRegistry.coingeckoIdForBase(baseAsset);
                     if (mapped != null) {
                         return mapped;
                     }

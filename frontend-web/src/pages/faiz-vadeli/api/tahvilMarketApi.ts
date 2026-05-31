@@ -24,7 +24,7 @@ function toDateParam(d: Date): string {
 
 export async function fetchTahvilSummary(symbol: string): Promise<MarketPriceSummaryEntry | null> {
   return getCachedOrLoad(`faiz-vadeli:tahvil:summary:${symbol.toUpperCase()}`, SUMMARY_TTL_MS, async () => {
-    const { data } = await apiClient.get<Record<string, MarketPriceSummaryEntry>>('/api/market/prices/summary', {
+    const { data } = await apiClient.get<Record<string, MarketPriceSummaryEntry>>('/api/v1/market/prices/summary', {
       params: { symbols: symbol },
     })
     const row = data?.[symbol.toUpperCase()]
@@ -38,7 +38,7 @@ export async function fetchTahvilHistory(symbol: string): Promise<MarketHistoryP
   const from = new Date(to)
   from.setFullYear(from.getFullYear() - 5)
   return getCachedOrLoad(`faiz-vadeli:tahvil:history:${symbol.toUpperCase()}:5Y`, HISTORY_TTL_MS, async () => {
-    const { data } = await apiClient.get<MarketHistoryPoint[]>('/api/market/prices/history', {
+    const { data } = await apiClient.get<MarketHistoryPoint[]>('/api/v1/market/prices/history', {
       params: {
         symbol: symbol.toUpperCase(),
         from: toDateParam(from),

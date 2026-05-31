@@ -1,6 +1,6 @@
 package com.company.finance_api.watchlist.infrastructure.http.dto;
 
-import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import java.time.Instant;
 
 /** WatchlistItemDto — API transfer nesnesi (DTO/response/request). */

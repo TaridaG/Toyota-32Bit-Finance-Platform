@@ -195,6 +195,6 @@ export function AdminAvgLatencyPage() {
 }
 
 const PROBE_PATH_LABEL_KEYS: Record<string, string> = {
-  '/api/admin/metrics/portal-users': 'latencyPage.path.portalUsers',
-  '/api/admin/metrics/portal-portfolios': 'latencyPage.path.portalPortfolios',
+  '/api/v1/admin/metrics/portal-users': 'latencyPage.path.portalUsers',
+  '/api/v1/admin/metrics/portal-portfolios': 'latencyPage.path.portalPortfolios',
 }

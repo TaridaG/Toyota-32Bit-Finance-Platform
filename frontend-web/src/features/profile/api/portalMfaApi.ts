@@ -12,7 +12,7 @@ export type PortalMfaSetup = {
   qrCodeBase64: string
 }
 
-const BASE = '/api/portal/profile/mfa'
+const BASE = '/api/v1/portal/profile/mfa'
 
 export async function fetchPortalMfaStatus(): Promise<PortalMfaStatus> {
   const { data } = await apiClient.get<ApiEnvelope<PortalMfaStatus>>(BASE)

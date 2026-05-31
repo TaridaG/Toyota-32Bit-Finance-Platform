@@ -5,8 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.portfolio.goal.PortfolioGoalService;
-import com.company.finance_api.portfolio.goal.dto.PortfolioGoalsViewResponse;
+import com.company.finance_api.portfolio.goal.application.PortfolioGoalService;
+import com.company.finance_api.portfolio.goal.infrastructure.http.dto.PortfolioGoalsViewResponse;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;
@@ -35,7 +35,7 @@ class PortfolioGoalControllerTest {
         .thenReturn(new PortfolioGoalsViewResponse("ALL", null, "USD", null, null));
 
     mockMvc
-        .perform(get("/api/portfolio/goals"))
+        .perform(get("/api/v1/portfolio/goals"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.scope").value("ALL"));

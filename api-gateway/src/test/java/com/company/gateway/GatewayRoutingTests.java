@@ -75,7 +75,7 @@ class GatewayRoutingTests {
                 .claim("realm_access", Map.of("roles", List.of("USER"))));
 
         webTestClient.get()
-                .uri("/api/test")
+                .uri("/api/v1/test")
                 .headers(h -> {
                     h.setBearerAuth(token);
                     h.set("X-USER-ID", "00000000-0000-0000-0000-000000000000");
@@ -89,7 +89,7 @@ class GatewayRoutingTests {
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
 
         RecordedRequest recorded = financeMock.takeRequest();
-        Assertions.assertEquals("/api/test", recorded.getPath());
+        Assertions.assertEquals("/api/v1/test", recorded.getPath());
         Assertions.assertEquals("jwt-sub-1", recorded.getHeader("X-USER-ID"));
         Assertions.assertEquals("jwt-user", recorded.getHeader("X-USERNAME"));
         Assertions.assertNull(recorded.getHeader("X-USER-EMAIL"));
@@ -101,13 +101,13 @@ class GatewayRoutingTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.get()
-                .uri("/market/crypto/latest")
+                .uri("/api/v1/market/crypto/latest")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
 
         RecordedRequest recorded = marketMock.takeRequest();
-        Assertions.assertEquals("/api/market/crypto/latest", recorded.getPath());
+        Assertions.assertEquals("/api/v1/market/crypto/latest", recorded.getPath());
         Assertions.assertNull(recorded.getHeader("X-USER-ID"));
     }
 
@@ -129,14 +129,11 @@ class GatewayRoutingTests {
                 .expectBody(String.class).isEqualTo("{\"ok\":true}");
 
         RecordedRequest recorded = financeMock.takeRequest();
-        Assertions.assertEquals("/api/portfolio/overview", recorded.getPath());
+        Assertions.assertEquals("/api/v1/portfolio/overview", recorded.getPath());
     }
 
     @Test
-    void legacy_api_should_emit_deprecation_headers() throws Exception {
-        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
-                .addHeader("Content-Type", "application/json"));
-
+    void legacy_api_should_be_unsupported() throws Exception {
         String token = GatewayOidcIssuerStub.mintAccessToken(b -> b
                 .subject("jwt-sub-1")
                 .claim("preferred_username", "jwt-user")
@@ -146,9 +143,7 @@ class GatewayRoutingTests {
                 .uri("/api/portfolio/overview")
                 .headers(h -> h.setBearerAuth(token))
                 .exchange()
-                .expectStatus().isOk()
-                .expectHeader().valueEquals("Deprecation", "true")
-                .expectHeader().exists("Link");
+                .expectStatus().isNotFound();
     }
 
     @Test
@@ -157,12 +152,12 @@ class GatewayRoutingTests {
                 .addHeader("Content-Type", "application/json"));
 
         webTestClient.get()
-                .uri("/api/market/instruments/BTCUSDT/fundamentals?forceRefresh=false")
+                .uri("/api/v1/market/instruments/BTCUSDT/fundamentals?forceRefresh=false")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class).isEqualTo("{\"symbol\":\"BTCUSDT\"}");
 
         RecordedRequest recorded = marketMock.takeRequest();
-        Assertions.assertEquals("/api/market/instruments/BTCUSDT/fundamentals?forceRefresh=false", recorded.getPath());
+        Assertions.assertEquals("/api/v1/market/instruments/BTCUSDT/fundamentals?forceRefresh=false", recorded.getPath());
     }
 }

@@ -4,4 +4,4 @@ WHERE provider = 'YAHOO'
   AND provider_symbol IN ('GC=F', 'SI=F', 'HG=F', 'PA=F', 'PL=F');
 
 DELETE FROM mds_instrument_catalog
-WHERE symbol IN ('GC=F', 'SI=F', 'HG=F', 'PA=F', 'PL=F');
+WHERE canonical_symbol IN ('GC=F', 'SI=F', 'HG=F', 'PA=F', 'PL=F');

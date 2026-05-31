@@ -16,7 +16,7 @@ class RateLimitConfigTest {
     @Test
     void userIdKeyResolver_usesTrustedUserHeader() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/portfolio")
+                MockServerHttpRequest.get("/api/v1/portfolio")
                         .header("X-USER-ID", "user-42")
                         .build()
         );
@@ -27,7 +27,7 @@ class RateLimitConfigTest {
     @Test
     void userIdKeyResolver_fallsBackToAnonymousWithoutUserHeader() {
         MockServerWebExchange exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/api/public/login").build()
+                MockServerHttpRequest.get("/api/v1/public/login").build()
         );
 
         assertEquals("anonymous", keyResolver.resolve(exchange).block());
@@ -35,7 +35,7 @@ class RateLimitConfigTest {
 
     @Test
     void userIdKeyResolver_fallsBackToClientIpWhenRemoteAddressPresent() {
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/public/login")
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/public/login")
                 .remoteAddress(new InetSocketAddress("203.0.113.10", 54321))
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);

@@ -17,7 +17,7 @@ import java.util.List;
  * `spot fiyat` REST endpoint'lerini expose eden HTTP controller.
  */
 @RestController
-@RequestMapping("/api/market")
+@RequestMapping("/api/v1/market")
 @RequiredArgsConstructor
 public class MarketDataController {
 

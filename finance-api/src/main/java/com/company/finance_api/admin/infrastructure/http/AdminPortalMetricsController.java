@@ -31,8 +31,8 @@ import com.company.finance_api.admin.infrastructure.http.dto.AdminSendUserMessag
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserAnalyticsDashboardDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserDirectoryPageDto;
 import com.company.finance_api.admin.infrastructure.http.dto.AdminUserPortfolioTreeDto;
-import com.company.finance_api.profile.PortalProfileService;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.profile.application.PortalProfileService;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -59,7 +59,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 /** Admin portal metrics REST endpoint'leri: dashboard KPI, dizin, analytics ve latency probe. */
 @RestController
-@RequestMapping("/api/admin/metrics")
+@RequestMapping("/api/v1/admin/metrics")
 public class AdminPortalMetricsController {
 
   private static final Logger log = LoggerFactory.getLogger(AdminPortalMetricsController.class);

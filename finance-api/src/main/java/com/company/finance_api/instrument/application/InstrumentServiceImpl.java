@@ -1,8 +1,8 @@
 package com.company.finance_api.instrument.application;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.enums.InstrumentType;
-import com.company.finance_api.repository.InstrumentRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
 

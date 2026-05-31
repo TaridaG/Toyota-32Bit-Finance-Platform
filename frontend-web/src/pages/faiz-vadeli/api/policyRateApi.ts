@@ -29,14 +29,14 @@ export type PolicyRateHistoryResponse = {
 
 export async function fetchPolicyRateLatest(): Promise<PolicyRateLatestResponse> {
   return getCachedOrLoad('faiz-vadeli:policy-rate:latest', LATEST_TTL_MS, async () => {
-    const { data } = await apiClient.get<PolicyRateLatestResponse>('/api/rates/policy-rate/latest')
+    const { data } = await apiClient.get<PolicyRateLatestResponse>('/api/v1/rates/policy-rate/latest')
     return data
   })
 }
 
 export async function fetchPolicyRateHistory(): Promise<PolicyRateHistoryResponse> {
   return getCachedOrLoad('faiz-vadeli:policy-rate:history:5Y:WEEKLY', HISTORY_TTL_MS, async () => {
-    const { data } = await apiClient.get<PolicyRateHistoryResponse>('/api/rates/policy-rate/history', {
+    const { data } = await apiClient.get<PolicyRateHistoryResponse>('/api/v1/rates/policy-rate/history', {
       params: { range: '5Y', frequency: 'WEEKLY' },
     })
     return data

@@ -1,7 +1,7 @@
 package com.company.finance_api.admin.application;
 
 import com.company.finance_api.admin.infrastructure.http.dto.AdminPortalPortfolioMetricsDto;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;

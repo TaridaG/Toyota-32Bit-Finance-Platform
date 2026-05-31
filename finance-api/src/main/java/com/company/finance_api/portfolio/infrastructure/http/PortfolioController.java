@@ -1,12 +1,12 @@
 package com.company.finance_api.portfolio.infrastructure.http;
 
-import com.company.finance_api.domain.PortfolioSnapshot;
-import com.company.finance_api.dto.PortfolioOverviewResponse;
-import com.company.finance_api.dto.PortfolioPerformanceSeriesResponse;
-import com.company.finance_api.dto.PortfolioPositionResponse;
-import com.company.finance_api.dto.PortfolioSummaryResponse;
-import com.company.finance_api.dto.PortfolioTradeFlowResponse;
-import com.company.finance_api.dto.PortfolioValuationResponse;
+import com.company.finance_api.portfolio.domain.PortfolioSnapshot;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioOverviewResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPerformanceSeriesResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPositionResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioSummaryResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioTradeFlowResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioValuationResponse;
 import com.company.finance_api.portfolio.application.PortfolioOverviewService;
 import com.company.finance_api.portfolio.application.PortfolioPerformanceSeriesService;
 import com.company.finance_api.portfolio.application.PortfolioService;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 /** Portfolio özet, değerleme ve snapshot endpoint'lerini sunan controller. */
 @RestController
-@RequestMapping("/api/portfolio")
+@RequestMapping("/api/v1/portfolio")
 @RequiredArgsConstructor
 public class PortfolioController {
 

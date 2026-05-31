@@ -33,17 +33,17 @@ function assertSuccessOnly(body: ApiEnvelope<unknown>): void {
 }
 
 export async function fetchNewsFavorites(): Promise<NewsFavoriteItem[]> {
-  const { data } = await apiClient.get<ApiEnvelope<NewsFavoriteItem[]>>('/api/news/favorites')
+  const { data } = await apiClient.get<ApiEnvelope<NewsFavoriteItem[]>>('/api/v1/news/favorites')
   return assertSuccessData(data)
 }
 
 export async function addNewsFavorite(newsId: number): Promise<void> {
-  const { data } = await apiClient.post<ApiEnvelope<unknown>>('/api/news/favorites', { newsId })
+  const { data } = await apiClient.post<ApiEnvelope<unknown>>('/api/v1/news/favorites', { newsId })
   assertSuccessOnly(data)
 }
 
 export async function removeNewsFavorite(newsId: number): Promise<void> {
-  const { data } = await apiClient.delete<ApiEnvelope<unknown>>(`/api/news/favorites/${newsId}`)
+  const { data } = await apiClient.delete<ApiEnvelope<unknown>>(`/api/v1/news/favorites/${newsId}`)
   assertSuccessOnly(data)
 }
 
@@ -69,7 +69,7 @@ export async function fetchFavoriteNewsEnriched(
 ): Promise<PageResponse<NewsApiItem>> {
   const maxAgeMinutes = maxAgeMinutesForRange(filters?.range ?? 'all')
   const normalizedSearch = search?.trim()
-  const { data } = await apiClient.get<ApiEnvelope<PageResponse<NewsApiItem>>>('/api/news/favorites/enriched', {
+  const { data } = await apiClient.get<ApiEnvelope<PageResponse<NewsApiItem>>>('/api/v1/news/favorites/enriched', {
     params: {
       page,
       size,

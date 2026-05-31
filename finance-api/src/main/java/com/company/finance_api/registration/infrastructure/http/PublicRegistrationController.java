@@ -1,13 +1,13 @@
 package com.company.finance_api.registration.infrastructure.http;
 
-import com.company.finance_api.dto.PublicEmailAvailabilityResponse;
-import com.company.finance_api.dto.PublicRegisterRequest;
-import com.company.finance_api.dto.PublicRegisterResponse;
-import com.company.finance_api.dto.PublicSendVerificationCodeRequest;
-import com.company.finance_api.dto.PublicSendVerificationCodeResponse;
-import com.company.finance_api.dto.PublicUsernameAvailabilityResponse;
-import com.company.finance_api.registration.PortalRegistrationService;
-import com.company.finance_api.registration.RegistrationEmailVerificationService;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicEmailAvailabilityResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicRegisterRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicRegisterResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicUsernameAvailabilityResponse;
+import com.company.finance_api.registration.application.PortalRegistrationService;
+import com.company.finance_api.registration.application.RegistrationEmailVerificationService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Kimlik doğrulama gerektirmeyen kayıt, doğrulama kodu ve müsaitlik endpoint'leri. */
 @RestController
-@RequestMapping("/api/public")
+@RequestMapping("/api/v1/public")
 public class PublicRegistrationController {
 
   private final PortalRegistrationService portalRegistrationService;

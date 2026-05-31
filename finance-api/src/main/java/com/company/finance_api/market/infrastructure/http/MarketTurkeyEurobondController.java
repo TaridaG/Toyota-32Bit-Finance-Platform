@@ -1,8 +1,8 @@
 package com.company.finance_api.market.infrastructure.http;
 
-import com.company.finance_api.dto.market.eurobond.EurobondCashflowResponse;
-import com.company.finance_api.dto.market.eurobond.EurobondHistoryResponse;
-import com.company.finance_api.dto.market.eurobond.EurobondInstrumentDto;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondCashflowResponse;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondHistoryResponse;
+import com.company.finance_api.market.infrastructure.http.dto.eurobond.EurobondInstrumentDto;
 import com.company.finance_api.market.application.TrEurobondMarketService;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.math.BigDecimal;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** TR eurobond listesi, geçmiş ve nakit akışı API'lerini sunar. */
 @RestController
-@RequestMapping("/api/market/eurobonds/tr")
+@RequestMapping("/api/v1/market/eurobonds/tr")
 public class MarketTurkeyEurobondController {
 
   private final TrEurobondMarketService trEurobondMarketService;

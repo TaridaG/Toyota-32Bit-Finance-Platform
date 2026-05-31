@@ -1,8 +1,8 @@
 package com.company.finance_api.infocards.infrastructure.http;
 
-import com.company.finance_api.infocards.InfoCardService;
-import com.company.finance_api.infocards.dto.InfoCardDto;
-import com.company.finance_api.infocards.dto.LiteracyCatalogPageDto;
+import com.company.finance_api.infocards.application.InfoCardService;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardDto;
+import com.company.finance_api.infocards.infrastructure.http.dto.LiteracyCatalogPageDto;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Portal info-card ve literacy catalog REST endpoint'leri. */
 @RestController
-@RequestMapping("/api/portal/info-cards")
+@RequestMapping("/api/v1/portal/info-cards")
 public class PortalInfoCardsController {
 
   private final InfoCardService infoCardService;

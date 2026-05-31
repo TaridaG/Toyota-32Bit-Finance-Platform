@@ -10,11 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.alarm.domain.AlarmRule;
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.User;
-import com.company.finance_api.domain.enums.AlarmCondition;
-import com.company.finance_api.domain.enums.Exchange;
-import com.company.finance_api.domain.enums.InstrumentType;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.profile.domain.User;
+import com.company.finance_api.alarm.domain.enums.AlarmCondition;
+import com.company.finance_api.instrument.domain.enums.Exchange;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import com.company.finance_api.alarm.application.AlarmService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
@@ -56,7 +56,7 @@ class AlarmControllerTest {
     when(alarmService.getActiveAlarmsForUser(userId)).thenReturn(List.of(rule));
 
     mockMvc
-        .perform(get("/api/alarms"))
+        .perform(get("/api/v1/alarms"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].instrumentSymbol").value("BTCUSDT"))
@@ -71,7 +71,7 @@ class AlarmControllerTest {
 
     mockMvc
         .perform(
-            post("/api/alarms")
+            post("/api/v1/alarms")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -94,7 +94,7 @@ class AlarmControllerTest {
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
 
     mockMvc
-        .perform(delete("/api/alarms/9"))
+        .perform(delete("/api/v1/alarms/9"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 

@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.infocards.InfoCardService;
+import com.company.finance_api.infocards.application.InfoCardService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;
@@ -33,7 +33,7 @@ class PortalInfoCardsControllerTest {
     when(infoCardService.listPortalCards(null, false, null)).thenReturn(List.of());
 
     mockMvc
-        .perform(get("/api/portal/info-cards"))
+        .perform(get("/api/v1/portal/info-cards"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").isArray());

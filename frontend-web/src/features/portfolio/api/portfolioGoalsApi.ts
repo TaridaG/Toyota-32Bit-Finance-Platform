@@ -62,7 +62,7 @@ export async function fetchPortfolioGoals(
   if (portfolioId != null && portfolioId > 0) {
     params.portfolioId = portfolioId
   }
-  const { data } = await apiClient.get<ApiResponse<unknown>>('/api/portfolio/goals', {
+  const { data } = await apiClient.get<ApiResponse<unknown>>('/api/v1/portfolio/goals', {
     params,
     headers: { 'X-Currency': displayCurrency },
   })
@@ -77,7 +77,7 @@ export async function savePortfolioValueGoal(
   body: { targetAmount: number; title?: string; description?: string },
   displayCurrency: SupportedCurrency,
 ): Promise<PortfolioGoalsView> {
-  const { data } = await apiClient.put<ApiResponse<unknown>>('/api/portfolio/goals/portfolio-value', {
+  const { data } = await apiClient.put<ApiResponse<unknown>>('/api/v1/portfolio/goals/portfolio-value', {
     portfolioId: portfolioId != null && portfolioId > 0 ? portfolioId : null,
     ...body,
   }, { headers: { 'X-Currency': displayCurrency } })
@@ -98,7 +98,7 @@ export async function saveProfitGoal(
   },
   displayCurrency: SupportedCurrency,
 ): Promise<PortfolioGoalsView> {
-  const { data } = await apiClient.put<ApiResponse<unknown>>('/api/portfolio/goals/profit', {
+  const { data } = await apiClient.put<ApiResponse<unknown>>('/api/v1/portfolio/goals/profit', {
     portfolioId: portfolioId != null && portfolioId > 0 ? portfolioId : null,
     ...body,
   }, { headers: { 'X-Currency': displayCurrency } })

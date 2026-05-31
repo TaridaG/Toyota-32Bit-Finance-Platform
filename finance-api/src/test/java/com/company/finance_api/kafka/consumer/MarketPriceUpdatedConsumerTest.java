@@ -1,4 +1,4 @@
-package com.company.finance_api.kafka.consumer;
+package com.company.finance_api.shared.messaging.kafka.consumer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -6,16 +6,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.domain.Instrument;
-import com.company.finance_api.domain.InstrumentPrice;
-import com.company.finance_api.domain.ProcessedEvent;
-import com.company.finance_api.domain.enums.Exchange;
-import com.company.finance_api.domain.enums.InstrumentType;
-import com.company.finance_api.domain.enums.PriceType;
-import com.company.finance_api.kafka.event.MarketPriceUpdatedEvent;
-import com.company.finance_api.kafka.support.SemanticPriceWriteMetrics;
-import com.company.finance_api.repository.InstrumentRepository;
-import com.company.finance_api.repository.ProcessedEventRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.outbox.domain.ProcessedEvent;
+import com.company.finance_api.instrument.domain.enums.Exchange;
+import com.company.finance_api.instrument.domain.enums.InstrumentType;
+import com.company.finance_api.pricing.domain.enums.PriceType;
+import com.company.finance_api.shared.messaging.kafka.event.MarketPriceUpdatedEvent;
+import com.company.finance_api.shared.messaging.kafka.support.SemanticPriceWriteMetrics;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
+import com.company.finance_api.outbox.infrastructure.persistence.ProcessedEventRepository;
 import com.company.finance_api.pricing.application.PriceService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;

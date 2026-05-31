@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Haber toplama ve zenginleştirilmiş haber detay endpoint'lerini sunar. */
 @RestController
-@RequestMapping("/api/news")
+@RequestMapping("/api/v1/news")
 public class NewsAggregationController {
 
   private final NewsEnrichmentService newsEnrichmentService;

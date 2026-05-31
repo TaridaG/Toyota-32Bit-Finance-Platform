@@ -76,7 +76,7 @@ export async function fetchAdminPortfolioAnalytics(
 ): Promise<AdminPortfolioAnalyticsDashboard> {
   try {
     const { data } = await apiClient.get<Envelope<AdminPortfolioAnalyticsDashboard>>(
-      '/api/admin/metrics/portfolio-analytics',
+      '/api/v1/admin/metrics/portfolio-analytics',
       { params: queryParams(q) },
     )
     if (!data.success || data.data == null) {

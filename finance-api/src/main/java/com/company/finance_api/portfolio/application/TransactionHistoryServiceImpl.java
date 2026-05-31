@@ -1,14 +1,14 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.enums.PurchaseMode;
-import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.portfolio.InstrumentListingCurrency;
-import com.company.finance_api.portfolio.external.repository.ExternalPortfolioRepository;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
+import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryPageResponse;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryResponse;
-import com.company.finance_api.repository.TransactionRepository;
-import com.company.finance_api.repository.UserRepository;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
+import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import jakarta.persistence.criteria.JoinType;
 import java.time.Instant;
@@ -140,7 +140,7 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         result.getTotalPages());
   }
 
-  private com.company.finance_api.domain.User resolveCurrentUser() {
+  private com.company.finance_api.profile.domain.User resolveCurrentUser() {
     UUID userId = currentUserResolver.getCurrentUserId();
     return userRepository.findById(userId).orElseThrow();
   }

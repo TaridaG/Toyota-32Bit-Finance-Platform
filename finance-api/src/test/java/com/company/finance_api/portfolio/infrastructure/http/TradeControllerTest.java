@@ -7,12 +7,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.domain.Transaction;
-import com.company.finance_api.domain.enums.PurchaseMode;
-import com.company.finance_api.domain.enums.TradeInputMode;
-import com.company.finance_api.domain.enums.TransactionType;
-import com.company.finance_api.dto.InstrumentPriceCoverageResponse;
-import com.company.finance_api.dto.TradePreviewResponse;
+import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
+import com.company.finance_api.portfolio.domain.enums.TradeInputMode;
+import com.company.finance_api.portfolio.domain.enums.TransactionType;
+import com.company.finance_api.pricing.infrastructure.http.dto.InstrumentPriceCoverageResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.TradePreviewResponse;
 import com.company.finance_api.portfolio.application.TradeService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
@@ -59,7 +59,7 @@ class TradeControllerTest {
 
     mockMvc
         .perform(
-            post("/api/trades/preview")
+            post("/api/v1/trades/preview")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -84,7 +84,7 @@ class TradeControllerTest {
                 7L, "AAPL", Instant.parse("2020-01-01T00:00:00Z"), Instant.now()));
 
     mockMvc
-        .perform(get("/api/trades/instruments/7/price-coverage"))
+        .perform(get("/api/v1/trades/instruments/7/price-coverage"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.instrumentId").value(7));
@@ -94,7 +94,7 @@ class TradeControllerTest {
   void buyOrder_validationError_returns400() throws Exception {
     mockMvc
         .perform(
-            post("/api/trades/buy/order")
+            post("/api/v1/trades/buy/order")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
         .andExpect(status().isBadRequest())
@@ -110,7 +110,7 @@ class TradeControllerTest {
 
     mockMvc
         .perform(
-            post("/api/trades/buy")
+            post("/api/v1/trades/buy")
                 .param("instrumentId", "3")
                 .param("quantity", "1.5"))
         .andExpect(status().isOk())

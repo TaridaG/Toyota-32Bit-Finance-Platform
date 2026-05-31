@@ -1,7 +1,7 @@
 package com.company.finance_api.portfolio.application;
 
-import com.company.finance_api.dto.PortfolioPositionResponse;
-import com.company.finance_api.dto.PortfolioSummaryResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioPositionResponse;
+import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioSummaryResponse;
 import java.util.List;
 import java.util.UUID;
 

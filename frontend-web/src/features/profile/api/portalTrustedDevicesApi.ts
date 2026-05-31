@@ -14,7 +14,7 @@ export type PortalTrustedDevicesResponse = {
   devices: PortalTrustedDeviceRow[]
 }
 
-const BASE = '/api/portal/profile/trusted-devices'
+const BASE = '/api/v1/portal/profile/trusted-devices'
 
 export async function fetchPortalTrustedDevices(): Promise<PortalTrustedDevicesResponse> {
   const { data } = await apiClient.get<ApiEnvelope<PortalTrustedDevicesResponse>>(BASE)
