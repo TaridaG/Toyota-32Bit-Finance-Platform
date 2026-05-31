@@ -1,0 +1,22 @@
+package com.company.finance_api.portfolio.infrastructure.scheduler;
+
+import com.company.finance_api.portfolio.application.PortfolioSnapshotService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+/** Kullanıcı portföy snapshot'larını periyodik oluşturur. */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class PortfolioSnapshotScheduler {
+
+  private final PortfolioSnapshotService snapshotService;
+
+  @Scheduled(fixedRateString = "${portfolio.snapshot.fixed-rate-ms:600000}")
+  public void snapshot() {
+    log.info("Creating portfolio snapshots for all active users...");
+    snapshotService.createSnapshotsForAllUsers();
+  }
+}

@@ -1,8 +1,8 @@
 package com.company.finance_api.profile.application;
 
-import com.company.finance_api.auth.LoginAttemptContext;
-import com.company.finance_api.auth.LoginSecurityNotificationService;
-import com.company.finance_api.auth.PortalTrustedDeviceService;
+import com.company.finance_api.auth.domain.LoginAttemptContext;
+import com.company.finance_api.auth.application.LoginSecurityNotificationService;
+import com.company.finance_api.auth.application.PortalTrustedDeviceService;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;

@@ -1,6 +1,6 @@
 package com.company.finance_api.domain;
 
-import com.company.finance_api.infocards.dto.InfoCardLocaleContentDto;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardLocaleContentDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

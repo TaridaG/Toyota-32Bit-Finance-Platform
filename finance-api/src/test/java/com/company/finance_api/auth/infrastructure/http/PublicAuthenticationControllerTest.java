@@ -6,8 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.auth.LoginCompletionResult;
-import com.company.finance_api.auth.PortalLoginService;
+import com.company.finance_api.auth.domain.LoginCompletionResult;
+import com.company.finance_api.auth.application.PortalLoginService;
 import com.company.finance_api.dto.PublicLoginResponse;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;

@@ -1,6 +1,6 @@
 package com.company.finance_api.profile.infrastructure.http;
 
-import com.company.finance_api.auth.LoginAttemptContext;
+import com.company.finance_api.auth.domain.LoginAttemptContext;
 import com.company.finance_api.dto.PortalChangePasswordRequest;
 import com.company.finance_api.dto.PortalChangeUsernameRequest;
 import com.company.finance_api.dto.PortalConfirmEmailChangeRequest;

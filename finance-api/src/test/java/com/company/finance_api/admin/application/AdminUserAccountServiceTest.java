@@ -7,7 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.auth.LoginSecurityNotificationService;
+import com.company.finance_api.auth.application.LoginSecurityNotificationService;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.domain.enums.NotificationType;
 import com.company.finance_api.notification.application.PortalInboxNotificationService;

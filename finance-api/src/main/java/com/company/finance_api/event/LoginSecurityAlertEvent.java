@@ -1,6 +1,6 @@
 package com.company.finance_api.event;
 
-import com.company.finance_api.auth.LoginSecurityAlertType;
+import com.company.finance_api.auth.domain.LoginSecurityAlertType;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;

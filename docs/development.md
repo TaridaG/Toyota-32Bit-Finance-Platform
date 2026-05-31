@@ -109,3 +109,17 @@ docker exec finance-api ls /app  # image yapısına göre değişir
 # PostgreSQL shell
 docker exec -it finance-postgres psql -U finance -d finance
 ```
+
+## finance-api paket yapısı (Faz 3 roadmap)
+
+Faz 1–2 ile modül içi katmanlar (`application` / `domain` / `infrastructure`) hizalandı. Kalan legacy paketler ayrı PR’larda taşınacak:
+
+| Legacy paket | Hedef | Öncelik |
+|--------------|-------|---------|
+| `repository/` (24) | `{modül}/infrastructure/persistence/` | portfolio → profile → market |
+| `domain/` entity (33) | `{modül}/domain/` | modül modül |
+| `dto/` (48) | `{modül}/infrastructure/http/dto/` | auth/registration/profile |
+| `registration/` flat | `registration/application` + persistence | orta |
+| `event/` + `kafka/` | modül kafka veya `shared/messaging` | mimari karar |
+
+Taşımalar `git mv` ile yapılır; davranış değişmez.

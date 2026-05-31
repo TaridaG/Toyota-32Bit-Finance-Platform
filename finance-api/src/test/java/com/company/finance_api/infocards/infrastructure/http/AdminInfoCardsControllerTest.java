@@ -5,8 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.infocards.InfoCardService;
-import com.company.finance_api.infocards.dto.InfoCardsPageDto;
+import com.company.finance_api.infocards.application.InfoCardService;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardsPageDto;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.util.List;

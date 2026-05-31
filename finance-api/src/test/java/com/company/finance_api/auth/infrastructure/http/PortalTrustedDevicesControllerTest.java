@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.company.finance_api.auth.PortalTrustedDeviceService;
+import com.company.finance_api.auth.application.PortalTrustedDeviceService;
 import com.company.finance_api.dto.PortalTrustedDevicesResponseDto;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;

@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.company.finance_api.auth.LoginSecurityNotificationService;
+import com.company.finance_api.auth.application.LoginSecurityNotificationService;
 import com.company.finance_api.domain.BlockedRegistrationEmail;
 import com.company.finance_api.domain.User;
 import com.company.finance_api.repository.BlockedRegistrationEmailRepository;

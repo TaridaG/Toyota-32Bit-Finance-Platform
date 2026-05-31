@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.company.finance_api.dto.PortalMfaStatusResponse;
-import com.company.finance_api.mfa.PortalMfaService;
+import com.company.finance_api.mfa.application.PortalMfaService;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
 import java.time.Instant;

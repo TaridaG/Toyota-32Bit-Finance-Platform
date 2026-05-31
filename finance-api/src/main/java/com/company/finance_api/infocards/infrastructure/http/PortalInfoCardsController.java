@@ -1,8 +1,8 @@
 package com.company.finance_api.infocards.infrastructure.http;
 
-import com.company.finance_api.infocards.InfoCardService;
-import com.company.finance_api.infocards.dto.InfoCardDto;
-import com.company.finance_api.infocards.dto.LiteracyCatalogPageDto;
+import com.company.finance_api.infocards.application.InfoCardService;
+import com.company.finance_api.infocards.infrastructure.http.dto.InfoCardDto;
+import com.company.finance_api.infocards.infrastructure.http.dto.LiteracyCatalogPageDto;
 import com.company.finance_api.shared.web.ApiResponse;
 import java.util.Arrays;
 import java.util.List;

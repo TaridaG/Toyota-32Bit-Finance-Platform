@@ -4,7 +4,7 @@ import com.company.finance_api.dto.PortalMfaConfirmRequest;
 import com.company.finance_api.dto.PortalMfaDisableRequest;
 import com.company.finance_api.dto.PortalMfaSetupResponse;
 import com.company.finance_api.dto.PortalMfaStatusResponse;
-import com.company.finance_api.mfa.PortalMfaService;
+import com.company.finance_api.mfa.application.PortalMfaService;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;

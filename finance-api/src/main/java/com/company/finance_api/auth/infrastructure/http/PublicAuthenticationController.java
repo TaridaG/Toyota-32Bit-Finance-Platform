@@ -1,8 +1,8 @@
 package com.company.finance_api.auth.infrastructure.http;
 
-import com.company.finance_api.auth.LoginAttemptContext;
-import com.company.finance_api.auth.LoginCompletionResult;
-import com.company.finance_api.auth.PortalLoginService;
+import com.company.finance_api.auth.domain.LoginAttemptContext;
+import com.company.finance_api.auth.domain.LoginCompletionResult;
+import com.company.finance_api.auth.application.PortalLoginService;
 import com.company.finance_api.dto.PublicLoginMfaRequest;
 import com.company.finance_api.dto.PublicLoginRequest;
 import com.company.finance_api.dto.PublicLoginResponse;
