@@ -1,27 +1,15 @@
-# Dokümantasyon
+# Documentation / Dokümantasyon
 
-Finance Platform monoreposu için teknik rehberler. Güncel mimari ve yapılandırma kaynağı olarak bu klasörü kullanın; `frontend-web/README.md` yalnızca Vite şablon notları içerir.
+Finance Platform technical guides are available in three languages. Shared media lives at [`assets/`](assets/) and [`diagrams/`](diagrams/) (not duplicated per locale).
 
-## Rehberler
+| Language | Index |
+|----------|--------|
+| **Türkçe** | [turkce/README.md](turkce/README.md) |
+| **English** | [english/README.md](english/README.md) |
+| **Deutsch** | [deutsch/README.md](deutsch/README.md) |
 
-| Belge | Ne zaman okunur? |
-|-------|------------------|
-| [architecture.md](architecture.md) | Sistem bileşenleri, Kafka, güvenlik ve veri akışını anlamak |
-| [getting-started.md](getting-started.md) | İlk kurulum (Docker veya hibrit yerel) |
-| [services.md](services.md) | Hangi servis ne yapar, hangi portta dinler |
-| [api.md](api.md) | `/api/v1` yönlendirme, Swagger, kimlik doğrulama |
-| [development.md](development.md) | Maven, profiller, test, frontend proxy |
-| [configuration.md](configuration.md) | `Docker/.env` ve servis ortam değişkenleri |
-| [observability.md](observability.md) | Prometheus, Grafana, Jaeger, OpenSearch |
+## Maintenance
 
-## Hızlı bağlantılar
+When you change architecture, ports, or gateway routes, update the matching file under **`docs/turkce/`** first, then mirror the change in **`docs/english/`** and **`docs/deutsch/`** (same filenames; keep Mermaid blocks identical across locales; translate prose only).
 
-- Kök özet: [../README.md](../README.md)
-- Docker Compose: [../Docker/docker-compose.yml](../Docker/docker-compose.yml)
-- Ortam şablonu: [../Docker/.env.example](../Docker/.env.example)
-- Keycloak realm: [../Docker/keycloak/realm-finance.json](../Docker/keycloak/realm-finance.json)
-- Frontend env: [../frontend-web/.env.example](../frontend-web/.env.example)
-
-## Dokümantasyonu güncelleme
-
-Mimari veya port değişikliği yaptığınızda ilgili `docs/*.md` dosyasını aynı PR’da güncelleyin. Gateway route sırası değiştiyse [api.md](api.md) ve [architecture.md](architecture.md) birlikte gözden geçirilmelidir.
+Project overview (Turkish): [../README.md](../README.md).
