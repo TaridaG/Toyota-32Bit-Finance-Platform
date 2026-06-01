@@ -41,7 +41,6 @@ public class LoginSecurityNotificationService {
             LoginSecurityAlertType.LOGIN_SUCCEEDED,
             contextIp(context),
             contextUa(context)),
-        false,
         false);
   }
 
@@ -61,7 +60,6 @@ public class LoginSecurityNotificationService {
             LoginSecurityAlertType.LOGIN_FAILED,
             contextIp(context),
             contextUa(context)),
-        true,
         true);
   }
 
@@ -76,7 +74,6 @@ public class LoginSecurityNotificationService {
             resolveLocale(user, context),
             contextIp(context),
             contextUa(context)),
-        false,
         false);
   }
 
@@ -93,7 +90,6 @@ public class LoginSecurityNotificationService {
             previousUsername,
             contextIp(context),
             contextUa(context)),
-        false,
         false);
   }
 
@@ -107,8 +103,7 @@ public class LoginSecurityNotificationService {
             user.getUsername(),
             user.getPreferredLocale(),
             reason),
-        false,
-        true);
+        false);
   }
 
   /** Hesap çözme (unfreeze) bildirimi yayınlar. */
@@ -117,8 +112,7 @@ public class LoginSecurityNotificationService {
         user,
         LoginSecurityAlertEvent.accountUnfrozen(
             user.getId(), requireEmail(user), user.getUsername(), user.getPreferredLocale()),
-        false,
-        true);
+        false);
   }
 
   /** Admin tarafından gönderilen mesajı güvenlik kanalıyla iletir. */
@@ -131,8 +125,7 @@ public class LoginSecurityNotificationService {
             user.getUsername(),
             user.getPreferredLocale(),
             messageBody),
-        false,
-        true);
+        false);
   }
 
   /** Admin hesap silme işlemi sonrası bildirim yayınlar. */
@@ -145,8 +138,7 @@ public class LoginSecurityNotificationService {
             user.getUsername(),
             user.getPreferredLocale(),
             emailBlocked),
-        false,
-        true);
+        false);
   }
 
   /**
@@ -177,28 +169,23 @@ public class LoginSecurityNotificationService {
           user,
           LoginSecurityAlertEvent.emailChangedOldAccount(
               user.getId(), oldEmail.trim(), newEmail, user.getUsername(), locale, ip, ua),
-          false,
-          true);
+          false);
     }
     if (StringUtils.hasText(newEmail)) {
       publish(
           user,
           LoginSecurityAlertEvent.emailChangedNewAccount(
               user.getId(), newEmail.trim(), user.getUsername(), locale, oldEmail, ip, ua),
-          false,
-          true);
+          false);
     }
   }
 
   private void publish(
-      User user,
-      LoginSecurityAlertEvent event,
-      boolean trackFailedLoginCooldown,
-      boolean forceSend) {
+      User user, LoginSecurityAlertEvent event, boolean trackFailedLoginCooldown) {
     if (user == null) {
       return;
     }
-    if (!forceSend && !user.isNotifySecurityAlerts()) {
+    if (!user.isNotifySecurityAlerts()) {
       return;
     }
     String to =

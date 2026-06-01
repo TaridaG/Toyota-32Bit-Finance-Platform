@@ -42,6 +42,7 @@ class AlarmServiceImplTest {
 
     User user = mock(User.class);
     when(user.getId()).thenReturn(UUID.randomUUID());
+    when(user.isNotifyAlarmAlerts()).thenReturn(true);
 
     Instrument instrument = mock(Instrument.class);
     when(instrument.getSymbol()).thenReturn("BTCUSDT");
@@ -74,5 +75,45 @@ class AlarmServiceImplTest {
     verify(rule).deactivate();
     verify(alarmRuleRepository).save(rule);
     verify(alarmEventPublisher).publish(any());
+    verify(alarmHistoryRepository).save(any());
+  }
+
+  @Test
+  void checkAlarms_shouldSaveHistoryButNotPublish_whenAlarmEmailsDisabled() {
+
+    User user = mock(User.class);
+    when(user.getId()).thenReturn(UUID.randomUUID());
+    when(user.isNotifyAlarmAlerts()).thenReturn(false);
+
+    Instrument instrument = mock(Instrument.class);
+    when(instrument.getSymbol()).thenReturn("BTCUSDT");
+
+    AlarmRule rule = mock(AlarmRule.class);
+    when(rule.getCondition()).thenReturn(AlarmCondition.GREATER_THAN);
+    when(rule.getUser()).thenReturn(user);
+    when(rule.getInstrument()).thenReturn(instrument);
+
+    InstrumentPrice price =
+        new InstrumentPrice(
+            instrument,
+            com.company.finance_api.pricing.domain.enums.PriceType.MARKET,
+            BigDecimal.valueOf(200),
+            Instant.now());
+
+    AlarmEvaluator evaluator = mock(AlarmEvaluator.class);
+
+    when(alarmRuleRepository.findByInstrumentAndActiveTrue(instrument)).thenReturn(List.of(rule));
+
+    when(evaluatorFactory.getEvaluator(AlarmCondition.GREATER_THAN))
+        .thenReturn(Optional.of(evaluator));
+
+    when(evaluator.evaluate(rule, price)).thenReturn(true);
+
+    alarmService.checkAlarms(instrument, price);
+
+    verify(rule).deactivate();
+    verify(alarmRuleRepository).save(rule);
+    verify(alarmHistoryRepository).save(any());
+    verify(alarmEventPublisher, never()).publish(any());
   }
 }

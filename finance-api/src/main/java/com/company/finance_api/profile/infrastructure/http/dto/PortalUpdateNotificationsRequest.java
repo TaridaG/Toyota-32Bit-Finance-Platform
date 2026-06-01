@@ -7,7 +7,9 @@ public class PortalUpdateNotificationsRequest {
 
   @NotNull private Boolean notifySecurityAlerts;
 
-  @NotNull private Boolean notifyProductUpdates;
+  @NotNull private Boolean notifyWatchlistAlerts;
+
+  @NotNull private Boolean notifyAlarmAlerts;
 
   public Boolean getNotifySecurityAlerts() {
     return notifySecurityAlerts;
@@ -17,11 +19,19 @@ public class PortalUpdateNotificationsRequest {
     this.notifySecurityAlerts = notifySecurityAlerts;
   }
 
-  public Boolean getNotifyProductUpdates() {
-    return notifyProductUpdates;
+  public Boolean getNotifyWatchlistAlerts() {
+    return notifyWatchlistAlerts;
   }
 
-  public void setNotifyProductUpdates(Boolean notifyProductUpdates) {
-    this.notifyProductUpdates = notifyProductUpdates;
+  public void setNotifyWatchlistAlerts(Boolean notifyWatchlistAlerts) {
+    this.notifyWatchlistAlerts = notifyWatchlistAlerts;
+  }
+
+  public Boolean getNotifyAlarmAlerts() {
+    return notifyAlarmAlerts;
+  }
+
+  public void setNotifyAlarmAlerts(Boolean notifyAlarmAlerts) {
+    this.notifyAlarmAlerts = notifyAlarmAlerts;
   }
 }

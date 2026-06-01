@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Kullanıcı alarm kurallarının oluşturulması, listelenmesi ve fiyat güncellemesinde
- * değerlendirilmesi.
+ * değerlendirilmesidirrr.
  */
 public interface AlarmService {
 

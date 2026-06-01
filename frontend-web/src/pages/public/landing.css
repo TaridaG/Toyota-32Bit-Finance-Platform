@@ -4,18 +4,23 @@ body {
 }
 
 .landing-page {
+  --landing-gutter: clamp(1rem, 4.5vw, 2rem);
+  --landing-section-gap: clamp(2rem, 5vw, 4.5rem);
   min-height: 100vh;
   background: var(--color-bg);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding-inline: var(--landing-gutter);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
 .scroll-container {
@@ -24,7 +29,8 @@ body {
 
 .landing-section {
   width: 100%;
-  padding: 48px 0;
+  padding-block: clamp(2rem, 6vw, 4rem);
+  padding-inline: 0;
   border-top: 1px solid var(--color-border);
   scroll-snap-align: start;
 }
@@ -96,6 +102,8 @@ body {
   position: relative;
   overflow: hidden;
   min-height: 100vh;
+  padding-inline: var(--landing-gutter);
+  box-sizing: border-box;
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(79, 70, 229, 0.08));
   border-top: 0;
 }
@@ -103,7 +111,9 @@ body {
 .landing-hero-content {
   position: relative;
   z-index: 2;
-  width: min(1160px, 100%);
+  width: 100%;
+  max-width: min(1160px, 100%);
+  margin-inline: auto;
   border: 1px solid var(--color-border);
   border-radius: 22px;
   padding: clamp(1.3rem, 3vw, 2.4rem);
@@ -206,7 +216,7 @@ body {
 .landing-subtitle {
   margin: 0.75rem 0 0;
   color: var(--color-text-muted);
-  max-width: 760px;
+  max-width: none;
 }
 
 .landing-cta-row {
@@ -409,7 +419,7 @@ body {
 
 .analysis-title {
   margin: 0;
-  max-width: 12.5ch;
+  max-width: none;
   font-size: clamp(2rem, 3.6vw, 3.35rem);
   line-height: 1.08;
   letter-spacing: -0.04em;
@@ -1766,7 +1776,7 @@ body {
 
 .news-preview-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17.5rem, 18.6rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(18.6rem, 38vw));
   gap: 0.95rem;
   padding: 1rem;
 }
@@ -2586,73 +2596,33 @@ body {
   }
 }
 
+@media (max-width: 1023px) {
+  .analysis-copy,
+  .news-copy,
+  .bank-rates-copy,
+  .literacy-copy,
+  .final-cta-copy {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .analysis-subtitle,
+  .analysis-points {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .landing-root {
     scroll-snap-type: none;
   }
-}
 
-@media (min-width: 768px) {
-  .section-title {
-    text-align: left;
-  }
-
-  .landing-markets-head-title {
-    justify-content: flex-start;
-  }
-
-  .grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container {
-    padding: 0 32px;
-    align-items: stretch;
-  }
-
-  .landing-section {
-    padding: 64px 0;
-  }
-
-  .grid {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-
-  .analysis-showcase {
-    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
-    align-items: center;
-  }
-
-  .news-showcase {
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-    align-items: center;
-  }
-
-  .bank-rates-showcase {
-    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
-    align-items: center;
-  }
-
-  .literacy-showcase {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    align-items: center;
-  }
-
-  .final-cta-showcase {
-    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
-    align-items: center;
+  .landing-subtitle {
+    max-width: none;
   }
 
   .landing-section-dots {
-    right: 32px;
-  }
-}
-
-@media (max-width: 720px) {
-  .landing-section {
-    padding: 1rem 0.85rem;
+    display: none;
   }
 
   .landing-card-grid {
@@ -2663,24 +2633,9 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .landing-section-dots {
-    display: none;
-  }
-
-}
-
-@media (max-width: 640px) {
-  .landing-section {
-    padding: 32px 0;
-  }
-
   .section-title {
-    font-size: 22px;
+    font-size: clamp(1.25rem, 4.5vw, 1.75rem);
     text-align: center;
-  }
-
-  .hero-title {
-    font-size: 28px;
   }
 
   .analysis-title {
@@ -2697,26 +2652,10 @@ body {
     max-width: none;
   }
 
-  .analysis-preview {
-    max-width: 100%;
-    transform: none;
-  }
-
-  .news-preview {
-    max-width: 100%;
-    transform: none;
-  }
-
-  .bank-rates-preview {
-    max-width: 100%;
-    transform: none;
-  }
-
-  .literacy-preview {
-    max-width: 100%;
-    transform: none;
-  }
-
+  .analysis-preview,
+  .news-preview,
+  .bank-rates-preview,
+  .literacy-preview,
   .portfolio-preview {
     max-width: 100%;
     transform: none;
@@ -2763,9 +2702,17 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .bank-rates-preview-bank-cell {
+    min-width: 0;
+  }
+
   .literacy-preview-stats,
   .literacy-preview-content {
     flex-direction: column;
+  }
+
+  .literacy-preview-sidebar {
+    width: 100%;
   }
 
   .portfolio-preview-shell,
@@ -2775,6 +2722,10 @@ body {
 
   .portfolio-preview-metrics {
     flex-direction: column;
+  }
+
+  .portfolio-preview-sidebar {
+    padding: 0.8rem;
   }
 
   .analysis-preview-side-tools {
@@ -2797,12 +2748,82 @@ body {
     overflow-x: auto;
   }
 
-  .literacy-preview-sidebar {
-    width: 100%;
+  .landing-cta-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .portfolio-preview-sidebar {
-    padding: 0.8rem;
+  .landing-cta-primary,
+  .landing-cta-secondary {
+    display: flex;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) {
+  .landing-subtitle {
+    max-width: 760px;
+  }
+
+  .section-title {
+    text-align: left;
+  }
+
+  .landing-markets-head-title {
+    justify-content: flex-start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    align-items: stretch;
+  }
+
+  .landing-section {
+    padding-block: 64px;
+  }
+
+  .analysis-title {
+    max-width: 12.5ch;
+    text-align: left;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .analysis-showcase {
+    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+    align-items: center;
+  }
+
+  .news-showcase {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    align-items: center;
+  }
+
+  .bank-rates-showcase {
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    align-items: center;
+  }
+
+  .literacy-showcase {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
+  }
+
+  .final-cta-showcase {
+    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+    align-items: center;
+  }
+
+  .landing-section-dots {
+    right: 32px;
   }
 }
 

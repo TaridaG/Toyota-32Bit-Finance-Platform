@@ -3,7 +3,8 @@ export type PortalProfile = {
   username: string
   phone: string | null
   notifySecurityAlerts: boolean
-  notifyProductUpdates: boolean
+  notifyAlarmAlerts: boolean
+  notifyWatchlistAlerts: boolean
   /** ISO-8601 instant from the server; null if no profile photo is stored. */
   avatarUpdatedAt: string | null
   preferredLocale: string

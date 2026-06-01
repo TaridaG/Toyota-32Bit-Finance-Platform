@@ -1,3 +1,6 @@
+import { PORTAL_PAGES } from '../../data/portalPages'
+import type { PortalPageKey } from '../../types/infoCards'
+
 const PICK_SKIP_SELECTOR =
   '[data-literacy-help-control], [data-admin-pick-control], .lit-help-banner, .lit-help-popover, .help-card-popover, .ic-modal-overlay, .portal-header'
 
@@ -73,18 +76,37 @@ export function resolvePickTargetFromEvent(event: MouseEvent): PickTargetResult 
   return { term: label, label, elementId, i18nKey, i18nNs }
 }
 
+const PICK_BLOCKED_PAGE_KEYS = new Set<PortalPageKey>(['FINANCIAL_LITERACY', 'INFO_CARDS'])
+
+function resolvePortalPageKeyFromPath(pathname: string): PortalPageKey | null {
+  const normalized = pathname.replace(/\/+$/, '') || '/'
+  const sorted = [...PORTAL_PAGES].sort((a, b) => b.route.length - a.route.length)
+  for (const page of sorted) {
+    if (normalized === page.route || normalized.startsWith(`${page.route}/`)) {
+      return page.key
+    }
+  }
+  return null
+}
+
 export function isAdminPickRouteAllowed(pathname: string): boolean {
   const normalized = pathname.replace(/\/+$/, '') || '/'
-  if (normalized === '/app/bilgi-kartlari' || normalized.startsWith('/app/bilgi-kartlari/')) {
-    return false
+
+  const pageKey = resolvePortalPageKeyFromPath(pathname)
+  if (pageKey != null) {
+    return !PICK_BLOCKED_PAGE_KEYS.has(pageKey)
   }
+
   if (
     normalized === '/app/finansal-okuryazarlik' ||
-    normalized.startsWith('/app/finansal-okuryazarlik/') ||
-    normalized === '/finansal-okuryazarlik' ||
-    normalized.startsWith('/finansal-okuryazarlik/')
+    normalized.startsWith('/app/finansal-okuryazarlik/')
   ) {
     return false
   }
-  return normalized.startsWith('/app')
+
+  if (normalized.startsWith('/app/')) {
+    return true
+  }
+
+  return false
 }

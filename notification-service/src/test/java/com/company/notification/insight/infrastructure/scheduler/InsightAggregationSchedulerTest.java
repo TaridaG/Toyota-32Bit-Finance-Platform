@@ -1,5 +1,6 @@
 package com.company.notification.insight.infrastructure.scheduler;
 
+import com.company.notification.insight.application.DeliverWatchlistDigestUseCase;
 import com.company.notification.insight.domain.PendingInsightEvent;
 import com.company.notification.insight.infrastructure.persistence.PendingInsightEventRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -25,16 +26,21 @@ class InsightAggregationSchedulerTest {
     @Mock
     private PendingInsightEventRepository pendingInsightEventRepository;
 
+    @Mock
+    private DeliverWatchlistDigestUseCase deliverWatchlistDigestUseCase;
+
     @Test
     void aggregateAndSend_noop_when_nothing_pending() {
         when(pendingInsightEventRepository.findByProcessedFalse()).thenReturn(List.of());
 
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
+                deliverWatchlistDigestUseCase,
                 new SimpleMeterRegistry()
         );
         scheduler.aggregateAndSend();
 
+        verify(deliverWatchlistDigestUseCase, never()).deliver(any(), any());
         verify(pendingInsightEventRepository, never()).saveAll(any());
     }
 
@@ -50,10 +56,12 @@ class InsightAggregationSchedulerTest {
 
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
+                deliverWatchlistDigestUseCase,
                 new SimpleMeterRegistry()
         );
         scheduler.aggregateAndSend();
 
+        verify(deliverWatchlistDigestUseCase).deliver(eq(userId), anyList());
         ArgumentCaptor<List<PendingInsightEvent>> captor = ArgumentCaptor.forClass(List.class);
         verify(pendingInsightEventRepository).saveAll(captor.capture());
         List<PendingInsightEvent> saved = captor.getValue();
@@ -72,6 +80,7 @@ class InsightAggregationSchedulerTest {
 
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
+                deliverWatchlistDigestUseCase,
                 new SimpleMeterRegistry()
         );
         scheduler.aggregateAndSend();
@@ -94,10 +103,12 @@ class InsightAggregationSchedulerTest {
 
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
+                deliverWatchlistDigestUseCase,
                 new SimpleMeterRegistry()
         );
         scheduler.aggregateAndSend();
 
+        verify(deliverWatchlistDigestUseCase, times(2)).deliver(any(), any());
         verify(pendingInsightEventRepository, times(2)).saveAll(any());
     }
 
@@ -109,18 +120,19 @@ class InsightAggregationSchedulerTest {
         PendingInsightEvent user2Event = insight(user2, "B", "0.20");
         when(pendingInsightEventRepository.findByProcessedFalse())
                 .thenReturn(List.of(user1Event, user2Event));
-        doThrow(new IllegalStateException("db down"))
-                .doAnswer(invocation -> invocation.getArgument(0))
-                .when(pendingInsightEventRepository)
-                .saveAll(any());
+        doThrow(new IllegalStateException("delivery failed"))
+                .when(deliverWatchlistDigestUseCase)
+                .deliver(eq(user1), anyList());
 
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
+                deliverWatchlistDigestUseCase,
                 new SimpleMeterRegistry()
         );
         scheduler.aggregateAndSend();
 
-        verify(pendingInsightEventRepository, times(2)).saveAll(any());
+        verify(deliverWatchlistDigestUseCase, times(2)).deliver(any(), any());
+        verify(pendingInsightEventRepository, times(1)).saveAll(any());
     }
 
     private static PendingInsightEvent insight(UUID userId, String symbol, String change) {

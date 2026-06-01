@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 
+import com.company.analytics.processing.application.util.CandleTradePriceUtil;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
@@ -133,6 +135,17 @@ public class MarketPriceUpdatedConsumer {
         Long instrumentId = resolveInstrumentId(m);
         if (instrumentId == null) {
             handleMissingInstrument(m);
+            return;
+        }
+
+        if (!CandleTradePriceUtil.isValidTradePrice(m.price())) {
+            meterRegistry.counter(
+                    "analytics_invalid_price_skipped_total",
+                    "service", "analytics-service",
+                    "symbol", m.instrumentSymbol() == null ? "unknown" : m.instrumentSymbol(),
+                    "reason", "non_positive_or_null"
+            ).increment();
+            eventIdempotencyService.markProcessed(m.eventId());
             return;
         }
 

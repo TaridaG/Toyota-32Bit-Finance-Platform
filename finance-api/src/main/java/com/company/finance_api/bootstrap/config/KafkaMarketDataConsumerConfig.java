@@ -1,5 +1,6 @@
 package com.company.finance_api.bootstrap.config;
 
+import com.company.finance_api.notification.infrastructure.kafka.messaging.PortalInboxDeliverMessage;
 import com.company.finance_api.shared.messaging.kafka.event.FundSnapshotUpdatedEvent;
 import com.company.finance_api.shared.messaging.kafka.event.FxSnapshotUpdatedEvent;
 import com.company.finance_api.shared.messaging.kafka.event.MarketPriceUpdatedEvent;
@@ -119,6 +120,35 @@ public class KafkaMarketDataConsumerConfig {
     ConcurrentKafkaListenerContainerFactory<String, FundSnapshotUpdatedEvent> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(fundSnapshotConsumerFactory());
+    factory.setCommonErrorHandler(errorHandler);
+    return factory;
+  }
+
+  /** Portal inbox deliver mesajları için consumer factory. */
+  @Bean
+  public ConsumerFactory<String, PortalInboxDeliverMessage> portalInboxConsumerFactory() {
+    JsonDeserializer<PortalInboxDeliverMessage> deserializer =
+        new JsonDeserializer<>(PortalInboxDeliverMessage.class);
+    deserializer.addTrustedPackages("*");
+    deserializer.ignoreTypeHeaders();
+    ErrorHandlingDeserializer<PortalInboxDeliverMessage> errorHandling =
+        new ErrorHandlingDeserializer<>(deserializer);
+    Map<String, Object> props = new HashMap<>();
+    props.put(
+        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+        System.getenv().getOrDefault("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"));
+    props.put(ConsumerConfig.GROUP_ID_CONFIG, "finance-api-portal-inbox");
+    props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), errorHandling);
+  }
+
+  /** Portal inbox listener container factory. */
+  @Bean
+  public ConcurrentKafkaListenerContainerFactory<String, PortalInboxDeliverMessage>
+      portalInboxKafkaListenerContainerFactory(DefaultErrorHandler errorHandler) {
+    ConcurrentKafkaListenerContainerFactory<String, PortalInboxDeliverMessage> factory =
+        new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(portalInboxConsumerFactory());
     factory.setCommonErrorHandler(errorHandler);
     return factory;
   }
