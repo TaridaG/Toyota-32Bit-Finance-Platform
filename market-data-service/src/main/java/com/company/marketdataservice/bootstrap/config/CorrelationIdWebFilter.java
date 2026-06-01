@@ -11,7 +11,8 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 /**
- * WebFlux isteklerinde {@code X-Correlation-Id} header'ını okur (yoksa üretir) ve SLF4J MDC'ye yazar.
+ * WebFlux isteklerinde dağıtık izleme: {@code X-Correlation-Id} header'ını okur (yoksa UUID üretir)
+ * ve SLF4J {@linkplain MDC}'ye yazar; yanıtta aynı id döner.
  */
 @Component
 public class CorrelationIdWebFilter implements WebFilter, Ordered {
@@ -39,7 +40,7 @@ public class CorrelationIdWebFilter implements WebFilter, Ordered {
                 .doFinally(signal -> MDC.clear());
     }
 
-    /** Security ve route filter'larından önce çalışır. */
+    /** Security ve route {@link WebFilter}'larından önce çalışır ({@link Ordered#HIGHEST_PRECEDENCE}). */
     @Override
     public int getOrder() {
         return Ordered.HIGHEST_PRECEDENCE + 10;

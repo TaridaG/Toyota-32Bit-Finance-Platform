@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * TCMB EVDS makro veri yapılandırması ({@code market.evds}): API anahtarı, base URL ve
+ * politika faizi, TL mevduat, TÜFE ve repo kartları için seri kodları.
  */
 @Component
 @ConfigurationProperties(prefix = "market.evds")
@@ -15,21 +16,21 @@ public class MarketEvdsProperties {
     private String apiKey = "";
     private String baseUrl = "https://evds3.tcmb.gov.tr/igmevdsms-dis";
     /**
-     * EVDS series for the policy-rate card (EVDS points → weekly DB rows).
-     * <p>Default {@code TP_BISPOLFAIZ_TUR} = EVDS “Merkez Bankası politika faizi” (BIS / TCMB serisi; aylık).
-     * Override with {@code TP.FG.J0} if you prefer the 1-week repo level instead.</p>
-     * <p>{@code TP.APIFON4} = günlük <strong>ağırlıklı ortalama fonlama maliyeti</strong> (politika faizi değildir).</p>
+     * Politika faizi kartı EVDS seri kodu (noktalar → haftalık DB satırları).
+     * <p>Varsayılan {@code TP_BISPOLFAIZ_TUR} = Merkez Bankası politika faizi (BIS/TCMB; aylık).
+     * 1 haftalık repo seviyesi için {@code TP.FG.J0} ile override edilebilir.</p>
+     * <p>{@code TP.APIFON4} günlük ağırlıklı ortalama fonlama maliyetidir; politika faizi değildir.</p>
      */
     private String policyRateSeries = "TP_BISPOLFAIZ_TUR";
 
     /**
-     * EVDS {@code frequency} query param when non-blank (e.g. {@code 5} = monthly for {@code TP_BISPOLFAIZ_TUR}).
-     * Leave empty for daily series such as {@code TP.APIFON4}.
+     * Politika faizi serisi için EVDS {@code frequency} query parametresi (ör. {@code 5} = aylık).
+     * Günlük serilerde boş bırakılır ({@code TP.APIFON4} gibi).
      */
     private String policyRateEvdsFrequency = "5";
 
     /**
-     * EVDS series for TL deposit weighted-average rates (stock), one per maturity bucket (MT01…MT06).
+     * TL mevduat ağırlıklı ortalama faiz serileri; her vade kovası için bir kod (MT01…MT06).
      */
     private List<String> tlDepositEvdsSeries = new ArrayList<>(List.of(
             "TP.MT210AGS.TRY.MT01",
@@ -40,23 +41,23 @@ public class MarketEvdsProperties {
             "TP.MT210AGS.TRY.MT06"
     ));
 
-    /** EVDS {@code frequency} for deposit series (typically {@code 5} = monthly, same as policy). */
+    /** TL mevduat serileri için EVDS {@code frequency} (genelde {@code 5} = aylık). */
     private String tlDepositEvdsFrequency = "5";
 
-    /** Suffix of the series shown on the dashboard card (default {@code MT04} = up to 1 year). */
+    /** Dashboard kartında gösterilen vade soneki (varsayılan {@code MT04} = 1 yıla kadar). */
     private String tlDepositCardMaturity = "MT04";
 
-    /** EVDS TÜFE genel endeks (2003=100), aylık {@code frequency=5}. Aylık/yıllık % değişimler bu seriden türetilir. */
+    /** EVDS TÜFE genel endeks (2003=100); aylık {@code frequency=5}. Aylık/yıllık % değişimler buradan türetilir. */
     private String cpiIndexSeries = "TP.FG.J0";
 
     private String cpiEvdsFrequency = "5";
 
     /**
-     * EVDS series for the 1-week repo rate card (default {@code TP_BISPOLFAIZ_TUR}, aligned with Investing.com repo indicator).
+     * 1 haftalık repo faizi kartı EVDS seri kodu (varsayılan {@code TP_BISPOLFAIZ_TUR}).
      */
     private String repoRateSeries = "TP_BISPOLFAIZ_TUR";
 
-    /** EVDS {@code frequency} for repo series (typically {@code 5} = monthly). */
+    /** Repo serisi için EVDS {@code frequency} (genelde {@code 5} = aylık). */
     private String repoRateEvdsFrequency = "5";
 
     public String getApiKey() {

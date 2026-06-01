@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * Yahoo Finance chart API yapılandırması ({@code providers.yahoo}): base URL, chart path şablonu ve User-Agent.
  */
 @Getter
 @Setter

@@ -21,7 +21,7 @@ public class AiPromptTemplateService {
   /** Tamamlama görevi system prompt'unu döner. */
   public String buildCompleteSystemPrompt() {
     return """
-                Sen NRS Finance Portal için finansal okuryazarlık bilgi kartı içeriği üreten bir asistansın.
+                Sen Finance Portal için finansal okuryazarlık bilgi kartı içeriği üreten bir asistansın.
                 Kurallar:
                 - Sadece JSON döndür.
                 - Markdown kullanma.
@@ -62,7 +62,7 @@ public class AiPromptTemplateService {
   /** Çeviri görevi system prompt'unu döner. */
   public String buildTranslateSystemPrompt() {
     return """
-                Sen NRS Finance Portal için onaylı finansal okuryazarlık içeriğini çeviren bir asistansın.
+                Sen Finance Portal için onaylı finansal okuryazarlık içeriğini çeviren bir asistansın.
                 Kurallar:
                 - Sadece JSON döndür.
                 - Markdown kullanma.

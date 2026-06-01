@@ -21,6 +21,7 @@ import type {
 } from './types/financialLiteracy'
 import { LiteracyHero } from './components/LiteracyHero'
 import { LiteracySidebarFilters } from './components/LiteracySidebarFilters'
+import { LiteracyFiltersDrawer } from './components/LiteracyFiltersDrawer'
 import { LiteracyTermCard } from './components/LiteracyTermCard'
 import { LiteracyDetailDrawer } from './components/LiteracyDetailDrawer'
 import { LiteracyEmptyState } from './components/LiteracyEmptyState'
@@ -34,6 +35,22 @@ const EMPTY_STATS: LiteracyCatalogStats = {
   charts: 0,
   analysisTools: 0,
   macro: 0,
+}
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(query).matches : false,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const onChange = () => setMatches(media.matches)
+    onChange()
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [query])
+
+  return matches
 }
 
 export function FinansalOkuryazarlikPage() {
@@ -54,6 +71,8 @@ export function FinansalOkuryazarlikPage() {
   const [selectedEntry, setSelectedEntry] = useState<LiteracyEntry | null>(null)
 
   const [listPage, setListPage] = useState(0)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const isMobileFilters = useMediaQuery('(max-width: 960px)')
   const [entries, setEntries] = useState<LiteracyEntry[]>([])
   const [stats, setStats] = useState<LiteracyCatalogStats>(EMPTY_STATS)
   const [totalElements, setTotalElements] = useState(0)
@@ -135,6 +154,37 @@ export function FinansalOkuryazarlikPage() {
   const labelType = (type: LiteracyContentType) => t(`finansalOkuryazarlikPage.contentTypes.${type}`)
   const labelPortal = (p: LiteracyPortalPage | string) => translatePortalPageKey(t, p)
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (category !== 'ALL') {
+      count += 1
+    }
+    count += difficulties.length + contentTypes.length + portalPages.length
+    return count
+  }, [category, difficulties, contentTypes, portalPages])
+
+  const filterLabels = useMemo(
+    () => ({
+      filtersTitle: t('finansalOkuryazarlikPage.filtersTitle'),
+      categoryTitle: t('finansalOkuryazarlikPage.categoryTitle'),
+      allCategories: t('finansalOkuryazarlikPage.allCategories'),
+      difficultyTitle: t('finansalOkuryazarlikPage.difficultyTitle'),
+      contentTypeTitle: t('finansalOkuryazarlikPage.contentTypeTitle'),
+      portalPageTitle: t('finansalOkuryazarlikPage.portalPageTitle'),
+      categoryLabel: labelCategory,
+      difficultyLabel: labelDifficulty,
+      contentTypeLabel: labelType,
+      portalPageLabel: labelPortal,
+    }),
+    [t, language],
+  )
+
+  useEffect(() => {
+    if (!isMobileFilters) {
+      setFiltersOpen(false)
+    }
+  }, [isMobileFilters])
+
   if (loading) {
     return (
       <section className="finansal-okuryazarlik-page lit-page" aria-labelledby="finansal-okuryazarlik-heading">
@@ -155,6 +205,12 @@ export function FinansalOkuryazarlikPage() {
         }}
         searchPlaceholder={t('finansalOkuryazarlikPage.searchPlaceholder')}
         searchAriaLabel={t('finansalOkuryazarlikPage.searchAria')}
+        showFilterButton={isMobileFilters}
+        onFilterClick={() => setFiltersOpen((prev) => !prev)}
+        filtersOpen={filtersOpen}
+        activeFilterCount={activeFilterCount}
+        filterButtonLabel={t('finansalOkuryazarlikPage.filtersToggle')}
+        filterButtonAria={t('finansalOkuryazarlikPage.openFilters')}
         stats={
           <>
             <span>
@@ -195,41 +251,32 @@ export function FinansalOkuryazarlikPage() {
       />
 
       <div className="lit-main-layout">
-        <LiteracySidebarFilters
-          category={category}
-          onCategoryChange={(value) => {
-            setCategory(value)
-            resetListPage()
-          }}
-          difficulties={difficulties}
-          onDifficultyToggle={(d) => {
-            setDifficulties((prev) => toggle(prev, d))
-            resetListPage()
-          }}
-          contentTypes={contentTypes}
-          onContentTypeToggle={(type) => {
-            setContentTypes((prev) => toggle(prev, type))
-            resetListPage()
-          }}
-          portalPages={portalPages}
-          onPortalPageToggle={(p) => {
-            setPortalPages((prev) => toggle(prev, p))
-            resetListPage()
-          }}
-          showSystemCategory={showAdminTerms}
-          labels={{
-            filtersTitle: t('finansalOkuryazarlikPage.filtersTitle'),
-            categoryTitle: t('finansalOkuryazarlikPage.categoryTitle'),
-            allCategories: t('finansalOkuryazarlikPage.allCategories'),
-            difficultyTitle: t('finansalOkuryazarlikPage.difficultyTitle'),
-            contentTypeTitle: t('finansalOkuryazarlikPage.contentTypeTitle'),
-            portalPageTitle: t('finansalOkuryazarlikPage.portalPageTitle'),
-            categoryLabel: labelCategory,
-            difficultyLabel: labelDifficulty,
-            contentTypeLabel: labelType,
-            portalPageLabel: labelPortal,
-          }}
-        />
+        {!isMobileFilters ? (
+          <LiteracySidebarFilters
+            category={category}
+            onCategoryChange={(value) => {
+              setCategory(value)
+              resetListPage()
+            }}
+            difficulties={difficulties}
+            onDifficultyToggle={(d) => {
+              setDifficulties((prev) => toggle(prev, d))
+              resetListPage()
+            }}
+            contentTypes={contentTypes}
+            onContentTypeToggle={(type) => {
+              setContentTypes((prev) => toggle(prev, type))
+              resetListPage()
+            }}
+            portalPages={portalPages}
+            onPortalPageToggle={(p) => {
+              setPortalPages((prev) => toggle(prev, p))
+              resetListPage()
+            }}
+            showSystemCategory={showAdminTerms}
+            labels={filterLabels}
+          />
+        ) : null}
 
         <div className="lit-content-column">
           {listLoading ? (
@@ -265,6 +312,34 @@ export function FinansalOkuryazarlikPage() {
           )}
         </div>
       </div>
+
+      <LiteracyFiltersDrawer
+        open={isMobileFilters && filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        closeLabel={t('finansalOkuryazarlikPage.closeFilters')}
+        category={category}
+        onCategoryChange={(value) => {
+          setCategory(value)
+          resetListPage()
+        }}
+        difficulties={difficulties}
+        onDifficultyToggle={(d) => {
+          setDifficulties((prev) => toggle(prev, d))
+          resetListPage()
+        }}
+        contentTypes={contentTypes}
+        onContentTypeToggle={(type) => {
+          setContentTypes((prev) => toggle(prev, type))
+          resetListPage()
+        }}
+        portalPages={portalPages}
+        onPortalPageToggle={(p) => {
+          setPortalPages((prev) => toggle(prev, p))
+          resetListPage()
+        }}
+        showSystemCategory={showAdminTerms}
+        labels={filterLabels}
+      />
 
       <LiteracyDetailDrawer
         entry={selectedEntry}

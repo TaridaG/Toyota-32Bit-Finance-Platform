@@ -11,16 +11,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * `uygulama bootstrap` için Spring `@Configuration` bean tanımları.
+ * Fon fiyat provider bean zinciri: TEFAS HTTP, mock ve {@link CompositeFundProvider} birleşimi.
  */
 @Configuration
 public class FundProviderConfiguration {
 
+    /** Test ve fallback için mock TEFAS provider. */
     @Bean
     public TefasProvider tefasMockFundProvider() {
         return new TefasProvider();
     }
 
+    /** Birincil {@link FundProvider}: canlı TEFAS, HTTP ve mock sıralı deneme. */
     @Bean
     @Primary
     public FundProvider fundProvider(

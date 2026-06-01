@@ -193,11 +193,13 @@ export async function updatePortalPhone(phone: string): Promise<PortalProfile> {
 
 export async function updatePortalNotifications(
   notifySecurityAlerts: boolean,
-  notifyProductUpdates: boolean,
+  notifyWatchlistAlerts: boolean,
+  notifyAlarmAlerts: boolean,
 ): Promise<PortalProfile> {
   const { data } = await apiClient.put<ApiEnvelope<PortalProfile>>(`${BASE}/notifications`, {
     notifySecurityAlerts,
-    notifyProductUpdates,
+    notifyWatchlistAlerts,
+    notifyAlarmAlerts,
   })
   return assertSuccessData(data)
 }

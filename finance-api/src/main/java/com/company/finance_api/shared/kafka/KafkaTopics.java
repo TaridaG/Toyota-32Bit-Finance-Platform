@@ -22,4 +22,7 @@ public final class KafkaTopics {
 
   /** Login güvenlik uyarısı e-postası topic'i. */
   public static final String LOGIN_SECURITY_ALERT = "login-security.alert";
+
+  /** Portal bildirim kutusuna sistem mesajı (watchlist digest vb.). */
+  public static final String NOTIFICATION_PORTAL_INBOX = "notification.portal.inbox";
 }

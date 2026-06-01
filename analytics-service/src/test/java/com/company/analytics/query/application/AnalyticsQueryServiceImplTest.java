@@ -5,6 +5,7 @@ import com.company.analytics.processing.infrastructure.persistence.AnalyticsPric
 import com.company.analytics.processing.infrastructure.persistence.AnalyticsPriceCandleRepository;
 import com.company.analytics.processing.infrastructure.persistence.AnalyticsRSIRepository;
 import com.company.analytics.processing.infrastructure.persistence.AnalyticsTrendMetricRepository;
+import com.company.analytics.shared.integration.FinanceInstrumentClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,8 @@ class AnalyticsQueryServiceImplTest {
     private AnalyticsRSIRepository rsiRepository;
     @Mock
     private AnalyticsTrendMetricRepository trendMetricRepository;
+    @Mock
+    private FinanceInstrumentClient financeInstrumentClient;
 
     private AnalyticsQueryServiceImpl service;
 
@@ -39,7 +42,8 @@ class AnalyticsQueryServiceImplTest {
                 multiIntervalCandleRepository,
                 movingAverageRepository,
                 rsiRepository,
-                trendMetricRepository
+                trendMetricRepository,
+                financeInstrumentClient
         );
     }
 

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 
 /**
- * `tahvil` için uygulama açılışında veya gecikmeli tetiklenen bootstrap listener.
+ * tahvil verileri için uygulama açılışında veya gecikmeli tetiklenen bootstrap listener.
  */
 @Component
 @RequiredArgsConstructor
@@ -22,8 +22,9 @@ public class BondHistoryBootstrapListener {
     private final BondHistoryBackfillService bondHistoryBackfillService;
 
     /**
-     * Zamanlanmış işi tetikler.
-         */
+     * {@link ApplicationReadyEvent} sonrası virtual thread ile gecikmeli olark
+     * {@link BondHistoryBackfillService#backfillTrackedBonds()} tetikler.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void scheduleBondHistoryBootstrap() {
         long delay = Math.max(0L, bondProperties.getHistoryBootstrap().getDelayMs());

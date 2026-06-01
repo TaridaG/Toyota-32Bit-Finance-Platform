@@ -8,9 +8,10 @@
 
 - Alarm triggered email (`alarm-triggered`)
 - Login security alert (`login-security.alert`)
-- Watchlist add/remove notifications
-- Analytics simple insight (`analytics.insight.simple`)
-- News–instrument match (`news.instrument.matched`) — watchlist followers
+- Watchlist projection sync (`watchlist.item.added` / `watchlist.item.removed`)
+- Watchlist digest delivery: branded email + `notification.portal.inbox` → finance-api inbox (`WATCHLIST_DIGEST`)
+- Analytics simple insight (`analytics.insight.simple`) — queued for watchlist followers
+- News–instrument match (`news.instrument.matched`) — queued for watchlist followers
 - Kafka retry and DLQ (`{topic}.dlq`) handling
 - Pending insight / dedup tables (PostgreSQL)
 
@@ -91,11 +92,13 @@ flowchart TB
 
   C1 --> SMTP[SMTP]
   C2 --> SMTP
-  C3 --> SMTP
-  C4 --> SMTP
+  C3 --> WP[(watchlist_projection)]
+  C4 --> WP
   C5 --> PG[(pending insight)]
   C6 --> PG
-  PG --> SMTP
+  PG --> Sched[InsightAggregationScheduler]
+  Sched --> SMTP
+  Sched -->|notification.portal.inbox| FA[finance-api inbox]
 ```
 
 Source: [`KafkaTopicNames.java`](../../../notification-service/src/main/java/com/company/notification/bootstrap/config/kafka/KafkaTopicNames.java).
@@ -108,6 +111,15 @@ Source: [`KafkaTopicNames.java`](../../../notification-service/src/main/java/com
 | `watchlist.item.removed` | finance-api | `WatchlistItemRemovedEventConsumer` |
 | `analytics.insight.simple` | analytics-service | `SimpleInsightEventConsumer` |
 | `news.instrument.matched` | news-service | `NewsMatchedEventConsumer` |
+| `notification.portal.inbox` | notification-service | `PortalInboxDeliverConsumer` (finance-api) |
+
+### Watchlist digest (price move + news)
+
+1. `SimpleInsightEventConsumer` / `NewsMatchedEventConsumer` append rows to `pending_insight_events` for users following the instrument (`watchlist_projection`).
+2. `InsightAggregationScheduler` (default every 6h, `notification.insight.aggregation-interval-ms`) groups by user, sends branded digest email via `SendWatchlistDigestEmailUseCase`, publishes one `notification.portal.inbox` message per user.
+3. finance-api persists `alarm_history` with `notification_type=WATCHLIST_DIGEST` for `/api/v1/notifications`.
+
+Price-move threshold is configured in **analytics-service** (`notification.insight.threshold`, default 8% 1h change). Users can opt out with `users.notify_watchlist_alerts` (portal profile).
 
 ### Alarm email
 
@@ -131,7 +143,11 @@ On processing errors, messages are routed to the `{originalTopic}.dlq` partition
 
 ## Schedulers / background jobs
 
-Fully event-driven; no periodic jobs (pending insight flush is triggered inside the consumer).
+| Job | Module | Role |
+|-----|--------|------|
+| `InsightAggregationScheduler` | notification-service | Flush `pending_insight_events` → email + portal inbox Kafka |
+
+All other work is Kafka-driven on ingest.
 
 ## Data model
 

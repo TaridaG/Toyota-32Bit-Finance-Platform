@@ -155,16 +155,23 @@ public class AlarmServiceImpl implements AlarmService {
                 alarm.getThreshold(),
                 latestPrice.getPrice()));
 
-        alarmEventPublisher.publish(
-            AlarmTriggeredEvent.of(
-                alarm.getId(),
-                owner.getId(),
-                userEmail,
-                preferredLocale,
-                alarm.getInstrument().getSymbol(),
-                alarm.getCondition(),
-                alarm.getThreshold(),
-                latestPrice.getPrice()));
+        if (owner.isNotifyAlarmAlerts()) {
+          alarmEventPublisher.publish(
+              AlarmTriggeredEvent.of(
+                  alarm.getId(),
+                  owner.getId(),
+                  userEmail,
+                  preferredLocale,
+                  alarm.getInstrument().getSymbol(),
+                  alarm.getCondition(),
+                  alarm.getThreshold(),
+                  latestPrice.getPrice()));
+        } else {
+          log.info(
+              "ALARM_EMAIL_SKIPPED userId={} instrument={} reason=prefs",
+              owner.getId(),
+              alarm.getInstrument().getSymbol());
+        }
 
         log.info(
             "ALARM_TRIGGERED user={}, instrument={}, price={}",

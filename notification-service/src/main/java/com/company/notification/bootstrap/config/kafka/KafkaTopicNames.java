@@ -14,4 +14,5 @@ public final class KafkaTopicNames {
     public static final String WATCHLIST_ITEM_REMOVED = "watchlist.item.removed";
     public static final String ANALYTICS_INSIGHT_SIMPLE = "analytics.insight.simple";
     public static final String NEWS_INSTRUMENT_MATCHED = "news.instrument.matched";
+    public static final String NOTIFICATION_PORTAL_INBOX = "notification.portal.inbox";
 }

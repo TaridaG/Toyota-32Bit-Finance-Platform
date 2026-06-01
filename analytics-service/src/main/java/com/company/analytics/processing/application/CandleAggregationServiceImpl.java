@@ -1,6 +1,7 @@
 package com.company.analytics.processing.application;
 
 import com.company.analytics.processing.application.CandleAggregationService;
+import com.company.analytics.processing.application.util.CandleTradePriceUtil;
 import com.company.analytics.processing.application.util.TimeBucketUtil;
 import com.company.analytics.processing.domain.AnalyticsPriceCandle;
 import com.company.analytics.processing.domain.AnalyticsPriceCandleDaily;
@@ -29,6 +30,9 @@ public class CandleAggregationServiceImpl implements CandleAggregationService {
     /** Event fiyatını günlük ve tüm desteklenen interval candle bucket'larına uygular. */
     @Override
     public void process(AnalyticsMarketPriceEvent event) {
+        if (!CandleTradePriceUtil.isValidTradePrice(event.price())) {
+            return;
+        }
         processDaily(event);
         processForInterval(event, CandleInterval.ONE_MINUTE);
         processForInterval(event, CandleInterval.FIVE_MINUTES);

@@ -24,9 +24,23 @@ public interface AnalyticsPriceCandleRepository extends JpaRepository<AnalyticsP
             CandleInterval candleInterval
     );
 
+    /** Instrument ve candle interval'e göre mumları açılış zamanına göre artan sırada döner. */
+    List<AnalyticsPriceCandle> findByInstrumentIdAndCandleIntervalOrderByOpenTimeAsc(
+            Long instrumentId,
+            CandleInterval candleInterval
+    );
+
     /** Sembol, candle interval ve zaman aralığına göre mumları açılış zamanına göre artan sırada döner. */
     List<AnalyticsPriceCandle> findByInstrumentSymbolAndCandleIntervalAndOpenTimeBetweenOrderByOpenTimeAsc(
             String symbol,
+            CandleInterval candleInterval,
+            Instant from,
+            Instant to
+    );
+
+    /** Instrument, candle interval ve zaman aralığına göre mumları açılış zamanına göre artan sırada döner. */
+    List<AnalyticsPriceCandle> findByInstrumentIdAndCandleIntervalAndOpenTimeBetweenOrderByOpenTimeAsc(
+            Long instrumentId,
             CandleInterval candleInterval,
             Instant from,
             Instant to

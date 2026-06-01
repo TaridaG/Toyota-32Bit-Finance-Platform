@@ -33,8 +33,11 @@ public class User {
   @Column(nullable = false)
   private boolean notifySecurityAlerts = true;
 
-  @Column(nullable = false)
-  private boolean notifyProductUpdates = false;
+  @Column(name = "notify_watchlist_alerts", nullable = false)
+  private boolean notifyWatchlistAlerts = true;
+
+  @Column(name = "notify_alarm_alerts", nullable = false)
+  private boolean notifyAlarmAlerts = true;
 
   @Column(nullable = false)
   private boolean active = true;
@@ -113,8 +116,12 @@ public class User {
     return notifySecurityAlerts;
   }
 
-  public boolean isNotifyProductUpdates() {
-    return notifyProductUpdates;
+  public boolean isNotifyWatchlistAlerts() {
+    return notifyWatchlistAlerts;
+  }
+
+  public boolean isNotifyAlarmAlerts() {
+    return notifyAlarmAlerts;
   }
 
   public boolean isActive() {
@@ -161,8 +168,12 @@ public class User {
     this.notifySecurityAlerts = notifySecurityAlerts;
   }
 
-  public void setNotifyProductUpdates(boolean notifyProductUpdates) {
-    this.notifyProductUpdates = notifyProductUpdates;
+  public void setNotifyWatchlistAlerts(boolean notifyWatchlistAlerts) {
+    this.notifyWatchlistAlerts = notifyWatchlistAlerts;
+  }
+
+  public void setNotifyAlarmAlerts(boolean notifyAlarmAlerts) {
+    this.notifyAlarmAlerts = notifyAlarmAlerts;
   }
 
   public Instant getDeletionRequestedAt() {

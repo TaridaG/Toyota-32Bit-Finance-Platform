@@ -22,7 +22,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * `uygulama bootstrap` için uygulama açılışında veya gecikmeli tetiklenen bootstrap listener.
+ * Geçmiş fiyat tablosu boşken takip edilen kripto/hisse sembolleri için sahte seed fiyat yazar.
+ * <p>{@link ApplicationReadyEvent} sonrası çalışır; {@code market.price-bootstrap.enabled=false} ile kapatılabilir.</p>
  */
 @Component
 @ConditionalOnProperty(prefix = "market.price-bootstrap", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -51,8 +52,8 @@ public class MarketPriceBootstrapInitializer {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * {@code mds_market_price_history} boşsa registry'deki sembollere BOOTSTRAP kaynağıyla dummy fiyat ekler.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void bootstrapIfEmpty() {
         if (marketPriceHistoryRepository.count() > 0) {

@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * Harici provider dayanıklılık ayarları ({@code resilience.providers.*}): retry, timeout ve circuit breaker eşikleri.
  */
 @Data
 @Component
@@ -44,6 +44,11 @@ public class ResilienceProperties {
         private int permittedNumberOfCallsInHalfOpenState = 3;
     }
 
+    /**
+     * Provider adına göre zorunlu config; yoksa {@link IllegalStateException}.
+     *
+     * @param providerName örn. {@code finnhub}, {@code yahoo}, {@code binance}
+     */
     public ProviderConfig getRequiredProvider(String providerName) {
         ProviderConfig config = providers.get(providerName.toLowerCase(Locale.ROOT));
         if (config == null) {

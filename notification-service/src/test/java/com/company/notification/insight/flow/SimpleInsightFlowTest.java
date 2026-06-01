@@ -1,5 +1,6 @@
 package com.company.notification.insight.flow;
 
+import com.company.notification.insight.application.DeliverWatchlistDigestUseCase;
 import com.company.notification.insight.domain.PendingInsightEvent;
 import com.company.notification.insight.infrastructure.kafka.SimpleInsightEventConsumer;
 import com.company.notification.insight.infrastructure.kafka.messaging.AnalyticsInsightMessage;
@@ -32,6 +33,8 @@ class SimpleInsightFlowTest {
     private SyncWatchlistProjectionUseCase syncWatchlistProjectionUseCase;
     @Mock
     private PendingInsightEventRepository pendingInsightEventRepository;
+    @Mock
+    private DeliverWatchlistDigestUseCase deliverWatchlistDigestUseCase;
 
     @Test
     void event_flow_should_store_and_aggregate_and_mark_processed() {
@@ -42,6 +45,7 @@ class SimpleInsightFlowTest {
         );
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
+                deliverWatchlistDigestUseCase,
                 new SimpleMeterRegistry()
         );
 
@@ -70,6 +74,7 @@ class SimpleInsightFlowTest {
 
         scheduler.aggregateAndSend();
 
+        verify(deliverWatchlistDigestUseCase).deliver(eq(userId), anyList());
         ArgumentCaptor<List<PendingInsightEvent>> saveAllCaptor = ArgumentCaptor.forClass(List.class);
         verify(pendingInsightEventRepository).saveAll(saveAllCaptor.capture());
         assertEquals(true, saveAllCaptor.getValue().get(0).isProcessed());

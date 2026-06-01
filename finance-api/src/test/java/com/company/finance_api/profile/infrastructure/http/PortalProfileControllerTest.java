@@ -38,6 +38,7 @@ class PortalProfileControllerTest {
                 null,
                 true,
                 false,
+                true,
                 null,
                 "en",
                 "USD",

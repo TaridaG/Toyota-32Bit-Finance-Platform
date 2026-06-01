@@ -12,11 +12,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * `uygulama bootstrap` yapılandırma properties veya bean tanımı.
+ * Resilience4j {@link CircuitBreakerRegistry} ve {@link RetryRegistry} bean'lerini
+ * {@link ResilienceProperties} üzerinden provider bazlı kaydeder.
  */
 @Configuration
 public class ResilienceRegistryConfig {
 
+    /** Her harici provider için sliding window ve open-state süreleriyle circuit breaker config. */
     @Bean
     public CircuitBreakerRegistry circuitBreakerRegistry(ResilienceProperties properties) {
         CircuitBreakerRegistry registry = CircuitBreakerRegistry.ofDefaults();
@@ -37,6 +39,7 @@ public class ResilienceRegistryConfig {
         return registry;
     }
 
+    /** Provider başına maxAttempts ve sabit gecikmeli retry config. */
     @Bean
     public RetryRegistry retryRegistry(ResilienceProperties properties) {
         RetryRegistry registry = RetryRegistry.ofDefaults();
@@ -54,6 +57,7 @@ public class ResilienceRegistryConfig {
         return registry;
     }
 
+    /** Circuit breaker / retry callback'leri için sabit boyutlu daemon thread pool. */
     @Bean(destroyMethod = "shutdown")
     public ExecutorService resilienceExecutorService() {
         return Executors.newFixedThreadPool(8, runnable -> {

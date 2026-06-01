@@ -516,6 +516,22 @@ function buildCategoryDonutRows(overview: PortfolioOverview | null, t: (key: str
 const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation'] as const
 const sidebarSecondaryKeys = ['news', 'analysis', 'targets', 'watchlist', 'settings'] as const
 const PORTFOLIO_SECTIONS = new Set<string>([...sidebarMainKeys, ...sidebarSecondaryKeys])
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(query).matches : false,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const onChange = () => setMatches(media.matches)
+    onChange()
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [query])
+
+  return matches
+}
 type MarketOptionAssetType = 'STOCK' | 'FX' | 'METAL' | 'CRYPTO' | 'FUND' | 'DEPOSIT' | 'BOND'
 type MarketOptionAssetTypeFilter = 'ALL' | MarketOptionAssetType
 
@@ -909,6 +925,8 @@ export function MyPortfolioPage() {
   const [deletePortfolioSubmitting, setDeletePortfolioSubmitting] = useState(false)
   const [amountsHiddenSaving, setAmountsHiddenSaving] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const isMobileNav = useMediaQuery('(max-width: 920px)')
   const sectionFromUrl = searchParams.get('section')
   const [activeSection, setActiveSection] = useState<string>(() =>
     sectionFromUrl && PORTFOLIO_SECTIONS.has(sectionFromUrl) ? sectionFromUrl : 'dashboard',
@@ -935,6 +953,9 @@ export function MyPortfolioPage() {
 
   const selectPortfolioSection = (section: string) => {
     setActiveSection(section)
+    if (isMobileNav) {
+      setMobileNavOpen(false)
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
@@ -948,6 +969,33 @@ export function MyPortfolioPage() {
       { replace: true },
     )
   }
+
+  useEffect(() => {
+    if (!isMobileNav) {
+      setMobileNavOpen(false)
+    }
+  }, [isMobileNav])
+
+  useEffect(() => {
+    if (!isMobileNav || !mobileNavOpen) {
+      return undefined
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileNavOpen(false)
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isMobileNav, mobileNavOpen])
 
   useEffect(() => {
     const fromUrl = searchParams.get('section')
@@ -2227,21 +2275,59 @@ export function MyPortfolioPage() {
   return (
     <section className="my-portfolio-page">
       <div className="my-portfolio-shell">
-        <aside className={`my-portfolio-sidebar card${sidebarOpen ? ' my-portfolio-sidebar-open' : ''}`}>
+        {isMobileNav && !mobileNavOpen ? (
+          <button
+            type="button"
+            className="my-portfolio-sidebar-mobile-trigger"
+            onClick={() => setMobileNavOpen(true)}
+            aria-expanded={false}
+            aria-controls="my-portfolio-sidebar"
+            aria-label={t('sidebar.expand')}
+          >
+            <span className="my-portfolio-sidebar-toggle-icon" aria-hidden>
+              ›
+            </span>
+          </button>
+        ) : null}
+
+        {isMobileNav && mobileNavOpen ? (
+          <button
+            type="button"
+            className="my-portfolio-sidebar-backdrop"
+            aria-label={t('sidebar.collapse')}
+            onClick={() => setMobileNavOpen(false)}
+          />
+        ) : null}
+
+        <aside
+          id="my-portfolio-sidebar"
+          className={`my-portfolio-sidebar card${
+            (!isMobileNav && sidebarOpen) || (isMobileNav && mobileNavOpen) ? ' my-portfolio-sidebar-open' : ''
+          }${isMobileNav && mobileNavOpen ? ' my-portfolio-sidebar-mobile-open' : ''}`}
+          role={isMobileNav && mobileNavOpen ? 'dialog' : undefined}
+          aria-modal={isMobileNav && mobileNavOpen ? true : undefined}
+          aria-label={isMobileNav ? t('sidebar.navAria') : undefined}
+        >
           <div className="my-portfolio-sidebar-top">
             <button
               type="button"
               className="my-portfolio-sidebar-toggle"
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              aria-label={sidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+              onClick={() => {
+                if (isMobileNav) {
+                  setMobileNavOpen(false)
+                  return
+                }
+                setSidebarOpen((prev) => !prev)
+              }}
+              aria-label={isMobileNav || sidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')}
             >
               <span className="my-portfolio-sidebar-toggle-icon" aria-hidden>
-                {sidebarOpen ? '‹' : '›'}
+                {isMobileNav || sidebarOpen ? '‹' : '›'}
               </span>
             </button>
 
             <label className="my-portfolio-select-wrap">
-              {sidebarOpen ? (
+              {isMobileNav || sidebarOpen ? (
                 <>
                   <span>{t('sidebar.portfolios')}</span>
                   <select
@@ -2301,7 +2387,7 @@ export function MyPortfolioPage() {
                 <span className="my-portfolio-sidebar-item-icon" aria-hidden>
                   <SidebarItemIcon item={item} />
                 </span>
-                {sidebarOpen ? <span>{t(`sidebar.items.${item}`)}</span> : null}
+                {isMobileNav || sidebarOpen ? <span>{t(`sidebar.items.${item}`)}</span> : null}
               </button>
             ))}
           </nav>
@@ -2317,7 +2403,7 @@ export function MyPortfolioPage() {
                 <span className="my-portfolio-sidebar-item-icon" aria-hidden>
                   <SidebarItemIcon item={item} />
                 </span>
-                {sidebarOpen ? <span>{t(`sidebar.items.${item}`)}</span> : null}
+                {isMobileNav || sidebarOpen ? <span>{t(`sidebar.items.${item}`)}</span> : null}
               </button>
             ))}
           </nav>
@@ -2330,7 +2416,7 @@ export function MyPortfolioPage() {
                 <path d="M18 12H9" />
               </svg>
             </span>
-            {sidebarOpen ? <span>{t('sidebar.logout')}</span> : null}
+            {isMobileNav || sidebarOpen ? <span>{t('sidebar.logout')}</span> : null}
           </button>
         </aside>
 

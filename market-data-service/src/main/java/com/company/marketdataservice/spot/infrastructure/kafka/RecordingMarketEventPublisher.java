@@ -1,4 +1,5 @@
 package com.company.marketdataservice.spot.infrastructure.kafka;
+import com.company.marketdataservice.spot.application.SpotPricePublishValidator;
 import com.company.marketdataservice.spot.infrastructure.snapshot.MarketSnapshotStore;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.bootstrap.config.MarketHistoryBackfillProperties;
@@ -24,9 +25,13 @@ public class RecordingMarketEventPublisher implements MarketEventPublisher {
     private final MarketHistoryWriteService marketHistoryWriteService;
     private final MarketHistoryBackfillProperties backfillProperties;
     private final KafkaMarketEventPublisher delegate;
+    private final SpotPricePublishValidator spotPricePublishValidator;
 
     @Override
     public void publishMarketPriceUpdated(MarketPriceUpdatedEvent event) {
+        if (!spotPricePublishValidator.shouldAccept(event)) {
+            return;
+        }
         snapshotStore.recordMarketPrice(event);
         try {
             marketHistoryWriteService.save(event);

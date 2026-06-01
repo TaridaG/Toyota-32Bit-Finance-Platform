@@ -314,7 +314,8 @@ public class PortalProfileService {
   public PortalProfileResponse updateNotifications(PortalUpdateNotificationsRequest request) {
     User user = loadCurrentUser();
     user.setNotifySecurityAlerts(Boolean.TRUE.equals(request.getNotifySecurityAlerts()));
-    user.setNotifyProductUpdates(Boolean.TRUE.equals(request.getNotifyProductUpdates()));
+    user.setNotifyWatchlistAlerts(Boolean.TRUE.equals(request.getNotifyWatchlistAlerts()));
+    user.setNotifyAlarmAlerts(Boolean.TRUE.equals(request.getNotifyAlarmAlerts()));
     userRepository.save(user);
     return mapProfile(user);
   }
@@ -351,7 +352,8 @@ public class PortalProfileService {
         user.getUsername(),
         user.getPhone(),
         user.isNotifySecurityAlerts(),
-        user.isNotifyProductUpdates(),
+        user.isNotifyWatchlistAlerts(),
+        user.isNotifyAlarmAlerts(),
         user.getProfileAvatarUpdatedAt(),
         normalizePreferredLocale(user.getPreferredLocale()),
         normalizePreferredCurrency(user.getPreferredCurrency()),

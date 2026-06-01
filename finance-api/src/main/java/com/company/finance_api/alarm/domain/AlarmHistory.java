@@ -73,6 +73,18 @@ public class AlarmHistory {
     return history;
   }
 
+  public static AlarmHistory watchlistDigest(
+      UUID userId, String instrumentSymbol, String title, String body) {
+    AlarmHistory history = new AlarmHistory();
+    history.userId = userId;
+    history.notificationType = NotificationType.WATCHLIST_DIGEST;
+    history.instrumentSymbol = instrumentSymbol;
+    history.title = title;
+    history.body = body;
+    history.triggeredAt = Instant.now();
+    return history;
+  }
+
   public String getTitle() {
     return title;
   }

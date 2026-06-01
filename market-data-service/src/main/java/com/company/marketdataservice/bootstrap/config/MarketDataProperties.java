@@ -5,7 +5,7 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Root market-data-service configuration (schedulers, ingestion env).
+ * {@code market.*} kök yapılandırması: varsayılan provider ve ingestion ortamı ({@code dev}/{@code prod}).
  */
 @Getter
 @Setter
@@ -15,6 +15,7 @@ public class MarketDataProperties {
     private String provider;
     private Ingestion ingestion = new Ingestion();
 
+    /** Ingest ortam etiketi; provider davranışında ortam ayrımı için kullanılır. */
     @Getter
     @Setter
     public static class Ingestion {

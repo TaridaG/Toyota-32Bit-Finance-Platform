@@ -501,6 +501,15 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     setLocaleOpen(false)
   }
 
+  const handleLiteracyHelpToggle = () => {
+    closeMenu()
+    closeDesktopPanels()
+    if (pickModeActive) {
+      deactivatePickMode()
+    }
+    toggleLiteracyHelp()
+  }
+
   const appNavForSession = useMemo(() => {
     const core = [appNavPortfolioItem, ...appNavItemsWithoutPortfolio]
     if (isAuthenticated && isAdminUser()) {
@@ -580,13 +589,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
                 aria-label={t('header.literacyHelp.aria')}
                 aria-pressed={literacyHelpActive}
                 title={t('header.literacyHelp.aria')}
-                onClick={() => {
-                  closeDesktopPanels()
-                  if (pickModeActive) {
-                    deactivatePickMode()
-                  }
-                  toggleLiteracyHelp()
-                }}
+                onClick={handleLiteracyHelpToggle}
               >
                 <IconHelp />
               </button>
@@ -983,6 +986,22 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
           </button>
         </div>
 
+        <div className="portal-header-mobile-actions">
+          {isAuthenticated ? (
+            <button
+              type="button"
+              data-literacy-help-control
+              className={`portal-icon-button portal-literacy-help-button${literacyHelpActive ? ' portal-icon-button-active' : ''}`}
+              aria-label={t('header.literacyHelp.aria')}
+              aria-pressed={literacyHelpActive}
+              title={t('header.literacyHelp.aria')}
+              onClick={handleLiteracyHelpToggle}
+            >
+              <IconHelp />
+            </button>
+          ) : null}
+        </div>
+
         <button
           type="button"
           className="portal-menu-button"
@@ -1107,6 +1126,21 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
             </section>
 
             <div className="portal-mobile-footer portal-mobile-footer-card">
+              <div className="portal-mobile-locale">
+                <span>{t('language')}</span>
+                <div role="group" aria-label={t('header.locale.aria')}>
+                  {SUPPORTED_LOCALES.map((locale) => (
+                    <button
+                      key={locale}
+                      type="button"
+                      className={currentLocale === locale ? 'portal-theme-button-active' : undefined}
+                      onClick={() => void handleSelectLocale(locale)}
+                    >
+                      {LANGUAGE_LABELS[locale]}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="portal-mobile-theme">
                 <span>{t('header.theme.label')}</span>
                 <div>

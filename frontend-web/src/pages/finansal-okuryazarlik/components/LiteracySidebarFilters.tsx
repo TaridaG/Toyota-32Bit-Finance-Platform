@@ -11,7 +11,7 @@ import {
   LITERACY_PORTAL_PAGES,
 } from '../types/financialLiteracy'
 
-type LiteracySidebarFiltersProps = {
+export type LiteracySidebarFiltersProps = {
   category: LiteracyCategory | 'ALL'
   onCategoryChange: (category: LiteracyCategory | 'ALL') => void
   difficulties: LiteracyDifficulty[]

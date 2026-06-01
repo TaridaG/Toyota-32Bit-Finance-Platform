@@ -3,7 +3,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * Geçmiş fiyat backfill orkestrasyonu ({@code market.history.backfill}): yıl/parça boyutu,
+ * Kafka yayını, retry ve canlı spot'un geçmişe bağlı bekletilmesi.
  */
 @Component
 @ConfigurationProperties(prefix = "market.history.backfill")
@@ -19,9 +20,9 @@ public class MarketHistoryBackfillProperties {
     private int minPriceHistoryDays = 240;
     private int minRecentPriceHistoryDays = 120;
     private int minRecent30DayCoverageDays = 15;
-    /** When false, live spot publish proceeds while history backfill runs in the background. */
+    /** {@code false} ise geçmiş backfill arka planda çalışırken canlı spot publish devam eder. */
     private boolean gateLiveUntilHistoryReady = false;
-    /** Parallel stock history bootstrap workers (Yahoo/Finnhub historical fetches). */
+    /** Paralel hisse geçmiş bootstrap worker sayısı (Yahoo/Finnhub historical fetch). */
     private int stockBootstrapParallelism = 4;
     private long sleepMs = 200L;
     private long scheduleInitialDelayMs = 30_000L;

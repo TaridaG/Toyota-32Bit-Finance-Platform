@@ -7,7 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * Döviz (FX) ingest yapılandırması ({@code market.fx}): TCMB XML ve yedek ExchangeRate API URL'leri,
+ * provider sırası ve desteklenen para birimleri.
  */
 @Getter
 @Setter

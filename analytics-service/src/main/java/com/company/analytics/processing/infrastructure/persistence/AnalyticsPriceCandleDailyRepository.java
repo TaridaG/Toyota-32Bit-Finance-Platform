@@ -30,4 +30,11 @@ public interface AnalyticsPriceCandleDailyRepository
             LocalDate to
     );
 
+    /** Instrument ve tarih aralığına göre günlük mumları tarihe göre artan sırada döner. */
+    List<AnalyticsPriceCandleDaily> findByInstrumentIdAndCandleDateBetweenOrderByCandleDateAsc(
+            Long instrumentId,
+            LocalDate from,
+            LocalDate to
+    );
+
 }

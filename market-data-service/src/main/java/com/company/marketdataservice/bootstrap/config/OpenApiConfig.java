@@ -7,10 +7,14 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** OpenAPI 3 spec and Swagger UI for market-data-service. */
+/**
+ * market-data-service OpenAPI 3 tanımı ve Swagger UI ({@code /swagger-ui}).
+ * Gateway üzerinden erişim için canonical server {@code /api/v1} olarak işaretlenir.
+ */
 @Configuration
 public class OpenApiConfig {
 
+  /** Swagger UI ve gateway uyumlu OpenAPI kök belgesi. */
   @Bean
   public OpenAPI marketDataOpenAPI() {
     return new OpenAPI()

@@ -2,7 +2,10 @@ package com.company.marketdataservice.bootstrap.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** Sıcak market read endpoint cache TTL ve enable bayrakları. */
+/**
+ * Sık okunan market endpoint'leri için bellek içi cache ayarları ({@code market.hot-read-cache}).
+ * Fiyat, FX ve pulse yanıtları için ayrı TTL ve genel {@code enabled} bayrağı.
+ */
 @ConfigurationProperties(prefix = "market.hot-read-cache")
 public class HotReadCacheProperties {
 
