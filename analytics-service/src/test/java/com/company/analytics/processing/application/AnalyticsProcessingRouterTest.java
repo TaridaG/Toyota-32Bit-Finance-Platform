@@ -39,12 +39,19 @@ class AnalyticsProcessingRouterTest {
     }
 
     @Test
-    void unknown_should_enable_only_candle() {
+    void unknown_should_skip_candle_and_indicators() {
         AnalyticsProcessingDecision decision = router.decide("SOMETHING_ELSE");
 
-        assertEquals(true, decision.processCandle());
+        assertEquals(false, decision.processCandle());
         assertEquals(false, decision.processMovingAverage());
         assertEquals(false, decision.processRsi());
         assertEquals(false, decision.processTrend());
+    }
+
+    @Test
+    void ohlcPriceTypes_should_not_update_candles() {
+        assertEquals(false, router.decide("OPEN").processCandle());
+        assertEquals(false, router.decide("HIGH").processCandle());
+        assertEquals(false, router.decide("LOW").processCandle());
     }
 }

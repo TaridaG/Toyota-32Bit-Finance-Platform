@@ -14,7 +14,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * `spot fiyat` verisini periyodik olarak fetch edip snapshot/Kafka'ya publish eden scheduler.
+ * {@code TRBOND*} Hazine getiri serilerini periyodik olarak EVDS'ten fetch edip Kafka'ya
+ * {@link MarketPriceUpdatedEvent} publish eden scheduler.
  */
 @Slf4j
 @Component
@@ -30,8 +31,8 @@ public class BondPriceScheduler {
     private final InstrumentMappingService instrumentMappingService;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Tracked seriler için son EVDS değerini alır ve {@link MarketEventPublisher} ile market price event publish eder.
+     */
     @Scheduled(fixedDelayString = "${scheduler.bond.delay-ms:300000}")
     public void pullBondPrices() {
         List<TcmbBondMarketProperties.TcmbBondSeries> tracked = bondProperties.getTracked();

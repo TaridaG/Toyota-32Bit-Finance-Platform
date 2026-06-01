@@ -104,10 +104,17 @@ public class AnalyticsPriceCandleDaily {
      * @param quantity Trade miktarı
      */
     public void applyTrade(BigDecimal price, BigDecimal quantity) {
-        if (price.compareTo(highPrice) > 0) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        if (highPrice == null || highPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            highPrice = price;
+        } else if (price.compareTo(highPrice) > 0) {
             highPrice = price;
         }
-        if (price.compareTo(lowPrice) < 0) {
+        if (lowPrice == null || lowPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            lowPrice = price;
+        } else if (price.compareTo(lowPrice) < 0) {
             lowPrice = price;
         }
 

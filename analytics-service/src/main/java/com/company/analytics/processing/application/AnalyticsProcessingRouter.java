@@ -24,7 +24,7 @@ public class AnalyticsProcessingRouter {
                 if (unknownPriceTypeWarned.add(rawPriceType == null ? "null" : rawPriceType)) {
                     log.warn("ANALYTICS_UNKNOWN_PRICE_TYPE priceType={}", rawPriceType);
                 }
-                yield new AnalyticsProcessingDecision(true, false, false, false);
+                yield new AnalyticsProcessingDecision(false, false, false, false);
             }
         };
     }

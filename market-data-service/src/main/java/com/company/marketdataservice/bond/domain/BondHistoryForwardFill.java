@@ -17,10 +17,13 @@ public final class BondHistoryForwardFill {
     private BondHistoryForwardFill() {}
 
     /**
-     * @param sparse        raw EVDS points (any order); same calendar day keeps the last occurrence
-     * @param rangeStart    inclusive calendar start
-     * @param rangeEnd      inclusive calendar end
-     * @param seedBeforeRange last known value strictly before {@code rangeStart}, or {@code null}
+     * EVDS'ten gelen sparse günlük noktaları {@code [rangeStart, rangeEnd]} aralığında forward-fill ile yoğunlaştırır.
+     *
+     * @param sparse seyrek EVDS noktaları (sıra fark etmez); aynı takvim gününde son değer kalır
+     * @param rangeStart dahil aralık başlangıcı
+     * @param rangeEnd dahil aralık sonu
+     * @param seedBeforeRange {@code rangeStart} öncesi son bilinen değer veya {@code null}
+     * @return günlük {@link BondEodPoint} listesi
      */
     public static List<BondEodPoint> expand(
             List<BondEodPoint> sparse,

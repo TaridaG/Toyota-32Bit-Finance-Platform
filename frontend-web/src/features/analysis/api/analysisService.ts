@@ -187,35 +187,90 @@ function finalizeFxCandles(symbol: string, kind: AnalysisHistoryKind, candles: C
   return kind === 'fx' ? normalizeFxCandleSeries(symbol, candles) : candles
 }
 
+type HistoryTick = { ts: number; price: number }
+
+function medianPrice(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2
+  }
+  return sorted[mid]
+}
+
+/** Scalar history ticks → OHLC; drops isolated outliers (e.g. one bad MARKET tick on 2026-05-29). */
+function ohlcFromHistoryTicks(ticks: HistoryTick[]): { open: number; high: number; low: number; close: number } | null {
+  const valid = ticks.filter((t) => Number.isFinite(t.price) && t.price > 0)
+  if (valid.length === 0) {
+    return null
+  }
+  const ref = medianPrice(valid.map((t) => t.price))
+  const bandLow = ref / 2.5
+  const bandHigh = ref * 2.5
+  const core = valid.filter((t) => t.price >= bandLow && t.price <= bandHigh)
+  const use = core.length >= 2 ? core : valid
+  const ordered = [...use].sort((a, b) => a.ts - b.ts)
+  const prices = ordered.map((t) => t.price)
+  return {
+    open: prices[0],
+    high: Math.max(...prices),
+    low: Math.min(...prices),
+    close: prices[prices.length - 1],
+  }
+}
+
+function mergeCandleSeries(base: CandlePoint[], overlay: CandlePoint[]): CandlePoint[] {
+  const byTime = new Map<number, CandlePoint>()
+  for (const candle of base) {
+    byTime.set(candle.time, candle)
+  }
+  for (const candle of overlay) {
+    byTime.set(candle.time, candle)
+  }
+  return [...byTime.values()].sort((a, b) => a.time - b.time)
+}
+
+function overlayAnalyticsCandles(history: CandlePoint[], analytics: CandlePoint[]): CandlePoint[] {
+  if (analytics.length === 0) {
+    return history
+  }
+  if (history.length === 0) {
+    return analytics
+  }
+  return mergeCandleSeries(history, analytics)
+}
+
 function historyPointsToCandles(points: HistoryPointDto[], granularity: 'hour' | 'day', maxBars: number): CandlePoint[] {
   const bucket = granularity === 'day' ? dayBucketUtc : hourBucketUtc
-  const byKey = new Map<number, CandlePoint>()
+  const ticksByKey = new Map<number, HistoryTick[]>()
   for (const item of points) {
     if (!item?.time) {
       continue
     }
     const ts = Date.parse(item.time)
     const price = Number(item.value)
-    if (!Number.isFinite(ts) || !Number.isFinite(price)) {
+    if (!Number.isFinite(ts) || !Number.isFinite(price) || price <= 0) {
       continue
     }
     const key = bucket(ts)
-    const candleTime = Math.floor(key / 1000) as UTCTimestamp
-    const existing = byKey.get(key)
-    if (!existing) {
-      byKey.set(key, {
-        time: candleTime,
-        open: price,
-        high: price,
-        low: price,
-        close: price,
-        volume: 0,
-      })
+    const list = ticksByKey.get(key) ?? []
+    list.push({ ts, price })
+    ticksByKey.set(key, list)
+  }
+  const byKey = new Map<number, CandlePoint>()
+  for (const [key, ticks] of ticksByKey) {
+    const ohlc = ohlcFromHistoryTicks(ticks)
+    if (!ohlc) {
       continue
     }
-    existing.high = Math.max(existing.high, price)
-    existing.low = Math.min(existing.low, price)
-    existing.close = price
+    byKey.set(key, {
+      time: Math.floor(key / 1000) as UTCTimestamp,
+      open: ohlc.open,
+      high: ohlc.high,
+      low: ohlc.low,
+      close: ohlc.close,
+      volume: 0,
+    })
   }
   return [...byKey.values()].sort((a, b) => a.time - b.time).slice(-maxBars)
 }
@@ -331,7 +386,7 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
     const historyFromTs = historyToTs - (historyDays - 1) * DAY_MS
     const historyPoints = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyPoints.length > 0) {
-      return finalizeFxCandles(historySym, kind, historyPoints)
+      return finalizeFxCandles(historySym, kind, overlayAnalyticsCandles(historyPoints, windowed))
     }
   }
 
@@ -344,14 +399,15 @@ export async function fetchCandles(symbol: string, range: AnalysisRange, ctx?: F
     const historyFromTs = historyDays ? historyToTs - (historyDays - 1) * DAY_MS : fromTs
     const historyFallback = await fetchHistoryCandles(historySym, range, historyFromTs, historyToTs, kind)
     if (historyFallback.length > 0) {
-      return finalizeFxCandles(historySym, kind, historyFallback)
+      return finalizeFxCandles(historySym, kind, overlayAnalyticsCandles(historyFallback, windowed))
     }
   }
 
   const fromMarket = await candlesFromMarketHistory(historySym, range, fromTs, Date.now(), kind)
   if (fromMarket.length > 0) {
     const w = fromMarket.filter((point) => point.time * 1000 >= fromTs)
-    return finalizeFxCandles(historySym, kind, w.length > 0 ? w : fromMarket)
+    const merged = overlayAnalyticsCandles(w.length > 0 ? w : fromMarket, windowed)
+    return finalizeFxCandles(historySym, kind, merged)
   }
 
   const fallbackPoints = RANGE_TO_FALLBACK_POINTS[range]

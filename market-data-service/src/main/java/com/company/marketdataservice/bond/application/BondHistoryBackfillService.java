@@ -24,7 +24,8 @@ import java.util.Optional;
 
 
 /**
- * `tahvil` infrastructure katmanı adaptörü.
+ * {@code tahvil verileri (TCMB EVDS)} geçmiş fiyat backfill ve trailing refresh application servisidir
+ * proje ilk başlatıldıgında geçmiş verileri çekmek için ayarlar
  */
 @Service
 @RequiredArgsConstructor
@@ -41,8 +42,9 @@ public class BondHistoryBackfillService {
     private final MarketPriceHistoryRepository marketPriceHistoryRepository;
 
     /**
-     * Backfill işlemini çalıştırır.
-         */
+     * {@link TcmbBondMarketProperties#getTracked()} serileri için yapılandırılmış lookback yılı kadar EVDS geçmişini
+     * chunk'lar halinde fetch edip forward-fill sonrası {@code mds_market_price_history}'ye persist eder.
+     */
     public void backfillTrackedBonds() {
         List<TcmbBondMarketProperties.TcmbBondSeries> tracked = bondProperties.getTracked();
         if (tracked == null || tracked.isEmpty()) {
@@ -93,7 +95,10 @@ public class BondHistoryBackfillService {
     }
 
     /**
-     * Re-merges a trailing calendar window for every tracked bond (scheduled). Idempotent upserts via unique constraint.
+     * Her aktif olarak takip edilen tahvil için son {@code lookbackDays} takvim penceresini EVDS'ten yeniden merge ediyor.
+     * Scheduled refresh; unique constraint ile idempotent upsert.
+     * Cron ile, config’teki her tahvil serisi için son N günü TCMB EVDS’ten tekrar çekip geçmiş fiyat tablosuna yazar;
+     * aynı gün veya sembol için tekrar yazınca unique key sayesinde tekrarlayan kayıt oluşmuyor
      */
     public void refreshTrailingWindow() {
         TcmbBondMarketProperties.BondHistoryRefresh refresh = bondProperties.getHistoryRefresh();
@@ -136,6 +141,11 @@ public class BondHistoryBackfillService {
         }
     }
 
+    /**
+     * Tek tarih aralığı: EVDS fetch ->> isteğe bağlı forward-fill -> {@link MarketHistoryWriteService#saveBatch}.
+     * tek tarih aralığı derken chunk başlama ve bitiş aralıgı örnek olarak 90 gün gibi.
+     * @return persist edilen nokta sayısı
+     */
     private int mergeChunk(
             String symbol,
             String evdsSeries,
@@ -166,6 +176,9 @@ public class BondHistoryBackfillService {
         return events.size();
     }
 
+    /**
+     * Chunk başlangıcından önceki son bilinen fiyat; parçalı backfill'de forward-fill seed'i.
+     */
     private BigDecimal findSeedBefore(String symbol, Instant beforeExclusive) {
         List<BigDecimal> rows = marketPriceHistoryRepository.findLatestPricesBefore(
                 symbol,
@@ -180,6 +193,7 @@ public class BondHistoryBackfillService {
         return Optional.ofNullable(rows.get(0)).orElse(null);
     }
 
+    /** EVDS {@code frequency} query parametresi; boşsa {@code null} (parametre gönderilmez). */
     private static String resolveEvdsFrequency(String raw) {
         if (!StringUtils.hasText(raw)) {
             return null;

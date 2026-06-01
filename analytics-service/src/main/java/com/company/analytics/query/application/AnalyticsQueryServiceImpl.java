@@ -1,15 +1,18 @@
 package com.company.analytics.query.application;
 
-import com.company.analytics.query.application.AnalyticsQueryService;
+import com.company.analytics.processing.domain.AnalyticsPriceCandle;
+import com.company.analytics.processing.domain.AnalyticsPriceCandleDaily;
 import com.company.analytics.processing.domain.enums.CandleInterval;
-import com.company.analytics.query.infrastructure.http.dto.*;
 import com.company.analytics.processing.infrastructure.persistence.*;
+import com.company.analytics.query.infrastructure.http.dto.*;
+import com.company.analytics.shared.integration.FinanceInstrumentClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -25,6 +28,7 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
     private final AnalyticsMovingAverageRepository movingAverageRepository;
     private final AnalyticsRSIRepository rsiRepository;
     private final AnalyticsTrendMetricRepository trendMetricRepository;
+    private final FinanceInstrumentClient financeInstrumentClient;
 
     /**
      * {@inheritDoc}
@@ -33,16 +37,11 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
     public List<CandleResponse> getCandles(String symbol, LocalDate from, LocalDate to) {
         String normalizedSymbol = requireSymbol(symbol);
         validateDateRange(from, to);
-        if (from == null || to == null) {
-            return candleRepository
-                    .findByInstrumentSymbolOrderByCandleDateAsc(normalizedSymbol)
-                    .stream()
-                    .map(CandleResponse::from)
-                    .toList();
-        }
-        return candleRepository
-                .findByInstrumentSymbolAndCandleDateBetweenOrderByCandleDateAsc(normalizedSymbol, from, to)
+        return financeInstrumentClient.resolveInstrumentId(normalizedSymbol)
+                .map(instrumentId -> loadDailyCandles(instrumentId, from, to))
+                .orElseGet(() -> loadDailyCandlesBySymbol(normalizedSymbol, from, to))
                 .stream()
+                .sorted(Comparator.comparing(AnalyticsPriceCandleDaily::getCandleDate))
                 .map(CandleResponse::from)
                 .toList();
     }
@@ -62,20 +61,11 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
         if (interval == null) {
             throw new IllegalArgumentException("interval is required");
         }
-        if (from == null || to == null) {
-            return multiIntervalCandleRepository
-                    .findByInstrumentSymbolAndCandleIntervalOrderByOpenTimeAsc(normalizedSymbol, interval)
-                    .stream()
-                    .map(CandleResponse::from)
-                    .toList();
-        }
-        Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().minusSeconds(1);
-        return multiIntervalCandleRepository
-                .findByInstrumentSymbolAndCandleIntervalAndOpenTimeBetweenOrderByOpenTimeAsc(
-                        normalizedSymbol, interval, fromInstant, toInstant
-                )
+        return financeInstrumentClient.resolveInstrumentId(normalizedSymbol)
+                .map(instrumentId -> loadIntervalCandles(instrumentId, interval, from, to))
+                .orElseGet(() -> loadIntervalCandlesBySymbol(normalizedSymbol, interval, from, to))
                 .stream()
+                .sorted(Comparator.comparing(AnalyticsPriceCandle::getOpenTime))
                 .map(CandleResponse::from)
                 .toList();
     }
@@ -131,6 +121,70 @@ public class AnalyticsQueryServiceImpl implements AnalyticsQueryService {
                 .stream()
                 .map(TrendMetricResponse::from)
                 .toList();
+    }
+
+    private List<AnalyticsPriceCandleDaily> loadDailyCandles(Long instrumentId, LocalDate from, LocalDate to) {
+        if (from == null || to == null) {
+            return CandleQuerySupport.dedupeDailyCandlesByDate(
+                    candleRepository.findByInstrumentIdOrderByCandleDateAsc(instrumentId)
+            );
+        }
+        return CandleQuerySupport.dedupeDailyCandlesByDate(
+                candleRepository.findByInstrumentIdAndCandleDateBetweenOrderByCandleDateAsc(instrumentId, from, to)
+        );
+    }
+
+    private List<AnalyticsPriceCandleDaily> loadDailyCandlesBySymbol(String symbol, LocalDate from, LocalDate to) {
+        if (from == null || to == null) {
+            return CandleQuerySupport.dedupeDailyCandlesByDate(
+                    candleRepository.findByInstrumentSymbolOrderByCandleDateAsc(symbol)
+            );
+        }
+        return CandleQuerySupport.dedupeDailyCandlesByDate(
+                candleRepository.findByInstrumentSymbolAndCandleDateBetweenOrderByCandleDateAsc(symbol, from, to)
+        );
+    }
+
+    private List<AnalyticsPriceCandle> loadIntervalCandles(
+            Long instrumentId,
+            CandleInterval interval,
+            LocalDate from,
+            LocalDate to
+    ) {
+        if (from == null || to == null) {
+            return CandleQuerySupport.dedupeIntervalCandlesByOpenTime(
+                    multiIntervalCandleRepository.findByInstrumentIdAndCandleIntervalOrderByOpenTimeAsc(
+                            instrumentId, interval
+                    )
+            );
+        }
+        Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().minusSeconds(1);
+        return CandleQuerySupport.dedupeIntervalCandlesByOpenTime(
+                multiIntervalCandleRepository.findByInstrumentIdAndCandleIntervalAndOpenTimeBetweenOrderByOpenTimeAsc(
+                        instrumentId, interval, fromInstant, toInstant
+                )
+        );
+    }
+
+    private List<AnalyticsPriceCandle> loadIntervalCandlesBySymbol(
+            String symbol,
+            CandleInterval interval,
+            LocalDate from,
+            LocalDate to
+    ) {
+        if (from == null || to == null) {
+            return CandleQuerySupport.dedupeIntervalCandlesByOpenTime(
+                    multiIntervalCandleRepository.findByInstrumentSymbolAndCandleIntervalOrderByOpenTimeAsc(symbol, interval)
+            );
+        }
+        Instant fromInstant = from.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant toInstant = to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant().minusSeconds(1);
+        return CandleQuerySupport.dedupeIntervalCandlesByOpenTime(
+                multiIntervalCandleRepository.findByInstrumentSymbolAndCandleIntervalAndOpenTimeBetweenOrderByOpenTimeAsc(
+                        symbol, interval, fromInstant, toInstant
+                )
+        );
     }
 
     private static String requireSymbol(String symbol) {

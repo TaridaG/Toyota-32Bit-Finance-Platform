@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 
 
 /**
- * `tahvil` verisini periyodik olarak fetch edip snapshot/Kafka'ya publish eden scheduler.
+ * {@code TRBOND*} geçmiş fiyat tablosunda trailing pencereyi cron ile yenileyen scheduler.
+ * EVDS verilerini {@link BondHistoryBackfillService#refreshTrailingWindow()} ile DB'ye merge ederek aktarır birleştirir;
+ * Kafka publish yoktur.
  */
 @Component
 @RequiredArgsConstructor
@@ -20,8 +22,8 @@ public class BondHistoryRefreshScheduler {
     private final BondHistoryBackfillService bondHistoryBackfillService;
 
     /**
-     * Önbelleği veya snapshot'ı yeniler.
-         */
+     * Günlük cron ile son lookback günlerini EVDS'ten tekrar çekip {@code mds_market_price_history}'ye idempotent upsert eder.
+     */
     @Scheduled(cron = "${market.bond.history-refresh.cron:0 15 8 * * *}", zone = "Europe/Istanbul")
     public void refreshTrailingBondHistory() {
         try {
