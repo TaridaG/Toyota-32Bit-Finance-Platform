@@ -6,7 +6,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Fund market configuration (TEFAS HTTP settings). Tracked fund codes come from {@link FundRegistry}.
+ * Fon piyasası yapılandırması: TEFAS HTTP URL'leri, scheduler gecikmeleri ve NAV geçmiş bootstrap.
+ * Takip edilen fon kodları {@link FundRegistry} üzerinden gelir.
  */
 @Getter
 @Setter
@@ -29,7 +30,7 @@ public class FundMarketProperties {
 
     private long tefasFonGnlRequestSpacingMs = 10_000L;
 
-    private String tefasFontip = "YAT";
+    private String tefasFontip = "YAT";  /** tefasta yat yatırım fonlarının kısaltmasıdır.*/
 
     private int tefasHistoryLookbackDays = 370;
 
@@ -43,6 +44,7 @@ public class FundMarketProperties {
         return FundRegistry.tefasCodes();
     }
 
+    /** TEFAS NAV geçmiş tablosu için gecikmeli bootstrap (enabled, delay, lookback). */
     @Getter
     @Setter
     public static class NavHistoryBootstrap {

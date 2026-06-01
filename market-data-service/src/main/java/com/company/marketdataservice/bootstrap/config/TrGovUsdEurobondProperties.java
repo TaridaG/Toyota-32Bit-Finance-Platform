@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * TR USD eurobond history settings. Tracked series are defined in {@link EurobondRegistry}.
+ * TR USD Hazine eurobond geçmiş fiyat yapılandırması ({@code market.tr-gov-usd-eurobond}).
+ * Yahoo chart bootstrap/refresh ve takip edilen seriler {@link EurobondRegistry} ile hizalıdır.
  */
 @Getter
 @Setter
@@ -22,6 +23,7 @@ public class TrGovUsdEurobondProperties {
     private HistoryRefresh historyRefresh = new HistoryRefresh();
     private List<TrackedSeries> tracked = new ArrayList<>();
 
+    /** YAML {@code tracked} doluysa onu; değilse {@link EurobondRegistry} satırlarını döner. */
     public List<TrackedSeries> getTracked() {
         if (tracked != null && !tracked.isEmpty()) {
             return tracked;
@@ -36,6 +38,7 @@ public class TrGovUsdEurobondProperties {
                 .toList();
     }
 
+    /** Yahoo chart ile uzun geçmiş bootstrap (range, interval, gecikme). */
     @Getter
     @Setter
     public static class HistoryBootstrap {
@@ -46,6 +49,7 @@ public class TrGovUsdEurobondProperties {
         private long chunkSpacingMs = 400L;
     }
 
+    /** Günlük cron ile eurobond geçmiş penceresini yenileme. */
     @Getter
     @Setter
     public static class HistoryRefresh {

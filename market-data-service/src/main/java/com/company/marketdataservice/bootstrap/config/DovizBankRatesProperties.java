@@ -5,7 +5,9 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * `uygulama bootstrap` feature yapılandırma property'leri (`application.yml` prefix).
+ * doviz.com banka kurları web scraping yapılandırması ({@code market.bank-rates}).
+ * <p>Resmi canlı kur API'si olmadığı için HTML sayfa URL'leri, cache TTL ve
+ * {@code User-Agent} buradan yönetilir; veri {@link com.company.marketdataservice.rates.infrastructure.provider.bank.DovizBankRatesService} ile çekilir.</p>
  */
 @ConfigurationProperties(prefix = "market.bank-rates")
 public class DovizBankRatesProperties {
@@ -47,6 +49,13 @@ public class DovizBankRatesProperties {
         this.pageUrls = pageUrls;
     }
 
+    /**
+     * Varlık için yapılandırılmış doviz.com sayfa URL'si.
+     *
+     * @param asset USD, EUR, GBP veya GOLD
+     * @return tam sayfa URL'si
+     * @throws IllegalArgumentException URL tanımlı değilse
+     */
     public String urlFor(BankRatesAsset asset) {
         String url = pageUrls.get(asset);
         if (url == null || url.isBlank()) {

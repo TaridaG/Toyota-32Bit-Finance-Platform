@@ -12,11 +12,12 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
- * `uygulama bootstrap` yapılandırma properties veya bean tanımı.
+ * Harici API çağrıları için timeout'lu {@link WebClient} bean tanımları (Netty tabanlı).
  */
 @Configuration
 public class WebClientConfig {
 
+    /** Varsayılan spot provider ({@link MarketDataProperties#getProvider()}) için timeout'lu client. */
     @Bean
     public WebClient webClient(ResilienceProperties resilienceProperties, MarketDataProperties marketDataProperties) {
 
@@ -48,6 +49,7 @@ public class WebClientConfig {
                 .build();
     }
 
+    /** TCMB / ExchangeRate FX kaynakları için 25 sn timeout'lu client. */
     @Bean("fxWebClient")
     public WebClient fxWebClient() {
         long timeoutMillis = 25_000L;
@@ -69,6 +71,7 @@ public class WebClientConfig {
                 .build();
     }
 
+    /** Yahoo Finance chart/quote istekleri için {@code resilience.providers.yahoo} timeout'u. */
     @Bean("yahooStockWebClient")
     public WebClient yahooStockWebClient(ResilienceProperties resilienceProperties) {
         long timeoutMillis = resilienceProperties.getRequiredProvider("yahoo").getTimeout().getMillis();
@@ -90,6 +93,7 @@ public class WebClientConfig {
                 .build();
     }
 
+    /** Finnhub REST istekleri için {@code resilience.providers.finnhub} timeout'u. */
     @Bean("finnhubWebClient")
     public WebClient finnhubWebClient(ResilienceProperties resilienceProperties) {
         long timeoutMillis = resilienceProperties.getRequiredProvider("finnhub").getTimeout().getMillis();
@@ -111,6 +115,7 @@ public class WebClientConfig {
                 .build();
     }
 
+    /** TEFAS.gov.tr fon API çağrıları için 20 sn timeout'lu client. */
     @Bean("tefasWebClient")
     public WebClient tefasWebClient() {
         long timeoutMillis = 20_000L;

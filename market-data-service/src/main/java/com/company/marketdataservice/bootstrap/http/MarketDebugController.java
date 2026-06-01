@@ -21,7 +21,8 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * `uygulama bootstrap` REST endpoint'lerini expose eden HTTP controller.
+ * Geliştirme ve operasyon için market debug REST endpoint'leri ({@code /api/v1/market/debug}).
+ * Geçmiş fiyat önizleme, Yahoo canlı fiyat ve sembol bazlı history sorguları.
  */
 @RestController
 @RequestMapping("/api/v1/market/debug")
@@ -33,9 +34,7 @@ public class MarketDebugController {
     private final YahooFinanceHistoricalPriceProvider yahooFinanceHistoricalPriceProvider;
     private final MarketHistoryWriteService marketHistoryWriteService;
 
-    /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+    /** Son 20 geçmiş fiyat satırını (sembol, zaman, fiyat) döner. */
     @GetMapping("/latest")
     public Mono<List<DebugPriceRow>> latest() {
         return Mono.fromCallable(() -> marketPriceHistoryRepository.findLatestDebugRows(20)
@@ -46,9 +45,10 @@ public class MarketDebugController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param symbol enstrüman sembolü
-         */
+     * Sembol için geçmiş fiyat listesi; DB boşsa Yahoo'dan 1 yıl çekip persist eder.
+     *
+     * @param symbol enstrüman sembolü
+     */
     @GetMapping("/history/{symbol}")
     public Mono<List<DebugPriceRow>> history(@PathVariable String symbol) {
         return Mono.fromCallable(() -> {
@@ -87,9 +87,10 @@ public class MarketDebugController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param symbol enstrüman sembolü
-         */
+     * Yahoo Finance üzerinden anlık fiyat smoke test'i.
+     *
+     * @param symbol enstrüman sembolü
+     */
     @GetMapping("/yahoo/{symbol}")
     public Mono<YahooDebugResponse> yahoo(@PathVariable String symbol) {
         return Mono.fromCallable(() -> {
@@ -107,12 +108,7 @@ public class MarketDebugController {
         return symbol.trim().toUpperCase(Locale.ROOT);
     }
 
-    /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param symbol enstrüman sembolü
-         * @param observedAt girdi parametresi
-         * @param price girdi parametresi
-         */
+    /** Debug geçmiş fiyat satırı DTO. */
     public record DebugPriceRow(
             String symbol,
             Instant observedAt,
@@ -120,13 +116,7 @@ public class MarketDebugController {
     ) {
     }
 
-    /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param symbol enstrüman sembolü
-         * @param price girdi parametresi
-         * @param timestamp girdi parametresi
-         * @param source provider adı
-         */
+    /** Yahoo debug yanıtı: sembol, fiyat, zaman damgası ve provider kaynağı. */
     public record YahooDebugResponse(
             String symbol,
             BigDecimal price,

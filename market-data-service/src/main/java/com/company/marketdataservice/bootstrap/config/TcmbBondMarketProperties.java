@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * TCMB bond market configuration. Tracked series are defined in {@link BondRegistry}.
+ * TCMB tahvil piyasası yapılandırması ({@code market.bond}): scheduler, EVDS geçmiş bootstrap ve trailing refresh.
+ * Takip edilen seriler varsayılan olarak {@link BondRegistry} ingest satırlarından gelir.
  */
 @Getter
 @Setter
@@ -23,6 +24,7 @@ public class TcmbBondMarketProperties {
     private BondHistoryBootstrap historyBootstrap = new BondHistoryBootstrap();
     private BondHistoryRefresh historyRefresh = new BondHistoryRefresh();
 
+    /** YAML {@code tracked} doluysa onu; değilse {@link BondRegistry} ingest satırlarını döner. */
     public List<TcmbBondSeries> getTracked() {
         if (tracked != null && !tracked.isEmpty()) {
             return tracked;
@@ -37,6 +39,7 @@ public class TcmbBondMarketProperties {
                 .toList();
     }
 
+    /** Uygulama açılışında EVDS geçmiş backfill (lookback yıl, chunk, forward-fill). */
     @Getter
     @Setter
     public static class BondHistoryBootstrap {
@@ -49,6 +52,7 @@ public class TcmbBondMarketProperties {
         private boolean forwardFillCalendarDays = true;
     }
 
+    /** Cron ile son N günü EVDS'ten yenileyen trailing refresh ayarları. */
     @Getter
     @Setter
     public static class BondHistoryRefresh {

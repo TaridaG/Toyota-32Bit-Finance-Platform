@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Finnhub API configuration. Symbol ownership is resolved via {@link NasdaqRegistry}.
+ * Finnhub API yapılandırması (ABD hisse/ETF fiyat ve temel veri).
+ * Sembol sahipliği varsayılan olarak {@link NasdaqRegistry} üzerinden çözülür.
  */
 @Getter
 @Setter
@@ -27,9 +28,15 @@ public class FinnhubProperties {
     private String stockFinancialsReportedPath = "/api/v1/stock/financials-reported";
     private String stockMetricPath = "/api/v1/stock/metric";
     private String apiKey = "";
-    /** Optional YAML override; when empty, {@link NasdaqRegistry} is the source of truth. */
+    /** İsteğe bağlı YAML listesi; boşsa kaynak {@link NasdaqRegistry}. */
     private List<String> symbols = new ArrayList<>();
 
+    /**
+     * Verilen sembolün Finnhub ingest kapsamında olup olmadığını döner.
+     *
+     * @param symbol tek kabul edilen enstrüman sembolü
+     * @return {@code symbols} doluysa listede eşleşme; değilse registry kontrolü
+     */
     public boolean ownsSymbol(String symbol) {
         if (symbol == null || symbol.isBlank()) {
             return false;
