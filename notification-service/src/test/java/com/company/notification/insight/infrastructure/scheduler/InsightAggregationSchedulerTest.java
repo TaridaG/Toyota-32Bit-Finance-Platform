@@ -120,9 +120,13 @@ class InsightAggregationSchedulerTest {
         PendingInsightEvent user2Event = insight(user2, "B", "0.20");
         when(pendingInsightEventRepository.findByProcessedFalse())
                 .thenReturn(List.of(user1Event, user2Event));
-        doThrow(new IllegalStateException("delivery failed"))
-                .when(deliverWatchlistDigestUseCase)
-                .deliver(eq(user1), anyList());
+        doAnswer(invocation -> {
+            UUID userId = invocation.getArgument(0);
+            if (user1.equals(userId)) {
+                throw new IllegalStateException("delivery failed");
+            }
+            return null;
+        }).when(deliverWatchlistDigestUseCase).deliver(any(UUID.class), any());
 
         InsightAggregationScheduler scheduler = new InsightAggregationScheduler(
                 pendingInsightEventRepository,
