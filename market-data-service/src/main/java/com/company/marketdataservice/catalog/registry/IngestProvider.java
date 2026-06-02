@@ -11,5 +11,6 @@ public enum IngestProvider {
     TEFAS,
     TCMB,
     TCMB_BOND,
+    BIST_DERIVATIVES,
     COMPOSITE
 }

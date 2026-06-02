@@ -258,6 +258,13 @@ services:
       # TCMB Hazine getiri (TRBOND*): EVDS günlük geçmiş → mds_market_price_history (varsayılan açık; kapatmak için false).
       - MARKET_BOND_HISTORY_BOOTSTRAP_ENABLED=${MARKET_BOND_HISTORY_BOOTSTRAP_ENABLED:-true}
       - MARKET_BOND_HISTORY_BOOTSTRAP_DELAY_MS=${MARKET_BOND_HISTORY_BOOTSTRAP_DELAY_MS:-120000}
+      - MARKET_VIOP_ENABLED=${MARKET_VIOP_ENABLED:-true}
+      - MARKET_VIOP_CRON=${MARKET_VIOP_CRON:-0 */2 * * * *}
+      - MARKET_VIOP_ZONE=${MARKET_VIOP_ZONE:-Europe/Istanbul}
+      - MARKET_VIOP_BASE_URL=${MARKET_VIOP_BASE_URL:-https://www.borsaistanbul.com}
+      - MARKET_VIOP_CONTRACTS_PATH_TEMPLATE=${MARKET_VIOP_CONTRACTS_PATH_TEMPLATE:-/viopdata/viopms_{yyyyMMdd}.csv}
+      - MARKET_VIOP_SETTLEMENT_PATH_TEMPLATE=${MARKET_VIOP_SETTLEMENT_PATH_TEMPLATE:-/viopdata/viop_{yyyyMMdd}.csv}
+      - MARKET_VIOP_SOURCE_LOOKUP_DAYS=${MARKET_VIOP_SOURCE_LOOKUP_DAYS:-14}
     networks:
       - finance-net
 

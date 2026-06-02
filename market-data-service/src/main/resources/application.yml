@@ -224,6 +224,33 @@ market:
       lookback-days: ${MARKET_BOND_HISTORY_REFRESH_LOOKBACK_DAYS:60}
       chunk-spacing-ms: ${MARKET_BOND_HISTORY_REFRESH_CHUNK_SPACING_MS:400}
       cron: ${MARKET_BOND_HISTORY_REFRESH_CRON:0 15 8 * * *}
+  viop:
+    enabled: ${MARKET_VIOP_ENABLED:false}
+    cron: ${MARKET_VIOP_CRON:0 40 19 * * MON-FRI}
+    zone: ${MARKET_VIOP_ZONE:Europe/Istanbul}
+    connect-timeout-ms: ${MARKET_VIOP_CONNECT_TIMEOUT_MS:15000}
+    read-timeout-ms: ${MARKET_VIOP_READ_TIMEOUT_MS:25000}
+    request-spacing-ms: ${MARKET_VIOP_REQUEST_SPACING_MS:250}
+    base-url: ${MARKET_VIOP_BASE_URL:https://www.borsaistanbul.com}
+    contracts-path-template: ${MARKET_VIOP_CONTRACTS_PATH_TEMPLATE:/viopdata/viopms_{yyyyMMdd}.csv}
+    settlement-path-template: ${MARKET_VIOP_SETTLEMENT_PATH_TEMPLATE:/viopdata/viop_{yyyyMMdd}.csv}
+    source-lookup-days: ${MARKET_VIOP_SOURCE_LOOKUP_DAYS:10}
+    contracts-urls:
+      - ${MARKET_VIOP_CONTRACTS_URL_1:}
+    settlement-urls:
+      - ${MARKET_VIOP_SETTLEMENT_URL_1:}
+    bond-keywords:
+      - DIBS
+      - TAHVIL
+      - BONO
+      - TRBOND
+      - GOVBOND
+      - TRT
+      - KESN
+    rate-keywords:
+      - TLREF
+      - FAIZ
+      - INTEREST
   # Türkiye USD Hazine benchmark — tracked series: catalog.registry.providers.EurobondRegistry
   tr-gov-usd-eurobond:
     history-bootstrap:
