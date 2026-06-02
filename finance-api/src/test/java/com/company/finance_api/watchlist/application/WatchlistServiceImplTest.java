@@ -56,7 +56,7 @@ class WatchlistServiceImplTest {
 
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(instrumentRepository.findById(1L)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(instrument));
     when(watchlistItemRepository.findByUserIdAndInstrumentId(userId, 1L))
         .thenReturn(Optional.empty());
 
@@ -76,7 +76,7 @@ class WatchlistServiceImplTest {
 
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(instrumentRepository.findById(1L)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(instrument));
     when(watchlistItemRepository.findByUserIdAndInstrumentId(userId, 1L))
         .thenReturn(Optional.of(activeItem));
 
@@ -97,7 +97,7 @@ class WatchlistServiceImplTest {
 
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(instrumentRepository.findById(1L)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(instrument));
     when(watchlistItemRepository.findByUserIdAndInstrumentId(userId, 1L))
         .thenReturn(Optional.of(inactiveItem));
 
