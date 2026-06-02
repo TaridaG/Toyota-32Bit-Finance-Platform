@@ -12,11 +12,10 @@ import type { CpiMetricCode } from './api/cpiApi'
 import { FaizVadeliTlDepositStatCard } from './components/FaizVadeliTlDepositStatCard'
 import { FaizVadeliTlDepositChartPanel } from './components/FaizVadeliTlDepositChartPanel'
 import { FaizVadeliTahvilStatCard } from './components/FaizVadeliTahvilStatCard'
-import { FaizVadeliTahvilChartPanel } from './components/FaizVadeliTahvilChartPanel'
+import { FaizVadeliViopDetailPanel } from './components/FaizVadeliViopDetailPanel'
 import { FaizVadeliEurobondStatCard } from './components/FaizVadeliEurobondStatCard'
 import { FaizVadeliEurobondDetailPanel } from './components/FaizVadeliEurobondDetailPanel'
 import type { TlDepositMaturityCode } from './lib/tlDepositMaturity'
-import type { TahvilSymbol } from './lib/tahvilSymbol'
 import { TR_USD_EUROBOND_DEFAULT_ISIN } from './lib/trUsdEurobondIsins'
 import type { EurobondInstrumentWire } from './api/eurobondMarketApi'
 
@@ -26,7 +25,6 @@ export function FaizVadeliDashboard() {
   const { i18n } = useTranslation()
   const [midChart, setMidChart] = useState<MidPanel>('policy')
   const [tlDepositMaturity, setTlDepositMaturity] = useState<TlDepositMaturityCode>('MT04')
-  const [tahvilSymbol, setTahvilSymbol] = useState<TahvilSymbol>('TRBOND1Y')
   const [eurobondInstruments, setEurobondInstruments] = useState<EurobondInstrumentWire[]>([])
   const [eurobondIsin, setEurobondIsin] = useState(TR_USD_EUROBOND_DEFAULT_ISIN)
   const [cpiMetric, setCpiMetric] = useState<CpiMetricCode>('YEARLY_PCT')
@@ -51,8 +49,6 @@ export function FaizVadeliDashboard() {
             ) : stat.statSlot === 'tahvil' ? (
               <FaizVadeliTahvilStatCard
                 template={stat}
-                symbol={tahvilSymbol}
-                onSymbolChange={setTahvilSymbol}
                 onShowHistory={() => setMidChart('tahvil')}
               />
             ) : stat.statSlot === 'repo' ? (
@@ -94,7 +90,7 @@ export function FaizVadeliDashboard() {
         ) : midChart === 'tl_deposit' ? (
           <FaizVadeliTlDepositChartPanel maturity={tlDepositMaturity} onBack={goPolicy} />
         ) : midChart === 'tahvil' ? (
-          <FaizVadeliTahvilChartPanel symbol={tahvilSymbol} onBack={goPolicy} />
+          <FaizVadeliViopDetailPanel onBack={goPolicy} />
         ) : midChart === 'repo' ? (
           <FaizVadeliRepoChartPanel onBack={goPolicy} />
         ) : midChart === 'eurobond' ? (

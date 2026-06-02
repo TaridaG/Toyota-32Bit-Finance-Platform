@@ -3,8 +3,7 @@ package com.company.marketdataservice.spot.infrastructure.scheduler;
 import com.company.marketdataservice.bootstrap.config.FinnhubProperties;
 import com.company.marketdataservice.catalog.application.InstrumentIngestScopeService;
 import com.company.marketdataservice.catalog.application.InstrumentMappingService;
-import com.company.marketdataservice.catalog.registry.IngestInstrumentDef;
-import com.company.marketdataservice.catalog.registry.IngestProvider;
+import com.company.marketdataservice.catalog.domain.IngestScopeSegment;
 import com.company.marketdataservice.shared.observation.MarketPriceObservation;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import com.company.marketdataservice.spot.infrastructure.kafka.MarketEventPublisher;
@@ -49,30 +48,28 @@ public class StockPriceScheduler {
     @Scheduled(fixedDelayString = "${scheduler.stock.delay-ms:30000}")
     public void pullStockPrices() {
         log.info("STOCK SCHEDULER RUNNING");
-        List<IngestInstrumentDef> equities = ingestScope.resolvePolledEquityDefinitions();
-        if (equities.isEmpty()) {
+        List<String> bistSymbols = ingestScope.symbolsForSegment(IngestScopeSegment.BIST);
+        List<String> nasdaqSymbols = ingestScope.symbolsForSegment(IngestScopeSegment.NASDAQ);
+        if (bistSymbols.isEmpty() && nasdaqSymbols.isEmpty()) {
             return;
         }
-        for (IngestInstrumentDef def : equities) {
+        pullSymbolsWithYahoo(bistSymbols);
+        if (finnhubProperties.isEnabled()) {
+            pullSymbolsWithFinnhub(nasdaqSymbols);
+            return;
+        }
+        pullSymbolsWithYahoo(nasdaqSymbols);
+    }
+
+    private void pullSymbolsWithYahoo(List<String> symbols) {
+        for (String symbol : symbols) {
             try {
-                String symbol = def.symbol();
                 if (!stockHistoryBootstrapGuard.isLiveAllowed(symbol)) {
                     log.info("STOCK_DATA_WAITING_FOR_HISTORY symbol={}", symbol);
                     continue;
                 }
-                String source;
-                BigDecimal price;
-                if (def.provider() == IngestProvider.FINNHUB && finnhubProperties.isEnabled()) {
-                    source = IngestProvider.FINNHUB.name();
-                    price = finnhubClient.fetchLiveQuotePrice(symbol);
-                } else if (def.provider() == IngestProvider.YAHOO) {
-                    source = yahooFinanceProvider.source();
-                    price = yahooFinanceProvider.fetchPrice(symbol);
-                } else {
-                    log.debug("STOCK_SCHEDULER_SKIP symbol={} provider={}", symbol, def.provider());
-                    continue;
-                }
-
+                String source = yahooFinanceProvider.source();
+                BigDecimal price = yahooFinanceProvider.fetchPrice(symbol);
                 var observation = new MarketPriceObservation(source, symbol, price, Instant.now());
                 Long instrumentId = instrumentMappingService.resolveInstrument(source, symbol).orElse(null);
                 recordMappingMetrics(source, symbol, instrumentId);
@@ -86,7 +83,34 @@ public class StockPriceScheduler {
                         instrumentId,
                         observation);
             } catch (Exception e) {
-                log.error("STOCK_DATA_ERROR symbol={}, error={}", def.symbol(), e.getMessage());
+                log.error("STOCK_DATA_ERROR symbol={}, provider={}, error={}", symbol, "YAHOO", e.getMessage());
+            }
+        }
+    }
+
+    private void pullSymbolsWithFinnhub(List<String> symbols) {
+        for (String symbol : symbols) {
+            try {
+                if (!stockHistoryBootstrapGuard.isLiveAllowed(symbol)) {
+                    log.info("STOCK_DATA_WAITING_FOR_HISTORY symbol={}", symbol);
+                    continue;
+                }
+                String source = "FINNHUB";
+                BigDecimal price = finnhubClient.fetchLiveQuotePrice(symbol);
+                var observation = new MarketPriceObservation(source, symbol, price, Instant.now());
+                Long instrumentId = instrumentMappingService.resolveInstrument(source, symbol).orElse(null);
+                recordMappingMetrics(source, symbol, instrumentId);
+                publisher.publishMarketPriceUpdated(
+                        MarketPriceUpdatedEvent.of(symbol, price, "MARKET", source, instrumentId));
+                log.info(
+                        "STOCK_DATA_PUBLISHED source={}, symbol={}, price={}, instrumentId={}, observation={}",
+                        observation.provider(),
+                        observation.symbol(),
+                        observation.price(),
+                        instrumentId,
+                        observation);
+            } catch (Exception e) {
+                log.error("STOCK_DATA_ERROR symbol={}, provider={}, error={}", symbol, "FINNHUB", e.getMessage());
             }
         }
     }

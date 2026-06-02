@@ -627,26 +627,41 @@
         "chartFoot": "Çizgi, TCMB EVDS ağırlıklı ortalama TL mevduat (stok) serisinin haftalık özetidir; gözlem tarihleri şekli etkileyebilir."
       },
       "tahvil": {
-        "tenorSelectAria": "Gösterge tahvil vadesi seçin",
+        "tenorSelectAria": "VIOP faiz/tahvil kontratı seçin",
         "symbolLabel": {
-          "TRBOND1Y": "1 yıl",
-          "TRBOND2Y": "2 yıl",
-          "TRBOND3Y": "3 yıl"
+          "VIOP_TLREF_NEAR": "TLREF yakın vade",
+          "VIOP_DIBS_NEAR": "DİBS yakın vade",
+          "VIOP_FAIZ_NEAR": "Faiz yakın vade"
         },
-        "chartTitleWithTenor": "{{tenor}} gösterge getirisi — son 5 yıl",
+        "chartTitleWithTenor": "{{tenor}} uzlaşma fiyatı — son 5 yıl",
+        "cardValue": "Detay panelde incele",
+        "cardHint": "Tıkla: faiz/tahvil VIOP kontratları, vade, uzlaşma, hacim ve açık pozisyon",
+        "detailOpenHint": "VIOP faiz/tahvil detay panelini aç",
+        "detailTitle": "VIOP faiz/tahvil kontratları",
+        "detailLoading": "VIOP kontratları yükleniyor",
+        "detailLoadError": "VIOP kontrat detayları yüklenemedi.",
+        "detailSearchPlaceholder": "Kontrat/Dayanak ara (örn. TLREF)",
+        "detailNoSelection": "Kontrat seçin",
+        "colContract": "Kontrat",
+        "colUnderlying": "Dayanak",
+        "colExpiry": "Vade",
+        "colSettle": "Uzlaşma",
+        "colChange1D": "1G %",
+        "colVolume": "Hacim (TL)",
+        "colOpenInterest": "Açık pozisyon",
         "change1dSub": "Son baskıya göre (göreli): {{pct}}%",
-        "liveNoData": "Bu vade için henüz getiri verisi yok.",
-        "liveNoDataHint": "TCMB tahvil geçmişi yüklendikten sonra burada görünür.",
-        "liveLoadError": "Getiri alınamadı. Bağlantıyı kontrol edin.",
-        "liveSkeletonAria": "Güncel tahvil getirisi yükleniyor",
-        "chartOpenHint": "Seçili vade için son beş yılın getiri grafiğini göster",
+        "liveNoData": "Bu VIOP alias için henüz veri yok.",
+        "liveNoDataHint": "BIST günlük uzlaşma ingest'i tamamlandığında burada görünür.",
+        "liveLoadError": "VIOP verisi alınamadı. Bağlantıyı kontrol edin.",
+        "liveSkeletonAria": "Güncel VIOP fiyatı yükleniyor",
+        "chartOpenHint": "Seçili VIOP alias için son beş yıl grafiğini göster",
         "chartBackToYield": "Politika faizi grafiğine dön",
-        "chartAxisY": "Getiri (%)",
+        "chartAxisY": "Uzlaşma fiyatı",
         "chartLoading": "Grafik yükleniyor",
         "chartError": "Geçmiş veri yüklenemedi.",
         "chartRetry": "Tekrar dene",
         "chartEmpty": "Bu aralıkta kayıtlı veri yok.",
-        "chartFoot": "Çizgi, MDS’deki TCMB Hazine gösterge getirisini gösterir; EVDS günlük serisi alınır ve takvim günleri son bilinen değerle doldurulur."
+        "chartFoot": "Çizgi, BIST VIOP günlük uzlaşma verisinden oluşturulan near-contract alias fiyatını gösterir."
       },
       "eurobond": {
         "cardTitle": "Türkiye Eurobondları",
@@ -2119,6 +2134,8 @@
         "userFlowSparkFoot": "Grafik: günlük yeni kayıt (ana çizgi) · hesap silme talebi (soluk, UTC günü)",
         "portfolioFlowSparkFoot": "Grafik: yeni harici portföy (ana) · önceden var olan portföyde güncelleme (soluk)",
         "instrumentDataActivityFoot": "Son 7 UTC gününde en az bir fiyat kaydı alan farklı enstrüman sayısı",
+        "ingestRegistry": "Ingest registry",
+        "addInstrument": "Yeni varlık ekle",
         "portfolioCreationVelocityWow": "Yeni portföy momentumu (7g / önceki 7g)",
         "usersMetricLoadError": "Canlı kullanıcı sayısı alınamadı — API veya ADMIN yetkisi (gateway).",
         "portfoliosMetricLoadError": "Canlı portföy sayısı alınamadı — harici portföy tablosu okunamadı veya finance-api eski sürüm (log: external_portfolios count)."
@@ -2497,7 +2514,8 @@
       "kpiMarketStreams": "Portföy ve izleme listesindeki varlık tercihleri; önceden hesaplanmış özet.",
       "kpiNewsSources": "Toplam haber sayısı, kaynak çeşitliliği ve son 7 günde günlük yayımlanan haber hacmi.",
       "kpiSystemStatus": "Bileşen sağlığı, synthetic kontroller ve genel operasyonel durum.",
-      "kpiAvgLatency": "Uçtan uca gecikme trendi, hedef eşikleri ve alarmlar."
+      "kpiAvgLatency": "Uçtan uca gecikme trendi, hedef eşikleri ve alarmlar.",
+      "kpiIngestRegistry": "Admin tarafından açılıp kapatılan ingest sembolleri, geçmiş kapsama ve son hata durumu."
     },
     "placeholder": {
       "body": "Bu bölüm sonraki iterasyon için iskelet. Grafik ve tablolar sözleşme netleşince /api/admin/* ile bağlanacak."

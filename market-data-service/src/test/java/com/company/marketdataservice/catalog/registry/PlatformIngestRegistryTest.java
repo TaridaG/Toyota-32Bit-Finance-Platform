@@ -7,6 +7,7 @@ import com.company.marketdataservice.catalog.registry.providers.EurobondRegistry
 import com.company.marketdataservice.catalog.registry.providers.FundRegistry;
 import com.company.marketdataservice.catalog.registry.providers.FxRegistry;
 import com.company.marketdataservice.catalog.registry.providers.NasdaqRegistry;
+import com.company.marketdataservice.catalog.registry.providers.ViopRegistry;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -27,7 +28,8 @@ class PlatformIngestRegistryTest {
                 + FundRegistry.all().size()
                 + BondRegistry.all().size()
                 + FxRegistry.all().size()
-                + EurobondRegistry.all().size();
+                + EurobondRegistry.all().size()
+                + ViopRegistry.all().size();
         assertEquals(expected, PlatformIngestRegistry.all().size());
     }
 

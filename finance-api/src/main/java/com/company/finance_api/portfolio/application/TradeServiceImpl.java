@@ -82,7 +82,7 @@ public class TradeServiceImpl implements TradeService {
   public TradePreviewResponse preview(TradeExecutionRequest request) {
     Instrument instrument =
         instrumentRepository
-            .findById(request.getInstrumentId())
+            .findByIdAndActiveTrue(request.getInstrumentId())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
     Computation computation = compute(request, instrument);
     Instant effectiveAcquiredAt =
@@ -117,7 +117,7 @@ public class TradeServiceImpl implements TradeService {
 
     Instrument instrument =
         instrumentRepository
-            .findById(request.getInstrumentId())
+            .findByIdAndActiveTrue(request.getInstrumentId())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
 
     Computation computation = compute(request, instrument);
@@ -199,7 +199,7 @@ public class TradeServiceImpl implements TradeService {
 
     Instrument instrument =
         instrumentRepository
-            .findById(request.getInstrumentId())
+            .findByIdAndActiveTrue(request.getInstrumentId())
             .orElseThrow(() -> new IllegalArgumentException("Instrument not found"));
 
     Computation computation = compute(request, instrument);

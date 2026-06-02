@@ -218,6 +218,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const { t: tNotifications } = useTranslation('notificationsPage')
   const { currency, setLanguage, setCurrency } = useAppPreferences()
   const { pathname } = useLocation()
+  const isAdminRoute = pathname.startsWith('/admin')
   const { active: literacyHelpActive, toggle: toggleLiteracyHelp, deactivate: deactivateLiteracyHelp } =
     useLiteracyHelpMode()
   const {
@@ -259,7 +260,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   }, [avatarUrl])
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isAdminRoute) {
       setServerAvatarUpdatedAt(null)
       setPortalUsername(null)
       return
@@ -273,7 +274,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
         setServerAvatarUpdatedAt(null)
         setPortalUsername(null)
       })
-  }, [isAuthenticated])
+  }, [isAuthenticated, isAdminRoute])
 
   useEffect(() => {
     const onUsername = (e: Event) => {
@@ -324,7 +325,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
   const loadNotificationsPreview = useCallback(
     async (opts?: { showLoading?: boolean }) => {
-      if (!isAuthenticated) {
+      if (!isAuthenticated || isAdminRoute) {
         setNotifications([])
         setNotificationUnreadCount(0)
         setNotificationTotalCount(0)
@@ -347,11 +348,11 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
         }
       }
     },
-    [isAuthenticated, t],
+    [isAuthenticated, isAdminRoute, t],
   )
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isAdminRoute) {
       setNotifications([])
       setNotificationUnreadCount(0)
       setNotificationTotalCount(0)
@@ -360,14 +361,14 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     return scheduleIdleWork(() => {
       void loadNotificationsPreview()
     }, 1_500)
-  }, [isAuthenticated, loadNotificationsPreview])
+  }, [isAuthenticated, isAdminRoute, loadNotificationsPreview])
 
   useEffect(() => {
-    if (!notificationsOpen || !isAuthenticated) {
+    if (!notificationsOpen || !isAuthenticated || isAdminRoute) {
       return
     }
     void loadNotificationsPreview({ showLoading: true })
-  }, [notificationsOpen, isAuthenticated, loadNotificationsPreview])
+  }, [notificationsOpen, isAuthenticated, isAdminRoute, loadNotificationsPreview])
 
   useEffect(() => {
     const onChanged = () => {
@@ -386,7 +387,7 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
   const loadAlarmsPreview = useCallback(
     async (opts?: { showLoading?: boolean }) => {
-      if (!isAuthenticated) {
+      if (!isAuthenticated || isAdminRoute) {
         setActiveAlarms([])
         setAlarmTotalCount(0)
         setAlarmPricesBySymbol({})
@@ -423,11 +424,11 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
         }
       }
     },
-    [isAuthenticated, t],
+    [isAuthenticated, isAdminRoute, t],
   )
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isAdminRoute) {
       setActiveAlarms([])
       setAlarmTotalCount(0)
       setAlarmPricesBySymbol({})
@@ -436,14 +437,14 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     return scheduleIdleWork(() => {
       void loadAlarmsPreview()
     }, 2_000)
-  }, [isAuthenticated, alarmsRefreshKey, loadAlarmsPreview])
+  }, [isAuthenticated, isAdminRoute, alarmsRefreshKey, loadAlarmsPreview])
 
   useEffect(() => {
-    if (!alarmsOpen || !isAuthenticated) {
+    if (!alarmsOpen || !isAuthenticated || isAdminRoute) {
       return
     }
     void loadAlarmsPreview({ showLoading: true })
-  }, [alarmsOpen, isAuthenticated, loadAlarmsPreview])
+  }, [alarmsOpen, isAuthenticated, isAdminRoute, loadAlarmsPreview])
 
   useEffect(() => {
     const onChanged = () => {

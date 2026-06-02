@@ -53,8 +53,12 @@ final class GatewaySecurityPaths {
         return new String[] {V1 + "/admin/**"};
     }
 
+    static String[] ingestAdminActions() {
+        return new String[] {V1 + "/market/ingest/actions/**"};
+    }
+
     static String[] userProfile() {
-        return new String[] {V1 + "/users/me/**", V1 + "/profile/**"};
+        return new String[] {V1 + "/users/me/**", V1 + "/profile/**", V1 + "/portal/profile/**"};
     }
 
     static String[] portfolioWrites() {

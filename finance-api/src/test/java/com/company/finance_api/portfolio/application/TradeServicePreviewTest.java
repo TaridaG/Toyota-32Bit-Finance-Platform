@@ -67,7 +67,7 @@ class TradeServicePreviewTest {
     InstrumentPrice market =
         new InstrumentPrice(g, PriceType.MARKET, new BigDecimal("184.50"), Instant.now());
 
-    when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(g));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(g));
     when(instrumentPriceRepository.findTopByInstrumentAndPriceTypeOrderByTimestampDesc(
             g, PriceType.MARKET))
         .thenReturn(Optional.of(market));

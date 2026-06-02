@@ -7,7 +7,8 @@ import com.company.marketdataservice.catalog.registry.PlatformIngestRegistry;
 import com.company.marketdataservice.catalog.registry.providers.FxRegistry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -25,8 +26,8 @@ import java.util.Locale;
  * Startup sync from {@link PlatformIngestRegistry} into shared {@code instruments} and MDS catalog tables.
  */
 @Component
-@Slf4j
 public class InstrumentRegistryDbSync {
+    private static final Logger log = LoggerFactory.getLogger(InstrumentRegistryDbSync.class);
 
     private static final String UPSERT_INSTRUMENT = """
             INSERT INTO instruments (symbol, name, type, exchange, active)
@@ -59,6 +60,11 @@ public class InstrumentRegistryDbSync {
               instrument_id = EXCLUDED.instrument_id,
               priority = EXCLUDED.priority,
               active = TRUE
+            """;
+    private static final String UPSERT_INGEST_CONFIG = """
+            INSERT INTO mds_ingest_config (instrument_id, segment, enabled)
+            VALUES (?, ?, TRUE)
+            ON CONFLICT (instrument_id, segment) DO NOTHING
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -104,6 +110,7 @@ public class InstrumentRegistryDbSync {
         Long instrumentId = upsertInstrument(def);
         upsertCatalog(def, instrumentId);
         upsertMappings(def, instrumentId);
+        upsertIngestConfig(def, instrumentId);
     }
 
     private Long upsertInstrument(IngestInstrumentDef def) {
@@ -147,6 +154,33 @@ public class InstrumentRegistryDbSync {
 
     private void upsertMapping(String provider, String providerSymbol, Long instrumentId, int priority) {
         jdbcTemplate.update(UPSERT_MAPPING, provider, providerSymbol, instrumentId, priority);
+    }
+
+    private void upsertIngestConfig(IngestInstrumentDef def, Long instrumentId) {
+        String segment = resolveIngestSegment(def);
+        if (segment == null) {
+            return;
+        }
+        jdbcTemplate.update(UPSERT_INGEST_CONFIG, instrumentId, segment);
+    }
+
+    private static String resolveIngestSegment(IngestInstrumentDef def) {
+        if (def.kind() == AssetKind.CRYPTO) {
+            return "CRYPTO";
+        }
+        if (def.kind() != AssetKind.STOCK) {
+            return null;
+        }
+        String exchange = def.exchange();
+        if ("BIST".equalsIgnoreCase(exchange)) {
+            return "BIST";
+        }
+        if ("NASDAQ".equalsIgnoreCase(exchange)
+                || "FINNHUB".equalsIgnoreCase(exchange)
+                || "YAHOO".equalsIgnoreCase(exchange)) {
+            return "NASDAQ";
+        }
+        return null;
     }
 
     private static String resolveBaseCurrency(IngestInstrumentDef def) {

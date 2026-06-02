@@ -66,7 +66,7 @@ public class WatchlistServiceImpl implements WatchlistService {
             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     Instrument instrument =
         instrumentRepository
-            .findById(instrumentId)
+            .findByIdAndActiveTrue(instrumentId)
             .orElseThrow(
                 () -> new ResourceNotFoundException("Instrument not found: " + instrumentId));
 

@@ -14,6 +14,10 @@ public interface InstrumentRepository extends JpaRepository<Instrument, Long> {
   List<Instrument> findByActiveTrue();
 
   List<Instrument> findByTypeAndActiveTrue(InstrumentType type);
+  
+  List<Instrument> findByActiveFalse();
 
   Optional<Instrument> findBySymbol(String symbol);
+
+  Optional<Instrument> findByIdAndActiveTrue(Long id);
 }

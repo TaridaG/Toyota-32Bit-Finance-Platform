@@ -66,7 +66,7 @@ class TradeServiceImplTest {
   void preview_shouldThrow_whenInstrumentMissing() {
     TradeExecutionRequest request = liveLotsRequest(999L, "1");
 
-    when(instrumentRepository.findById(999L)).thenReturn(Optional.empty());
+    when(instrumentRepository.findByIdAndActiveTrue(999L)).thenReturn(Optional.empty());
 
     IllegalArgumentException ex =
         assertThrows(IllegalArgumentException.class, () -> tradeService.preview(request));
@@ -104,7 +104,7 @@ class TradeServiceImplTest {
 
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
     when(instrumentPriceRepository.findTopByInstrumentAndPriceTypeOrderByTimestampDesc(
             instrument, PriceType.MARKET))
         .thenReturn(Optional.of(market));
@@ -138,7 +138,7 @@ class TradeServiceImplTest {
 
     when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
     when(instrumentPriceRepository.findTopByInstrumentAndPriceTypeOrderByTimestampDesc(
             instrument, PriceType.MARKET))
         .thenReturn(Optional.of(market));
@@ -164,7 +164,7 @@ class TradeServiceImplTest {
     ReflectionTestUtils.setField(instrument, "id", instrumentId);
     TradeExecutionRequest request = liveLotsRequest(instrumentId, "5");
 
-    when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
 
     IllegalArgumentException ex =
         assertThrows(IllegalArgumentException.class, () -> tradeService.preview(request));
@@ -184,7 +184,7 @@ class TradeServiceImplTest {
     request.setInputCurrency("USD");
     request.setPurchaseMode(PurchaseMode.NOW);
 
-    when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
     when(currencyConversionService.normalizeCurrency("USD")).thenReturn("USD");
     when(currencyConversionService.convert(eq(BigDecimal.ONE), eq("USD"), eq("TRY")))
         .thenReturn(new BigDecimal("40.000000"));
@@ -223,7 +223,7 @@ class TradeServiceImplTest {
     request.setPurchaseMode(PurchaseMode.PAST);
     request.setAcquiredAt(acquiredAt);
 
-    when(instrumentRepository.findById(instrumentId)).thenReturn(Optional.of(instrument));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
     when(currencyConversionService.normalizeCurrency("EUR")).thenReturn("EUR");
     when(currencyConversionService.convertAt(any(), eq(BigDecimal.ONE), eq("EUR"), eq("TRY")))
         .thenReturn(new BigDecimal("43.000000"));

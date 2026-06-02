@@ -39,6 +39,7 @@ public class Instrument {
     this.name = name;
     this.type = type;
     this.exchange = exchange;
+    this.active = true;
   }
 
   // --- GETTERS ---
@@ -65,5 +66,9 @@ public class Instrument {
 
   public boolean isActive() {
     return active;
+  }
+
+  public void deactivate() {
+    this.active = false;
   }
 }

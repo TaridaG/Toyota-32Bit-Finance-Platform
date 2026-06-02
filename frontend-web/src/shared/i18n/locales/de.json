@@ -628,26 +628,41 @@
         "chartFoot": "Die Linie fasst die wöchentlich gespeicherte TCMB-EVDS-Serie (gewichteter TRY-Einlagenzins, Bestand) zusammen; Beobachtungstermine können die Form leicht beeinflussen."
       },
       "tahvil": {
-        "tenorSelectAria": "Benchmark-Laufzeit wählen",
+        "tenorSelectAria": "VIOP Zins/Anleihe-Kontrakt wählen",
         "symbolLabel": {
-          "TRBOND1Y": "1 Jahr",
-          "TRBOND2Y": "2 Jahre",
-          "TRBOND3Y": "3 Jahre"
+          "VIOP_TLREF_NEAR": "TLREF nah",
+          "VIOP_DIBS_NEAR": "DIBS nah",
+          "VIOP_FAIZ_NEAR": "Zins nah"
         },
-        "chartTitleWithTenor": "{{tenor}} Staatsrendite — letzte 5 Jahre",
+        "chartTitleWithTenor": "{{tenor}} Settlement-Preis — letzte 5 Jahre",
+        "cardValue": "Detailansicht öffnen",
+        "cardHint": "Klick: VIOP Zins/Anleihe-Kontrakte mit Laufzeit, Settlement, Volumen und Open Interest",
+        "detailOpenHint": "VIOP Zins/Anleihe Detailansicht öffnen",
+        "detailTitle": "VIOP Zins/Anleihe Kontrakte",
+        "detailLoading": "VIOP-Kontrakte werden geladen",
+        "detailLoadError": "VIOP-Kontraktdetails konnten nicht geladen werden.",
+        "detailSearchPlaceholder": "Kontrakt/Basiswert suchen (z. B. TLREF)",
+        "detailNoSelection": "Kontrakt wählen",
+        "colContract": "Kontrakt",
+        "colUnderlying": "Basiswert",
+        "colExpiry": "Fälligkeit",
+        "colSettle": "Settlement",
+        "colChange1D": "1T %",
+        "colVolume": "Volumen (TRY)",
+        "colOpenInterest": "Open Interest",
         "change1dSub": "Seit letzter Veröffentlichung (relativ): {{pct}}%",
-        "liveNoData": "Für diese Laufzeit liegen noch keine Renditedaten vor.",
-        "liveNoDataHint": "Erscheint, sobald die TCMB-Anleihenhistorie geladen ist.",
-        "liveLoadError": "Rendite konnte nicht geladen werden. Verbindung prüfen.",
-        "liveSkeletonAria": "Aktuelle Benchmark-Rendite wird geladen",
-        "chartOpenHint": "Fünf Jahre Renditeverlauf für die gewählte Laufzeit anzeigen",
+        "liveNoData": "Noch keine Daten für dieses VIOP-Alias.",
+        "liveNoDataHint": "Erscheint nach dem BIST-Tagesingest der Settlement-Dateien.",
+        "liveLoadError": "VIOP-Daten konnten nicht geladen werden. Verbindung prüfen.",
+        "liveSkeletonAria": "Aktueller VIOP-Preis wird geladen",
+        "chartOpenHint": "Fünf Jahre Verlauf für das gewählte VIOP-Alias anzeigen",
         "chartBackToYield": "Zur Leitzinsgrafik",
-        "chartAxisY": "Rendite (%)",
+        "chartAxisY": "Settlement-Preis",
         "chartLoading": "Diagramm wird geladen",
         "chartError": "Historie konnte nicht geladen werden.",
         "chartRetry": "Erneut versuchen",
         "chartEmpty": "Keine Daten in diesem Zeitraum.",
-        "chartFoot": "Die Linie zeigt die TCMB-Staatsanleihen-Benchmark-Rendite in MDS; EVDS wird täglich abgefragt und Kalendertage ohne Neudruck mit dem letzten Wert aufgefüllt."
+        "chartFoot": "Die Linie zeigt Near-Contract-Alias-Preise aus den taeglichen BIST-VIOP-Settlement-Dateien."
       },
       "eurobond": {
         "cardTitle": "Türkei-Eurobonds",
@@ -2121,6 +2136,8 @@
         "userFlowSparkFoot": "Diagramm: tägliche Neuregistrierungen (Hauptlinie) · gestartete Kontolöschungen (gedämpft, UTC-Tag)",
         "portfolioFlowSparkFoot": "Diagramm: neue externe Portfolios (Haupt) · Aktualisierungen bestehender Portfolios (gedämpft)",
         "instrumentDataActivityFoot": "Anzahl verschiedener Instrumente mit mindestens einem Preis-Tick je UTC-Tag (letzte 7 Tage)",
+        "ingestRegistry": "Ingest-Registry",
+        "addInstrument": "Instrument hinzufugen",
         "portfolioCreationVelocityWow": "Neues-Portfolio-Momentum (7T / vorherige 7T)",
         "usersMetricLoadError": "Live-Nutzerzahl nicht verfügbar — API/Gateway und ADMIN-Rolle prüfen.",
         "portfoliosMetricLoadError": "Live-Portfolioanzahl nicht verfügbar — API/Gateway und ADMIN-Rolle prüfen."
@@ -2499,7 +2516,8 @@
       "kpiMarketStreams": "Asset-Nutzung in Portfolios und Watchlists; vorberechnete Übersicht.",
       "kpiNewsSources": "Gesamtartikel, Quellen und tägliches Publikationsvolumen der letzten Woche.",
       "kpiSystemStatus": "Komponenten-Gesundheit, Synthetics und Gesamtzustand.",
-      "kpiAvgLatency": "End-to-End-Latenz, Schwellen und Alarme."
+      "kpiAvgLatency": "End-to-End-Latenz, Schwellen und Alarme.",
+      "kpiIngestRegistry": "Vom Admin verwaltete Ingest-Symbole, Historienabdeckung und letzter Fehlerstatus."
     },
     "placeholder": {
       "body": "Dieser Bereich ist vorbereitet. Diagramme und Tabellen binden später /api/admin/*."
