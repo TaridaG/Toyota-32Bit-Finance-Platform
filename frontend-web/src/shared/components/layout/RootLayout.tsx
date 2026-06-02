@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { PortalHeader } from './PortalHeader'
 import { fetchPortalProfileBootstrap, logoutPortalSession } from '../../../features/profile/api/portalProfileApi'
 import { clearAuthSession, isAuthenticated } from '../../auth/session'
@@ -17,8 +17,10 @@ import { CreateAlarmModal } from '../../../features/alarms/components/CreateAlar
 
 export function RootLayout() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const authenticated = isAuthenticated()
   const { setLanguage, setCurrency } = useAppPreferences()
+  const isAdminRoute = pathname.startsWith('/admin')
 
   useFrozenAccountGuard(authenticated)
 
@@ -26,7 +28,7 @@ export function RootLayout() {
     let cancelled = false
     let retryTimer: number | null = null
 
-    if (!authenticated) {
+    if (!authenticated || isAdminRoute) {
       return
     }
 
@@ -67,7 +69,7 @@ export function RootLayout() {
         window.clearTimeout(retryTimer)
       }
     }
-  }, [authenticated, setCurrency, setLanguage])
+  }, [authenticated, isAdminRoute, setCurrency, setLanguage])
 
   const handleLogout = () => {
     void (async () => {

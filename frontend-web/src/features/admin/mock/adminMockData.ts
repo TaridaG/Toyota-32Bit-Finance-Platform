@@ -70,6 +70,16 @@ export function getAdminOverviewMock(): AdminOverviewMock {
         sparkline: kpiSparkline(14, 4.8),
         accent: 'amber',
       },
+      {
+        variant: 'streams',
+        id: 'ingestRegistry',
+        labelKey: 'dashboard.kpi.ingestRegistry',
+        total: 12,
+        active: 10,
+        passive: 2,
+        sparkline: kpiSparkline(14, 6.2),
+        accent: 'blue',
+      },
     ],
   }
 }

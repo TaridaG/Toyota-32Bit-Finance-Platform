@@ -32,6 +32,8 @@ import { AdminTotalPortfoliosPage } from '../../pages/admin/AdminTotalPortfolios
 import { AdminMarketAssetsPage } from '../../pages/admin/AdminMarketAssetsPage'
 import { AdminBlockedEmailsPage } from '../../pages/admin/AdminBlockedEmailsPage'
 import { AdminTotalUsersPage } from '../../pages/admin/AdminTotalUsersPage'
+import { AdminIngestRegistryPage } from '../../pages/admin/AdminIngestRegistryPage'
+import { AdminCreateInstrumentPage } from '../../pages/admin/AdminCreateInstrumentPage'
 
 export const appRouter = createBrowserRouter([
   {
@@ -106,6 +108,8 @@ export const appRouter = createBrowserRouter([
           { path: 'kpi/market-streams', element: <AdminMarketAssetsPage /> },
           { path: 'kpi/news-sources', element: <AdminTotalNewsPage /> },
           { path: 'kpi/avg-latency', element: <AdminAvgLatencyPage /> },
+          { path: 'kpi/ingest-registry', element: <AdminIngestRegistryPage /> },
+          { path: 'instruments/create', element: <AdminCreateInstrumentPage /> },
           { path: 'users', element: <Navigate to="/admin/kpi/total-users" replace /> },
           { path: 'portfolios', element: <Navigate to="/admin/kpi/active-portfolios" replace /> },
           { path: 'market-data', element: <Navigate to="/admin/kpi/market-streams" replace /> },

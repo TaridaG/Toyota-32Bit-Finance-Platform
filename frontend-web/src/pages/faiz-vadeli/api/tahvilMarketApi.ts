@@ -18,6 +18,25 @@ export type MarketHistoryPoint = {
   value?: number | null
 }
 
+export type ViopActiveContract = {
+  contractCode: string
+  underlying?: string | null
+  marketGroup?: string | null
+  expiryDate?: string | null
+  tradeDate?: string | null
+  settlementPrice?: number | null
+  changePercent?: number | null
+  volumeTl?: number | null
+  volumeQty?: number | null
+  openInterest?: number | null
+  ingestedAt?: string | null
+}
+
+export type ViopContractHistoryPoint = {
+  tradeDate?: string | null
+  settlementPrice?: number | null
+}
+
 function toDateParam(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
@@ -32,7 +51,7 @@ export async function fetchTahvilSummary(symbol: string): Promise<MarketPriceSum
   })
 }
 
-/** Son ~5 yıl (TRBOND için MDS üst sınırı genişletilmiş aralık). */
+/** Son ~5 yıl (VIOP alias sembolleri için günlük MDS fiyat geçmişi). */
 export async function fetchTahvilHistory(symbol: string): Promise<MarketHistoryPoint[]> {
   const to = new Date()
   const from = new Date(to)
@@ -46,5 +65,32 @@ export async function fetchTahvilHistory(symbol: string): Promise<MarketHistoryP
       },
     })
     return Array.isArray(data) ? data : []
+  })
+}
+
+export async function fetchViopActiveContracts(): Promise<ViopActiveContract[]> {
+  return getCachedOrLoad('faiz-vadeli:viop:contracts:active', SUMMARY_TTL_MS, async () => {
+    const { data } = await apiClient.get<ViopActiveContract[] | { data?: ViopActiveContract[] }>('/api/v1/market/viop/contracts/active')
+    if (Array.isArray(data)) {
+      return data
+    }
+    return Array.isArray(data?.data) ? data.data : []
+  })
+}
+
+export async function fetchViopContractHistory(contractCode: string): Promise<MarketHistoryPoint[]> {
+  const to = new Date()
+  const from = new Date(to)
+  from.setFullYear(from.getFullYear() - 5)
+  const key = `faiz-vadeli:viop:history:${contractCode.toUpperCase()}:5Y`
+  return getCachedOrLoad(key, HISTORY_TTL_MS, async () => {
+    const { data } = await apiClient.get<ViopContractHistoryPoint[] | { data?: ViopContractHistoryPoint[] }>(
+      `/api/v1/market/viop/contracts/${encodeURIComponent(contractCode)}/history`,
+      {
+        params: { from: toDateParam(from), to: toDateParam(to) },
+      },
+    )
+    const rows = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
+    return rows.map((row) => ({ time: row.tradeDate ?? null, value: row.settlementPrice ?? null }))
   })
 }

@@ -633,26 +633,41 @@
         "chartFoot": "The line is a weekly summary of the TCMB EVDS weighted-average TRY deposit (stock) series; observation dates may shift the shape slightly."
       },
       "tahvil": {
-        "tenorSelectAria": "Choose benchmark tenor",
+        "tenorSelectAria": "Choose VIOP rates/bond contract",
         "symbolLabel": {
-          "TRBOND1Y": "1-year",
-          "TRBOND2Y": "2-year",
-          "TRBOND3Y": "3-year"
+          "VIOP_TLREF_NEAR": "TLREF near",
+          "VIOP_DIBS_NEAR": "DIBS near",
+          "VIOP_FAIZ_NEAR": "Rate near"
         },
-        "chartTitleWithTenor": "{{tenor}} benchmark yield — last 5 years",
+        "chartTitleWithTenor": "{{tenor}} settlement price — last 5 years",
+        "cardValue": "Open detail panel",
+        "cardHint": "Click to inspect VIOP rates/bond contracts with expiry, settlement, volume and open interest",
+        "detailOpenHint": "Open VIOP rates/bond detail panel",
+        "detailTitle": "VIOP rates/bond contracts",
+        "detailLoading": "Loading VIOP contracts",
+        "detailLoadError": "Could not load VIOP contract details.",
+        "detailSearchPlaceholder": "Search contract/underlying (e.g. TLREF)",
+        "detailNoSelection": "Select a contract",
+        "colContract": "Contract",
+        "colUnderlying": "Underlying",
+        "colExpiry": "Expiry",
+        "colSettle": "Settlement",
+        "colChange1D": "1D %",
+        "colVolume": "Volume (TRY)",
+        "colOpenInterest": "Open interest",
         "change1dSub": "Since last print (relative): {{pct}}%",
-        "liveNoData": "No yield data for this tenor yet.",
-        "liveNoDataHint": "Shows here after TCMB bond history is loaded.",
-        "liveLoadError": "Could not load the yield. Check your connection.",
-        "liveSkeletonAria": "Loading current benchmark yield",
-        "chartOpenHint": "Show five years of yield history for the selected tenor",
+        "liveNoData": "No data for this VIOP alias yet.",
+        "liveNoDataHint": "Will appear after BIST daily settlement ingest completes.",
+        "liveLoadError": "Could not load VIOP data. Check your connection.",
+        "liveSkeletonAria": "Loading current VIOP price",
+        "chartOpenHint": "Show five years of history for the selected VIOP alias",
         "chartBackToYield": "Back to policy rate chart",
-        "chartAxisY": "Yield (%)",
+        "chartAxisY": "Settlement price",
         "chartLoading": "Loading chart",
         "chartError": "Could not load history.",
         "chartRetry": "Retry",
         "chartEmpty": "No data in this range.",
-        "chartFoot": "The line shows the TCMB Treasury benchmark yield in MDS; EVDS is requested at daily frequency and calendar gaps are forward-filled from the last print."
+        "chartFoot": "The line shows near-contract alias pricing built from BIST VIOP daily settlement files."
       },
       "eurobond": {
         "cardTitle": "Turkey eurobonds",
@@ -2128,6 +2143,8 @@
         "userFlowSparkFoot": "Chart: daily new sign-ups (main) · account deletion requests started (muted, UTC day)",
         "portfolioFlowSparkFoot": "Chart: new external portfolios (main) · updates to already-existing portfolios (muted)",
         "instrumentDataActivityFoot": "Distinct instruments that received at least one price tick in each of the last 7 UTC days",
+        "ingestRegistry": "Ingest registry",
+        "addInstrument": "Add instrument",
         "portfolioCreationVelocityWow": "New portfolio momentum (7d / prior 7d)",
         "usersMetricLoadError": "Live user count unavailable — check API reachability and ADMIN role on the gateway.",
         "portfoliosMetricLoadError": "Live portfolio count unavailable — check API reachability and ADMIN role on the gateway."
@@ -2506,7 +2523,8 @@
       "kpiMarketStreams": "Asset usage across portfolios and watchlists; precomputed summary.",
       "kpiNewsSources": "Total articles, distinct sources, and daily publish volume over the last week.",
       "kpiSystemStatus": "Component health, synthetic checks, and overall operational state.",
-      "kpiAvgLatency": "End-to-end latency trends, thresholds, and alerts."
+      "kpiAvgLatency": "End-to-end latency trends, thresholds, and alerts.",
+      "kpiIngestRegistry": "Admin-managed ingest symbols, history coverage, and latest error status."
     },
     "placeholder": {
       "body": "This section is scaffolded for the next iteration. Charts and tables will bind to /api/admin/* once contracts are finalized."
