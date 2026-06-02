@@ -26,6 +26,9 @@ public final class MarketCatalogSegmentRules {
             return "STOCK";
         }
         String s = symbol.trim().toUpperCase(Locale.ROOT);
+        if (s.startsWith("VIOP_")) {
+            return "DERIVATIVE";
+        }
         if (s.startsWith("TRBOND") || s.startsWith("TRGOVUSD")) {
             return "BOND";
         }
@@ -91,6 +94,9 @@ public final class MarketCatalogSegmentRules {
             if ("FINNHUB".equals(src)) {
                 return "nasdaq";
             }
+            return null;
+        }
+        if ("DERIVATIVE".equals(cat)) {
             return null;
         }
         return null;

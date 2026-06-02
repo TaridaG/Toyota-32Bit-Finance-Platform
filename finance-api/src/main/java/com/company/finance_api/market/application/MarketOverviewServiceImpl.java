@@ -9,6 +9,7 @@ import com.company.finance_api.pricing.infrastructure.persistence.InstrumentPric
 import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.pricing.application.CurrencyConversionServiceImpl;
 import com.company.finance_api.instrument.application.InstrumentService;
+import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
 import com.company.finance_api.shared.cache.JsonCacheService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -54,6 +56,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
   private final InstrumentService instrumentService;
+  private final InstrumentRepository instrumentRepository;
   private final InstrumentPriceRepository instrumentPriceRepository;
   private final CurrencyConversionService currencyConversionService;
   private final ObjectMapper objectMapper;
@@ -74,16 +77,18 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private final ConcurrentHashMap<String, CachedSummaryMap> summaryCacheLocal =
       new ConcurrentHashMap<>();
   private volatile CachedInstrumentMap instrumentMapCache =
-      new CachedInstrumentMap(Map.of(), Instant.EPOCH);
+      new CachedInstrumentMap(Map.of(), Set.of(), Instant.EPOCH);
 
   public MarketOverviewServiceImpl(
       InstrumentService instrumentService,
+      InstrumentRepository instrumentRepository,
       InstrumentPriceRepository instrumentPriceRepository,
       CurrencyConversionService currencyConversionService,
       ObjectMapper objectMapper,
       JsonCacheService jsonCacheService,
       @Value("${market.overview.page-cache-ttl-seconds:10}") int pageCacheTtlSeconds) {
     this.instrumentService = instrumentService;
+    this.instrumentRepository = instrumentRepository;
     this.instrumentPriceRepository = instrumentPriceRepository;
     this.currencyConversionService = currencyConversionService;
     this.objectMapper = objectMapper;
@@ -351,7 +356,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
 
   private record CachedSummaryMap(Map<String, SummaryDto> payload, Instant expiresAt) {}
 
-  private record CachedInstrumentMap(Map<String, Instrument> payload, Instant expiresAt) {}
+  private record CachedInstrumentMap(
+      Map<String, Instrument> payload, Set<String> inactiveSymbols, Instant expiresAt) {}
 
   private List<MarketBaseItem> loadMergedBaseItems(String mdsSegment, String normalizedCategory) {
     List<MarketPriceDto> prices = fetchLatestPrices(mdsSegment);
@@ -361,18 +367,35 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       prices = mergeDistinctPrices(prices, fetchFxRatesAsPrices());
     }
     Map<String, Instrument> instrumentsBySymbol = loadActiveInstrumentsBySymbol();
-    List<MarketBaseItem> filtered =
+    Set<String> inactiveSymbols = loadInactiveInstrumentSymbols();
+    List<MarketBaseItem> mergedWithPrices =
         prices.stream()
             .filter(price -> price.symbol() != null && !price.symbol().isBlank())
             .map(
                 price -> {
                   String symbol = price.symbol().trim().toUpperCase(Locale.ROOT);
+                  if (inactiveSymbols.contains(symbol)) {
+                    return null;
+                  }
                   Instrument instrument = instrumentsBySymbol.get(symbol);
                   return mergeBase(price, instrument);
                 })
+            .filter(item -> item != null)
             .toList();
-    if (!filtered.isEmpty()) {
-      return filtered;
+    LinkedHashMap<String, MarketBaseItem> bySymbol = new LinkedHashMap<>();
+    for (MarketBaseItem item : mergedWithPrices) {
+      bySymbol.put(item.symbol().trim().toUpperCase(Locale.ROOT), item);
+    }
+    for (Instrument instrument : instrumentsBySymbol.values()) {
+      if (instrument == null || !StringUtils.hasText(instrument.getSymbol())) {
+        continue;
+      }
+      String symbol = instrument.getSymbol().trim().toUpperCase(Locale.ROOT);
+      bySymbol.putIfAbsent(symbol, fallbackBaseFromInstrument(instrument));
+    }
+    List<MarketBaseItem> mergedAll = new ArrayList<>(bySymbol.values());
+    if (!mergedAll.isEmpty()) {
+      return mergedAll;
     }
     if (StringUtils.hasText(mdsSegment)) {
       log.warn("Market overview empty for segment={} category={}", mdsSegment, normalizedCategory);
@@ -380,6 +403,41 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     }
     log.warn("Market overview empty, returning fallback minimal dataset");
     return fallbackMinimalItems(prices, instrumentsBySymbol);
+  }
+
+  private MarketBaseItem fallbackBaseFromInstrument(Instrument instrument) {
+    String symbol = instrument.getSymbol().trim().toUpperCase(Locale.ROOT);
+    String source = inferSourceFromInstrument(instrument);
+    return new MarketBaseItem(
+        symbol,
+        instrument.getName(),
+        BigDecimal.ZERO,
+        MarketOverviewCategoryRules.inferWireCategory(symbol),
+        instrument.getId(),
+        source,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null);
+  }
+
+  private static String inferSourceFromInstrument(Instrument instrument) {
+    if (instrument == null || instrument.getExchange() == null) {
+      return null;
+    }
+    return switch (instrument.getExchange()) {
+      case BIST, YAHOO -> "YAHOO";
+      case NASDAQ, FINNHUB -> "FINNHUB";
+      case BINANCE -> "BINANCE";
+      default -> null;
+    };
   }
 
   private static List<MarketPriceDto> mergeDistinctPrices(
@@ -550,9 +608,41 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
                       Function.identity(),
                       (left, right) -> left));
       instrumentMapCache =
-          new CachedInstrumentMap(Map.copyOf(next), Instant.now().plus(INSTRUMENT_CACHE_TTL));
+          new CachedInstrumentMap(
+              Map.copyOf(next), loadInactiveInstrumentSymbolsUncached(), Instant.now().plus(INSTRUMENT_CACHE_TTL));
       return instrumentMapCache.payload();
     }
+  }
+
+  private Set<String> loadInactiveInstrumentSymbols() {
+    Instant now = Instant.now();
+    CachedInstrumentMap cached = instrumentMapCache;
+    if (cached.expiresAt().isAfter(now)) {
+      return cached.inactiveSymbols();
+    }
+    synchronized (this) {
+      now = Instant.now();
+      cached = instrumentMapCache;
+      if (cached.expiresAt().isAfter(now)) {
+        return cached.inactiveSymbols();
+      }
+      Map<String, Instrument> active =
+          instrumentService.getAllActive().stream()
+              .collect(
+                  Collectors.toMap(
+                      instrument -> instrument.getSymbol().trim().toUpperCase(Locale.ROOT),
+                      Function.identity(),
+                      (left, right) -> left));
+      Set<String> inactive = loadInactiveInstrumentSymbolsUncached();
+      instrumentMapCache = new CachedInstrumentMap(Map.copyOf(active), inactive, Instant.now().plus(INSTRUMENT_CACHE_TTL));
+      return inactive;
+    }
+  }
+
+  private Set<String> loadInactiveInstrumentSymbolsUncached() {
+    return instrumentRepository.findByActiveFalse().stream()
+        .map(instrument -> instrument.getSymbol().trim().toUpperCase(Locale.ROOT))
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private boolean searchMatches(MarketBaseItem item, String search) {

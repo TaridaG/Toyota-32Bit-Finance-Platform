@@ -87,7 +87,7 @@ public class AlarmServiceImpl implements AlarmService {
 
     Instrument instrument =
         instrumentRepository
-            .findById(instrumentId)
+            .findByIdAndActiveTrue(instrumentId)
             .orElseThrow(() -> new IllegalStateException("Instrument not found"));
 
     AlarmRule alarm = new AlarmRule(user, instrument, condition, threshold);

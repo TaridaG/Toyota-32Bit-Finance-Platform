@@ -210,6 +210,7 @@ public class WebSecurityConfig {
                         .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.instruments()).permitAll()
                         .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.analytics()).permitAll()
                         .pathMatchers(HttpMethod.GET, GatewaySecurityPaths.portalInfoCards()).permitAll()
+                        .pathMatchers(HttpMethod.POST, GatewaySecurityPaths.ingestAdminActions()).hasRole("ADMIN")
                         .pathMatchers(GatewaySecurityPaths.newsAdmin()).hasRole("ADMIN")
                         .pathMatchers(GatewaySecurityPaths.admin()).hasRole("ADMIN")
                         .pathMatchers(GatewaySecurityPaths.userProfile()).hasAnyRole("USER", "ADMIN")

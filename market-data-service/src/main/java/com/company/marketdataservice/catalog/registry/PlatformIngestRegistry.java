@@ -7,6 +7,7 @@ import com.company.marketdataservice.catalog.registry.providers.EurobondRegistry
 import com.company.marketdataservice.catalog.registry.providers.FundRegistry;
 import com.company.marketdataservice.catalog.registry.providers.FxRegistry;
 import com.company.marketdataservice.catalog.registry.providers.NasdaqRegistry;
+import com.company.marketdataservice.catalog.registry.providers.ViopRegistry;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,6 +62,7 @@ public final class PlatformIngestRegistry {
         merged.addAll(NasdaqRegistry.all());
         merged.addAll(FundRegistry.all());
         merged.addAll(BondRegistry.all());
+        merged.addAll(ViopRegistry.all());
         merged.addAll(FxRegistry.all());
         merged.addAll(EurobondRegistry.all());
         assertNoDuplicateSymbols(merged);

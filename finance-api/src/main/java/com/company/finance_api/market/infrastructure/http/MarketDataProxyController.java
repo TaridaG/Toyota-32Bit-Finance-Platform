@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,7 +39,7 @@ public class MarketDataProxyController {
   private String marketDataBaseUrl;
 
   @RequestMapping(
-      method = {RequestMethod.GET, RequestMethod.HEAD},
+      method = {RequestMethod.GET, RequestMethod.HEAD, RequestMethod.POST},
       value = {
         "/api/v1/market/prices",
         "/api/v1/market/prices/**",
@@ -47,6 +48,8 @@ public class MarketDataProxyController {
         "/api/v1/market/fx/**",
         "/api/v1/market/funds",
         "/api/v1/market/funds/**",
+        "/api/v1/market/viop/**",
+        "/api/v1/market/ingest/**",
         "/api/v1/market/ingestion/**",
         "/api/v1/market/debug/**",
         "/api/v1/rates",
@@ -63,16 +66,29 @@ public class MarketDataProxyController {
 
     HttpMethod method = HttpMethod.valueOf(request.getMethod());
     try {
-      return restClient
+      byte[] requestBody = StreamUtils.copyToByteArray(request.getInputStream());
+      RestClient.RequestBodySpec spec =
+          restClient
           .method(method)
           .uri(downstream)
-          .headers(h -> copySelectRequestHeaders(request, h))
-          .retrieve()
-          .toEntity(byte[].class);
+          .headers(h -> copySelectRequestHeaders(request, h));
+      if (hasRequestBody(method) && requestBody.length > 0) {
+        spec = spec.body(requestBody);
+      }
+      return spec.retrieve().toEntity(byte[].class);
     } catch (ResourceAccessException | RestClientResponseException ex) {
       log.warn("Market data proxy failed uri={} reason={}", downstream, ex.toString());
       return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
+    } catch (Exception ex) {
+      log.warn("Market data proxy request read failed uri={} reason={}", downstream, ex.toString());
+      return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
     }
+  }
+
+  private static boolean hasRequestBody(HttpMethod method) {
+    return HttpMethod.POST.equals(method)
+        || HttpMethod.PUT.equals(method)
+        || HttpMethod.PATCH.equals(method);
   }
 
   private static void copySelectRequestHeaders(HttpServletRequest request, HttpHeaders out) {
