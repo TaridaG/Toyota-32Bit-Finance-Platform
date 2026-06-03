@@ -180,7 +180,7 @@ export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 mvn -pl notification-service -am spring-boot:run
 ```
 
-Port **8086**. SMTP için `.env` veya compose demo Gmail.
+Port **8086**. SMTP için `Docker/.env` içindeki `SMTP_*` değişkenleri.
 
 Kurulum: [getting-started.md](../getting-started.md).
 

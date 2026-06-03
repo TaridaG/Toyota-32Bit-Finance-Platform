@@ -65,15 +65,21 @@ cd Docker
 Copy-Item .env.example .env
 ```
 
-`.env.example` kopyalandığında `NEWS_DB_PASSWORD=123456` hazır gelir (PostgreSQL şifresiyle aynı olmalı). Demo için **başka bir değişken yazmanız gerekmez.**
+`.env.example` kopyalandıktan sonra **`Docker/.env` içine kendi `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerlerinizi yazın** (repoda anahtar tutulmaz). Yerel DB için `POSTGRES_PASSWORD` / `NEWS_DB_PASSWORD` şablonda `123456` olarak gelir; üretimde değiştirin.
 
-Şifreyi değiştirirseniz `docker-compose.yml` içindeki `POSTGRES_PASSWORD` ile birlikte güncelleyin.
+API anahtarları ve harici servis şifreleri yalnızca `Docker/.env` dosyasında tutulur (`POSTGRES_PASSWORD` ile `NEWS_DB_PASSWORD` aynı kalsın). Kişisel override için: `Copy-Item docker-compose.override.yml.example docker-compose.override.yml` — ayrıntı: [configuration-precedence.md](configuration-precedence.md).
+
+> **Sıra önemli:** Anahtarları yazdıktan **sonra** (aşağıdaki) `docker compose up` çalıştırın. İlk kurulumda ayrıca `--force-recreate` gerekmez.
+>
+> **Stack ayaktayken** `.env` içinde API anahtarı veya mail değiştirirseniz, kaydettikten sonra ilgili servisi yeniden oluşturun; örnek: `docker compose up -d --force-recreate market-data-service`.
 
 ### 2. Stack'i başlat
 
 ```bash
 docker compose up -d --build
 ```
+
+Portal varsayılan olarak **production build** (nginx + statik `dist`) ile http://localhost:5173 üzerinden sunulur; `/api` istekleri nginx üzerinden api-gateway'e proxy edilir. UI'da Vite HMR istiyorsanız: `docker compose --profile dev up -d` → http://localhost:5174 (`frontend-web-dev`).
 
 ### Docker ayağa kalkma sırası (özet)
 
@@ -113,7 +119,8 @@ flowchart TD
 
 | Kontrol | Adres | Beklenen |
 |---------|-------|----------|
-| Portal (SPA) | http://localhost:5173 | Landing / giriş ekranı |
+| Portal (SPA, nginx prod) | http://localhost:5173 | Landing / giriş ekranı |
+| Portal (Vite HMR, opsiyonel) | http://localhost:5174 | `docker compose --profile dev` |
 | API Gateway | http://localhost:8080 | HTTP 200 veya yönlendirme |
 | Gateway health | http://localhost:8080/actuator/health | `{"status":"UP"}` |
 | Swagger UI | http://localhost:8080/swagger-ui.html | OpenAPI arayüzü |
@@ -179,13 +186,11 @@ docker compose down -v
 
 ## İsteğe bağlı `.env` değişkenleri
 
-Demo için `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerleri `docker-compose.yml` içinde tanımlıdır; `.env`'e yazmanız gerekmez.
-
 | Değişken | Ne zaman? | Not |
 |----------|-----------|-----|
-| `MARKET_EVDS_API_KEY` | TCMB EVDS için ayrı anahtar | Tanımlamazsanız compose'daki `TCMB_API_KEY` kullanılır. **Boş satır (`KEY=`) yazmayın** |
+| `MARKET_EVDS_API_KEY` | TCMB EVDS için ayrı anahtar | Tanımlamazsanız `.env` içindeki `TCMB_API_KEY` kullanılır. **Boş satır (`KEY=`) yazmayın** |
 | `OPENAI_API_KEY` | Admin bilgi kartı AI | `AI_ENABLED=true`; anahtar yoksa AI devre dışı kalır |
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | Kendi e-postanızdan alarm ve kayıt maili | Tanımlamazsanız compose demo SMTP kullanır |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | Kayıt doğrulama ve alarm e-postası | `.env` içinde tanımlayın; repoda örnek şifre yok |
 | `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Üretim ortamı | Demo'da compose varsayılanları yeterli |
 
 Tüm değişkenler: [configuration.md](configuration.md).

@@ -4,8 +4,10 @@ target/
 # Logs
 *.log
 
-# Env
+# Env (secrets — never commit)
 .env
+Docker/.env
+Docker/docker-compose.override.yml
 
 # IDE
 .idea/

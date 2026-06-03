@@ -20,6 +20,14 @@ class MarketCatalogSegmentRulesTest {
     }
 
     @Test
+    void isSpotMetalSymbol() {
+        assertTrue(MarketCatalogSegmentRules.isSpotMetalSymbol("XAUTRY"));
+        assertTrue(MarketCatalogSegmentRules.isSpotMetalSymbol("xpttry"));
+        assertFalse(MarketCatalogSegmentRules.isSpotMetalSymbol("USDTRY"));
+        assertFalse(MarketCatalogSegmentRules.isSpotMetalSymbol("GC=F"));
+    }
+
+    @Test
     void inferWireCategory_metalSpot() {
         assertEquals("METAL", MarketCatalogSegmentRules.inferWireCategory("XAUTRY"));
     }

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * `geçmiş veri ve backfill` verisi için Spring Data JPA repository.
  */
-public interface FxRateHistoryRepository extends JpaRepository<FxRateHistoryEntry, Long> {
+public interface FxRateHistoryRepository extends JpaRepository<FxRateHistoryEntry, Long>, FxRateHistoryRepositoryCustom {
 
     interface LatestFxRateView {
 

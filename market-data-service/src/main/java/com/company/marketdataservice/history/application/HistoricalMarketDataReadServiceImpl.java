@@ -102,7 +102,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             return fundNavHistoryRepository.findHistoryPoints(fundCode, fromInclusive, toExclusive);
         }
         if (usesFxRateHistory(normalized)) {
-            return fxRateHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
+            return findFxHistoryPoints(normalized, fromInclusive, toExclusive);
         }
         return marketPriceHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
     }
@@ -122,7 +122,14 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         String normalized = symbol.trim().toUpperCase(Locale.ROOT);
         Instant fromInclusive = from.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant toExclusive = to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
-        return fxRateHistoryRepository.findHistoryPoints(normalized, fromInclusive, toExclusive);
+        return findFxHistoryPoints(normalized, fromInclusive, toExclusive);
+    }
+
+    private List<HistoryPointDto> findFxHistoryPoints(String symbol, Instant fromInclusive, Instant toExclusive) {
+        if (MarketCatalogSegmentRules.isSpotMetalSymbol(symbol)) {
+            return fxRateHistoryRepository.findSpotMetalHistoryPoints(symbol, fromInclusive, toExclusive);
+        }
+        return fxRateHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
     }
 
     /**
@@ -377,7 +384,9 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
         BigDecimal last;
         BigDecimal prev;
         if (usesFxRateHistory(symbol)) {
-            var rows = fxRateHistoryRepository.findLastTwoDailyCloses(symbol);
+            var rows = MarketCatalogSegmentRules.isSpotMetalSymbol(symbol)
+                    ? fxRateHistoryRepository.findSpotMetalLastTwoDailyCloses(symbol)
+                    : fxRateHistoryRepository.findLastTwoDailyCloses(symbol);
             if (rows == null || rows.size() < 2) {
                 Instant now = clock.instant();
                 return computePeriodChange(symbol, now.minus(1, ChronoUnit.DAYS), now.plus(1, ChronoUnit.DAYS));
@@ -424,7 +433,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             return fundNavHistoryRepository.findHistoryPoints(fundCode, fromInclusive, toExclusive);
         }
         if (usesFxRateHistory(symbol)) {
-            return fxRateHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
+            return findFxHistoryPoints(symbol, fromInclusive, toExclusive);
         }
         return marketPriceHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
     }

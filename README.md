@@ -177,63 +177,12 @@
 
 > **Not — piyasa verisi ve zamanlayıcılar**  
 > Stack ayağa kalktıktan sonra `market-data-service`, geçmiş fiyat backfill ile canlı güncellemeleri arka planda birleştirir. Katalog ve geçmiş serilerin tamamlanması — enstrüman sayısına ve sağlayıcı yanıt sürelerine bağlı olarak — **yaklaşık 30 dakika** sürebilir; portal bu süreçte kademeli olarak dolar, ilk dakikalarda eksik grafik veya boş liste görmek normaldir.  
-> Demo yapılandırmadaki zamanlayıcı aralıkları (ör. hisse ~1 dk, FX/tahvil ~5 dk) ve backfill adımları, **ücretsiz kota** sunan harici kaynaklara (TCMB EVDS, Yahoo, CoinGecko, compose’daki demo Finnhub anahtarı vb.) göre ayarlanmıştır; istekler arası bekleme süreleri rate limit ihlallerini önler. Ücretli API planına veya daha yüksek kotaya geçildiğinde `scheduler.*.delay-ms`, backfill `sleep-ms` ve ilgili cron ifadeleri [docs/turkce/configuration.md](docs/turkce/configuration.md) üzerinden sıklaştırılabilir.  
+> Demo yapılandırmadaki zamanlayıcı aralıkları (ör. hisse ~1 dk, FX/tahvil ~5 dk) ve backfill adımları, **ücretsiz kota** sunan harici kaynaklara (TCMB EVDS, Yahoo, CoinGecko, Finnhub vb.) göre ayarlanmıştır; API anahtarları `Docker/.env` içinde tanımlanır (repoda yoktur). İstekler arası bekleme süreleri rate limit ihlallerini önler. Ücretli API planına veya daha yüksek kotaya geçildiğinde `scheduler.*.delay-ms`, backfill `sleep-ms` ve ilgili cron ifadeleri [docs/turkce/configuration.md](docs/turkce/configuration.md) üzerinden sıklaştırılabilir.  
 > İlerlemeyi izlemek için: `docker compose logs -f market-data-service`
 
-### [Hızlı başlat](docs/turkce/getting-started.md)
+### Hızlı başlat
 
-Depoyu klonlayıp **Docker Compose** ile tüm platformu tek komutla ayağa kaldırabilirsiniz.
-
-**Gereksinimler:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose v2), yaklaşık **8 GB RAM**.
-
-```bash
-git clone https://github.com/TaridaG/Toyota-32Bit-Finance-Platform.git
-cd Toyota-32Bit-Finance-Platform/Docker
-cp .env.example .env
-```
-
-`.env.example` dosyasını `.env` olarak kopyalamanız yeterlidir. `NEWS_DB_PASSWORD` ve RSS ayarları şablonda hazır gelir (`123456` — PostgreSQL şifresiyle aynı olmalı; compose içinde sabit). **Ekstra bir şifre yazmanıza gerek yok.** Şifreyi değiştirirseniz `docker-compose.yml` içindeki `POSTGRES_PASSWORD` ile birlikte güncellemeniz gerekir.
-
-**İsteğe bağlı — `.env` içinde yorum satırını açıp doldurun** (boş bırakılırsa demo/compose varsayılanları kullanılır):
-
-| Değişken | Ne zaman? | Not |
-|----------|-----------|-----|
-| `MARKET_EVDS_API_KEY` | TCMB EVDS için ayrı anahtar | Tanımlamazsanız compose’daki `TCMB_API_KEY` kullanılır. **Boş satır (`KEY=`) yazmayın** |
-| `OPENAI_API_KEY` | Admin bilgi kartı AI | Compose’da `AI_ENABLED=true`; anahtar yoksa AI çalışmaz |
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | Kendi e-postanızdan alarm ve kayıt maili | Tanımlamazsanız compose demo Gmail kullanır |
-| `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Üretim ortamı | Demo’da compose varsayılanları yeterli |
-
-Demo için `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerleri `docker-compose.yml` içinde tanımlıdır; `.env`’e yazmanız gerekmez. Üretimde kendi anahtarlarınızı `.env`’e ekleyin. Tüm değişkenler: [docs/turkce/configuration.md](docs/turkce/configuration.md).
-
-**1 · Projeyi ayağa kaldır**
-
-```bash
-docker compose up -d --build
-```
-
-<p align="center"><strong>2 · Hızlı ulaş</strong><br><sub>Stack ayaktayken logolara tıklayın</sub></p>
-
-<p align="center">
-  <a href="http://localhost:5173" title="Web arayüzü — http://localhost:5173"><img src="https://cdn.simpleicons.org/react/61DAFB" height="32" alt="Web arayüzü"></a>&nbsp;
-  <a href="http://localhost:8080" title="API Gateway — http://localhost:8080"><img src="https://cdn.simpleicons.org/springboot/6DB33F" height="32" alt="API Gateway"></a>&nbsp;
-  <a href="http://localhost:8080/swagger-ui.html" title="Swagger UI — http://localhost:8080/swagger-ui.html"><img src="https://cdn.simpleicons.org/swagger/85EA2D" height="32" alt="Swagger UI"></a>&nbsp;
-  <a href="http://localhost:8085" title="Keycloak OIDC (realm: finance) — http://localhost:8085"><img src="https://cdn.simpleicons.org/keycloak/4D4DFF" height="32" alt="Keycloak"></a>&nbsp;
-  <a href="http://localhost:8085/admin" title="Keycloak Admin (admin / admin) — http://localhost:8085/admin"><img src="https://cdn.simpleicons.org/keycloak/FFFFFF" height="32" alt="Keycloak Admin"></a>
-</p>
-<p align="center">
-  <a href="http://localhost:3000" title="Grafana (admin / admin) — http://localhost:3000"><img src="https://cdn.simpleicons.org/grafana/F46800" height="32" alt="Grafana"></a>&nbsp;
-  <a href="http://localhost:9090" title="Prometheus — http://localhost:9090"><img src="https://cdn.simpleicons.org/prometheus/E6522C" height="32" alt="Prometheus"></a>&nbsp;
-  <a href="http://localhost:16686" title="Jaeger — http://localhost:16686"><img src="https://cdn.simpleicons.org/opentelemetry/FFFFFF" height="32" alt="Jaeger"></a>&nbsp;
-  <a href="http://localhost:5601" title="OpenSearch Dashboards — http://localhost:5601"><img src="https://cdn.simpleicons.org/opensearch/005EB8" height="32" alt="OpenSearch Dashboards"></a>&nbsp;
-  <a href="https://localhost:9200" title="OpenSearch REST API (admin / 123456789) — https://localhost:9200"><img src="https://cdn.simpleicons.org/opensearch/FFFFFF" height="32" alt="OpenSearch API"></a>&nbsp;
-  <span title="PostgreSQL — localhost:5432"><img src="https://cdn.simpleicons.org/postgresql/4169E1" height="32" alt="PostgreSQL"></span>&nbsp;
-  <span title="Redis — localhost:6379"><img src="https://cdn.simpleicons.org/redis/DC382D" height="32" alt="Redis"></span>&nbsp;
-  <span title="Kafka — localhost:9092"><img src="https://cdn.simpleicons.org/apachekafka/FFFFFF" height="32" alt="Kafka"></span>
-</p>
-
-**Demo giriş:** `user1` veya `admin1` — şifre: `123456` (Keycloak realm import).
-
-Yerel geliştirme (IDE + kısmi Docker) ve ayrıntılı adımlar: [docs/turkce/getting-started.md](docs/turkce/getting-started.md).
+Sıfırdan kurulum adımları: [Hızlı başlangıç (Docker — önerilen)](#hızlı-başlangıç-docker--önerilen). Ayrıntılı rehber: [docs/turkce/getting-started.md](docs/turkce/getting-started.md).
 
 ### Kafka olayları
 
@@ -272,15 +221,70 @@ Docker Compose (`Docker/`) ile gelen paylaşımlı bileşenler:
 
 ## Hızlı başlangıç (Docker — önerilen)
 
-**Gereksinimler:** Docker Desktop, en az ~8 GB RAM (OpenSearch + tüm servisler için).
+Repoda **API anahtarı yoktur**. Sıfırdan klonlayan herkes aşağıdaki sırayı izlemelidir.
 
-`.env.example` kopyalandığında `NEWS_DB_PASSWORD=123456` hazır gelir; demo için `.env`’de başka bir değişiklik gerekmez.
+**Gereksinimler:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose v2), yaklaşık **8 GB RAM**.
 
-**1 · Projeyi ayağa kaldır**
+| Adım | Ne yapmalısınız |
+|------|------------------|
+| **1** | Depoyu klonlayın |
+| **2** | `Docker/.env` oluşturun (`.env.example` kopyası) |
+| **3** | `Docker/.env` dosyasını düzenleyip **kendi** `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerlerinizi yazın |
+| **4** | `Docker` klasöründen `docker compose up -d --build` çalıştırın |
+| **5** | Portal: http://localhost:5173 — demo giriş `admin1` / `123456` |
+| **6** | Piyasa verisi 10–30 dk dolabilir; izlemek: `docker compose logs -f market-data-service` |
+
+**1 · Klon**
 
 ```bash
-cd Docker
+git clone https://github.com/TaridaG/Toyota-32Bit-Finance-Platform.git
+cd Toyota-32Bit-Finance-Platform/Docker
+```
+
+**2 · Ortam dosyası**
+
+```bash
 cp .env.example .env
+```
+
+Windows (PowerShell): `Copy-Item .env.example .env`
+
+**3 · API anahtarlarını yazın (zorunlu)**
+
+`Docker/.env` dosyasını bir metin editörüyle açın. Boş placeholder’ları doldurun:
+
+```env
+TCMB_API_KEY=evds-anahtariniz
+FINNHUB_API_KEY=finnhub-anahtariniz
+```
+
+- Anahtarlar yalnızca `Docker/.env` içinde tutulur; **bu dosyayı commit etmeyin**.
+- `POSTGRES_PASSWORD` ve `NEWS_DB_PASSWORD` şablonda `123456` — yerel demo için aynı bırakılabilir.
+
+> **İlk kurulum (repo yeni klonlandı):** Adım 3’te anahtarları yazdıktan sonra doğrudan Adım 4’te `docker compose up` yeterlidir — konteynerler zaten yeni `.env` ile oluşur, **öncesinde `--force-recreate` gerekmez**.
+>
+> **İleride anahtar değişirse** (stack zaten çalışıyorken `.env` düzenlediyseniz): çalışan konteyner eski değeri tutar; kaydettikten sonra ilgili servisi yeniden oluşturun:
+>
+> ```bash
+> cd Docker
+> docker compose up -d --force-recreate market-data-service   # TCMB / Finnhub
+> docker compose up -d --force-recreate finance-api         # OpenAI / mail
+> docker compose up -d --force-recreate notification-service  # SMTP
+> ```
+
+**İsteğe bağlı** (`.env` içinde yorumu kaldırıp doldurun):
+
+| Değişken | Ne için? |
+|----------|----------|
+| `OPENAI_API_KEY` | Admin bilgi kartı AI |
+| `SPRING_MAIL_*` / `SMTP_*` | Kayıt doğrulama ve alarm e-postası |
+| `MARKET_EVDS_API_KEY` | Ayrı EVDS anahtarı (yoksa `TCMB_API_KEY` kullanılır; **boş `KEY=` satırı yazmayın**) |
+
+Tüm değişkenler: [docs/turkce/configuration.md](docs/turkce/configuration.md).
+
+**4 · Stack’i başlat**
+
+```bash
 docker compose up -d --build
 ```
 
@@ -308,7 +312,7 @@ docker compose up -d --build
 
 Keycloak realm import: `user1` / `admin1` — şifre: `123456`
 
-Piyasa verisi backfill ve zamanlayıcılar hakkında ayrıntılı not: [Hızlı başlat](#hızlı-başlat) bölümü. Log: `docker compose logs -f market-data-service`
+Piyasa verisi backfill notu: [Proje yapısı](#proje-yapısı) altındaki zamanlayıcı notu. Log: `docker compose logs -f market-data-service`
 
 ## Yerel geliştirme (özet)
 

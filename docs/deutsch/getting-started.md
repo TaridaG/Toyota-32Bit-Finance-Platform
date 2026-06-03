@@ -65,9 +65,9 @@ cd Docker
 Copy-Item .env.example .env
 ```
 
-Beim Kopieren von `.env.example` ist `NEWS_DB_PASSWORD=123456` bereits gesetzt (muss mit dem PostgreSQL-Passwort übereinstimmen). Für die Demo **müssen keine weiteren Variablen gesetzt werden.**
+Nach `cp .env.example .env` **`TCMB_API_KEY` und `FINNHUB_API_KEY` in `Docker/.env` eintragen** (keine echten Schlüssel im Repo). `NEWS_DB_PASSWORD` und `POSTGRES_PASSWORD` stehen in der Vorlage auf `123456` — synchron halten.
 
-Bei Passwortänderung zusammen mit `POSTGRES_PASSWORD` in `docker-compose.yml` aktualisieren.
+API-Schlüssel nur in `Docker/.env` pflegen.
 
 ### 2. Stack starten
 
@@ -179,13 +179,13 @@ docker compose down -v
 
 ## Optionale `.env`-Variablen
 
-Für die Demo sind `TCMB_API_KEY` und `FINNHUB_API_KEY` in `docker-compose.yml` definiert; Eintrag in `.env` ist nicht nötig.
+Nach `cp .env.example .env` **`TCMB_API_KEY` und `FINNHUB_API_KEY` in `Docker/.env` setzen** (keine echten Schlüssel im Repo).
 
 | Variable | Wann? | Hinweis |
 |----------|-------|---------|
-| `MARKET_EVDS_API_KEY` | Separater Schlüssel für TCMB EVDS | Ohne Angabe wird `TCMB_API_KEY` aus Compose verwendet. **Keine leere Zeile (`KEY=`) setzen** |
+| `MARKET_EVDS_API_KEY` | Separater Schlüssel für TCMB EVDS | Ohne Angabe wird `TCMB_API_KEY` aus `.env` verwendet. **Keine leere Zeile (`KEY=`) setzen** |
 | `OPENAI_API_KEY` | Admin-Infokarten-KI | `AI_ENABLED=true`; ohne Schlüssel ist KI deaktiviert |
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | Alarm- und Registrierungsmail von eigener E-Mail | Ohne Angabe nutzt Compose Demo-SMTP |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | Registrierungs- und Alarmmail | Nur in `.env`; kein Demo-Passwort im Repo |
 | `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Produktionsumgebung | In der Demo reichen Compose-Standardwerte |
 
 Alle Variablen: [configuration.md](configuration.md).

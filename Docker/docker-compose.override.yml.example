@@ -1,0 +1,16 @@
+# Kişisel / ortam özel override şablonu.
+# Kullanım (PowerShell, Docker klasöründen):
+#   Copy-Item docker-compose.override.yml.example docker-compose.override.yml
+# docker-compose.override.yml git'e girmez (.gitignore).
+
+services:
+  api-gateway:
+    environment:
+      # Ek frontend origin (Keycloak redirectUris ile birlikte güncellenmeli)
+      GATEWAY_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+
+  market-data-service:
+    environment:
+      # Ayrı EVDS anahtarı — .env'de de tanımlanabilir (env_file); boş KEY= yazmayın
+      # MARKET_EVDS_API_KEY: your-evds-key
+      PROVIDERS_FINNHUB_ENABLED: "false"

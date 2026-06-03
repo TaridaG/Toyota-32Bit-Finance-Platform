@@ -43,26 +43,26 @@ class HistoricalMarketDataReadServiceImplMetalSummaryTest {
 
         when(fxRateHistoryRepository.findLatestHistoryPoint(eq("XAUTRY"), any(Pageable.class)))
                 .thenReturn(List.of(new HistoryPointDto(now, new BigDecimal("206000"))));
-        when(fxRateHistoryRepository.findHistoryPoints(eq("XAUTRY"), eq(now.minus(1, ChronoUnit.DAYS)), eq(toExclusive)))
+        when(fxRateHistoryRepository.findSpotMetalHistoryPoints(eq("XAUTRY"), eq(now.minus(1, ChronoUnit.DAYS)), eq(toExclusive)))
                 .thenReturn(List.of(
                         new HistoryPointDto(now.minus(1, ChronoUnit.DAYS), new BigDecimal("200000")),
                         new HistoryPointDto(now, new BigDecimal("206000"))
                 ));
-        when(fxRateHistoryRepository.findHistoryPoints(eq("XAUTRY"), eq(now.minus(7, ChronoUnit.DAYS)), eq(toExclusive)))
+        when(fxRateHistoryRepository.findSpotMetalHistoryPoints(eq("XAUTRY"), eq(now.minus(7, ChronoUnit.DAYS)), eq(toExclusive)))
                 .thenReturn(List.of(
                         new HistoryPointDto(now.minus(7, ChronoUnit.DAYS), new BigDecimal("198000")),
                         new HistoryPointDto(now, new BigDecimal("206000"))
                 ));
-        when(fxRateHistoryRepository.findHistoryPoints(eq("XAUTRY"), eq(now.minus(30, ChronoUnit.DAYS)), eq(toExclusive)))
+        when(fxRateHistoryRepository.findSpotMetalHistoryPoints(eq("XAUTRY"), eq(now.minus(30, ChronoUnit.DAYS)), eq(toExclusive)))
                 .thenReturn(List.of(
                         new HistoryPointDto(now.minus(30, ChronoUnit.DAYS), new BigDecimal("190000")),
                         new HistoryPointDto(now, new BigDecimal("206000"))
                 ));
-        when(fxRateHistoryRepository.findHistoryPoints(eq("XAUTRY"), eq(now.minus(90, ChronoUnit.DAYS)), eq(toExclusive)))
+        when(fxRateHistoryRepository.findSpotMetalHistoryPoints(eq("XAUTRY"), eq(now.minus(90, ChronoUnit.DAYS)), eq(toExclusive)))
                 .thenReturn(List.of());
-        when(fxRateHistoryRepository.findHistoryPoints(eq("XAUTRY"), eq(now.minus(180, ChronoUnit.DAYS)), eq(toExclusive)))
+        when(fxRateHistoryRepository.findSpotMetalHistoryPoints(eq("XAUTRY"), eq(now.minus(180, ChronoUnit.DAYS)), eq(toExclusive)))
                 .thenReturn(List.of());
-        when(fxRateHistoryRepository.findHistoryPoints(eq("XAUTRY"), eq(now.minus(365, ChronoUnit.DAYS)), eq(toExclusive)))
+        when(fxRateHistoryRepository.findSpotMetalHistoryPoints(eq("XAUTRY"), eq(now.minus(365, ChronoUnit.DAYS)), eq(toExclusive)))
                 .thenReturn(List.of());
 
         HistoricalMarketDataReadServiceImpl svc =

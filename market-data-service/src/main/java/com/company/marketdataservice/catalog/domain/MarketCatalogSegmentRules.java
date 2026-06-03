@@ -15,6 +15,14 @@ public final class MarketCatalogSegmentRules {
 
     private MarketCatalogSegmentRules() {}
 
+    /** TRY spot precious metals quoted as troy oz (Minted/Yahoo-derived), not TCMB gram crosses. */
+    public static boolean isSpotMetalSymbol(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return false;
+        }
+        return SPOT_METAL_SYMBOLS.contains(symbol.trim().toUpperCase(Locale.ROOT));
+    }
+
     /**
      * Sembol için kabaca wire category döner (CRYPTO, STOCK, FX, FUND, METAL, BOND); SPA katalog birleşmesi ile uyumludur.
      *

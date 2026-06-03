@@ -1,3 +1,8 @@
+# Secrets: cp .env.example .env (gitignore) and set TCMB_API_KEY, FINNHUB_API_KEY, mail, etc. — never commit real keys.
+# Compose reads Docker/.env for ${VAR:?...} substitution; app services also use env_file: .env.
+# Do not set MARKET_EVDS_API_KEY= (empty) in .env — omit the line or set a real key; TCMB_API_KEY is the EVDS fallback.
+# Personal overrides: docker-compose.override.yml (see docker-compose.override.yml.example).
+
 services:
   # -----------------------------
   # Core infrastructure
@@ -9,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: finance
       POSTGRES_USER: finance
-      POSTGRES_PASSWORD: 123456
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
     ports:
       - "5432:5432"
     healthcheck:
@@ -191,9 +196,7 @@ services:
       - APP_REGISTRATION_VERIFICATION_HASH_SECRET=finance-email-verify-secret
       - SPRING_MAIL_HOST=smtp.gmail.com
       - SPRING_MAIL_PORT=587
-      - SPRING_MAIL_USERNAME=32bitdemofinanceplatformmm@gmail.com
-      - SPRING_MAIL_PASSWORD=mpxnlgmbyehkiqwm
-      - APP_REGISTRATION_VERIFICATION_FROM=32bitdemofinanceplatformmm@gmail.com
+      # SPRING_MAIL_* / APP_REGISTRATION_VERIFICATION_FROM: set in Docker/.env (env_file)
       - APP_PORTAL_PUBLIC_URL=http://localhost:5173
       - KEYCLOAK_PORTAL_CLIENT_SECRET=finance-portal-dev-secret
       - APP_MFA_ENCRYPTION_SECRET=${APP_MFA_ENCRYPTION_SECRET:-finance-mfa-dev-encryption-secret}
@@ -201,7 +204,7 @@ services:
       - APP_TRUSTED_DEVICE_ENABLED=${APP_TRUSTED_DEVICE_ENABLED:-true}
       - APP_TRUSTED_DEVICE_SIGNING_SECRET=${APP_TRUSTED_DEVICE_SIGNING_SECRET:-finance-trusted-device-dev-secret}
       - MARKET_TR_USD_EUROBOND_YAHOO_ENABLED=${MARKET_TR_USD_EUROBOND_YAHOO_ENABLED:-true}
-      - AI_ENABLED=true
+      - AI_ENABLED=${AI_ENABLED:-true}
       - PROFILE_AVATAR_STORAGE_ROOT=/photos
     volumes:
       - ../photos:/photos
@@ -219,6 +222,8 @@ services:
       context: ..
       dockerfile: market-data-service/Dockerfile
     container_name: market-data-service
+    env_file:
+      - .env
     depends_on:
       kafka:
         condition: service_started
@@ -238,14 +243,14 @@ services:
       - SPRING_DATASOURCE_PASSWORD=123456
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
       - SPRING_FLYWAY_BASELINE_VERSION=0
-      - TCMB_API_KEY=${TCMB_API_KEY:-NvIg6r0WZV}
+      - TCMB_API_KEY=${TCMB_API_KEY:?Set TCMB_API_KEY in Docker/.env — copy .env.example to .env}
       - TCMB_API_KEY_QUERY_PARAM=${TCMB_API_KEY_QUERY_PARAM:-key}
       - TCMB_API_KEY_HEADER=${TCMB_API_KEY_HEADER:-X-API-Key}
       # EVDS: ayrı anahtar istenirse host .env'de MARKET_EVDS_API_KEY tanımlayın. Boş string geçirmeyin —
       # aksi halde Spring ilk property'yi boş görür ve TCMB_API_KEY yedeğine düşmez. Tanımsız bırakınca yalnızca TCMB_API_KEY kullanılır.
       - MARKET_EVDS_BASE_URL=${MARKET_EVDS_BASE_URL:-https://evds3.tcmb.gov.tr/igmevdsms-dis}
-      - PROVIDERS_FINNHUB_ENABLED=true
-      - FINNHUB_API_KEY=d7r26q9r01qtpsm0phfgd7r26q9r01qtpsm0phg0
+      - PROVIDERS_FINNHUB_ENABLED=${PROVIDERS_FINNHUB_ENABLED:-true}
+      # FINNHUB_API_KEY: Docker/.env (env_file); required when PROVIDERS_FINNHUB_ENABLED=true
       - MARKET_HISTORY_BACKFILL_ENABLED=true
       - MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP=true
       - MARKET_HISTORY_BACKFILL_GATE_LIVE_UNTIL_HISTORY_READY=false
@@ -301,6 +306,8 @@ services:
       context: ..
       dockerfile: notification-service/Dockerfile
     container_name: notification-service
+    env_file:
+      - .env
     depends_on:
       kafka:
         condition: service_started
@@ -312,9 +319,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=123456
       - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
       - SPRING_FLYWAY_BASELINE_VERSION=0
-      - SMTP_USERNAME=${SMTP_USERNAME:-32bitdemofinanceplatformmm@gmail.com}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-mpxnlgmbyehkiqwm}
-      - NOTIFICATION_MAIL_FROM=${NOTIFICATION_MAIL_FROM:-32bitdemofinanceplatformmm@gmail.com}
+      # SMTP_* / NOTIFICATION_MAIL_FROM: set in Docker/.env (env_file)
       - APP_PORTAL_PUBLIC_URL=${APP_PORTAL_PUBLIC_URL:-http://localhost:5173}
       - MANAGEMENT_HEALTH_MAIL_ENABLED=false
     networks:
@@ -325,6 +330,8 @@ services:
       context: ..
       dockerfile: news-service/Dockerfile
     container_name: news-service
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -387,6 +394,8 @@ services:
       context: ..
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
+    env_file:
+      - .env
     depends_on:
       kafka:
         condition: service_started
@@ -404,7 +413,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      JWT_ISSUER_URI: http://localhost:8085/realms/finance
+      JWT_ISSUER_URI: ${JWT_ISSUER_URI:-http://localhost:8085/realms/finance}
+      GATEWAY_CORS_ALLOWED_ORIGINS: ${GATEWAY_CORS_ALLOWED_ORIGINS:-http://localhost:5173}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -413,6 +423,7 @@ services:
     networks:
       - finance-net
 
+  # Production SPA (nginx + vite build). UI hot-reload: docker compose --profile dev (frontend-web-dev :5174).
   frontend-web:
     build:
       context: ../frontend-web
@@ -422,12 +433,31 @@ services:
       api-gateway:
         condition: service_started
     ports:
-      - "5173:5173"
+      - "5173:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - finance-net
+
+  frontend-web-dev:
+    profiles: ["dev"]
+    build:
+      context: ../frontend-web
+      dockerfile: Dockerfile.dev
+    container_name: frontend-web-dev
+    depends_on:
+      api-gateway:
+        condition: service_started
+    ports:
+      - "5174:5173"
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - VITE_PROXY_TARGET=http://api-gateway:8080
-      # Single /api proxy — split routing would send /api/market to localhost:8082 inside the container (broken).
       - VITE_DEV_PROXY_GATEWAY=true
     volumes:
       - ../frontend-web:/app
