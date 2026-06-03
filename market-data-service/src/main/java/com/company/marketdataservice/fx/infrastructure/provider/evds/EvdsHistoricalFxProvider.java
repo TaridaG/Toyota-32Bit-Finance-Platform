@@ -1,5 +1,6 @@
 package com.company.marketdataservice.fx.infrastructure.provider.evds;
 import com.company.marketdataservice.bootstrap.config.MarketEvdsProperties;
+import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
 import com.company.marketdataservice.history.domain.HistoricalFxPoint;
 import com.company.marketdataservice.history.domain.HistoricalFxProvider;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,6 +71,9 @@ public class EvdsHistoricalFxProvider implements HistoricalFxProvider {
         }
 
         String canonical = symbol.trim().toUpperCase(Locale.ROOT);
+        if (MarketCatalogSegmentRules.isSpotMetalSymbol(canonical)) {
+            return List.of();
+        }
         Pair pair = resolvePair(canonical);
         if (pair == null) {
             return List.of();

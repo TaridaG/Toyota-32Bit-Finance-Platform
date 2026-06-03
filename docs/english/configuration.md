@@ -92,13 +92,13 @@ Compose passes values to `finance-api` and other services via `env_file: .env`.
 | `JWT_ISSUER_URI` | api-gateway | Browser issuer: `http://localhost:8085/realms/finance` |
 | `KAFKA_BOOTSTRAP_SERVERS` | All Kafka users | Docker: `kafka:9092`, local: `localhost:9092` |
 
-**Demo note:** `TCMB_API_KEY` and `FINNHUB_API_KEY` are currently defined in `docker-compose.yml`; the stack starts without writing them to `.env`.
+**Secrets:** `TCMB_API_KEY` and `FINNHUB_API_KEY` belong only in `Docker/.env` (`.env.example` has placeholders). Fill `.env` before `docker compose up`; no real keys in the repo.
 
 ## Market data (TCMB / EVDS)
 
 | Variable | Note |
 |----------|-----|
-| `TCMB_API_KEY` | Compose default demo key; use your own in production |
+| `TCMB_API_KEY` | Required — `Docker/.env` only (EVDS / bonds / rates) |
 | `MARKET_EVDS_API_KEY` | **Do not write an empty line** (`MARKET_EVDS_API_KEY=`) — Spring sees an empty string and the fallback key does not activate |
 | `MARKET_EVDS_BASE_URL` | Default EVDS3 public API |
 | `PROVIDERS_FINNHUB_ENABLED` / `FINNHUB_API_KEY` | NASDAQ and Finnhub history |
@@ -147,7 +147,7 @@ Keycloak realm import: [`Docker/keycloak/realm-finance.json`](../../Docker/keycl
 | `SPRING_MAIL_*` | finance-api registration verification |
 | `SMTP_USERNAME`, `SMTP_PASSWORD`, `NOTIFICATION_MAIL_FROM` | notification-service alerts |
 
-Docker demo includes a Gmail app password — **do not use in production**.
+SMTP / Gmail app password is set only in `Docker/.env` — **never commit to the repo**.
 
 ## Frontend
 

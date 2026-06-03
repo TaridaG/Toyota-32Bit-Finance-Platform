@@ -34,10 +34,13 @@
 | Özellik | Değer |
 |---------|-------|
 | Paket | `frontend-web` |
-| Container adı | `frontend-web` |
-| HTTP port | **5173** |
-| Build | `npm run build` → `tsc` + Vite |
-| API (Docker) | `VITE_PROXY_TARGET=http://api-gateway:8080`, `VITE_DEV_PROXY_GATEWAY=true` |
+| Container (varsayılan prod) | `frontend-web` — nginx, port **5173** → container 80 |
+| Container (HMR) | `frontend-web-dev` — profil `dev`, port **5174** |
+| Dockerfile prod | [`Dockerfile`](../../../frontend-web/Dockerfile) — `npm run build` + nginx |
+| Dockerfile dev | [`Dockerfile.dev`](../../../frontend-web/Dockerfile.dev) — Vite dev server |
+| Yerel build | `npm run build` → `dist/` |
+| API (Docker prod) | Same-origin `/api` → nginx `proxy_pass` → api-gateway |
+| API (Docker dev profil) | `VITE_PROXY_TARGET=http://api-gateway:8080`, `VITE_DEV_PROXY_GATEWAY=true` |
 
 ## Bağımlılıklar
 
@@ -52,14 +55,14 @@
 ```mermaid
 flowchart TB
   Browser[Tarayıcı]
-  Vite[Vite dev / static]
+  FE[nginx prod veya Vite dev]
   GW[api-gateway :8080]
   KC[Keycloak :8085]
   BE[Backend servisleri]
 
-  Browser --> Vite
+  Browser --> FE
   Browser -->|OIDC| KC
-  Vite -->|"/api proxy"| GW
+  FE -->|"/api"| GW
   GW --> BE
 ```
 
@@ -69,9 +72,10 @@ flowchart TB
 
 | Mod | Ortam | Davranış |
 |-----|-------|----------|
-| Gateway (Docker) | `VITE_DEV_PROXY_GATEWAY=true` | Tüm `/api` → api-gateway |
+| Prod (Docker varsayılan) | nginx :5173 | Statik SPA; `/api` → gateway |
+| Gateway dev (Docker `--profile dev`) | `VITE_DEV_PROXY_GATEWAY=true` | Vite :5174, tüm `/api` → gateway |
 | BFF (yerel) | varsayılan | `/api` → finance-api:8080 |
-| Uzak API | `VITE_API_BASE_URL` | Doğrudan host |
+| Uzak API | `VITE_API_BASE_URL` (build-time prod) | Doğrudan host |
 
 Detay: [api.md](../api.md) · [development.md](../development.md).
 

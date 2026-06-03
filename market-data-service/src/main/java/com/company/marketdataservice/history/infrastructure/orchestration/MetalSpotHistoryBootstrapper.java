@@ -25,13 +25,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * `geçmiş veri ve backfill` için uygulama açılışında veya gecikmeli tetiklenen bootstrap listener.
+ * Backfills TRY spot metal FX history from Yahoo futures (GC=F, …) × USDTRY.
  */
 @Component
 public class MetalSpotHistoryBootstrapper {
 
     private static final Logger log = LoggerFactory.getLogger(MetalSpotHistoryBootstrapper.class);
     private static final List<String> METAL_SYMBOLS = List.of("XAUTRY", "XAGTRY", "XPTTRY", "XPDTRY", "XCUTRY");
+    private static final String YAHOO_DERIVED_PROVIDER = "YAHOO_DERIVED_SPOT";
+    /** Rolling refresh window so recent days stay aligned with live Minted/Stooq scale. */
+    private static final int RECENT_REFRESH_DAYS = 30;
 
     private final YahooDerivedMetalHistoricalFxProvider metalHistoricalProvider;
     private final FxHistoryWriteService fxHistoryWriteService;
@@ -54,9 +57,6 @@ public class MetalSpotHistoryBootstrapper {
         this.backfillProperties = backfillProperties;
     }
 
-    /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() {
         log.info("METAL_SPOT_HISTORY_BOOTSTRAP_INIT enabled={} runOnStartup={}",
@@ -68,9 +68,6 @@ public class MetalSpotHistoryBootstrapper {
         backfillMetals("startup");
     }
 
-    /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
     @Scheduled(initialDelayString = "${market.history.backfill.schedule-initial-delay-ms:30000}",
             fixedDelayString = "${scheduler.fx.delay-ms:300000}")
     public void periodic() {
@@ -95,17 +92,51 @@ public class MetalSpotHistoryBootstrapper {
 
     private void backfillSymbol(String symbol, LocalDate start, LocalDate end, String trigger) {
         String normalized = symbol.trim().toUpperCase(Locale.ROOT);
+        if ("periodic".equals(trigger) && hasSufficientHistory(normalized)) {
+            LocalDate recentStart = end.minusDays(RECENT_REFRESH_DAYS);
+            if (!recentStart.isBefore(start)) {
+                refreshRecentRange(normalized, recentStart, end, trigger);
+            }
+            return;
+        }
         if (readySymbols.contains(normalized) || hasSufficientHistory(normalized)) {
             readySymbols.add(normalized);
             log.debug("METAL_SPOT_HISTORY_SKIP trigger={} symbol={} reason=sufficient_history", trigger, normalized);
             return;
         }
-        List<HistoricalFxPoint> points = metalHistoricalProvider.fetchRange(normalized, start, end);
+        persistRange(normalized, start, end, trigger);
+        if (hasSufficientHistory(normalized)) {
+            readySymbols.add(normalized);
+        }
+    }
+
+    protected void refreshRecentRange(String symbol, LocalDate start, LocalDate end, String trigger) {
+        Instant fromInclusive = start.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant toExclusive = end.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        int deleted = fxRateHistoryRepository.deleteBySymbolProviderAndObservedAtBetween(
+                symbol,
+                YAHOO_DERIVED_PROVIDER,
+                fromInclusive,
+                toExclusive
+        );
+        persistRange(symbol, start, end, trigger + "_recent");
+        log.info(
+                "METAL_SPOT_HISTORY_REFRESHED trigger={} symbol={} deleted={} from={} to={}",
+                trigger,
+                symbol,
+                deleted,
+                start,
+                end
+        );
+    }
+
+    private void persistRange(String symbol, LocalDate start, LocalDate end, String trigger) {
+        List<HistoricalFxPoint> points = metalHistoricalProvider.fetchRange(symbol, start, end);
         if (points.isEmpty()) {
-            log.info("METAL_SPOT_HISTORY_EMPTY trigger={} symbol={} from={} to={}", trigger, normalized, start, end);
+            log.info("METAL_SPOT_HISTORY_EMPTY trigger={} symbol={} from={} to={}", trigger, symbol, start, end);
             return;
         }
-        Long instrumentId = instrumentMappingService.resolveInstrument("COMPOSITE_FX", normalized).orElse(null);
+        Long instrumentId = instrumentMappingService.resolveInstrument("COMPOSITE_FX", symbol).orElse(null);
         List<FxSnapshotUpdatedEvent> events = new ArrayList<>(points.size());
         for (HistoricalFxPoint p : points) {
             events.add(new FxSnapshotUpdatedEvent(
@@ -122,10 +153,7 @@ public class MetalSpotHistoryBootstrapper {
             ));
         }
         fxHistoryWriteService.saveBatch(events);
-        if (hasSufficientHistory(normalized)) {
-            readySymbols.add(normalized);
-        }
-        log.info("METAL_SPOT_HISTORY_BACKFILLED trigger={} symbol={} points={}", trigger, normalized, events.size());
+        log.info("METAL_SPOT_HISTORY_BACKFILLED trigger={} symbol={} points={}", trigger, symbol, events.size());
     }
 
     private boolean hasSufficientHistory(String symbol) {

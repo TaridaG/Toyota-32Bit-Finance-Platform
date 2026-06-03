@@ -92,7 +92,7 @@ Compose übergibt per `env_file: .env` an `finance-api` und andere Services.
 | `JWT_ISSUER_URI` | api-gateway | Browser-Issuer: `http://localhost:8085/realms/finance` |
 | `KAFKA_BOOTSTRAP_SERVERS` | Alle Kafka-Nutzer | Docker: `kafka:9092`, lokal: `localhost:9092` |
 
-**Demo-Hinweis:** `TCMB_API_KEY` und `FINNHUB_API_KEY` sind derzeit in `docker-compose.yml` definiert; der Stack startet ohne Eintrag in `.env`.
+**Geheimnisse:** `TCMB_API_KEY` und `FINNHUB_API_KEY` nur in `Docker/.env` (`.env.example` Platzhalter). Vor `docker compose up` ausfüllen.
 
 ## Marktdaten (TCMB / EVDS)
 
@@ -147,7 +147,7 @@ Keycloak-Realm-Import: [`Docker/keycloak/realm-finance.json`](../../Docker/keycl
 | `SPRING_MAIL_*` | finance-api Registrierungsverifizierung |
 | `SMTP_USERNAME`, `SMTP_PASSWORD`, `NOTIFICATION_MAIL_FROM` | notification-service Alarme |
 
-Docker-Demo enthält Gmail-App-Passwort — **nicht in Produktion verwenden**.
+SMTP / Gmail-App-Passwort nur in `Docker/.env` — **nicht ins Repo committen**.
 
 ## Frontend
 

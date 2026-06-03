@@ -65,9 +65,9 @@ cd Docker
 Copy-Item .env.example .env
 ```
 
-When `.env.example` is copied, `NEWS_DB_PASSWORD=123456` is ready out of the box (must match the PostgreSQL password). For a demo, **you do not need to set any other variables.**
+After `cp .env.example .env`, **set `TCMB_API_KEY` and `FINNHUB_API_KEY` in `Docker/.env`** (no real keys in the repo). `NEWS_DB_PASSWORD` and `POSTGRES_PASSWORD` default to `123456` in the template; keep them in sync.
 
-If you change the password, update it together with `POSTGRES_PASSWORD` in `docker-compose.yml`.
+API keys and external secrets live only in `Docker/.env`.
 
 ### 2. Start the stack
 
@@ -179,13 +179,11 @@ docker compose down -v
 
 ## Optional `.env` variables
 
-For a demo, `TCMB_API_KEY` and `FINNHUB_API_KEY` values are defined in `docker-compose.yml`; you do not need to write them to `.env`.
-
 | Variable | When? | Notes |
 |----------|-------|-------|
-| `MARKET_EVDS_API_KEY` | Separate key for TCMB EVDS | If unset, compose uses `TCMB_API_KEY`. **Do not write an empty line (`KEY=`)** |
+| `MARKET_EVDS_API_KEY` | Separate key for TCMB EVDS | If unset, `.env` `TCMB_API_KEY` is used. **Do not write an empty line (`KEY=`)** |
 | `OPENAI_API_KEY` | Admin info card AI | `AI_ENABLED=true`; AI stays disabled without a key |
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | Alarm and registration email from your own mailbox | If unset, compose uses demo SMTP |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | Registration and alert email | Set in `.env` only; no demo password in the repo |
 | `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Production environment | Compose defaults are sufficient for demo |
 
 All variables: [configuration.md](configuration.md).

@@ -180,11 +180,7 @@ market:
       - GBP
       - JPY
       - AED
-      - XAU
-      - XAG
-      - XPT
-      - XPD
-      - XCU
+      # Spot metals (XAUTRY, …) come from Minted/Stooq via CompositeFxProvider — not TCMB gram quotes.
     tcmb-url: https://www.tcmb.gov.tr/kurlar/today.xml
     tcmb-api-key: ${TCMB_API_KEY:}
     tcmb-api-key-query-param: ${TCMB_API_KEY_QUERY_PARAM:key}

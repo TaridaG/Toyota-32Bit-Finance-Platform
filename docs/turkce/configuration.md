@@ -2,6 +2,8 @@
 
 Ortam değişkenleri, Spring `application*.yml` dosyaları ve Docker Compose birlikte platform davranışını belirler. Servis etkileşimleri: [services.md](services.md). Geliştirme modları: [development.md](development.md).
 
+**Docker’da tek operasyonel dosya:** [`Docker/.env`](../../Docker/.env) (`cp .env.example .env`). Öncelik kuralları ve restart/build matrisi: [configuration-precedence.md](configuration-precedence.md). Kişisel override: [`docker-compose.override.yml.example`](../../Docker/docker-compose.override.yml.example).
+
 ---
 
 ## Yapılandırma katmanları
@@ -37,8 +39,8 @@ flowchart TB
 
 | Katman | Konum | Ne zaman değişir? |
 |--------|-------|------------------|
-| Compose sabit env | `Docker/docker-compose.yml` | Demo anahtarlar, profil listesi, internal hostname |
-| `.env` | `Docker/.env` | Gizli / ortama özel değerler (SMTP, OpenAI, EVDS) |
+| Compose `environment` | `Docker/docker-compose.yml` | Internal hostname, profil; API anahtarları `${VAR:?}` ile `.env` zorunlu |
+| `.env` + `env_file` | `Docker/.env` | Gizli / ortama özel (TCMB, Finnhub, OpenAI, SMTP, EVDS) — tüm uygulama servisleri |
 | Spring profil | `application-{profile}.yml` | dev / docker / kafka / cache-redis |
 | Frontend | `frontend-web/.env.development` | Vite proxy hedefi |
 
@@ -92,13 +94,13 @@ Compose `env_file: .env` ile `finance-api` ve diğer servislere aktarır.
 | `JWT_ISSUER_URI` | api-gateway | Tarayıcı issuer: `http://localhost:8085/realms/finance` |
 | `KAFKA_BOOTSTRAP_SERVERS` | Tüm Kafka kullananlar | Docker: `kafka:9092`, yerel: `localhost:9092` |
 
-**Demo notu:** `TCMB_API_KEY` ve `FINNHUB_API_KEY` şu an `docker-compose.yml` içinde tanımlı; `.env`’e yazmadan stack ayağa kalkar.
+**Gizliler:** `TCMB_API_KEY` ve `FINNHUB_API_KEY` yalnızca `Docker/.env` içinde tutulur (`.env.example` placeholder). `docker compose up` öncesi `.env` doldurulmalıdır; repoda gerçek anahtar yoktur.
 
 ## Piyasa verisi (TCMB / EVDS)
 
 | Değişken | Not |
 |----------|-----|
-| `TCMB_API_KEY` | Compose varsayılan demo anahtarı; üretimde kendi anahtarınız |
+| `TCMB_API_KEY` | Zorunlu — yalnızca `Docker/.env` (EVDS / tahvil / oranlar) |
 | `MARKET_EVDS_API_KEY` | **Boş satır yazmayın** (`MARKET_EVDS_API_KEY=`) — Spring boş string görür, yedek anahtar devreye girmez |
 | `MARKET_EVDS_BASE_URL` | Varsayılan EVDS3 dis API |
 | `PROVIDERS_FINNHUB_ENABLED` / `FINNHUB_API_KEY` | NASDAQ ve Finnhub geçmişi |
@@ -147,7 +149,7 @@ Keycloak realm import: [`Docker/keycloak/realm-finance.json`](../../Docker/keycl
 | `SPRING_MAIL_*` | finance-api kayıt doğrulama |
 | `SMTP_USERNAME`, `SMTP_PASSWORD`, `NOTIFICATION_MAIL_FROM` | notification-service alarmları |
 
-Docker demo Gmail uygulama şifresi içerir — **üretimde kullanmayın**.
+SMTP / Gmail uygulama şifresi yalnızca `Docker/.env` içinde tanımlanır — **repoya commit etmeyin**.
 
 ## Frontend
 
@@ -241,6 +243,7 @@ flowchart TD
 | Belge | İçerik |
 |-------|--------|
 | [getting-started.md](getting-started.md) | `.env` kurulum adımları |
+| [configuration-precedence.md](configuration-precedence.md) | Öncelik, restart vs build |
 | [development.md](development.md) | Yerel profil override |
 | [observability.md](observability.md) | OpenSearch, Prometheus env |
 | [services.md](services.md) | Servis port ve etkileşim diyagramları |
