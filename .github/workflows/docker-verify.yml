@@ -37,40 +37,48 @@ jobs:
               - 'finance-api/**'
               - 'finance-api/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             market-data-service:
               - 'pom.xml'
               - 'market-data-service/**'
               - 'market-data-service/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             api-gateway:
               - 'pom.xml'
               - 'api-gateway/**'
               - 'api-gateway/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             news-service:
               - 'pom.xml'
               - 'news-service/**'
               - 'news-service/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             notification-service:
               - 'pom.xml'
               - 'notification-service/**'
               - 'notification-service/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             analytics-service:
               - 'pom.xml'
               - 'analytics-service/**'
               - 'analytics-service/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             log-consumer-service:
               - 'pom.xml'
               - 'log-consumer-service/**'
               - 'log-consumer-service/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
             frontend-web:
               - 'frontend-web/**'
               - 'frontend-web/Dockerfile'
               - '.github/workflows/docker-verify.yml'
+              - '.github/workflows/deploy-ec2.yml'
 
       - name: Build Docker matrix
         id: matrix
