@@ -35,30 +35,37 @@ jobs:
               - 'pom.xml'
               - 'finance-api/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
             market-data-service:
               - 'pom.xml'
               - 'market-data-service/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
             api-gateway:
               - 'pom.xml'
               - 'api-gateway/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
             news-service:
               - 'pom.xml'
               - 'news-service/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
             notification-service:
               - 'pom.xml'
               - 'notification-service/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
             analytics-service:
               - 'pom.xml'
               - 'analytics-service/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
             log-consumer-service:
               - 'pom.xml'
               - 'log-consumer-service/**'
               - '.github/workflows/pr-ci.yml'
+              - '.github/workflows/deploy-ec2.yml'
 
       - name: Build test matrix
         id: matrix
