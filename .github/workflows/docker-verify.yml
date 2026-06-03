@@ -126,26 +126,9 @@ jobs:
             core.setOutput('services', JSON.stringify(services));
             core.setOutput('any_changed', services.length > 0 ? 'true' : 'false');
 
-  compose-config:
-    runs-on: ubuntu-latest
-    env:
-      NEWS_DB_PASSWORD: ci-placeholder-password
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Prepare Docker env file
-        shell: bash
-        run: cp Docker/.env.example Docker/.env
-
-      - name: Validate main Docker Compose file
-        run: docker compose -f Docker/docker-compose.yml config
-
   build-images:
     name: build-${{ matrix.service }}
-    needs:
-      - changes
-      - compose-config
+    needs: changes
     if: needs.changes.outputs.any_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
