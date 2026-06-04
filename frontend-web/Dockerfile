@@ -1,7 +1,7 @@
 # Production: static SPA + nginx /api proxy to api-gateway.
 # Dev/HMR: use Dockerfile.dev via docker compose --profile dev.
 
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
