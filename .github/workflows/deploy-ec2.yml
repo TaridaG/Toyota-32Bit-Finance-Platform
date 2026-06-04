@@ -185,10 +185,47 @@ jobs:
               echo "No services to deploy."
               exit 1
             fi
+            export DOCKER_BUILDKIT=1
+            export COMPOSE_DOCKER_CLI_BUILD=1
+
+            # Stop app tier + heavy infra before build (keeps postgres/redis up for data).
+            # Frees RAM/CPU on small EC2 instances during npm/mvn Docker builds.
+            STOP_FOR_BUILD=(
+              frontend-web
+              api-gateway
+              finance-api
+              market-data-service
+              news-service
+              notification-service
+              analytics-service
+              log-consumer-service
+              kafka
+              keycloak
+              opensearch
+              opensearch-dashboards
+              jaeger
+              prometheus
+              grafana
+            )
+            echo "=== Stopping services before build (maintenance window) ==="
+            docker compose stop "${STOP_FOR_BUILD[@]}" || true
+            sleep 5
+            free -h || true
+
             IFS=',' read -ra SVC <<< "${SERVICE_CSV}"
+            echo "=== Building changed services: ${SVC[*]} ==="
             for s in "${SVC[@]}"; do
-              echo "=== deploy ${s} ==="
+              echo "=== docker compose build ${s} ==="
               docker compose build "${s}"
+            done
+
+            echo "=== Starting full stack ==="
+            docker compose up -d
+
+            echo "=== Recreating deployed services ==="
+            for s in "${SVC[@]}"; do
               docker compose up -d --force-recreate "${s}"
             done
+
+            echo "=== Deploy finished ==="
             docker compose ps
