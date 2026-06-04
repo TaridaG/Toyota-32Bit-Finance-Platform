@@ -1,5 +1,6 @@
 package com.company.marketdataservice.spot.application;
 import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
+import com.company.marketdataservice.fx.domain.FxQuoteNormalization;
 import com.company.marketdataservice.bootstrap.config.HotReadCacheProperties;
 import com.company.marketdataservice.bootstrap.config.TcmbBondMarketProperties;
 import com.company.marketdataservice.shared.cache.JsonCacheService;
@@ -253,14 +254,16 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
         }
         return fxRateHistoryRepository.findLatestRatesPerSymbol()
                 .stream()
-                .map(row -> new FxRateDto(
-                        row.getCanonicalSymbol(),
-                        row.getBid(),
-                        row.getAsk(),
-                        row.getMid(),
-                        row.getSource(),
-                        row.getObservedAt()
-                ))
+                .map(row -> {
+                    String sym = row.getCanonicalSymbol();
+                    return new FxRateDto(
+                            sym,
+                            FxQuoteNormalization.normalizePrice(sym, row.getBid()),
+                            FxQuoteNormalization.normalizePrice(sym, row.getAsk()),
+                            FxQuoteNormalization.normalizePrice(sym, row.getMid()),
+                            row.getSource(),
+                            row.getObservedAt());
+                })
                 .toList();
     }
 

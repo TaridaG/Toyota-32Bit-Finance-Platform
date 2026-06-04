@@ -10,6 +10,12 @@ import org.springframework.util.StringUtils;
  */
 public final class MarketOverviewCategoryRules {
 
+  /** Keep in sync with market-data-service {@code UsEquitySymbols} / {@code NasdaqRegistry}. */
+  private static final Set<String> US_EQUITY_SYMBOLS =
+      Set.of(
+          "AAPL", "AMZN", "NVDA", "MSFT", "GOOGL", "TSLA", "META", "AVGO",
+          "AMD", "NFLX", "INTC", "CSCO",
+          "VOO", "VTI", "QQQ", "IVV", "SPY");
   private static final Set<String> FUND_SYMBOLS = Set.of("VOO", "VTI", "QQQ", "IVV", "SPY");
   private static final Set<String> SPOT_METAL_SYMBOLS =
       Set.of("XAUTRY", "XAGTRY", "XPTTRY", "XPDTRY", "XCUTRY");
@@ -101,6 +107,12 @@ public final class MarketOverviewCategoryRules {
       return "forex";
     }
     if ("STOCK".equals(cat)) {
+      if (s.endsWith(".IS")) {
+        return "bist";
+      }
+      if (US_EQUITY_SYMBOLS.contains(s)) {
+        return "nasdaq";
+      }
       if ("YAHOO".equals(src)) {
         return "bist";
       }
@@ -116,7 +128,8 @@ public final class MarketOverviewCategoryRules {
   }
 
   /** Sembolün UI kategori filtresine (ALL hariç) uyup uymadığını kontrol eder. */
-  public static boolean matchesUiCategory(String symbol, String source, String normalizedCategory) {
+  public static boolean matchesUiCategory(
+      String symbol, String source, String exchangeName, String normalizedCategory) {
     if (!StringUtils.hasText(normalizedCategory)
         || "ALL".equalsIgnoreCase(normalizedCategory.trim())) {
       return true;
@@ -127,7 +140,18 @@ public final class MarketOverviewCategoryRules {
     }
     String wire = inferWireCategory(symbol);
     String pulse = pulseSegment(symbol, wire, source);
-    return pulse != null && pulse.equalsIgnoreCase(mdsSegment);
+    if (pulse != null && pulse.equalsIgnoreCase(mdsSegment)) {
+      return true;
+    }
+    if (!StringUtils.hasText(exchangeName)) {
+      return false;
+    }
+    String ex = exchangeName.trim().toUpperCase(Locale.ROOT);
+    return switch (mdsSegment) {
+      case "bist" -> "BIST".equals(ex) || "YAHOO".equals(ex);
+      case "nasdaq" -> "NASDAQ".equals(ex) || "FINNHUB".equals(ex);
+      default -> false;
+    };
   }
 
   /** UI kategori kodunu market-data-service segment koduna çevirir. */

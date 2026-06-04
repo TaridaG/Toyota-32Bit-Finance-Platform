@@ -4,6 +4,7 @@ import com.company.marketdataservice.catalog.registry.AssetKind;
 import com.company.marketdataservice.catalog.registry.IngestInstrumentDef;
 import com.company.marketdataservice.catalog.registry.IngestProvider;
 import com.company.marketdataservice.catalog.registry.QuoteCurrency;
+import com.company.marketdataservice.catalog.registry.UsEquitySymbols;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +36,7 @@ public final class NasdaqRegistry {
     }
 
     public static boolean isFinnhubOwned(String symbol) {
-        if (symbol == null || symbol.isBlank()) {
-            return false;
-        }
-        String normalized = symbol.trim().toUpperCase(Locale.ROOT);
-        return STOCK_SYMBOLS.contains(normalized) || ETF_SYMBOLS.contains(normalized);
+        return UsEquitySymbols.isUsListedEquity(symbol);
     }
 
     private static IngestInstrumentDef stock(String symbol) {

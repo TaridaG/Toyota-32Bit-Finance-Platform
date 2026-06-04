@@ -1,4 +1,6 @@
 package com.company.marketdataservice.catalog.domain;
+
+import com.company.marketdataservice.catalog.registry.UsEquitySymbols;
 import java.util.Locale;
 import java.util.Set;
 
@@ -96,6 +98,12 @@ public final class MarketCatalogSegmentRules {
             return "forex";
         }
         if ("STOCK".equals(cat)) {
+            if (s.endsWith(".IS")) {
+                return "bist";
+            }
+            if (UsEquitySymbols.isUsListedEquity(s)) {
+                return "nasdaq";
+            }
             if ("YAHOO".equals(src)) {
                 return "bist";
             }
