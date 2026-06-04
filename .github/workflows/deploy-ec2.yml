@@ -189,43 +189,35 @@ jobs:
             export COMPOSE_DOCKER_CLI_BUILD=1
 
             # Stop app tier + heavy infra before build (keeps postgres/redis up for data).
-            # Frees RAM/CPU on small EC2 instances during npm/mvn Docker builds.
-            STOP_FOR_BUILD=(
-              frontend-web
-              api-gateway
-              finance-api
-              market-data-service
-              news-service
-              notification-service
-              analytics-service
-              log-consumer-service
-              kafka
-              keycloak
-              opensearch
-              opensearch-dashboards
-              jaeger
-              prometheus
-              grafana
-            )
+            # Single-line service list (no bash arrays — appleboy/ssh-action breaks multiline arrays).
             echo "=== Stopping services before build (maintenance window) ==="
-            docker compose stop "${STOP_FOR_BUILD[@]}" || true
+            docker compose stop frontend-web api-gateway finance-api market-data-service news-service notification-service analytics-service log-consumer-service kafka keycloak opensearch opensearch-dashboards jaeger prometheus grafana || true
             sleep 5
             free -h || true
 
-            IFS=',' read -ra SVC <<< "${SERVICE_CSV}"
-            echo "=== Building changed services: ${SVC[*]} ==="
-            for s in "${SVC[@]}"; do
+            echo "=== Building changed services: ${SERVICE_CSV} ==="
+            OLD_IFS="${IFS}"
+            IFS=','
+            for s in ${SERVICE_CSV}; do
+              s="$(echo "${s}" | xargs)"
+              if [ -z "${s}" ]; then continue; fi
               echo "=== docker compose build ${s} ==="
               docker compose build "${s}"
             done
+            IFS="${OLD_IFS}"
 
             echo "=== Starting full stack ==="
             docker compose up -d
 
             echo "=== Recreating deployed services ==="
-            for s in "${SVC[@]}"; do
+            OLD_IFS="${IFS}"
+            IFS=','
+            for s in ${SERVICE_CSV}; do
+              s="$(echo "${s}" | xargs)"
+              if [ -z "${s}" ]; then continue; fi
               docker compose up -d --force-recreate "${s}"
             done
+            IFS="${OLD_IFS}"
 
             echo "=== Deploy finished ==="
             docker compose ps
