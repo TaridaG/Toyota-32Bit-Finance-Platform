@@ -1,5 +1,5 @@
 import type { IChartApi, ISeriesApi } from 'lightweight-charts'
-import type { DrawingItem } from '../../types'
+import type { CandlePoint, DrawingItem } from '../../types'
 import { anchorToPixel, priceToCoordinate, timeToCoordinate, type PixelPoint } from './chartCoordinates'
 import { extendRaySegment, fibLevelY, FIB_LEVELS } from './drawingUtils'
 
@@ -47,6 +47,7 @@ export function projectDrawing(
   series: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'>,
   width: number,
   height: number,
+  candles: CandlePoint[] = [],
 ): ProjectedDrawing | null {
   const base: ProjectedDrawing = {
     id: item.id,
@@ -58,7 +59,7 @@ export function projectDrawing(
   }
 
   if (item.type === 'point') {
-    const p = anchorToPixel(chart, series, item.anchor)
+    const p = anchorToPixel(chart, series, item.anchor, candles)
     if (!p) return null
     base.circles.push({ x: p.x, y: p.y, r: 4 })
     return base
@@ -72,23 +73,23 @@ export function projectDrawing(
   }
 
   if (item.type === 'vline') {
-    const x = timeToCoordinate(chart, item.time)
+    const x = timeToCoordinate(chart, item.time, candles)
     if (x == null) return null
     base.lines.push({ x1: x, y1: 0, x2: x, y2: height })
     return base
   }
 
   if (item.type === 'trendline') {
-    const a = anchorToPixel(chart, series, item.a)
-    const b = anchorToPixel(chart, series, item.b)
+    const a = anchorToPixel(chart, series, item.a, candles)
+    const b = anchorToPixel(chart, series, item.b, candles)
     if (!a || !b) return null
     base.lines.push(clipLine({ x1: a.x, y1: a.y, x2: b.x, y2: b.y }, width, height))
     return base
   }
 
   if (item.type === 'ray') {
-    const a = anchorToPixel(chart, series, item.a)
-    const b = anchorToPixel(chart, series, item.b)
+    const a = anchorToPixel(chart, series, item.a, candles)
+    const b = anchorToPixel(chart, series, item.b, candles)
     if (!a || !b) return null
     base.lines.push(clipLine({ x1: a.x, y1: a.y, x2: b.x, y2: b.y }, width, height))
     const ray = extendRaySegment(a.x, a.y, b.x, b.y, 3)
@@ -98,8 +99,8 @@ export function projectDrawing(
   }
 
   if (item.type === 'rect' || item.type === 'fib') {
-    const a = anchorToPixel(chart, series, item.a)
-    const b = anchorToPixel(chart, series, item.b)
+    const a = anchorToPixel(chart, series, item.a, candles)
+    const b = anchorToPixel(chart, series, item.b, candles)
     if (!a || !b) return null
     const box = boxFromPoints(a, b)
 

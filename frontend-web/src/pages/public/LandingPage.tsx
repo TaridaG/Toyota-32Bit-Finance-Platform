@@ -28,7 +28,7 @@ const SECTION_IDS = [
   'final-cta',
 ] as const
 
-function sectionMotion(reduceMotion: boolean) {
+function sectionMotion(reduceMotion: boolean, viewportAmount = 0.25) {
   if (reduceMotion) {
     return {
       initial: false,
@@ -41,7 +41,7 @@ function sectionMotion(reduceMotion: boolean) {
   return {
     initial: { opacity: 0, y: 60 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.4 },
+    viewport: { once: true, amount: viewportAmount },
     transition: { duration: 0.6 },
   }
 }
@@ -64,6 +64,7 @@ export function LandingPage() {
   )
 
   const motionProps = sectionMotion(reduceMotion)
+  const finalCtaMotionProps = sectionMotion(reduceMotion, 0.06)
 
   return (
     <div className="landing-page landing-root scroll-container">
@@ -165,7 +166,7 @@ export function LandingPage() {
         </div>
       </motion.section>
 
-      <motion.section id="final-cta" className="landing-section landing-screen-section landing-final-cta" {...motionProps}>
+      <motion.section id="final-cta" className="landing-section landing-screen-section landing-final-cta" {...finalCtaMotionProps}>
         <div className="container final-cta-showcase">
           <div className="landing-copy final-cta-copy analysis-copy">
             <h2 className="analysis-title">{t('finalCta.title')}</h2>

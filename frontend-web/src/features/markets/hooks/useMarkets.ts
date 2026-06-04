@@ -167,8 +167,8 @@ export function useMarkets({ page, size, category, searchTerm, sort, displayCurr
         if (signal?.aborted) {
           return
         }
-        let nextRows = Array.isArray(response.content) ? response.content : []
-        let resolvedCurrency = backendDisplayCurrency
+        const nextRows = Array.isArray(response.content) ? response.content : []
+        const resolvedCurrency = backendDisplayCurrency
         setRows((prev) => (rowsEqual(prev, nextRows) ? prev : nextRows))
         const nextTotalElements = response.totalElements ?? 0
         const nextTotalPages = response.totalPages ?? 0

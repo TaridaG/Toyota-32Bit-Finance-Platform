@@ -142,7 +142,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 }
 
 // Hook colocated with provider; split file would duplicate context wiring.
-// eslint-disable-next-line react-refresh/only-export-components -- useTheme is a hook, not a component
 export function useTheme() {
   const context = useContext(ThemeContext)
 

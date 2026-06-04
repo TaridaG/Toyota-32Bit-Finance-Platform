@@ -1,37 +1,30 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ColorType, createChart, CrosshairMode, type IChartApi } from 'lightweight-charts'
-
-const defaultLayoutOptions = {
-  layout: {
-    background: { type: ColorType.Solid, color: '#0f172a' },
-    textColor: '#cbd5e1',
-  },
-  rightPriceScale: { borderColor: '#334155' },
-  timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: false },
-  grid: {
-    vertLines: { color: 'rgba(148, 163, 184, 0.12)' },
-    horzLines: { color: 'rgba(148, 163, 184, 0.12)' },
-  },
-  crosshair: {
-    mode: CrosshairMode.MagnetOHLC,
-    vertLine: { color: '#64748b', labelBackgroundColor: '#334155' },
-    horzLine: { color: '#64748b', labelBackgroundColor: '#334155' },
-  },
-  /** Ensure wheel zoom / drag pan work (defaults are true; set explicitly for clarity). */
-  handleScroll: true,
-  handleScale: true,
-} as const
+import { createChart, type IChartApi } from 'lightweight-charts'
+import { useTheme } from '../../../../shared/theme/ThemeProvider'
+import { getAnalysisChartLayoutOptions } from '../analysisChartLayoutOptions'
 
 /**
  * Chart mounts on `chartMountRef` only (empty div) so overlays never block the canvas.
  * `containerRef` is the outer box used for ResizeObserver + layout height.
  */
 export function useChart() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const containerRef = useRef<HTMLDivElement | null>(null)
   const chartMountRef = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const instanceRef = useRef<IChartApi | null>(null)
   const [chart, setChart] = useState<IChartApi | null>(null)
+
+  useEffect(() => {
+    const instance = instanceRef.current
+    if (!instance) return
+    try {
+      instance.applyOptions(getAnalysisChartLayoutOptions(isDark))
+    } catch {
+      /* chart disposed */
+    }
+  }, [isDark])
 
   useLayoutEffect(() => {
     const outer = containerRef.current
@@ -43,7 +36,7 @@ export function useChart() {
     const instance = createChart(mount, {
       width,
       height,
-      ...defaultLayoutOptions,
+      ...getAnalysisChartLayoutOptions(isDark),
     })
 
     instanceRef.current = instance

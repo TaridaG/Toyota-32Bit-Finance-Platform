@@ -1,13 +1,17 @@
-import type { IChartApi, ISeriesApi, Time, UTCTimestamp } from 'lightweight-charts'
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts'
 import type { CandlePoint, ChartAnchor } from '../../types'
 import { nearestCandleByTime } from '../utils/nearestCandle'
+import { chartTimeToCoordinate, coordinateToChartTime } from './chartTimeExtrapolation'
 import { getPricePaneBounds, type PricePaneBounds } from './chartPaneLayout'
 
 export type PixelPoint = { x: number; y: number }
 
-export function timeToCoordinate(chart: IChartApi, time: UTCTimestamp): number | null {
-  const x = chart.timeScale().timeToCoordinate(time as Time)
-  return x ?? null
+export function timeToCoordinate(
+  chart: IChartApi,
+  time: UTCTimestamp,
+  candles: CandlePoint[] = [],
+): number | null {
+  return chartTimeToCoordinate(chart, time, candles)
 }
 
 export function priceToCoordinate(
@@ -18,10 +22,12 @@ export function priceToCoordinate(
   return y ?? null
 }
 
-export function coordinateToTime(chart: IChartApi, x: number): UTCTimestamp | null {
-  const raw = chart.timeScale().coordinateToTime(x)
-  if (raw == null) return null
-  return Number(raw) as UTCTimestamp
+export function coordinateToTime(
+  chart: IChartApi,
+  x: number,
+  candles: CandlePoint[] = [],
+): UTCTimestamp | null {
+  return coordinateToChartTime(chart, x, candles)
 }
 
 /** Y is relative to the price pane (not full chart widget). */
@@ -46,7 +52,24 @@ function clientToPanePoint(
   return { chartX, paneY }
 }
 
-/** Snap time to nearest bar; keep exact click price so Y stays where the user clicked. */
+/**
+ * Snap to nearest bar only when the click falls inside the loaded candle range.
+ * Times after the last bar (or before the first) keep the exact chart time so
+ * trendlines / rays can extend into the future like TradingView.
+ */
+export function resolveDrawingAnchorTime(time: UTCTimestamp, candles: CandlePoint[]): UTCTimestamp {
+  if (candles.length === 0) return time
+
+  const t = Number(time)
+  const firstT = Number(candles[0].time)
+  const lastT = Number(candles[candles.length - 1].time)
+  if (t > lastT || t < firstT) return time
+
+  const candle = nearestCandleByTime(candles, t)
+  return candle?.time ?? time
+}
+
+/** Snap time to nearest bar when inside history; keep exact click price on Y. */
 export function clientToAnchor(
   chart: IChartApi,
   series: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'>,
@@ -61,21 +84,12 @@ export function clientToAnchor(
   const { chartX, paneY } = clientToPanePoint(mount, pane, clientX, clientY)
   if (paneY < 0 || paneY > pane.height) return null
 
-  const time = coordinateToTime(chart, chartX)
+  const time = coordinateToTime(chart, chartX, candles)
   const price = coordinateToPrice(series, paneY)
   if (time == null || price == null) return null
 
-  if (candles.length === 0) {
-    return { time, price }
-  }
-
-  const candle = nearestCandleByTime(candles, Number(time))
-  if (!candle) {
-    return { time, price }
-  }
-
   return {
-    time: candle.time,
+    time: resolveDrawingAnchorTime(time, candles),
     price,
   }
 }
@@ -85,11 +99,19 @@ export function anchorToPixel(
   chart: IChartApi,
   series: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'>,
   anchor: ChartAnchor,
+  candles: CandlePoint[] = [],
 ): PixelPoint | null {
-  const x = timeToCoordinate(chart, anchor.time)
+  const x = timeToCoordinate(chart, anchor.time, candles)
   const y = priceToCoordinate(series, anchor.price)
   if (x == null || y == null) return null
   return { x, y }
 }
 
-export const projectPendingAnchor = anchorToPixel
+export function projectPendingAnchor(
+  chart: IChartApi,
+  series: ISeriesApi<'Candlestick'> | ISeriesApi<'Line'>,
+  anchor: ChartAnchor,
+  candles: CandlePoint[] = [],
+): PixelPoint | null {
+  return anchorToPixel(chart, series, anchor, candles)
+}

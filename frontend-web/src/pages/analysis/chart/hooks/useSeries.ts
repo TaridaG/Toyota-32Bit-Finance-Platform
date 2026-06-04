@@ -165,6 +165,7 @@ export function useMainPriceData(
       if (shouldFit) {
         chart.timeScale().fitContent()
       }
+      chart.timeScale().applyOptions({ rightOffset: 40, fixRightEdge: false })
     } catch {
       /* unmount / chart.remove racing with data update */
     }

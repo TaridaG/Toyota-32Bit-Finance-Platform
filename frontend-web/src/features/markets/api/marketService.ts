@@ -141,6 +141,9 @@ function resolveInstrumentMeta(
 
 function toCategory(symbol: string, item?: MarketPriceApiItem): string {
   const symUp = symbol.trim().toUpperCase()
+  if (symUp.startsWith('VIOP_')) {
+    return 'DERIVATIVE'
+  }
   if (symUp.startsWith('FUND_')) {
     return 'FUND'
   }
@@ -320,14 +323,27 @@ export type CatalogRow = {
   listedExchange: string | null
 }
 
+/** Keep in sync with market-data-service {@code UsEquitySymbols}. */
+const US_LISTED_EQUITY_SYMBOLS = new Set([
+  'AAPL', 'AMZN', 'NVDA', 'MSFT', 'GOOGL', 'TSLA', 'META', 'AVGO',
+  'AMD', 'NFLX', 'INTC', 'CSCO',
+  'VOO', 'VTI', 'QQQ', 'IVV', 'SPY',
+])
+
+function isUsListedEquitySymbol(symbol: string): boolean {
+  return US_LISTED_EQUITY_SYMBOLS.has(symbol.trim().toUpperCase())
+}
+
 function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): CatalogRow[] {
   if (!category || category === 'all') {
     return rows
   }
   if (category === 'bist') {
     return rows.filter((row) => {
-      if (row.category !== 'STOCK') return false
       const sym = row.symbol.trim().toUpperCase()
+      if (sym.startsWith('VIOP_') || row.category === 'DERIVATIVE') return false
+      if (row.category !== 'STOCK') return false
+      if (isUsListedEquitySymbol(sym)) return false
       return (
         row.source === 'YAHOO' ||
         row.listedExchange === 'BIST' ||
@@ -336,13 +352,16 @@ function filterRowsByCategory(rows: CatalogRow[], category?: MarketCategory): Ca
     })
   }
   if (category === 'nasdaq') {
-    return rows.filter(
-      (row) =>
-        row.category === 'STOCK' &&
-        (row.source === 'FINNHUB' ||
-          row.listedExchange === 'NASDAQ' ||
-          row.listedExchange === 'FINNHUB'),
-    )
+    return rows.filter((row) => {
+      if (row.category !== 'STOCK') return false
+      const sym = row.symbol.trim().toUpperCase()
+      return (
+        isUsListedEquitySymbol(sym) ||
+        row.source === 'FINNHUB' ||
+        row.listedExchange === 'NASDAQ' ||
+        row.listedExchange === 'FINNHUB'
+      )
+    })
   }
   if (category === 'forex') {
     return rows.filter((row) => row.category === 'FX' && !METAL_SYMBOLS.has(row.symbol))
