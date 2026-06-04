@@ -2,7 +2,17 @@
 
 Ortam değişkenleri, Spring `application*.yml` dosyaları ve Docker Compose birlikte platform davranışını belirler. Servis etkileşimleri: [services.md](services.md). Geliştirme modları: [development.md](development.md).
 
-**Docker’da tek operasyonel dosya:** [`Docker/.env`](../../Docker/.env) (`cp .env.example .env`). Öncelik kuralları ve restart/build matrisi: [configuration-precedence.md](configuration-precedence.md). Kişisel override: [`docker-compose.override.yml.example`](../../Docker/docker-compose.override.yml.example).
+## Hızlı kurulum (`Docker/.env`)
+
+| | |
+|--|--|
+| İlk kez kuruyorsanız | Adım adım kontrol listesi: [getting-started.md](getting-started.md) (Yol A) |
+| `cp .env.example .env` | Yalnızca dosyayı oluşturur; **gizlileri siz doldurursunuz** |
+| Zorunlu | `TCMB_API_KEY`, `FINNHUB_API_KEY` (piyasa verisi) |
+| E-posta (isteğe bağlı) | `SMTP_*`, `SPRING_MAIL_*` — örnek: [getting-started.md](getting-started.md) Adım 3 |
+| Tüm değişken sözlüğü | Aşağıdaki bölümler |
+
+**Docker’da tek operasyonel dosya:** [`Docker/.env`](../../Docker/.env). Öncelik kuralları: [configuration-precedence.md](configuration-precedence.md). Kişisel override: [`docker-compose.override.yml.example`](../../Docker/docker-compose.override.yml.example).
 
 ---
 
@@ -82,6 +92,7 @@ Kullanım:
 ```bash
 cd Docker
 cp .env.example .env
+# Ardından .env içine TCMB_API_KEY ve FINNHUB_API_KEY yazın (kopya tek başına yetmez)
 ```
 
 Compose `env_file: .env` ile `finance-api` ve diğer servislere aktarır.
@@ -220,7 +231,7 @@ Yeni frontend origin eklerken gateway + Keycloak `redirectUris` / `webOrigins` b
 ```mermaid
 flowchart TD
   Q{Ne yapılandırıyorsunuz?}
-  Q -->|İlk Docker kurulum| A[cp .env.example .env]
+  Q -->|İlk Docker kurulum| A[kopyala .env + anahtarlari yaz]
   Q -->|Haber DB hatası| B[NEWS_DB_PASSWORD=123456]
   Q -->|EVDS verisi yok| C[MARKET_EVDS boş satır silin veya anahtar yazın]
   Q -->|Frontend API 401| D[JWT_ISSUER_URI + Keycloak 8085]

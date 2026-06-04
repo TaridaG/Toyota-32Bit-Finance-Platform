@@ -171,16 +171,16 @@ Profil dosyaları: `{modül}/src/main/resources/application*.yml`. Ortam değiş
 
 ```bash
 cd frontend-web
-cp .env.example .env.development   # Windows: Copy-Item .env.example .env.development
 npm install
 npm run dev
 ```
+
+Tam Docker stack’te portal (5173) için `.env.development` gerekmez. Yerel Vite proxy için: `cp .env.example .env.development` (Windows: `Copy-Item .env.example .env.development`). Backend anahtarları: [`Docker/.env`](../../Docker/.env.example) — [getting-started.md](getting-started.md).
 
 | Komut | Açıklama |
 |-------|----------|
 | `npm run dev` | Vite dev server — http://localhost:5173 |
 | `npm run build` | `tsc -b` + production bundle |
-| `npm run lint` | ESLint |
 | `npm run preview` | Build sonrası önizleme |
 
 ### Vite proxy modları
@@ -380,10 +380,10 @@ Modül başına `application-test.yml` H2 veya Testcontainers kullanabilir; vars
 
 ```bash
 cd frontend-web
-npm run lint
+npm run build
 ```
 
-Birim test dosyaları `src` altında co-located (ör. `pages/analysis/chart/measure/computeMeasureStats.test.ts`, `pages/bank-rates/lib/*.test.ts`). `package.json` içinde ayrı bir `npm test` script’i tanımlı değildir; test runner eklenene kadar lint + manuel doğrulama kullanılır.
+Birim test dosyaları `src` altında co-located (ör. `pages/analysis/chart/measure/computeMeasureStats.test.ts`, `pages/bank-rates/lib/*.test.ts`). `package.json` içinde ayrı bir `npm test` script’i tanımlı değildir; test runner eklenene kadar `npm run build` (TypeScript) + manuel doğrulama kullanılır.
 
 ---
 
@@ -399,7 +399,7 @@ flowchart TD
   BE -->|hayır| FE{Frontend?}
   FE -->|evet| F1[router + features]
   F1 --> F2[i18n tr en de]
-  B3 --> TEST[mvn test / npm lint]
+  B3 --> TEST[mvn test / npm run build]
   F2 --> TEST
   TEST --> PR[Pull request]
   PR --> DOC[docs güncel mi?]

@@ -1,6 +1,6 @@
 # Dokümantasyon
 
-Finance Platform monoreposu için teknik rehberler. Güncel mimari ve yapılandırma kaynağı olarak bu klasörü kullanın; `frontend-web/README.md` yalnızca Vite şablon notları içerir.
+Finance Platform monoreposu için teknik rehberler. Güncel mimari ve yapılandırma kaynağı olarak bu klasörü kullanın. Kök özet (Türkçe): [../../README.tr.md](../../README.tr.md). İlk kurulum: [getting-started.md](getting-started.md).
 
 ### Dokümantasyon haritası
 
@@ -46,7 +46,7 @@ flowchart TB
 
 ## Hızlı bağlantılar
 
-- Kök özet: [../README.md](../../README.md)
+- Kök README (EN · TR · DE): [../../README.md](../../README.md) · [../../README.tr.md](../../README.tr.md) · [../../README.de.md](../../README.de.md)
 - Docker Compose: [../Docker/docker-compose.yml](../../Docker/docker-compose.yml)
 - Ortam şablonu: [../Docker/.env.example](../../Docker/.env.example)
 - Keycloak realm: [../Docker/keycloak/realm-finance.json](../../Docker/keycloak/realm-finance.json)

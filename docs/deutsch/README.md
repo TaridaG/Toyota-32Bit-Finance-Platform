@@ -6,11 +6,11 @@ Technische Leitfäden für das Finance-Platform-Monorepo. Verwenden Sie diesen O
 
 ```mermaid
 flowchart TB
-  START[Yeni okuyucu]
+  START[Neuer Leser]
 
   START --> GS[getting-started.md]
-  GS --> SVC[services.md diyagramlar]
-  SVC --> DET[services/*.md detay]
+  GS --> SVC[services.md Diagramme]
+  SVC --> DET[services/*.md Details]
 
   START --> ARCH[architecture.md]
   ARCH --> API[api.md]
@@ -46,7 +46,7 @@ flowchart TB
 
 ## Schnelllinks
 
-- Übersicht im Repository-Root: [../README.md](../../README.md)
+- Root-README (EN · TR · DE): [../../README.md](../../README.md) · [../../README.tr.md](../../README.tr.md) · [../../README.de.md](../../README.de.md)
 - Docker Compose: [../Docker/docker-compose.yml](../../Docker/docker-compose.yml)
 - Umgebungsvorlage: [../Docker/.env.example](../../Docker/.env.example)
 - Keycloak-Realm: [../Docker/keycloak/realm-finance.json](../../Docker/keycloak/realm-finance.json)

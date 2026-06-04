@@ -10,7 +10,7 @@ Genel yapılandırma listesi: [configuration.md](configuration.md). İlk kurulum
 
 | Dosya | Rol |
 |-------|-----|
-| [`Docker/.env`](../../Docker/.env) | Gizliler ve ortama özel değerler (gitignore) — `cp .env.example .env` |
+| [`Docker/.env`](../../Docker/.env) | Gizliler ve ortama özel değerler (gitignore) — `cp .env.example .env` sonra **içini doldurun** ([getting-started.md](getting-started.md)) |
 | [`Docker/.env.example`](../../Docker/.env.example) | Şablon (placeholder); gerçek anahtarlar yalnızca `Docker/.env` |
 | [`Docker/docker-compose.yml`](../../Docker/docker-compose.yml) | Container wiring; `TCMB_API_KEY` için `${VAR:?}` — `.env` zorunlu |
 | [`Docker/docker-compose.override.yml`](../../Docker/docker-compose.override.yml) | İsteğe bağlı kişisel override (gitignore); şablon: `docker-compose.override.yml.example` |

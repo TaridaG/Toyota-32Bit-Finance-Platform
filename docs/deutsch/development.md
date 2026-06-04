@@ -171,16 +171,16 @@ Profildateien: `{modül}/src/main/resources/application*.yml`. Umgebungsvariable
 
 ```bash
 cd frontend-web
-cp .env.example .env.development   # Windows: Copy-Item .env.example .env.development
 npm install
 npm run dev
 ```
+
+Für den vollständigen Docker-Stack (Portal 5173) ist `.env.development` nicht nötig. Für lokales Vite-Proxy: `cp .env.example .env.development`. Backend-Geheimnisse: [`Docker/.env`](../../Docker/.env.example) — [getting-started.md](getting-started.md).
 
 | Befehl | Beschreibung |
 |--------|--------------|
 | `npm run dev` | Vite Dev Server — http://localhost:5173 |
 | `npm run build` | `tsc -b` + Production-Bundle |
-| `npm run lint` | ESLint |
 | `npm run preview` | Vorschau nach dem Build |
 
 ### Vite-Proxy-Modi
@@ -380,10 +380,10 @@ Pro Modul kann `application-test.yml` H2 oder Testcontainers nutzen; nicht anneh
 
 ```bash
 cd frontend-web
-npm run lint
+npm run build
 ```
 
-Unit-Test-Dateien liegen co-located unter `src` (z. B. `pages/analysis/chart/measure/computeMeasureStats.test.ts`, `pages/bank-rates/lib/*.test.ts`). In `package.json` ist kein separates `npm test`-Script definiert; bis ein Test-Runner hinzukommt: Lint + manuelle Verifikation.
+Unit-Test-Dateien liegen co-located unter `src` (z. B. `pages/analysis/chart/measure/computeMeasureStats.test.ts`, `pages/bank-rates/lib/*.test.ts`). In `package.json` ist kein separates `npm test`-Script definiert; bis ein Test-Runner hinzukommt: `npm run build` (TypeScript) + manuelle Verifikation.
 
 ---
 
@@ -399,7 +399,7 @@ flowchart TD
   BE -->|hayır| FE{Frontend?}
   FE -->|evet| F1[router + features]
   F1 --> F2[i18n tr en de]
-  B3 --> TEST[mvn test / npm lint]
+  B3 --> TEST[mvn test / npm run build]
   F2 --> TEST
   TEST --> PR[Pull request]
   PR --> DOC[docs güncel mi?]

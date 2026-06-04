@@ -133,7 +133,7 @@ sequenceDiagram
 
   FA->>KF: alarm-triggered
   KF->>NOTIF: consume
-  NOTIF->>PG: idempotency / şablon context
+  NOTIF->>PG: idempotency / template context
   NOTIF->>SMTP: send
 ```
 

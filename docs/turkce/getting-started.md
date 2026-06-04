@@ -8,7 +8,7 @@
 | IDE'den backend geliştirme | [Yol B — Hibrit](#yol-b--hibrit-altyapı-docker-uygulama-yerel) |
 | Yalnızca UI, uzak API | [Yol C — Frontend + uzak API](#yol-c--sadece-frontend--uzak-api) |
 
-Genel proje özeti: [../README.md](../../README.md). Mimari ve port detayları: [architecture.md](architecture.md), [services.md](services.md).
+Genel proje özeti: [../../README.tr.md](../../README.tr.md). Mimari ve port detayları: [architecture.md](architecture.md), [services.md](services.md).
 
 ### Hangi kurulum yolu?
 
@@ -22,7 +22,7 @@ flowchart TD
   Q2 -->|evet| C[Yol C Frontend + uzak API]
   Q2 -->|hayır| Q1
 
-  A --> A1[cd Docker && cp .env && compose up]
+  A --> A1[Kopyala .env - Anahtarlari yaz - compose up]
   B --> B1[Docker altyapı + mvn spring-boot:run]
   C --> C1[VITE_API_BASE_URL + npm run dev]
 ```
@@ -51,7 +51,16 @@ cd Toyota-32Bit-Finance-Platform
 
 Tüm altyapı ve uygulama servislerini tek komutla başlatır. **Yeni geliştiriciler ve demo için önerilen yoldur.**
 
-### 1. Ortam dosyası
+> **Önemli:** `cp .env.example .env` yalnızca dosyayı oluşturur. Piyasa verisi ve e-posta için `.env` **içini** doldurmanız gerekir (repoda gerçek anahtar yoktur).
+
+| Adım | Ne yaparsınız? |
+|------|----------------|
+| **1** | `Docker/.env` dosyasını oluşturun (şablondan kopya) |
+| **2** | **Zorunlu:** `TCMB_API_KEY`, `FINNHUB_API_KEY` yazın |
+| **3** | **İsteğe bağlı:** SMTP (kayıt / alarm maili), OpenAI (admin AI) |
+| **4** | `docker compose up -d --build` |
+
+### 1. Dosyayı oluştur
 
 ```bash
 cd Docker
@@ -65,15 +74,67 @@ cd Docker
 Copy-Item .env.example .env
 ```
 
-`.env.example` kopyalandıktan sonra **`Docker/.env` içine kendi `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerlerinizi yazın** (repoda anahtar tutulmaz). Yerel DB için `POSTGRES_PASSWORD` / `NEWS_DB_PASSWORD` şablonda `123456` olarak gelir; üretimde değiştirin.
+Şablon: [`Docker/.env.example`](../../Docker/.env.example). Kişisel override: `Copy-Item docker-compose.override.yml.example docker-compose.override.yml` — [configuration-precedence.md](configuration-precedence.md).
 
-API anahtarları ve harici servis şifreleri yalnızca `Docker/.env` dosyasında tutulur (`POSTGRES_PASSWORD` ile `NEWS_DB_PASSWORD` aynı kalsın). Kişisel override için: `Copy-Item docker-compose.override.yml.example docker-compose.override.yml` — ayrıntı: [configuration-precedence.md](configuration-precedence.md).
+### 2. Dosyayı düzenle (zorunlu)
 
-> **Sıra önemli:** Anahtarları yazdıktan **sonra** (aşağıdaki) `docker compose up` çalıştırın. İlk kurulumda ayrıca `--force-recreate` gerekmez.
->
-> **Stack ayaktayken** `.env` içinde API anahtarı veya mail değiştirirseniz, kaydettikten sonra ilgili servisi yeniden oluşturun; örnek: `docker compose up -d --force-recreate market-data-service`.
+`Docker/.env` dosyasını bir metin editörüyle açın. **Boş bırakmayın:**
 
-### 2. Stack'i başlat
+```env
+# Zorunlu — piyasa verisi
+TCMB_API_KEY=evds-anahtariniz
+FINNHUB_API_KEY=finnhub-anahtariniz
+```
+
+`POSTGRES_PASSWORD` ve `NEWS_DB_PASSWORD` şablonda `123456` — yerel demo için aynı bırakın; üretimde değiştirin.
+
+**Anahtar / ayar yoksa ne olur?**
+
+| Özellik | Durum |
+|---------|--------|
+| Portal giriş (`admin1` / `123456`) | Çalışır |
+| Piyasa listesi, grafikler, faiz kartları | Eksik veya boş (TCMB + Finnhub gerekli) |
+| Yeni kullanıcı kayıt e-postası | Çalışmaz (SMTP gerekli) |
+| Alarm e-postası | Çalışmaz (SMTP gerekli) |
+| Admin bilgi kartı AI | Kapalı (`OPENAI_API_KEY` + `AI_ENABLED=true` gerekir) |
+
+> Anahtarları yazdıktan **sonra** Adım 4’te `docker compose up` çalıştırın. İlk kurulumda `--force-recreate` gerekmez.
+
+### 3. İsteğe bağlı özellikler
+
+E-posta veya AI istiyorsanız `.env` içinde ilgili satırların başındaki `#` işaretini kaldırıp değerleri doldurun (örnek):
+
+```env
+# Kayıt doğrulama (finance-api) + alarm maili (notification-service)
+# Gmail: normal şifre değil, "Uygulama şifresi" kullanın
+SMTP_USERNAME=you@gmail.com
+SMTP_PASSWORD=16-haneli-uygulama-sifresi
+SPRING_MAIL_USERNAME=you@gmail.com
+SPRING_MAIL_PASSWORD=16-haneli-uygulama-sifresi
+APP_REGISTRATION_VERIFICATION_FROM=you@gmail.com
+NOTIFICATION_MAIL_FROM=you@gmail.com
+
+# Admin bilgi kartı AI (finance-api)
+# AI_ENABLED=true
+# OPENAI_API_KEY=sk-...
+```
+
+| Değişken | Ne için? | Not |
+|----------|----------|-----|
+| `MARKET_EVDS_API_KEY` | Ayrı TCMB EVDS anahtarı | Yoksa `TCMB_API_KEY` kullanılır. **Boş satır (`KEY=`) yazmayın** |
+| `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Üretim MFA | Yerel demo’da compose varsayılanları yeterli |
+
+Stack **zaten çalışıyorken** `.env` değiştirirseniz ilgili servisi yeniden oluşturun:
+
+```bash
+docker compose up -d --force-recreate market-data-service   # TCMB / Finnhub
+docker compose up -d --force-recreate finance-api             # OpenAI / kayıt maili
+docker compose up -d --force-recreate notification-service    # SMTP / alarmlar
+```
+
+Tüm değişkenler: [configuration.md](configuration.md).
+
+### 4. Stack'i başlat
 
 ```bash
 docker compose up -d --build
@@ -102,7 +163,7 @@ flowchart TD
 
 İlk build Maven derlemeleri nedeniyle birkaç dakika sürebilir. Mevcut bir kurulumda veritabanını korumak için yalnızca `up --build` kullanın; **`docker compose down -v` volume'ları siler.**
 
-### 3. Doğrulama
+### 5. Doğrulama
 
 ```mermaid
 flowchart TD
@@ -136,7 +197,7 @@ flowchart TD
 
 Keycloak yönetim konsolu: http://localhost:8085/admin — `admin` / `admin` (compose varsayılanı).
 
-### 4. Gözlemlenebilirlik ve altyapı
+### 6. Gözlemlenebilirlik ve altyapı
 
 Stack ayaktayken erişilebilir uçlar:
 
@@ -153,7 +214,7 @@ Stack ayaktayken erişilebilir uçlar:
 
 OpenSearch log indeksi için ilk kurulumda bir kez `application-logs-*` index pattern oluşturmanız gerekebilir — ayrıntı: [observability.md](observability.md).
 
-### 5. İlk çalıştırma süreleri
+### 7. İlk çalıştırma süreleri
 
 - **Flyway migration:** `finance-api`, `market-data-service`, `analytics-service` ve `news-service` ilk açılışta şemalarını uygular; birkaç dakika normaldir.
 - **Piyasa verisi backfill:** `market-data-service` katalog ve geçmiş fiyatları arka planda doldurur. Tamamlanması enstrüman sayısına bağlı olarak **yaklaşık 30 dakika** sürebilir; ilk dakikalarda boş liste veya eksik grafik görmek normaldir.
@@ -168,7 +229,7 @@ docker compose logs -f finance-api
 
 Demo zamanlayıcı aralıkları ücretsiz harici API kotasına göre ayarlanmıştır (TCMB EVDS, Yahoo, CoinGecko vb.). Sıklaştırma: [configuration.md](configuration.md).
 
-### 6. Durdurma
+### 8. Durdurma
 
 ```bash
 cd Docker
@@ -181,19 +242,6 @@ Veritabanı ve OpenSearch volume'larını **silmek istemiyorsanız** `-v` bayra�
 # DİKKAT: Tüm kalıcı veriyi siler (PostgreSQL, OpenSearch, Kafka)
 docker compose down -v
 ```
-
----
-
-## İsteğe bağlı `.env` değişkenleri
-
-| Değişken | Ne zaman? | Not |
-|----------|-----------|-----|
-| `MARKET_EVDS_API_KEY` | TCMB EVDS için ayrı anahtar | Tanımlamazsanız `.env` içindeki `TCMB_API_KEY` kullanılır. **Boş satır (`KEY=`) yazmayın** |
-| `OPENAI_API_KEY` | Admin bilgi kartı AI | `AI_ENABLED=true`; anahtar yoksa AI devre dışı kalır |
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | Kayıt doğrulama ve alarm e-postası | `.env` içinde tanımlayın; repoda örnek şifre yok |
-| `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Üretim ortamı | Demo'da compose varsayılanları yeterli |
-
-Tüm değişkenler: [configuration.md](configuration.md).
 
 ---
 
@@ -261,9 +309,14 @@ Tam servis listesi ve portlar: [services.md](services.md).
 
 ```bash
 cd frontend-web
-cp .env.example .env.development   # Windows: Copy-Item .env.example .env.development
 npm install
 npm run dev
+```
+
+Tam Docker stack’te portal http://localhost:5173 için `frontend-web/.env.development` **gerekmez** (nginx + gateway proxy). Yalnızca yerel `npm run dev` veya hibrit proxy için:
+
+```bash
+cp .env.example .env.development   # Windows: Copy-Item .env.example .env.development
 ```
 
 http://localhost:5173 — varsayılan proxy `finance-api:8080` veya yukarıdaki gateway env ile.

@@ -203,7 +203,7 @@ sequenceDiagram
   FA->>PG: iş kuralı + outbox kaydı
   OB->>KF: alarm-triggered
   KF->>NOTIF: consume
-  NOTIF->>SMTP: şablonlu e-posta
+  NOTIF->>SMTP: templated email
 ```
 
 ### Compose startup order (dependencies)

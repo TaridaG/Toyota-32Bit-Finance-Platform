@@ -6,11 +6,11 @@ Technical guides for the Finance Platform monorepo. Use this folder as the autho
 
 ```mermaid
 flowchart TB
-  START[Yeni okuyucu]
+  START[New reader]
 
   START --> GS[getting-started.md]
-  GS --> SVC[services.md diyagramlar]
-  SVC --> DET[services/*.md detay]
+  GS --> SVC[services.md diagrams]
+  SVC --> DET[services/*.md detail]
 
   START --> ARCH[architecture.md]
   ARCH --> API[api.md]
@@ -46,7 +46,7 @@ flowchart TB
 
 ## Quick links
 
-- Root overview: [../README.md](../../README.md)
+- Root README (EN · TR · DE): [../../README.md](../../README.md) · [../../README.tr.md](../../README.tr.md) · [../../README.de.md](../../README.de.md)
 - Docker Compose: [../Docker/docker-compose.yml](../../Docker/docker-compose.yml)
 - Environment template: [../Docker/.env.example](../../Docker/.env.example)
 - Keycloak realm: [../Docker/keycloak/realm-finance.json](../../Docker/keycloak/realm-finance.json)
