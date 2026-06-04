@@ -416,7 +416,7 @@ const TradingAreaChartInner = forwardRef<TradingAreaChartHandle, TradingAreaChar
       ro.observe(mount)
       roRef.current = ro
       requestAnimationFrame(syncChartSize)
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- lifecycle: yalnızca chart instance / ilk veri boyutu
+      // lifecycle: yalnızca chart instance / ilk veri boyutu
     }, [
       lineData.length,
       defaultWindowSec,

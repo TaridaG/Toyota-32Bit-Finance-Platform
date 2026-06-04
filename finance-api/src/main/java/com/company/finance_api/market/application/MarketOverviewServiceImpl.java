@@ -262,7 +262,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
             .filter(
                 item ->
                     MarketOverviewCategoryRules.matchesUiCategory(
-                        item.symbol(), item.source(), normalizedCategory))
+                        item.symbol(), item.source(), item.exchangeName(), normalizedCategory))
             .toList();
     UniverseSnapshot snapshot = new UniverseSnapshot(merged);
     universeCacheLocal.put(

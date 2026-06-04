@@ -163,8 +163,8 @@ export function ChartMeasureLayer({
 
   const projection = useMemo(() => {
     if (!displayRange || !chart || !priceSeries || !paneLayout) return null
-    const pa = anchorToPixel(chart, priceSeries, displayRange.a)
-    const pb = anchorToPixel(chart, priceSeries, displayRange.b)
+    const pa = anchorToPixel(chart, priceSeries, displayRange.a, candles)
+    const pb = anchorToPixel(chart, priceSeries, displayRange.b, candles)
     if (!pa || !pb) return null
 
     const x1 = pa.x

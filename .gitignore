@@ -4,6 +4,10 @@ target/
 # Logs
 *.log
 
+# Editor backups
+*.tmp
+*.bak
+
 # Env (secrets — never commit)
 .env
 Docker/.env

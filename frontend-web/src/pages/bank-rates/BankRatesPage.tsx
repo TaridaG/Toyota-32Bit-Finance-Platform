@@ -60,7 +60,6 @@ export function BankRatesPage() {
       }
     }
     // Kart önizlemeleri; yalnızca ilk mount'ta eksik snapshot'ları doldur
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const data = cache[tab] ?? null

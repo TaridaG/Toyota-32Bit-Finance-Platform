@@ -493,7 +493,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  min-width: 6.5rem;
+  min-width: 0;
 }
 
 .gm-market-symbol-cell strong {
@@ -619,11 +619,15 @@
   }
 
   .global-markets-globe-wrap {
-    width: clamp(220px, 78vw, 480px);
+    width: clamp(220px, 72vw, 480px);
     max-width: 100%;
     aspect-ratio: 1;
     height: auto;
     margin-inline: auto;
+  }
+
+  .gm-market-table-scroll {
+    max-width: 100%;
   }
 }
 
@@ -631,10 +635,38 @@
   .global-markets-stage {
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
+    padding-inline: var(--landing-gutter, clamp(1rem, 4.5vw, 2rem));
+  }
+
+  .global-markets-split {
+    width: 100%;
+    min-width: 0;
   }
 
   .gm-title {
     font-size: clamp(1.85rem, 8vw, 2.35rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .global-markets-globe-wrap {
+    width: clamp(200px, 70vw, 360px);
+  }
+
+  .gm-market-table {
+    font-size: 0.64rem;
+  }
+
+  .gm-market-table thead th,
+  .gm-market-table tbody td {
+    padding-inline: 0.2rem;
+  }
+
+  .gm-market-symbol-cell strong,
+  .gm-market-symbol-cell small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

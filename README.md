@@ -6,7 +6,7 @@
   <img src="docs/assets/brand.png" alt="32 Bit Finance" height="110" align="middle">
 </p>
 
-<h1 align="center">32 BİT FİNANCE PLATFORM</h1>
+<h1 align="center">32 BIT FINANCE PLATFORM</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=white" alt="Java">
@@ -27,221 +27,211 @@
   <img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus">
   <img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana">
   <img src="https://img.shields.io/badge/OpenSearch-005EB8?logo=opensearch&logoColor=white" alt="OpenSearch">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
 </p>
 
 <p align="center">
-  <strong>Türkiye odaklı, üç dilde finans portalı</strong> — portföyünüzü oluşturun, piyasaları ve haberleri tek ekrandan izleyin.
-  Arayüz ve içerik <strong>Türkçe</strong>, <strong>İngilizce</strong> ve <strong>Almanca</strong> destekler; dil değiştirdiğinizde menüler, kartlar ve mesajlar seçtiğiniz dile uyumlanır.
+  <a href="README.tr.md">Türkçe</a> · <strong>English</strong> · <a href="README.de.md">Deutsch</a>
 </p>
 
 <p align="center">
-  Canlı fiyatlarla hisse, fon, kripto, döviz, tahvil ve eurobond takibi; işlem geçmişi, hedefler ve harici portföy görünümü.
-  Haberlerde önemli gelişmeleri <strong>yıldızlayın</strong>, teknik analizde çizim ve notlarınızı <strong>kaydedip</strong> sonra yeniden açın.
-  Faiz/vadeli ürünler, banka kurları, RSI ve diğer göstergeler, alarmlar, izleme listesi ve finansal okuryazarlık — portföylerinizi yönetmek için tek platform.
+  <strong>Turkey-focused finance portal in three languages</strong> — build your portfolio and follow markets and news on one screen.
+  The UI and content support <strong>Turkish</strong>, <strong>English</strong>, and <strong>German</strong>; when you switch language, menus, cards, and messages adapt to your choice.
 </p>
 
-<h2 align="center">Ekranlar</h2>
-
-<p>
-  <a id="ekran-ana-sayfa"></a>
-  <a id="ekran-piyasalar"></a>
-  <a id="ekran-portfoyum"></a>
-  <a id="ekran-faiz-vadeli"></a>
-  <a id="ekran-analiz"></a>
-  <a id="ekran-haberler"></a>
-  <a id="ekran-banka-kurlari"></a>
-  <a id="ekran-finansal-okuryazarlik"></a>
-  <a id="ekran-bilgi-kartlari"></a>
-  <a id="ekran-profil"></a>
+<p align="center">
+  Track equities, funds, crypto, FX, bonds, and eurobonds with live prices; transaction history, goals, and external portfolio views.
+  <strong>Star</strong> important news items, <strong>save</strong> chart drawings and notes in technical analysis and reopen them later.
+  Interest and term products, bank rates, RSI and other indicators, alarms, watchlists, and financial literacy — one platform to manage your portfolios.
 </p>
+
+## Table of contents
+
+- [Screens](#screens)
+- [Project structure](#project-structure)
+- [Platform overview](#platform-overview)
+- [Quick start (Docker)](#quick-start-docker--recommended)
+- [Local development (summary)](#local-development-summary)
+- [Documentation](#documentation)
+- [License](#license)
+
+## Screens
 
 <table align="center" border="0" cellpadding="8" cellspacing="0" width="100%">
   <tr>
     <td align="center" valign="top" width="50%">
-      <strong>Ana Sayfa</strong><br>
-      <img src="docs/assets/screens/anasayfa.gif" alt="Ana Sayfa" width="100%">
+      <strong>Home</strong><br>
+      <img src="docs/assets/screens/anasayfa.gif" alt="Home" width="100%">
     </td>
     <td align="center" valign="top" width="50%">
-      <strong>Piyasalar</strong><br>
-      <img src="docs/assets/screens/piyasalar.gif" alt="Piyasalar" width="100%">
-    </td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" width="50%">
-      <strong>Portföyüm</strong><br>
-      <img src="docs/assets/screens/portfoyum.gif" alt="Portföyüm" width="100%">
-    </td>
-    <td align="center" valign="top" width="50%">
-      <strong>Faiz / Vadeli</strong><br>
-      <img src="docs/assets/screens/faizvadeli.gif" alt="Faiz / Vadeli" width="100%">
+      <strong>Markets</strong><br>
+      <img src="docs/assets/screens/piyasalar.gif" alt="Markets" width="100%">
     </td>
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <strong>Analiz</strong><br>
-      <img src="docs/assets/screens/analiz.gif" alt="Analiz" width="100%">
+      <strong>My Portfolio</strong><br>
+      <img src="docs/assets/screens/portfoyum.gif" alt="My Portfolio" width="100%">
     </td>
     <td align="center" valign="top" width="50%">
-      <strong>Haberler</strong><br>
-      <img src="docs/assets/screens/haberler.gif" alt="Haberler" width="100%">
-    </td>
-  </tr>
-  <tr>
-    <td align="center" valign="top" width="50%">
-      <strong>Banka kurları</strong><br>
-      <img src="docs/assets/screens/bankakurlari.gif" alt="Banka kurları" width="100%">
-    </td>
-    <td align="center" valign="top" width="50%">
-      <strong>Finansal Okuryazarlık</strong><br>
-      <img src="docs/assets/screens/finansalokuryazarlik.gif" alt="Finansal Okuryazarlık" width="100%">
+      <strong>Interest / Deposits</strong><br>
+      <img src="docs/assets/screens/faizvadeli.gif" alt="Interest / Deposits" width="100%">
     </td>
   </tr>
   <tr>
     <td align="center" valign="top" width="50%">
-      <strong>Bilgi kartları</strong><br>
-      <img src="docs/assets/screens/bilgikartlari.gif" alt="Bilgi kartları" width="100%">
+      <strong>Analysis</strong><br>
+      <img src="docs/assets/screens/analiz.gif" alt="Analysis" width="100%">
     </td>
     <td align="center" valign="top" width="50%">
-      <strong>Profil</strong><br>
-      <img src="docs/assets/screens/profil.gif" alt="Profil" width="100%">
+      <strong>News</strong><br>
+      <img src="docs/assets/screens/haberler.gif" alt="News" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <strong>Bank rates</strong><br>
+      <img src="docs/assets/screens/bankakurlari.gif" alt="Bank rates" width="100%">
+    </td>
+    <td align="center" valign="top" width="50%">
+      <strong>Financial literacy</strong><br>
+      <img src="docs/assets/screens/finansalokuryazarlik.gif" alt="Financial literacy" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <strong>Info cards</strong><br>
+      <img src="docs/assets/screens/bilgikartlari.gif" alt="Info cards" width="100%">
+    </td>
+    <td align="center" valign="top" width="50%">
+      <strong>Profile</strong><br>
+      <img src="docs/assets/screens/profil.gif" alt="Profile" width="100%">
     </td>
   </tr>
 </table>
 
-## İçindekiler
+## Project structure
 
-- [Ekranlar](#ekranlar)
-- [Proje yapısı](#proje-yapısı)
-- [Hızlı başlat](docs/turkce/getting-started.md)
-- [Hızlı başlangıç (Docker)](#hızlı-başlangıç-docker--önerilen)
-- [Yerel geliştirme (özet)](#yerel-geliştirme-özet)
-- [Dokümantasyon](#dokümantasyon)
-- [Lisans](#lisans)
-
-## Proje yapısı
-
-**32 Bit Finance Platform**, mikroservis mimarisiyle çalışan bir finans portalıdır. Kullanıcı **React** arayüzünden tek adrese (**api-gateway**) istek atar; gateway kimliği **Keycloak** ile doğrular ve isteği ilgili servise yönlendirir. Portföy, alarm, kayıt ve MFA gibi portal iş kuralları **finance-api**’de toplanır; piyasa fiyatları, haber, teknik analiz ve bildirimler kendi servislerinde uzmanlaşmıştır. Servisler birbirini gerektiğinde **HTTP** ile çağırır; fiyat güncellemesi, alarm ve log gibi akışlar **Kafka** üzerinden asenkron ilerler. Kalıcı veriler **PostgreSQL**’de tutulur; her servisin şeması **Flyway** ile ayrı yönetilir.
+**32 Bit Finance Platform** is a finance portal built on a microservice architecture. Users call a single address (**api-gateway**) from the **React** UI; the gateway authenticates identity with **Keycloak** and routes each request to the right service. Portal business rules such as portfolio, alarms, registration, and MFA live in **finance-api**; market prices, news, technical analysis, and notifications are handled by dedicated services. Services call each other over **HTTP** when needed; flows such as price updates, alarms, and logging proceed asynchronously over **Kafka**. Persistent data is stored in **PostgreSQL**; each service schema is managed separately with **Flyway**.
 
 <h3 align="center">
-  <a href="docs/turkce/architecture.md">PROJE MİMARİSİ</a>
+  <a href="docs/english/architecture.md">PROJECT ARCHITECTURE</a>
 </h3>
 
 <p align="center">
-  <a href="docs/turkce/architecture.md">
-    <img src="docs/diagrams/genelmimari.png" alt="Proje mimarisi diyagramı" width="900">
+  <a href="docs/english/architecture.md">
+    <img src="docs/diagrams/genelmimari.png" alt="Project architecture diagram" width="900">
   </a>
 </p>
 
 <table align="center" border="0" cellpadding="20" cellspacing="0">
   <tr>
     <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/api-gateway.md">api-gateway</a></h4>
-      <p>Tarayıcı ve mobil istemcilerin backend’e ulaştığı <strong>tek kapı</strong>dır. Gelen her <code>/api/v1/...</code> isteğinde JWT’yi Keycloak üzerinden doğrular, kullanıcı kimliğini arka servislere güvenli header’larla iletir. İstek yoluna göre <code>finance-api</code>, <code>market-data-service</code>, <code>news-service</code> veya <code>analytics-service</code>’e yönlendirir; Redis ile hız sınırlama ve Resilience4j ile devre kesici uygular. Geliştirici ve entegrasyon ekipleri için tüm servislerin OpenAPI dokümantasyonunu tek Swagger arayüzünde toplar. Ayrıntılı route listesi: <a href="docs/turkce/api.md">docs/turkce/api.md</a>.</p>
+      <h4><a href="docs/english/services/api-gateway.md">api-gateway</a></h4>
+      <p>The <strong>single entry point</strong> for browser and mobile clients to reach the backend. For every incoming <code>/api/v1/...</code> request it validates the JWT via Keycloak and forwards user identity to downstream services through secure headers. It routes by path to <code>finance-api</code>, <code>market-data-service</code>, <code>news-service</code>, or <code>analytics-service</code>; applies Redis rate limiting and Resilience4j circuit breakers. It aggregates OpenAPI documentation for all services in one Swagger UI for developers and integrators. Full route list: <a href="docs/english/api.md">docs/english/api.md</a>.</p>
     </td>
     <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/finance-api.md">finance-api</a></h4>
-      <p>Portalın <strong>kalbi</strong> ve Backend-for-Frontend (BFF) katmanıdır. Portföy, işlem geçmişi, hedefler, fiyat alarmları, izleme listesi, grafik çizim kayıtları ve profil gibi kullanıcıya özel iş kuralları burada yaşar. Kayıt, e-posta doğrulama, TOTP tabanlı MFA ve güvenilir cihaz yönetimi ile birlikte admin KPI’ları, bilgi kartları ve haber favorileri de bu serviste toplanır. Piyasa verisi için <code>market-data-service</code>’e HTTP ile gider; güncel fiyat ve FX snapshot’larını Kafka’dan dinler. Kritik domain olaylarını transactional outbox ile Kafka’ya yazar; veriler PostgreSQL’de Flyway ile yönetilir.</p>
-    </td>
-  </tr>
-  <tr>
-    <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/market-data-service.md">market-data-service</a></h4>
-      <p>Platformun <strong>piyasa verisi motoru</strong>dur. BIST, Nasdaq, kripto, fon, döviz, tahvil ve eurobond enstrümanlarını kataloglar; scheduler’larla canlı ve geçmiş fiyatları günceller. TCMB EVDS, Finnhub, Yahoo, CoinGecko ve Stooq gibi kaynaklardan veri çeker; politika faizi, banka kurları ve temel enstrüman bilgilerini sağlar. İlk kurulumda geçmiş fiyat backfill çalıştırabilir; sık okunan uçlar için hibrit JSON önbellek kullanır. Fiyat değişimlerini <code>market.price.updated</code> gibi Kafka topic’lerine yayınlayarak analitik ve portal katmanını besler.</p>
-    </td>
-    <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/analytics-service.md">analytics-service</a></h4>
-      <p>Canlı fiyat akışını <strong>teknik analiz</strong>e dönüştüren uzman servistir. <code>market-data-service</code>’in yayınladığı fiyat olaylarını Kafka üzerinden tüketir; RSI ve benzeri göstergeleri hesaplar, insight ve politika metriklerini üretir. Hesaplanan sonuçları kendi PostgreSQL şemasında saklar ve gateway üzerinden HTTP API ile sunar. Böylece ağır gösterge işleri portal BFF’inden ayrılır; analiz sayfası ve ilgili kartlar güncel metrikleri buradan alır.</p>
+      <h4><a href="docs/english/services/finance-api.md">finance-api</a></h4>
+      <p>The portal <strong>core</strong> and Backend-for-Frontend (BFF) layer. User-specific rules such as portfolio, transaction history, goals, price alarms, watchlist, chart drawing saves, and profile live here. Registration, email verification, TOTP-based MFA, trusted devices, admin KPIs, info cards, and news favorites are also centralized in this service. It calls <code>market-data-service</code> over HTTP for market data and consumes live price and FX snapshots from Kafka. Critical domain events are written to Kafka via a transactional outbox; data is stored in PostgreSQL with Flyway migrations.</p>
     </td>
   </tr>
   <tr>
     <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/news-service.md">news-service</a></h4>
-      <p>Finans haberlerinin <strong>toplandığı ve sunulduğu</strong> servistir. Tanımlı RSS kaynaklarını zamanlanmış görevlerle tarar, haberleri veritabanına yazar ve portalın listeleme/filtreleme API’sini besler. Gerekli içeriklerde MyMemory ile çeviri desteği sunar; gateway üzerinden <code>/api/v1/news/**</code> uçlarıyla erişilir. Haber akışı portal deneyiminden bağımsız ölçeklenir; Docker ortamında sıkı dosya sistemi ve ayrı veritabanı parolası ile çalışacak şekilde yapılandırılır.</p>
+      <h4><a href="docs/english/services/market-data-service.md">market-data-service</a></h4>
+      <p>The platform <strong>market data engine</strong>. It catalogs BIST, Nasdaq, crypto, funds, FX, bonds, and eurobond instruments; updates live and historical prices via schedulers. It pulls data from sources such as TCMB EVDS, Finnhub, Yahoo, CoinGecko, and Stooq; provides policy rates, bank rates, and basic instrument metadata. On first setup it can run historical price backfill and uses a hybrid JSON cache for frequently read endpoints. It publishes price changes to Kafka topics such as <code>market.price.updated</code> to feed analytics and the portal layer.</p>
     </td>
     <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/notification-service.md">notification-service</a></h4>
-      <p>Kullanıcıya giden <strong>e-posta bildirimlerinin</strong> merkezidir. Kafka’dan alarm tetiklenmesi, şüpheli giriş, izleme listesi değişikliği ve analitik insight gibi olayları dinler. Olay tipine göre SMTP ile şablonlu e-posta üretir; portalın anlık UI yükünü arka plana taşır. <code>finance-api</code> iş kuralı üretir, bu servis iletir; böylece bildirim kanalı değişse bile domain kodu sade kalır.</p>
+      <h4><a href="docs/english/services/analytics-service.md">analytics-service</a></h4>
+      <p>A specialist service that turns the live price stream into <strong>technical analysis</strong>. It consumes price events published by <code>market-data-service</code> over Kafka; computes RSI and similar indicators and produces insight and policy metrics. Results are stored in its own PostgreSQL schema and exposed via HTTP API through the gateway. Heavy indicator work stays out of the portal BFF; the analysis page and related cards read current metrics from here.</p>
     </td>
   </tr>
   <tr>
     <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/log-consumer-service.md">log-consumer-service</a></h4>
-      <p>Tüm backend servislerinin <strong>merkezi log arşivleyicisidir</strong>. Uygulamalar Log4j2 ile JSON formatında <code>app.logs</code> Kafka topic’ine yazar; bu servis mesajları tüketip OpenSearch’e indeksler. Operasyon ekibi Grafana, OpenSearch Dashboards veya doğrudan arama ile hata ve iz süzme yapabilir. Uygulama pod’ları log depolamak zorunda kalmaz; log pipeline platform genelinde tek noktadan yönetilir.</p>
+      <h4><a href="docs/english/services/news-service.md">news-service</a></h4>
+      <p>The service where financial news is <strong>aggregated and served</strong>. It scans configured RSS sources on a schedule, writes articles to the database, and feeds the portal listing and filtering API. It offers MyMemory translation where needed; accessed via gateway at <code>/api/v1/news/**</code>. The news pipeline scales independently of the portal experience; in Docker it is configured with a strict filesystem layout and a separate database password.</p>
     </td>
     <td valign="top" width="48%">
-      <h4><a href="docs/turkce/services/frontend-web.md">frontend-web</a></h4>
-      <p>Kullanıcının gördüğü <strong>React 19</strong> tabanlı tek sayfa uygulamasıdır (Vite + TypeScript). Landing, piyasalar, analiz, haberler, banka kurları ve finansal okuryazarlık sayfaları herkese açıkken; portföy, faiz/vadeli, dashboard ve harici portföy görünümü oturum gerektirir. Keycloak ile giriş ve kayıt akışını yönetir; TR, EN ve DE dil desteği sunar. Tüm API çağrıları <code>api-gateway</code> üzerinden gider; admin ve bilgi kartları yönetimi için ayrı <code>/admin</code> alanı bulunur.</p>
+      <h4><a href="docs/english/services/notification-service.md">notification-service</a></h4>
+      <p>The hub for <strong>email notifications</strong> to users. It listens on Kafka for events such as alarm triggers, suspicious login, watchlist changes, and analytics insights. It sends templated email over SMTP by event type, moving instant UI load off the portal. <code>finance-api</code> produces business events; this service delivers them so domain code stays simple even if the notification channel changes.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="48%">
+      <h4><a href="docs/english/services/log-consumer-service.md">log-consumer-service</a></h4>
+      <p>The <strong>central log archive</strong> for all backend services. Applications write JSON logs to the <code>app.logs</code> Kafka topic via Log4j2; this service consumes messages and indexes them in OpenSearch. Operations can filter errors and traces via Grafana, OpenSearch Dashboards, or direct search. Application pods do not need to store logs; the log pipeline is managed platform-wide from one place.</p>
+    </td>
+    <td valign="top" width="48%">
+      <h4><a href="docs/english/services/frontend-web.md">frontend-web</a></h4>
+      <p>The <strong>React 19</strong> single-page application users see (Vite + TypeScript). Landing, markets, analysis, news, bank rates, and financial literacy are public; portfolio, interest/deposits, dashboard, and external portfolio views require a session. It handles login and registration with Keycloak and supports TR, EN, and DE. All API calls go through <code>api-gateway</code>; a separate <code>/admin</code> area exists for admin and info card management.</p>
     </td>
   </tr>
 </table>
 
-> **Not — piyasa verisi ve zamanlayıcılar**  
-> Stack ayağa kalktıktan sonra `market-data-service`, geçmiş fiyat backfill ile canlı güncellemeleri arka planda birleştirir. Katalog ve geçmiş serilerin tamamlanması — enstrüman sayısına ve sağlayıcı yanıt sürelerine bağlı olarak — **yaklaşık 30 dakika** sürebilir; portal bu süreçte kademeli olarak dolar, ilk dakikalarda eksik grafik veya boş liste görmek normaldir.  
-> Demo yapılandırmadaki zamanlayıcı aralıkları (ör. hisse ~1 dk, FX/tahvil ~5 dk) ve backfill adımları, **ücretsiz kota** sunan harici kaynaklara (TCMB EVDS, Yahoo, CoinGecko, Finnhub vb.) göre ayarlanmıştır; API anahtarları `Docker/.env` içinde tanımlanır (repoda yoktur). İstekler arası bekleme süreleri rate limit ihlallerini önler. Ücretli API planına veya daha yüksek kotaya geçildiğinde `scheduler.*.delay-ms`, backfill `sleep-ms` ve ilgili cron ifadeleri [docs/turkce/configuration.md](docs/turkce/configuration.md) üzerinden sıklaştırılabilir.  
-> İlerlemeyi izlemek için: `docker compose logs -f market-data-service`
+> **Note — market data and schedulers**  
+> After the stack is up, `market-data-service` merges historical price backfill with live updates in the background. Completing the catalog and historical series — depending on instrument count and provider response times — can take **about 30 minutes**; the portal fills in gradually, and missing charts or empty lists in the first minutes are normal.  
+> Scheduler intervals in the demo configuration (e.g. equities ~1 min, FX/bonds ~5 min) and backfill steps are tuned for external sources with **free-tier quotas** (TCMB EVDS, Yahoo, CoinGecko, Finnhub, etc.); API keys are set in `Docker/.env` (not in the repo). Delays between requests help avoid rate-limit violations. When moving to a paid API plan or higher quota, tighten `scheduler.*.delay-ms`, backfill `sleep-ms`, and related cron expressions via [docs/english/configuration.md](docs/english/configuration.md).  
+> To watch progress: `docker compose logs -f market-data-service`
 
-### Hızlı başlat
+## Platform overview
 
-Sıfırdan kurulum adımları: [Hızlı başlangıç (Docker — önerilen)](#hızlı-başlangıç-docker--önerilen). Ayrıntılı rehber: [docs/turkce/getting-started.md](docs/turkce/getting-started.md).
+### Kafka events
 
-### Kafka olayları
-
-| Topic | Üreten (ör.) | Tüketen (ör.) |
-|-------|----------------|----------------|
+| Topic | Producer (e.g.) | Consumer (e.g.) |
+|-------|-----------------|-----------------|
 | `market.price.updated` | market-data-service | analytics-service, finance-api |
 | `market.fx.snapshot.updated` | market-data-service | finance-api |
 | `alarm-triggered` | finance-api (outbox) | notification-service |
 | `watchlist.item.added` / `removed` | finance-api | notification-service |
 | `login-security.alert` | finance-api | notification-service |
-| `app.logs` | Tüm servisler | log-consumer-service |
+| `app.logs` | All services | log-consumer-service |
 
-### Altyapı bileşenleri
+### Infrastructure components
 
-Docker Compose (`Docker/`) ile gelen paylaşımlı bileşenler:
+Shared components brought up with Docker Compose (`Docker/`):
 
-| Bileşen | Host port | Rol |
-|---------|-----------|-----|
-| PostgreSQL | 5432 | `finance` + `keycloak` veritabanları |
-| Redis | 6379 | Gateway rate limit, finance-api önbellek |
-| Kafka | 9092 | Olay bus |
+| Component | Host port | Role |
+|-----------|-----------|------|
+| PostgreSQL | 5432 | `finance` + `keycloak` databases |
+| Redis | 6379 | Gateway rate limit, finance-api cache |
+| Kafka | 9092 | Event bus |
 | Keycloak | 8085 | OIDC / realm import |
-| OpenSearch | 9200 | Log arama |
+| OpenSearch | 9200 | Log search |
 | OpenSearch Dashboards | 5601 | Log UI |
-| Jaeger | 16686 | Dağıtık iz |
-| Prometheus | 9090 | Metrik scrape |
-| Grafana | 3000 | Panolar |
+| Jaeger | 16686 | Distributed tracing |
+| Prometheus | 9090 | Metric scrape |
+| Grafana | 3000 | Dashboards |
 
-### Destekleyici dizinler
+### Supporting directories
 
-| Dizin | İçerik |
-|-------|--------|
+| Directory | Contents |
+|-----------|----------|
 | `Docker/` | `docker-compose`, Keycloak realm, observability stack |
-| `docs/` | Mimari, servisler, API, kurulum, gözlemlenebilirlik (`turkce/`, `english/`, `deutsch/`) |
-| `photos/` | Profil avatar dosyaları (yerel / volume) |
+| `docs/` | Architecture, services, API, setup, observability (`turkce/`, `english/`, `deutsch/`) |
+| `photos/` | Profile avatar files (local / volume) |
 
-## Hızlı başlangıç (Docker — önerilen)
+## Quick start (Docker — recommended)
 
-Repoda **API anahtarı yoktur**. Sıfırdan klonlayan herkes aşağıdaki sırayı izlemelidir.
+The repository contains **no API keys**. `cp .env.example .env` only creates the file; **you must add keys and (optionally) SMTP inside**. Step-by-step guide: [docs/english/getting-started.md](docs/english/getting-started.md).
 
-**Gereksinimler:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose v2), yaklaşık **8 GB RAM**.
+**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Compose v2), roughly **8 GB RAM**.
 
-| Adım | Ne yapmalısınız |
-|------|------------------|
-| **1** | Depoyu klonlayın |
-| **2** | `Docker/.env` oluşturun (`.env.example` kopyası) |
-| **3** | `Docker/.env` dosyasını düzenleyip **kendi** `TCMB_API_KEY` ve `FINNHUB_API_KEY` değerlerinizi yazın |
-| **4** | `Docker` klasöründen `docker compose up -d --build` çalıştırın |
-| **5** | Portal: http://localhost:5173 — demo giriş `admin1` / `123456` |
-| **6** | Piyasa verisi 10–30 dk dolabilir; izlemek: `docker compose logs -f market-data-service` |
+| Step | What to do |
+|------|------------|
+| **1** | Clone the repository |
+| **2** | Create `Docker/.env` (`cp .env.example .env`) |
+| **3** | **Fill in** `Docker/.env`: required `TCMB_API_KEY`, `FINNHUB_API_KEY` |
+| **4** | Optional: SMTP (registration / alarm email), OpenAI (admin AI) |
+| **5** | From the `Docker` folder: `docker compose up -d --build` |
+| **6** | Portal: http://localhost:5173 — demo `admin1` / `123456` (market data may take 10–30 min to populate) |
 
-**1 · Klon**
+**1 · Clone**
 
 ```bash
 git clone https://github.com/TaridaG/Toyota-32Bit-Finance-Platform.git
 cd Toyota-32Bit-Finance-Platform/Docker
 ```
 
-**2 · Ortam dosyası**
+**2 · Create environment file**
 
 ```bash
 cp .env.example .env
@@ -249,49 +239,56 @@ cp .env.example .env
 
 Windows (PowerShell): `Copy-Item .env.example .env`
 
-**3 · API anahtarlarını yazın (zorunlu)**
+> Copying alone is not enough — edit the file **contents** in Step 3.
 
-`Docker/.env` dosyasını bir metin editörüyle açın. Boş placeholder’ları doldurun:
+**3 · Fill in (required API keys)**
+
+Open `Docker/.env` in a text editor:
 
 ```env
-TCMB_API_KEY=evds-anahtariniz
-FINNHUB_API_KEY=finnhub-anahtariniz
+TCMB_API_KEY=your-evds-key
+FINNHUB_API_KEY=your-finnhub-key
 ```
 
-- Anahtarlar yalnızca `Docker/.env` içinde tutulur; **bu dosyayı commit etmeyin**.
-- `POSTGRES_PASSWORD` ve `NEWS_DB_PASSWORD` şablonda `123456` — yerel demo için aynı bırakılabilir.
+- Keys live only in `Docker/.env`; **do not commit this file**.
+- `POSTGRES_PASSWORD` and `NEWS_DB_PASSWORD` default to `123456` in the template — fine to leave for local demo.
 
-> **İlk kurulum (repo yeni klonlandı):** Adım 3’te anahtarları yazdıktan sonra doğrudan Adım 4’te `docker compose up` yeterlidir — konteynerler zaten yeni `.env` ile oluşur, **öncesinde `--force-recreate` gerekmez**.
->
-> **İleride anahtar değişirse** (stack zaten çalışıyorken `.env` düzenlediyseniz): çalışan konteyner eski değeri tutar; kaydettikten sonra ilgili servisi yeniden oluşturun:
->
-> ```bash
-> cd Docker
-> docker compose up -d --force-recreate market-data-service   # TCMB / Finnhub
-> docker compose up -d --force-recreate finance-api         # OpenAI / mail
-> docker compose up -d --force-recreate notification-service  # SMTP
-> ```
+**4 · Optional (SMTP / AI)**
 
-**İsteğe bağlı** (`.env` içinde yorumu kaldırıp doldurun):
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` + `AI_ENABLED=true` | Admin info card AI |
+| `SPRING_MAIL_*` / `SMTP_*` | Registration verification and alarm email |
+| `MARKET_EVDS_API_KEY` | Separate EVDS key (falls back to `TCMB_API_KEY`; **do not write empty `KEY=` lines**) |
 
-| Değişken | Ne için? |
-|----------|----------|
-| `OPENAI_API_KEY` | Admin bilgi kartı AI |
-| `SPRING_MAIL_*` / `SMTP_*` | Kayıt doğrulama ve alarm e-postası |
-| `MARKET_EVDS_API_KEY` | Ayrı EVDS anahtarı (yoksa `TCMB_API_KEY` kullanılır; **boş `KEY=` satırı yazmayın**) |
+Email example (Gmail **app password**, not your normal login password):
 
-Tüm değişkenler: [docs/turkce/configuration.md](docs/turkce/configuration.md).
+```env
+SMTP_USERNAME=you@gmail.com
+SMTP_PASSWORD=16-digit-app-password
+SPRING_MAIL_USERNAME=you@gmail.com
+SPRING_MAIL_PASSWORD=16-digit-app-password
+APP_REGISTRATION_VERIFICATION_FROM=you@gmail.com
+NOTIFICATION_MAIL_FROM=you@gmail.com
+```
 
-**4 · Stack’i başlat**
+All variables: [docs/english/configuration.md](docs/english/configuration.md).
+
+> **First install:** After Step 3, `docker compose up` in Step 5 is enough; `--force-recreate` is not required.  
+> **While the stack is running, if `.env` changes:** `docker compose up -d --force-recreate market-data-service` (TCMB/Finnhub), `finance-api` (mail/AI), `notification-service` (SMTP).
+
+**5 · Start the stack**
 
 ```bash
 docker compose up -d --build
 ```
 
-<p align="center"><strong>2 · Hızlı ulaş</strong><br><sub>Stack ayaktayken logolara tıklayın — portal, API, kimlik, gözlemlenebilirlik ve altyapı (TCP portları için üzerine gelin)</sub></p>
+### Quick access
+
+<p align="center"><sub>When the stack is running, click the logos — portal, API, identity, observability, and infrastructure (hover for TCP ports)</sub></p>
 
 <p align="center">
-  <a href="http://localhost:5173" title="Web arayüzü — http://localhost:5173"><img src="https://cdn.simpleicons.org/react/61DAFB" height="32" alt="Web arayüzü"></a>&nbsp;
+  <a href="http://localhost:5173" title="Web UI — http://localhost:5173"><img src="https://cdn.simpleicons.org/react/61DAFB" height="32" alt="Web UI"></a>&nbsp;
   <a href="http://localhost:8080" title="API Gateway — http://localhost:8080"><img src="https://cdn.simpleicons.org/springboot/6DB33F" height="32" alt="API Gateway"></a>&nbsp;
   <a href="http://localhost:8080/swagger-ui.html" title="Swagger UI — http://localhost:8080/swagger-ui.html"><img src="https://cdn.simpleicons.org/swagger/85EA2D" height="32" alt="Swagger UI"></a>&nbsp;
   <a href="http://localhost:8085" title="Keycloak OIDC (realm: finance) — http://localhost:8085"><img src="https://cdn.simpleicons.org/keycloak/4D4DFF" height="32" alt="Keycloak"></a>&nbsp;
@@ -308,36 +305,44 @@ docker compose up -d --build
   <span title="Kafka — localhost:9092"><img src="https://cdn.simpleicons.org/apachekafka/FFFFFF" height="32" alt="Kafka"></span>
 </p>
 
-### Demo kullanıcılar
+### Demo users
 
-Keycloak realm import: `user1` / `admin1` — şifre: `123456`
+| User | Password | Role |
+|------|----------|------|
+| `user1` | `123456` | USER |
+| `admin1` | `123456` | ADMIN |
 
-Piyasa verisi backfill notu: [Proje yapısı](#proje-yapısı) altındaki zamanlayıcı notu. Log: `docker compose logs -f market-data-service`
+Keycloak admin console: http://localhost:8085/admin — `admin` / `admin`
 
-## Yerel geliştirme (özet)
+Market data delay: see the note under [Project structure](#project-structure). Logs: `docker compose logs -f market-data-service`
 
-1. Altyapı: `cd Docker && docker compose up -d postgres redis kafka keycloak`
-2. Backend: `mvn -pl finance-api,market-data-service -am spring-boot:run` (servis başına ayrı terminal; portlar için [docs/turkce/services.md](docs/turkce/services.md))
-3. Frontend: `cd frontend-web && cp .env.example .env.development && npm install && npm run dev`
+## Local development (summary)
 
-Ayrıntılar: [docs/turkce/getting-started.md](docs/turkce/getting-started.md)
+1. Infrastructure: `cd Docker && docker compose up -d postgres redis kafka keycloak`
+2. Backend: `mvn -pl finance-api,market-data-service -am spring-boot:run` (ports: [docs/english/services.md](docs/english/services.md))
+3. Frontend: `cd frontend-web && npm install && npm run dev` (no `.env.development` needed with the full Docker stack)
 
-## Dokümantasyon
+Details: [docs/english/getting-started.md](docs/english/getting-started.md) (Path B / C).
 
-| Dosya | İçerik |
-|-------|--------|
-| [docs/README.md](docs/README.md) | Dil seçici (TR / EN / DE) |
-| [docs/turkce/README.md](docs/turkce/README.md) | Türkçe dokümantasyon indeksi |
-| [docs/turkce/architecture.md](docs/turkce/architecture.md) | Mimari ve veri akışı |
-| [docs/turkce/services.md](docs/turkce/services.md) | Servisler, portlar, sorumluluklar |
-| [docs/turkce/api.md](docs/turkce/api.md) | Gateway rotaları ve OpenAPI |
-| [docs/turkce/getting-started.md](docs/turkce/getting-started.md) | Kurulum adımları |
-| [docs/turkce/development.md](docs/turkce/development.md) | Geliştirme, test, profiller |
-| [docs/turkce/configuration.md](docs/turkce/configuration.md) | Ortam değişkenleri |
-| [docs/turkce/observability.md](docs/turkce/observability.md) | Metrik, trace, log |
+## Documentation
+
+Technical guides live under `docs/english/`. Other languages: [docs/README.md](docs/README.md) · [README.tr.md](README.tr.md) · [README.de.md](README.de.md)
+
+| Document | Contents |
+|----------|----------|
 | [docs/english/README.md](docs/english/README.md) | English documentation index |
-| [docs/deutsch/README.md](docs/deutsch/README.md) | Deutsche Dokumentation |
+| [docs/english/getting-started.md](docs/english/getting-started.md) | Setup (Docker, hybrid, frontend) |
+| [docs/english/architecture.md](docs/english/architecture.md) | Architecture and data flow |
+| [docs/english/services.md](docs/english/services.md) | Services and ports |
+| [docs/english/api.md](docs/english/api.md) | Gateway routes and OpenAPI |
+| [docs/english/configuration.md](docs/english/configuration.md) | `Docker/.env` and environment variables |
+| [docs/english/development.md](docs/english/development.md) | Development and testing |
+| [docs/english/observability.md](docs/english/observability.md) | Metrics, trace, and logs |
 
-## Lisans
+## Disclaimer
 
-Bu depo için lisans dosyası tanımlı değilse, dağıtım öncesi ekleyin.
+This repository is a **demo and learning project**. It does not provide investment, tax, or legal advice. Live market data depends on third-party APIs and their terms of use. Use in production or with real money is at your own risk.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

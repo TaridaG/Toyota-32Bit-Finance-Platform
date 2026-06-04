@@ -1,24 +1,24 @@
 package com.company.finance_api.market.domain;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 class MarketOverviewCategoryRulesTest {
 
   @Test
-  void listingCurrency_spotMetalsAreTry() {
-    assertEquals("TRY", MarketOverviewCategoryRules.listingCurrency("XAUTRY"));
-    assertEquals("TRY", MarketOverviewCategoryRules.listingCurrency("XAGTRY"));
+  void matchesUiCategory_aaplYahoo_onNasdaqTab_matches() {
+    assertTrue(MarketOverviewCategoryRules.matchesUiCategory("AAPL", "YAHOO", null, "NASDAQ"));
   }
 
   @Test
-  void listingCurrency_usEquitiesAreUsd() {
-    assertEquals("USD", MarketOverviewCategoryRules.listingCurrency("AAPL"));
+  void matchesUiCategory_aaplYahoo_onBistTab_doesNotMatch() {
+    assertFalse(MarketOverviewCategoryRules.matchesUiCategory("AAPL", "YAHOO", null, "BIST"));
   }
 
   @Test
-  void listingCurrency_fxCrossesAreTry() {
-    assertEquals("TRY", MarketOverviewCategoryRules.listingCurrency("USDTRY"));
+  void matchesUiCategory_akbnkYahoo_onBistTab_matches() {
+    assertTrue(MarketOverviewCategoryRules.matchesUiCategory("AKBNK", "YAHOO", "BIST", "BIST"));
   }
 }

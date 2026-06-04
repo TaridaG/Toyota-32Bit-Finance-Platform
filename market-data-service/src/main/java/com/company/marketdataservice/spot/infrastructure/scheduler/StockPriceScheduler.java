@@ -111,7 +111,30 @@ public class StockPriceScheduler {
                         observation);
             } catch (Exception e) {
                 log.error("STOCK_DATA_ERROR symbol={}, provider={}, error={}", symbol, "FINNHUB", e.getMessage());
+                publishYahooFallback(symbol);
             }
+        }
+    }
+
+    private void publishYahooFallback(String symbol) {
+        try {
+            String source = yahooFinanceProvider.source();
+            BigDecimal price = yahooFinanceProvider.fetchPrice(symbol);
+            Long instrumentId = instrumentMappingService.resolveInstrument(source, symbol).orElse(null);
+            publisher.publishMarketPriceUpdated(
+                    MarketPriceUpdatedEvent.of(symbol, price, "MARKET", source, instrumentId));
+            log.info(
+                    "STOCK_DATA_PUBLISHED_FALLBACK source={} symbol={} price={} instrumentId={}",
+                    source,
+                    symbol,
+                    price,
+                    instrumentId);
+        } catch (Exception yahooEx) {
+            log.error(
+                    "STOCK_DATA_FALLBACK_ERROR symbol={} provider={} error={}",
+                    symbol,
+                    "YAHOO",
+                    yahooEx.getMessage());
         }
     }
 

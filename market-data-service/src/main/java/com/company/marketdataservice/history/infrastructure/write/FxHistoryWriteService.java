@@ -1,4 +1,5 @@
 package com.company.marketdataservice.history.infrastructure.write;
+import com.company.marketdataservice.fx.domain.FxQuoteNormalization;
 import com.company.marketdataservice.fx.domain.FxSnapshotUpdatedEvent;
 import com.company.marketdataservice.history.infrastructure.persistence.FxRateHistoryEntry;
 import lombok.RequiredArgsConstructor;
@@ -98,9 +99,10 @@ public class FxHistoryWriteService {
         entry.setCanonicalSymbol(event.canonicalSymbol().trim().toUpperCase(Locale.ROOT));
         entry.setBaseCurrency(normalizeOrUnknown(event.baseCurrency()));
         entry.setQuoteCurrency(normalizeOrUnknown(event.quoteCurrency()));
-        entry.setBid(event.bid());
-        entry.setAsk(event.ask());
-        entry.setMid(event.mid());
+        String canonical = entry.getCanonicalSymbol();
+        entry.setBid(FxQuoteNormalization.normalizePrice(canonical, event.bid()));
+        entry.setAsk(FxQuoteNormalization.normalizePrice(canonical, event.ask()));
+        entry.setMid(FxQuoteNormalization.normalizePrice(canonical, event.mid()));
         entry.setProvider(normalizeOrUnknown(event.source()));
         entry.setObservedAt(event.occurredAt() == null ? Instant.now() : event.occurredAt());
         entry.setEventId(parseUuid(event.eventId()));

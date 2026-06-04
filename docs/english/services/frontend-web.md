@@ -27,7 +27,7 @@
 | Visitor | Landing, markets, bank rates, financial literacy (unauthenticated) |
 | User (`user1`) | Portfolio, analysis, news, alarms, profile, MFA |
 | Admin (`admin1`) | `/admin/**` KPI, `/app/bilgi-kartlari` management |
-| Developer | HMR (`npm run dev`), ESLint, Vite proxy modes |
+| Developer | HMR (`npm run dev`), `tsc` + Vite build, proxy modes |
 
 ## Runtime
 
@@ -215,17 +215,20 @@ Details: [observability.md](../observability.md).
 
 ## Local development
 
+**Full Docker stack** (http://localhost:5173, nginx prod): no `frontend-web/.env.development`; API keys live in [`Docker/.env`](../../../Docker/.env.example).
+
+**Local Vite** (`npm run dev`) or hybrid proxy:
+
 ```bash
 cd frontend-web
-cp .env.example .env.development
+cp .env.example .env.development   # optional proxy settings
 npm install
 npm run dev
 ```
 
-http://localhost:5173 — stack setup: [getting-started.md](../getting-started.md).
+http://localhost:5173 — [getting-started.md](../getting-started.md).
 
 ```bash
-npm run lint
 npm run build
 ```
 

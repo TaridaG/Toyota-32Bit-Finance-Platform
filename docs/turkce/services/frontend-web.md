@@ -27,7 +27,7 @@
 | Ziyaretçi | Landing, piyasalar, banka kurları, finansal okuryazarlık (oturumsuz) |
 | Kullanıcı (`user1`) | Portföy, analiz, haber, alarm, profil, MFA |
 | Admin (`admin1`) | `/admin/**` KPI, `/app/bilgi-kartlari` yönetimi |
-| Geliştirici | HMR (`npm run dev`), ESLint, Vite proxy modları |
+| Geliştirici | HMR (`npm run dev`), `tsc` + Vite build, proxy modları |
 
 ## Çalışma ortamı
 
@@ -219,17 +219,20 @@ Ayrıntı: [observability.md](../observability.md).
 
 ## Yerel çalıştırma
 
+**Tam Docker stack** (http://localhost:5173, nginx prod): `frontend-web/.env.development` gerekmez; API anahtarları [`Docker/.env`](../../../Docker/.env.example) içindedir.
+
+**Yerel Vite** (`npm run dev`) veya hibrit proxy:
+
 ```bash
 cd frontend-web
-cp .env.example .env.development
+cp .env.example .env.development   # isteğe bağlı proxy ayarları
 npm install
 npm run dev
 ```
 
-http://localhost:5173 — stack için [getting-started.md](../getting-started.md).
+http://localhost:5173 — [getting-started.md](../getting-started.md).
 
 ```bash
-npm run lint
 npm run build
 ```
 

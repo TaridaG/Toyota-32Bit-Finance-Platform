@@ -215,7 +215,7 @@ sequenceDiagram
   FA->>OB: OutboxPublisherScheduler
   OB->>KF: alarm-triggered
   KF->>NS: consume
-  NS->>SMTP: şablonlu e-posta
+  NS->>SMTP: vorlagenbasierte E-Mail
 ```
 
 ## Scheduler / Hintergrundaufgaben

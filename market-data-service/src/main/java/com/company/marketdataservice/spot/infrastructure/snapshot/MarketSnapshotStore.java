@@ -3,6 +3,7 @@ import com.company.marketdataservice.spot.infrastructure.http.dto.FundDto;
 import com.company.marketdataservice.spot.infrastructure.http.dto.FxRateDto;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceDto;
 import com.company.marketdataservice.fund.domain.FundSnapshotUpdatedEvent;
+import com.company.marketdataservice.fx.domain.FxQuoteNormalization;
 import com.company.marketdataservice.fx.domain.FxSnapshotUpdatedEvent;
 import com.company.marketdataservice.spot.domain.MarketPriceUpdatedEvent;
 import org.springframework.stereotype.Component;
@@ -44,16 +45,16 @@ public class MarketSnapshotStore {
         if (event == null || event.canonicalSymbol() == null || event.canonicalSymbol().isBlank()) {
             return;
         }
+        String sym = event.canonicalSymbol();
         latestFx.put(
-                event.canonicalSymbol(),
+                sym,
                 new FxRateDto(
-                        event.canonicalSymbol(),
-                        event.bid(),
-                        event.ask(),
-                        event.mid(),
+                        sym,
+                        FxQuoteNormalization.normalizePrice(sym, event.bid()),
+                        FxQuoteNormalization.normalizePrice(sym, event.ask()),
+                        FxQuoteNormalization.normalizePrice(sym, event.mid()),
                         event.source(),
-                        event.occurredAt()
-                )
+                        event.occurredAt())
         );
     }
 

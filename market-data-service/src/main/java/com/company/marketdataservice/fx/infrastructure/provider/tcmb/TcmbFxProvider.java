@@ -1,6 +1,7 @@
 package com.company.marketdataservice.fx.infrastructure.provider.tcmb;
 import com.company.marketdataservice.bootstrap.config.FxMarketProperties;
 import com.company.marketdataservice.fx.domain.FxProvider;
+import com.company.marketdataservice.fx.domain.FxQuoteNormalization;
 import com.company.marketdataservice.fx.domain.FxSnapshot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -133,6 +134,9 @@ public class TcmbFxProvider implements FxProvider {
             }
             BigDecimal mid = bid.add(ask).divide(BigDecimal.valueOf(2), 6, RoundingMode.HALF_UP);
             String canonical = kod + QUOTE_CCY;
+            bid = FxQuoteNormalization.normalizePrice(canonical, bid);
+            ask = FxQuoteNormalization.normalizePrice(canonical, ask);
+            mid = FxQuoteNormalization.normalizePrice(canonical, mid);
             out.add(new FxSnapshot(
                     canonical,
                     kod,

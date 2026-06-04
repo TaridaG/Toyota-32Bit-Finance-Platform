@@ -29,7 +29,7 @@ function clampWindowPreservingSpan(
   maxUnix: number,
 ): { from: number; to: number; clamped: boolean; reasons: string[] } {
   const reasons: string[] = []
-  let W = Math.max(1, to0 - from0)
+  const W = Math.max(1, to0 - from0)
   const corridor = maxUnix - minUnix
   if (W >= corridor - 1) {
     const clamped = Math.abs(from0 - minUnix) > 0.5 || Math.abs(to0 - maxUnix) > 0.5
@@ -55,7 +55,7 @@ function ixLog(
   state: Record<string, string | number | boolean | null | undefined>,
 ): void {
   if (!DEV || !enabled || !chartId) return
-  // eslint-disable-next-line no-console
+   
   console.debug(`[trading-interaction][${action}]`, { chartId, ...state })
 }
 

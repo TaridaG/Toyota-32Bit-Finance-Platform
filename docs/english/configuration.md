@@ -2,6 +2,18 @@
 
 Environment variables, Spring `application*.yml` files, and Docker Compose together define platform behavior. Service interactions: [services.md](services.md). Development modes: [development.md](development.md).
 
+## Quick setup (`Docker/.env`)
+
+| | |
+|--|--|
+| First-time setup | Step-by-step checklist: [getting-started.md](getting-started.md) (Path A) |
+| `cp .env.example .env` | Creates the file only; **you fill in secrets** |
+| Required | `TCMB_API_KEY`, `FINNHUB_API_KEY` (market data) |
+| Email (optional) | `SMTP_*`, `SPRING_MAIL_*` — example: [getting-started.md](getting-started.md) Step 3 |
+| Full variable reference | Sections below |
+
+**Single operational file in Docker:** [`Docker/.env`](../../Docker/.env). Precedence rules: [configuration-precedence.md](configuration-precedence.md).
+
 ---
 
 ## Configuration layers
@@ -80,6 +92,7 @@ Usage:
 ```bash
 cd Docker
 cp .env.example .env
+# Then set TCMB_API_KEY and FINNHUB_API_KEY in .env (copy alone is not enough)
 ```
 
 Compose passes values to `finance-api` and other services via `env_file: .env`.
@@ -218,7 +231,7 @@ When adding a new frontend origin, update gateway + Keycloak `redirectUris` / `w
 ```mermaid
 flowchart TD
   Q{Ne yapılandırıyorsunuz?}
-  Q -->|İlk Docker kurulum| A[cp .env.example .env]
+  Q -->|First Docker setup| A[copy .env + fill keys]
   Q -->|Haber DB hatası| B[NEWS_DB_PASSWORD=123456]
   Q -->|EVDS verisi yok| C[MARKET_EVDS boş satır silin veya anahtar yazın]
   Q -->|Frontend API 401| D[JWT_ISSUER_URI + Keycloak 8085]

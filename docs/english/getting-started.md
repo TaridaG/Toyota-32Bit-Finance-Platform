@@ -22,7 +22,7 @@ flowchart TD
   Q2 -->|evet| C[Yol C Frontend + uzak API]
   Q2 -->|hayır| Q1
 
-  A --> A1[cd Docker && cp .env && compose up]
+  A --> A1[Copy .env - Fill keys - compose up]
   B --> B1[Docker altyapı + mvn spring-boot:run]
   C --> C1[VITE_API_BASE_URL + npm run dev]
 ```
@@ -51,7 +51,16 @@ cd Toyota-32Bit-Finance-Platform
 
 Starts all infrastructure and application services with a single command. **Recommended path for new developers and demos.**
 
-### 1. Environment file
+> **Important:** `cp .env.example .env` only creates the file. You must **fill in** `Docker/.env` for market data and email (no real keys in the repo).
+
+| Step | What you do |
+|------|-------------|
+| **1** | Create `Docker/.env` (copy from template) |
+| **2** | **Required:** set `TCMB_API_KEY`, `FINNHUB_API_KEY` |
+| **3** | **Optional:** SMTP (registration / alert email), OpenAI (admin AI) |
+| **4** | `docker compose up -d --build` |
+
+### 1. Create the file
 
 ```bash
 cd Docker
@@ -65,11 +74,67 @@ cd Docker
 Copy-Item .env.example .env
 ```
 
-After `cp .env.example .env`, **set `TCMB_API_KEY` and `FINNHUB_API_KEY` in `Docker/.env`** (no real keys in the repo). `NEWS_DB_PASSWORD` and `POSTGRES_PASSWORD` default to `123456` in the template; keep them in sync.
+Template: [`Docker/.env.example`](../../Docker/.env.example).
 
-API keys and external secrets live only in `Docker/.env`.
+### 2. Edit the file (required)
 
-### 2. Start the stack
+Open `Docker/.env` in a text editor. **Do not leave these empty:**
+
+```env
+# Required — market data
+TCMB_API_KEY=your-evds-key
+FINNHUB_API_KEY=your-finnhub-key
+```
+
+`POSTGRES_PASSWORD` and `NEWS_DB_PASSWORD` default to `123456` in the template for local demo; change them in production.
+
+**What works without keys / SMTP?**
+
+| Feature | Without keys / SMTP |
+|---------|---------------------|
+| Portal login (`admin1` / `123456`) | Works |
+| Market lists, charts, rate cards | Empty or incomplete (TCMB + Finnhub required) |
+| New user registration email | Does not work (SMTP required) |
+| Alert email | Does not work (SMTP required) |
+| Admin info card AI | Off (`OPENAI_API_KEY` + `AI_ENABLED=true` required) |
+
+> Run Step 4 `docker compose up` **after** you save the keys. No `--force-recreate` needed on first install.
+
+### 3. Optional features
+
+For email or AI, remove the leading `#` on the relevant lines in `.env` and fill in values (example):
+
+```env
+# Registration (finance-api) + alert mail (notification-service)
+# Gmail: use an app password, not your normal login password
+SMTP_USERNAME=you@gmail.com
+SMTP_PASSWORD=16-char-app-password
+SPRING_MAIL_USERNAME=you@gmail.com
+SPRING_MAIL_PASSWORD=16-char-app-password
+APP_REGISTRATION_VERIFICATION_FROM=you@gmail.com
+NOTIFICATION_MAIL_FROM=you@gmail.com
+
+# Admin info card AI (finance-api)
+# AI_ENABLED=true
+# OPENAI_API_KEY=sk-...
+```
+
+| Variable | Purpose | Note |
+|----------|---------|------|
+| `MARKET_EVDS_API_KEY` | Separate TCMB EVDS key | Falls back to `TCMB_API_KEY`. **Do not set an empty line (`KEY=`)** |
+| `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Production MFA | Compose defaults are enough for local demo |
+
+If the stack is **already running** and you change `.env`, recreate the affected service:
+
+```bash
+docker compose up -d --force-recreate market-data-service   # TCMB / Finnhub
+docker compose up -d --force-recreate finance-api             # OpenAI / registration mail
+docker compose up -d --force-recreate notification-service    # SMTP / alerts
+```
+
+All variables: [configuration.md](configuration.md).
+
+### 4. Start the stack
 
 ```bash
 docker compose up -d --build
@@ -96,7 +161,7 @@ flowchart TD
 
 The first build may take several minutes due to Maven compilations. On an existing setup, use only `up --build` to preserve the database; **`docker compose down -v` deletes volumes.**
 
-### 3. Verification
+### 5. Verification
 
 ```mermaid
 flowchart TD
@@ -129,7 +194,7 @@ flowchart TD
 
 Keycloak admin console: http://localhost:8085/admin — `admin` / `admin` (compose default).
 
-### 4. Observability and infrastructure
+### 6. Observability and infrastructure
 
 Endpoints accessible while the stack is running:
 
@@ -146,7 +211,7 @@ Endpoints accessible while the stack is running:
 
 For the OpenSearch log index, you may need to create an `application-logs-*` index pattern once on first setup — details: [observability.md](observability.md).
 
-### 5. First-run timings
+### 7. First-run timings
 
 - **Flyway migration:** `finance-api`, `market-data-service`, `analytics-service`, and `news-service` apply their schemas on first startup; a few minutes is normal.
 - **Market data backfill:** `market-data-service` fills the catalog and historical prices in the background. Completion may take **approximately 30 minutes** depending on instrument count; seeing empty lists or incomplete charts in the first minutes is normal.
@@ -161,7 +226,7 @@ docker compose logs -f finance-api
 
 Demo scheduler intervals are tuned for free external API quotas (TCMB EVDS, Yahoo, CoinGecko, etc.). To tighten intervals: [configuration.md](configuration.md).
 
-### 6. Shutdown
+### 8. Shutdown
 
 ```bash
 cd Docker
@@ -174,19 +239,6 @@ Do **not** use the `-v` flag if you do not want to delete database and OpenSearc
 # WARNING: Deletes all persistent data (PostgreSQL, OpenSearch, Kafka)
 docker compose down -v
 ```
-
----
-
-## Optional `.env` variables
-
-| Variable | When? | Notes |
-|----------|-------|-------|
-| `MARKET_EVDS_API_KEY` | Separate key for TCMB EVDS | If unset, `.env` `TCMB_API_KEY` is used. **Do not write an empty line (`KEY=`)** |
-| `OPENAI_API_KEY` | Admin info card AI | `AI_ENABLED=true`; AI stays disabled without a key |
-| `SMTP_USERNAME` / `SMTP_PASSWORD` | Registration and alert email | Set in `.env` only; no demo password in the repo |
-| `APP_MFA_ENCRYPTION_SECRET` / `APP_TRUSTED_DEVICE_SIGNING_SECRET` | Production environment | Compose defaults are sufficient for demo |
-
-All variables: [configuration.md](configuration.md).
 
 ---
 
@@ -254,9 +306,14 @@ Full service list and ports: [services.md](services.md).
 
 ```bash
 cd frontend-web
-cp .env.example .env.development   # Windows: Copy-Item .env.example .env.development
 npm install
 npm run dev
+```
+
+For the full Docker stack at http://localhost:5173, `frontend-web/.env.development` is **not required** (nginx + gateway proxy). Only for local `npm run dev` or hybrid proxy:
+
+```bash
+cp .env.example .env.development   # Windows: Copy-Item .env.example .env.development
 ```
 
 http://localhost:5173 — default proxy targets `finance-api:8080` or the gateway env above.

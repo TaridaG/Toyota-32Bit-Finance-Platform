@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import type { IChartApi, ISeriesApi, MouseEventParams, Time, UTCTimestamp } from 'lightweight-charts'
-import { anchorToPixel, projectPendingAnchor } from '../chart/drawing/chartCoordinates'
-import { nearestCandleByTime } from '../chart/utils/nearestCandle'
+import type { IChartApi, ISeriesApi } from 'lightweight-charts'
+import { anchorToPixel, clientToAnchor, projectPendingAnchor } from '../chart/drawing/chartCoordinates'
 import { collectDrawingAnchors } from '../chart/drawing/drawingAnchors'
 import { getPricePaneBounds } from '../chart/drawing/chartPaneLayout'
 import { projectDrawing } from '../chart/drawing/drawingProjection'
@@ -137,18 +136,19 @@ export function DrawingToolsLayer({
           priceSeries,
           paneLayout.width,
           paneLayout.height,
+          candles,
         )
         return projected ? { item, projected } : null
       })
       .filter((entry): entry is { item: DrawingItem; projected: NonNullable<ReturnType<typeof projectDrawing>> } =>
         entry != null,
       )
-  }, [anchoredDrawings, chart, paneLayout, priceSeries])
+  }, [anchoredDrawings, candles, chart, paneLayout, priceSeries])
 
   const pendingPixel = useMemo(() => {
     if (!pendingAnchor || !chart || !priceSeries) return null
-    return projectPendingAnchor(chart, priceSeries, pendingAnchor)
-  }, [chart, pendingAnchor, priceSeries])
+    return projectPendingAnchor(chart, priceSeries, pendingAnchor, candles)
+  }, [candles, chart, pendingAnchor, priceSeries])
 
   const finishDraw = useCallback(() => {
     onDrawComplete?.()
@@ -202,59 +202,21 @@ export function DrawingToolsLayer({
     [finishDraw, onAddDrawing, onSelectDrawing],
   )
 
-  const anchorFromChartClick = useCallback(
-    (param: MouseEventParams<Time>): ChartAnchor | null => {
-      if (!chart || !priceSeries || param.point === undefined) return null
-
-      const mount = mountRef.current
-      const pane = mount ? getPricePaneBounds(priceSeries, mount) : null
-      if (pane && (param.point.y < 0 || param.point.y > pane.height)) return null
-
-      const price = priceSeries.coordinateToPrice(param.point.y)
-      if (price == null || !Number.isFinite(price)) return null
-
-      let time: UTCTimestamp
-      if (typeof param.time === 'number') {
-        time = param.time as UTCTimestamp
-      } else {
-        const raw = chart.timeScale().coordinateToTime(param.point.x)
-        if (raw == null) return null
-        time = Number(raw) as UTCTimestamp
-      }
-
-      if (candles.length === 0) {
-        return { time, price }
-      }
-
-      const candle = nearestCandleByTime(candles, Number(time))
-      if (!candle) {
-        return { time, price }
-      }
-
-      return { time: candle.time, price }
-    },
-    [candles, chart, mountRef, priceSeries],
-  )
-
   useEffect(() => {
     if (!chart || !priceSeries || !isDrawingMode) return
+    const mount = mountRef.current
+    if (!mount) return
 
-    const handler = (param: MouseEventParams<Time>) => {
-      if (drawToolRef.current === 'none') return
-      const anchor = anchorFromChartClick(param)
+    const onPointerDown = (ev: PointerEvent) => {
+      if (drawToolRef.current === 'none' || ev.button !== 0) return
+      const anchor = clientToAnchor(chart, priceSeries, mount, ev.clientX, ev.clientY, candles)
       if (!anchor) return
       applyDrawAnchor(anchor)
     }
 
-    chart.subscribeClick(handler)
-    return () => {
-      try {
-        chart.unsubscribeClick(handler)
-      } catch {
-        /* chart disposed */
-      }
-    }
-  }, [anchorFromChartClick, applyDrawAnchor, chart, isDrawingMode, priceSeries])
+    mount.addEventListener('pointerdown', onPointerDown, { capture: true })
+    return () => mount.removeEventListener('pointerdown', onPointerDown, { capture: true })
+  }, [applyDrawAnchor, candles, chart, isDrawingMode, mountRef, priceSeries])
 
   useEffect(() => {
     const mount = mountRef.current
@@ -361,7 +323,7 @@ export function DrawingToolsLayer({
               )
             })}
             {collectDrawingAnchors(item).map((anchor, index) => {
-              const px = anchorToPixel(chart, priceSeries, anchor)
+              const px = anchorToPixel(chart, priceSeries, anchor, candles)
               if (!px) return null
               const anchorStroke = drawingStrokeColor(item)
               return (

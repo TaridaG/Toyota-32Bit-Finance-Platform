@@ -1,5 +1,6 @@
 package com.company.marketdataservice.history.application;
 import com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules;
+import com.company.marketdataservice.fx.domain.FxQuoteNormalization;
 import com.company.marketdataservice.history.infrastructure.http.dto.HistoryPointDto;
 import com.company.marketdataservice.spot.application.MarketDataReadService;
 import com.company.marketdataservice.spot.infrastructure.http.dto.MarketPriceSummaryDto;
@@ -126,10 +127,26 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
     }
 
     private List<HistoryPointDto> findFxHistoryPoints(String symbol, Instant fromInclusive, Instant toExclusive) {
+        List<HistoryPointDto> raw;
         if (MarketCatalogSegmentRules.isSpotMetalSymbol(symbol)) {
-            return fxRateHistoryRepository.findSpotMetalHistoryPoints(symbol, fromInclusive, toExclusive);
+            raw = fxRateHistoryRepository.findSpotMetalHistoryPoints(symbol, fromInclusive, toExclusive);
+        } else {
+            raw = fxRateHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
         }
-        return fxRateHistoryRepository.findHistoryPoints(symbol, fromInclusive, toExclusive);
+        return normalizeFxHistoryPoints(symbol, raw);
+    }
+
+    private static List<HistoryPointDto> normalizeFxHistoryPoints(String symbol, List<HistoryPointDto> points) {
+        if (points == null || points.isEmpty()) {
+            return List.of();
+        }
+        return points.stream()
+                .map(p -> new HistoryPointDto(p.time(), FxQuoteNormalization.normalizePrice(symbol, p.value())))
+                .toList();
+    }
+
+    private static BigDecimal normalizeFxStoredPrice(String symbol, BigDecimal raw) {
+        return FxQuoteNormalization.normalizePrice(symbol, raw);
     }
 
     /**
@@ -267,7 +284,7 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
             if (latestPoints.isEmpty() || latestPoints.get(0).value() == null) {
                 return null;
             }
-            latestPrice = latestPoints.get(0).value();
+            latestPrice = normalizeFxStoredPrice(symbol, latestPoints.get(0).value());
         } else {
             List<HistoryPointDto> latestPoints =
                     marketPriceHistoryRepository.findLatestHistoryPoint(symbol, PageRequest.of(0, 1));
@@ -391,8 +408,8 @@ public class HistoricalMarketDataReadServiceImpl implements HistoricalMarketData
                 Instant now = clock.instant();
                 return computePeriodChange(symbol, now.minus(1, ChronoUnit.DAYS), now.plus(1, ChronoUnit.DAYS));
             }
-            last = rows.get(0).getPrice();
-            prev = rows.get(1).getPrice();
+            last = normalizeFxStoredPrice(symbol, rows.get(0).getPrice());
+            prev = normalizeFxStoredPrice(symbol, rows.get(1).getPrice());
         } else {
             var rows = marketPriceHistoryRepository.findLastTwoDailyCloses(symbol);
             if (rows == null || rows.size() < 2) {
