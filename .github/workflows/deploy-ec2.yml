@@ -44,11 +44,29 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Fetch main for path comparison
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.services == ''
+        run: git fetch origin main:refs/remotes/origin/main --depth=64
+
+      - name: Resolve path filter refs
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.services == ''
+        id: filter_refs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+            echo "base=main" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "base=$(git rev-parse "${{ github.sha }}^")" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Detect changed Docker targets
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.services == ''
         id: filter
         uses: dorny/paths-filter@v3
         with:
+          base: ${{ steps.filter_refs.outputs.base }}
+          ref: ${{ steps.filter_refs.outputs.ref }}
           filters: |
             shared:
               - 'pom.xml'
