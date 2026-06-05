@@ -143,6 +143,10 @@ public final class MarketOverviewCategoryRules {
     if (pulse != null && pulse.equalsIgnoreCase(mdsSegment)) {
       return true;
     }
+    // Exchange fallback is for registry-outside US/BIST equities only — not ETF, VIOP, bonds, etc.
+    if (!"STOCK".equals(wire)) {
+      return false;
+    }
     if (!StringUtils.hasText(exchangeName)) {
       return false;
     }

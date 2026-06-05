@@ -26,4 +26,21 @@ class MarketOverviewCategoryRulesTest {
   void matchesUiCategory_crmYahoo_onNasdaqTab_matchesViaExchange() {
     assertTrue(MarketOverviewCategoryRules.matchesUiCategory("CRM", "YAHOO", "NASDAQ", "NASDAQ"));
   }
+
+  @Test
+  void matchesUiCategory_vooFinnhub_onNasdaqTab_doesNotMatch() {
+    assertFalse(MarketOverviewCategoryRules.matchesUiCategory("VOO", "FINNHUB", "FINNHUB", "NASDAQ"));
+  }
+
+  @Test
+  void matchesUiCategory_viopBist_onBistTab_doesNotMatch() {
+    assertFalse(
+        MarketOverviewCategoryRules.matchesUiCategory("VIOP_DIBS_NEAR", "YAHOO", "BIST", "BIST"));
+  }
+
+  @Test
+  void matchesUiCategory_trGovUsd_onBistTab_doesNotMatch() {
+    assertFalse(
+        MarketOverviewCategoryRules.matchesUiCategory("TRGOVUSD15Y", "TCMB", "BIST", "BIST"));
+  }
 }
