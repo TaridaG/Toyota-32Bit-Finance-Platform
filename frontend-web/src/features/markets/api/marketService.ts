@@ -88,6 +88,7 @@ type HistoryPoint = {
 
 type PeriodChanges = {
   change1D: number
+  change1W?: number
   change1M: number
   change3M: number
   change6M: number
@@ -97,6 +98,7 @@ type PeriodChanges = {
 type SummaryItem = {
   price?: number | string
   change1D?: number
+  change1W?: number
   change1M?: number
   change3M?: number
   change6M?: number
@@ -663,6 +665,7 @@ export async function fetchMarketPricesSummary(
         out[symbol] = {
           price: toNumber(item.price ?? 0, 0),
           change1D: toNumber(item.change1D ?? 0, 0),
+          change1W: item.change1W != null ? toNumber(item.change1W, 0) : undefined,
           change1M: toNumber(item.change1M ?? 0, 0),
           change3M: toNumber(item.change3M ?? 0, 0),
           change6M: toNumber(item.change6M ?? 0, 0),

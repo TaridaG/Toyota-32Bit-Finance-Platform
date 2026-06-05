@@ -360,12 +360,9 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
       Map<String, Instrument> payload, Set<String> inactiveSymbols, Instant expiresAt) {}
 
   private List<MarketBaseItem> loadMergedBaseItems(String mdsSegment, String normalizedCategory) {
-    List<MarketPriceDto> prices = fetchLatestPrices(mdsSegment);
-    // TCMB crosses + Stooq spot metals are published on MDS /api/market/fx, not always in /prices
-    // snapshot.
-    if ("forex".equalsIgnoreCase(mdsSegment) || "metals".equalsIgnoreCase(mdsSegment)) {
-      prices = mergeDistinctPrices(prices, fetchFxRatesAsPrices());
-    }
+    // Full /prices universe + FX crosses (TCMB mid) for every category tab, including ALL.
+    List<MarketPriceDto> prices =
+        mergeDistinctPrices(fetchLatestPrices(null), fetchFxRatesAsPrices());
     Map<String, Instrument> instrumentsBySymbol = loadActiveInstrumentsBySymbol();
     Set<String> inactiveSymbols = loadInactiveInstrumentSymbols();
     List<MarketBaseItem> mergedWithPrices =
@@ -408,6 +405,8 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
   private MarketBaseItem fallbackBaseFromInstrument(Instrument instrument) {
     String symbol = instrument.getSymbol().trim().toUpperCase(Locale.ROOT);
     String source = inferSourceFromInstrument(instrument);
+    String exchangeName =
+        instrument.getExchange() != null ? instrument.getExchange().name() : null;
     return new MarketBaseItem(
         symbol,
         instrument.getName(),
@@ -420,7 +419,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         null,
         null,
         null,
-        null,
+        exchangeName,
         null,
         null,
         null,
@@ -511,6 +510,10 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
     String wireCategory = MarketOverviewCategoryRules.inferWireCategory(price.symbol());
     String name = instrument == null ? price.symbol() : instrument.getName();
     Long instrumentId = instrument == null ? null : instrument.getId();
+    String exchangeName = price.exchangeName();
+    if (!StringUtils.hasText(exchangeName) && instrument != null && instrument.getExchange() != null) {
+      exchangeName = instrument.getExchange().name();
+    }
     return new MarketBaseItem(
         price.symbol(),
         name,
@@ -523,7 +526,7 @@ public class MarketOverviewServiceImpl implements MarketOverviewService {
         price.dayOpen(),
         price.dayHigh(),
         price.dayLow(),
-        price.exchangeName(),
+        exchangeName,
         price.underlyingSymbol(),
         price.contractExpiry(),
         price.linkedSpotSymbol(),
