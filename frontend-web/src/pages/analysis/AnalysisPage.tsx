@@ -36,6 +36,7 @@ import { isAuthenticated } from '../../shared/auth/session'
 import { useCandles } from '../../features/analysis/hooks/useCandles'
 import { useIndicators } from '../../features/analysis/hooks/useIndicators'
 import { useAnalysisInstrumentCatalog } from './hooks/useAnalysisInstrumentCatalog'
+import { useInstrumentPeriodSummary } from './hooks/useInstrumentPeriodSummary'
 import { fetchMarketOverviewItemBySymbol } from '../../features/markets/api/marketService'
 import { fetchNewsForChart, type NewsApiItem } from '../../features/news/api/newsService'
 import { fetchFavoriteNewsEnriched } from '../../features/news/api/newsFavoritesApi'
@@ -66,7 +67,7 @@ export function AnalysisPage() {
   const [chartSegment, setChartSegment] = useState<MarketCategory>('bist')
   const [pickerCategory, setPickerCategory] = useState<MarketCategory>('bist')
   const [pickerSelectedId, setPickerSelectedId] = useState<string | null>(null)
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h')
+  const [timeRange, setTimeRange] = useState<TimeRange>('90d')
   const [showNewsOnChart, setShowNewsOnChart] = useState(false)
   const [chartNewsFavoritesOnly, setChartNewsFavoritesOnly] = useState(false)
   const [chartNewsFeed, setChartNewsFeed] = useState<NewsApiItem[]>([])
@@ -250,6 +251,8 @@ export function AnalysisPage() {
     timeRange,
     { wireCategory: selectedAsset?.wireCategory ?? null },
   )
+
+  const { summary: periodSummary } = useInstrumentPeriodSummary(selectedAsset?.symbol)
 
   const chartDataReady = !candlesLoading && selectedWindowSeries.length > 0
 
@@ -511,6 +514,17 @@ export function AnalysisPage() {
   const stats = useMemo(() => {
     const current = selectedWindowSeries[selectedWindowSeries.length - 1]
     const overview = selectedAsset ? marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null : null
+
+    if (periodSummary) {
+      return {
+        currentPrice: periodSummary.price ?? overview?.price ?? current?.close ?? 0,
+        daily: periodSummary.change1D ?? overview?.change1D ?? 0,
+        weekly: periodSummary.weekly,
+        monthly: periodSummary.monthly,
+        yearly: periodSummary.yearly,
+      }
+    }
+
     const daily = getPerformancePercent(sliceLast(selectedWindowSeries, 24))
     const weekly = isFundAsset
       ? (trailingCalendarReturnPercent(selectedWindowSeries, 7) ?? 0)
@@ -528,12 +542,21 @@ export function AnalysisPage() {
       monthly,
       yearly,
     }
-  }, [isFundAsset, marketBySymbol, selectedAsset, selectedWindowSeries])
+  }, [isFundAsset, marketBySymbol, periodSummary, selectedAsset, selectedWindowSeries])
 
   const horizonReturns = useMemo(() => {
+    if (periodSummary) {
+      return {
+        weekly: Number.isFinite(periodSummary.weekly) ? periodSummary.weekly : null,
+        monthly: Number.isFinite(periodSummary.monthly) ? periodSummary.monthly : null,
+        threeMonth: Number.isFinite(periodSummary.threeMonth) ? periodSummary.threeMonth : null,
+        sixMonth: Number.isFinite(periodSummary.sixMonth) ? periodSummary.sixMonth : null,
+        yearly: Number.isFinite(periodSummary.yearly) ? periodSummary.yearly : null,
+      }
+    }
     const ov = selectedAsset ? (marketBySymbol.get(selectedAsset.symbol.toUpperCase()) ?? null) : null
     return computeHorizonReturns(selectedWindowSeries, ov, isFundAsset)
-  }, [isFundAsset, marketBySymbol, selectedAsset, selectedWindowSeries])
+  }, [isFundAsset, marketBySymbol, periodSummary, selectedAsset, selectedWindowSeries])
 
   const relatedNews = useMemo(() => {
     if (!showNewsOnChart || !selectedAsset || selectedWindowSeries.length === 0) {

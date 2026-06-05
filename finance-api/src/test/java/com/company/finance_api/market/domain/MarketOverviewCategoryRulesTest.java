@@ -21,4 +21,9 @@ class MarketOverviewCategoryRulesTest {
   void matchesUiCategory_akbnkYahoo_onBistTab_matches() {
     assertTrue(MarketOverviewCategoryRules.matchesUiCategory("AKBNK", "YAHOO", "BIST", "BIST"));
   }
+
+  @Test
+  void matchesUiCategory_crmYahoo_onNasdaqTab_matchesViaExchange() {
+    assertTrue(MarketOverviewCategoryRules.matchesUiCategory("CRM", "YAHOO", "NASDAQ", "NASDAQ"));
+  }
 }
