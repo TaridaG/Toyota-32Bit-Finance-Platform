@@ -5,6 +5,6 @@ import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioTradeF
 /** PortfolioTradeFlowService iş mantığını uygular (portfolio trade flow service). */
 public interface PortfolioTradeFlowService {
 
-  /** getMyTradeFlow sözleşmesi. */
+  /** Hedef para biriminde alım/satım akışı (trade flow) zaman serisini döner. */
   PortfolioTradeFlowResponse getMyTradeFlow(String targetCurrency, Long portfolioId);
 }

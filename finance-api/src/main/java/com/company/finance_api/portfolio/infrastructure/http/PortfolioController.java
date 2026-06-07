@@ -14,8 +14,10 @@ import com.company.finance_api.portfolio.application.PortfolioSnapshotService;
 import com.company.finance_api.portfolio.application.PortfolioTradeFlowService;
 import com.company.finance_api.portfolio.application.PortfolioValuationService;
 import com.company.finance_api.shared.web.ApiResponse;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 /** Portfolio özet, değerleme ve snapshot endpoint'lerini sunan controller. */
@@ -49,6 +51,16 @@ public class PortfolioController {
       @RequestHeader(value = "X-Currency", required = false) String targetCurrency,
       @RequestParam(value = "portfolioId", required = false) Long portfolioId) {
     return ApiResponse.success(portfolioOverviewService.getMyOverview(targetCurrency, portfolioId));
+  }
+
+  /** Belirli bir tarihteki satılabilir pozisyonları döner (satış günü alımları hariç). */
+  @GetMapping("/holdings-as-of")
+  public ApiResponse<PortfolioOverviewResponse> holdingsAsOf(
+      @RequestHeader(value = "X-Currency", required = false) String targetCurrency,
+      @RequestParam(value = "portfolioId") Long portfolioId,
+      @RequestParam(value = "asOf") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
+    return ApiResponse.success(
+        portfolioOverviewService.getHoldingsAsOf(targetCurrency, portfolioId, asOf));
   }
 
   /** Portfolio değerleme detaylarını döner. */

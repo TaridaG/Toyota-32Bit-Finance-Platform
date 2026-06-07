@@ -20,15 +20,19 @@ import {
   buyTrade,
   createPortfolio,
   deletePortfolio,
+  deleteTransaction,
   getInstrumentsCatalogForTradePicker,
   getMyPortfolioOverview,
+  getPortfolioHoldingsAsOf,
   getPortfolioPerformanceSeries,
   getPortfolioSnapshots,
   getPortfolios,
+  getSalesAnalysisPage,
   getTransactionHistory,
   getTransactionHistoryPage,
   patchPortfolioAmountsHidden,
   previewTrade,
+  sellTrade,
 } from '../../features/portfolio/api/portfolioApi'
 import type {
   AcquisitionFxRatesSnapshot,
@@ -44,6 +48,8 @@ import type {
   TradePreview,
   TransactionHistoryFilters,
   TransactionHistoryItem,
+  SalesAnalysisFilters,
+  SalesAnalysisItem,
 } from '../../shared/types/portfolio'
 import type { MarketOverviewPageResponse } from '../../shared/types/market'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
@@ -513,7 +519,7 @@ function buildCategoryDonutRows(overview: PortfolioOverview | null, t: (key: str
   })
 }
 
-const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation'] as const
+const sidebarMainKeys = ['dashboard', 'markets', 'portfolio', 'allocation', 'salesAnalysis'] as const
 const sidebarSecondaryKeys = ['news', 'analysis', 'targets', 'watchlist', 'settings'] as const
 const PORTFOLIO_SECTIONS = new Set<string>([...sidebarMainKeys, ...sidebarSecondaryKeys])
 
@@ -569,6 +575,11 @@ type MarketOption = {
   assetType: MarketOptionAssetType
 }
 
+type SellHoldingOption = MarketOption & {
+  holdingQty: number
+  avgBuyPrice: number
+}
+
 const TRADE_PAYMENT_CURRENCIES: readonly TradePaymentCurrency[] = ['TRY', 'USD', 'EUR', 'GBP', 'JPY', 'AED']
 
 function normalizeToTradePaymentCurrency(raw: string | null | undefined): TradePaymentCurrency | null {
@@ -580,8 +591,8 @@ function normalizeToTradePaymentCurrency(raw: string | null | undefined): TradeP
   return null
 }
 
-function tradePaymentCurrencyLabel(c: TradePaymentCurrency): string {
-  return c === 'TRY' ? 'TRY (TL)' : c
+function tradePaymentCurrencyLabel(c: TradePaymentCurrency, tryLabel: string): string {
+  return c === 'TRY' ? tryLabel : c
 }
 
 function currencySymbolPrefix(iso: TradePaymentCurrency): string {
@@ -800,6 +811,15 @@ function SidebarItemIcon({ item }: { item: string }) {
             strokeLinejoin="round"
             opacity="0.55"
           />
+        </svg>
+      )
+    case 'salesAnalysis':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <path d="M4 19h16" />
+          <path d="M7 16V9" />
+          <path d="M12 16V5" />
+          <path d="M17 16v-4" />
         </svg>
       )
     case 'news':
@@ -1071,6 +1091,29 @@ export function MyPortfolioPage() {
   const [depositPastDateError, setDepositPastDateError] = useState<string | null>(null)
   const [lastEditedField, setLastEditedField] = useState<'lots' | 'amount'>('lots')
   const [isPreviewStep, setIsPreviewStep] = useState(false)
+  const [tradeSide, setTradeSide] = useState<'BUY' | 'SELL'>('BUY')
+  const isSellFlow = tradeSide === 'SELL'
+  const [sellHoldingsOverview, setSellHoldingsOverview] = useState<PortfolioOverview | null>(null)
+  const [sellHoldingsLoading, setSellHoldingsLoading] = useState(false)
+  const [deleteTxConfirm, setDeleteTxConfirm] = useState<TransactionHistoryItem | null>(null)
+  const [deleteTxSubmitting, setDeleteTxSubmitting] = useState(false)
+  const [deleteTxError, setDeleteTxError] = useState<string | null>(null)
+  const [salesAnalysisLoading, setSalesAnalysisLoading] = useState(false)
+  const [salesAnalysisError, setSalesAnalysisError] = useState<string | null>(null)
+  const [salesAnalysisRows, setSalesAnalysisRows] = useState<SalesAnalysisItem[]>([])
+  const [salesAnalysisPage, setSalesAnalysisPage] = useState(0)
+  const [salesAnalysisTotalPages, setSalesAnalysisTotalPages] = useState(0)
+  const [salesAnalysisTotalElements, setSalesAnalysisTotalElements] = useState(0)
+  const [salesAnalysisFilters, setSalesAnalysisFilters] = useState<SalesAnalysisFilters>({
+    symbol: '',
+    fromDate: '',
+    toDate: '',
+  })
+  const [appliedSalesAnalysisFilters, setAppliedSalesAnalysisFilters] = useState<SalesAnalysisFilters>({
+    symbol: '',
+    fromDate: '',
+    toDate: '',
+  })
   const [instrumentPerformance, setInstrumentPerformance] = useState<InstrumentPerformance>({
     change1D: null,
     change1M: null,
@@ -1512,11 +1555,56 @@ export function MyPortfolioPage() {
     }
   }, [activeSection, valuationCurrency, t])
 
-  const selectedInstrument = useMemo(
-    () => marketOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null,
-    [marketOptions, selectedInstrumentId],
-  )
-  const isTlDepositInstrument = selectedInstrument?.assetType === 'DEPOSIT'
+  const sellHoldingOptions = useMemo((): SellHoldingOption[] => {
+    if (!sellHoldingsOverview?.items?.length) return []
+    return sellHoldingsOverview.items
+      .filter((item) => item.quantity > 0)
+      .map((item) => {
+        const fromCatalog = marketOptions.find((m) => m.instrumentId === item.instrumentId)
+        if (fromCatalog) {
+          return {
+            ...fromCatalog,
+            holdingQty: item.quantity,
+            avgBuyPrice: item.avgBuyPrice,
+          }
+        }
+        return {
+          instrumentId: item.instrumentId,
+          symbol: item.symbol,
+          name: item.name,
+          nativeQuote: null,
+          assetType: normalizeMarketOptionAssetType(item.type, item.symbol),
+          holdingQty: item.quantity,
+          avgBuyPrice: item.avgBuyPrice,
+        }
+      })
+  }, [sellHoldingsOverview, marketOptions])
+
+  const selectedInstrument = useMemo((): MarketOption | null => {
+    if (selectedInstrumentId == null) return null
+    if (isSellFlow) {
+      return sellHoldingOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null
+    }
+    return marketOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null
+  }, [isSellFlow, sellHoldingOptions, marketOptions, selectedInstrumentId])
+
+  const selectedSellHolding = useMemo((): SellHoldingOption | null => {
+    if (!isSellFlow || selectedInstrumentId == null) return null
+    return sellHoldingOptions.find((item) => item.instrumentId === selectedInstrumentId) ?? null
+  }, [isSellFlow, sellHoldingOptions, selectedInstrumentId])
+
+  const sellOverviewItem = useMemo(() => {
+    if (!isSellFlow || selectedInstrumentId == null) return null
+    return sellHoldingsOverview?.items.find((item) => item.instrumentId === selectedInstrumentId) ?? null
+  }, [isSellFlow, selectedInstrumentId, sellHoldingsOverview])
+
+  const isTlDepositInstrument = useMemo(() => {
+    if (selectedInstrumentId == null) return false
+    const fromMarket = marketOptions.find((item) => item.instrumentId === selectedInstrumentId)
+    if (fromMarket) return fromMarket.assetType === 'DEPOSIT'
+    const fromHold = sellHoldingsOverview?.items.find((item) => item.instrumentId === selectedInstrumentId)
+    return fromHold?.type === 'DEPOSIT'
+  }, [marketOptions, selectedInstrumentId, sellHoldingsOverview])
   const tlDepositMaturityCode = useMemo(
     () => getTlDepositMaturityCodeFromInstrumentSymbol(selectedInstrument?.symbol),
     [selectedInstrument?.symbol],
@@ -1658,6 +1746,28 @@ export function MyPortfolioPage() {
     [historySize, historyPagedEndpointAvailable],
   )
 
+  const loadSalesAnalysisPage = useCallback(
+    async (page: number, filters: SalesAnalysisFilters, portfolioId: number | null) => {
+      setSalesAnalysisLoading(true)
+      setSalesAnalysisError(null)
+      try {
+        const response = await getSalesAnalysisPage(page, historySize, filters, portfolioId)
+        setSalesAnalysisRows(response.content)
+        setSalesAnalysisPage(response.page)
+        setSalesAnalysisTotalPages(response.totalPages)
+        setSalesAnalysisTotalElements(response.totalElements)
+      } catch (error) {
+        setSalesAnalysisRows([])
+        setSalesAnalysisTotalPages(0)
+        setSalesAnalysisTotalElements(0)
+        setSalesAnalysisError(extractApiErrorMessage(error) || t('salesAnalysis.loadError'))
+      } finally {
+        setSalesAnalysisLoading(false)
+      }
+    },
+    [historySize, t],
+  )
+
   useEffect(() => {
     if (activeSection !== 'portfolio') {
       return
@@ -1671,6 +1781,26 @@ export function MyPortfolioPage() {
     const portfolioId = selectedPortfolioId === ALL_PORTFOLIOS_ID ? null : selectedPortfolioId
     void loadHistoryPage(historyPage, appliedHistoryFilters, portfolioId)
   }, [activeSection, historyPage, appliedHistoryFilters, loadHistoryPage, selectedPortfolioId])
+
+  useEffect(() => {
+    if (activeSection !== 'salesAnalysis') {
+      return
+    }
+    if (selectedPortfolioId == null) {
+      setSalesAnalysisRows([])
+      setSalesAnalysisTotalElements(0)
+      setSalesAnalysisTotalPages(0)
+      return
+    }
+    const portfolioId = selectedPortfolioId === ALL_PORTFOLIOS_ID ? null : selectedPortfolioId
+    void loadSalesAnalysisPage(salesAnalysisPage, appliedSalesAnalysisFilters, portfolioId)
+  }, [
+    activeSection,
+    salesAnalysisPage,
+    appliedSalesAnalysisFilters,
+    loadSalesAnalysisPage,
+    selectedPortfolioId,
+  ])
 
   useEffect(() => {
     if (activeSection !== 'dashboard' || selectedPortfolioId == null) {
@@ -1727,6 +1857,53 @@ export function MyPortfolioPage() {
     }
     void getMyPortfolioOverview(overviewApiPortfolioId, valuationCurrency).then((data) => setOverview(data)).catch(() => setOverview(null))
   }, [activeSection, overviewApiPortfolioId, valuationCurrency, selectedPortfolioId])
+
+  useEffect(() => {
+    if (activeSection !== 'markets' || !isSellFlow || effectiveTradePortfolioId == null) {
+      setSellHoldingsOverview(null)
+      setSellHoldingsLoading(false)
+      return
+    }
+    if (purchaseMode === 'PAST') {
+      const normalizedAsOf = toUtcStartOfDay(acquiredAt)
+      if (!normalizedAsOf) {
+        setSellHoldingsOverview(null)
+        setSellHoldingsLoading(false)
+        return
+      }
+      const asOfDate = normalizedAsOf.slice(0, 10)
+      let cancelled = false
+      setSellHoldingsLoading(true)
+      void getPortfolioHoldingsAsOf(effectiveTradePortfolioId, asOfDate, valuationCurrency)
+        .then((data) => {
+          if (!cancelled) setSellHoldingsOverview(data)
+        })
+        .catch(() => {
+          if (!cancelled) setSellHoldingsOverview(null)
+        })
+        .finally(() => {
+          if (!cancelled) setSellHoldingsLoading(false)
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+    let cancelled = false
+    setSellHoldingsLoading(true)
+    void getMyPortfolioOverview(effectiveTradePortfolioId, valuationCurrency)
+      .then((data) => {
+        if (!cancelled) setSellHoldingsOverview(data)
+      })
+      .catch(() => {
+        if (!cancelled) setSellHoldingsOverview(null)
+      })
+      .finally(() => {
+        if (!cancelled) setSellHoldingsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeSection, isSellFlow, effectiveTradePortfolioId, valuationCurrency, purchaseMode, acquiredAt])
 
   useEffect(() => {
     if (selectedPortfolioId == null) {
@@ -1995,11 +2172,12 @@ export function MyPortfolioPage() {
 
   const availableAssetTypes = useMemo(
     () => {
+      const source = isSellFlow ? sellHoldingOptions : marketOptions
       const seen = new Set<MarketOptionAssetType>()
-      marketOptions.forEach((item) => seen.add(item.assetType))
+      source.forEach((item) => seen.add(item.assetType))
       return MARKET_OPTION_ASSET_TYPE_ORDER.filter((type) => seen.has(type))
     },
-    [marketOptions],
+    [isSellFlow, sellHoldingOptions, marketOptions],
   )
 
   const assetTypeFilterOptions = useMemo(
@@ -2019,15 +2197,33 @@ export function MyPortfolioPage() {
     }
   }, [availableAssetTypes, selectedAssetType])
 
+  useEffect(() => {
+    if (activeSection !== 'markets' || !isSellFlow) return
+    setSelectedAssetType('ALL')
+  }, [activeSection, isSellFlow])
+
   const filteredMarketOptions = useMemo(() => {
+    const base = isSellFlow ? sellHoldingOptions : marketOptions
     const typeFiltered =
       selectedAssetType === 'ALL'
-        ? marketOptions
-        : marketOptions.filter((item) => item.assetType === selectedAssetType)
+        ? base
+        : base.filter((item) => item.assetType === selectedAssetType)
     const q = instrumentQuery.trim().toLowerCase()
     if (!q) return typeFiltered
     return typeFiltered.filter((item) => `${item.symbol} ${item.name}`.toLowerCase().includes(q))
-  }, [instrumentQuery, marketOptions, selectedAssetType])
+  }, [instrumentQuery, isSellFlow, marketOptions, sellHoldingOptions, selectedAssetType])
+
+  useEffect(() => {
+    if (!isSellFlow || activeSection !== 'markets' || selectedInstrumentId == null) return
+    const holding = sellHoldingOptions.find((o) => o.instrumentId === selectedInstrumentId)
+    if (!holding) return
+    setLots((prev) => {
+      const n = Number(prev)
+      if (!Number.isFinite(n) || n <= 0) return '1'
+      if (n > holding.holdingQty) return String(holding.holdingQty)
+      return prev
+    })
+  }, [isSellFlow, activeSection, selectedInstrumentId, sellHoldingOptions])
 
   useEffect(() => {
     if (activeSection !== 'markets') return
@@ -2043,6 +2239,23 @@ export function MyPortfolioPage() {
   const parsedLots = Number(lots)
   const previewTotal = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 0
   const previewLots = Number.isFinite(parsedLots) && parsedLots > 0 ? parsedLots : 0
+  const sellProceedsPreview =
+    isSellFlow && unitPriceUsed != null && previewLots > 0 ? unitPriceUsed * previewLots : null
+  const sellCostBasisPreview =
+    isSellFlow && sellOverviewItem && previewLots > 0 ? sellOverviewItem.avgBuyPrice * previewLots : null
+  const sellRealizedPnlPreview =
+    sellProceedsPreview != null && sellCostBasisPreview != null
+      ? sellProceedsPreview - sellCostBasisPreview
+      : null
+  const sellRealizedPnlPct =
+    sellCostBasisPreview != null && sellCostBasisPreview > 0 && sellRealizedPnlPreview != null
+      ? (sellRealizedPnlPreview / sellCostBasisPreview) * 100
+      : null
+  const sellRemainingQty =
+    isSellFlow && sellOverviewItem != null
+      ? Math.max(0, sellOverviewItem.quantity - previewLots)
+      : null
+  const selectedSellHoldingQty = selectedSellHolding?.holdingQty ?? sellOverviewItem?.quantity ?? 0
   const depositPrincipalTry = useMemo(() => {
     if (!isTlDepositInstrument || unitPriceUsed == null || previewLots <= 0) return null
     return unitPriceUsed * previewLots
@@ -2070,13 +2283,23 @@ export function MyPortfolioPage() {
     },
     [formatDepositInstrumentLabel],
   )
+  const formatSellHoldingLabel = useCallback(
+    (item: SellHoldingOption) =>
+      `${item.symbol} — ${t('marketsAdd.lotQuantity', { qty: formatHoldingQuantity(item.holdingQty, i18n.language) })}`,
+    [i18n.language, t],
+  )
   const formatInstrumentSymbolLabel = useCallback(
     (symbol: string) => formatDepositMaturityLabel(symbol, null, t),
     [t],
   )
   const selectedInstrumentDisplayLabel = useMemo(
-    () => (selectedInstrument ? formatMarketOptionLabel(selectedInstrument) : '—'),
-    [formatMarketOptionLabel, selectedInstrument],
+    () =>
+      selectedInstrument
+        ? isSellFlow && selectedSellHolding
+          ? formatSellHoldingLabel(selectedSellHolding)
+          : formatMarketOptionLabel(selectedInstrument)
+        : '—',
+    [formatMarketOptionLabel, formatSellHoldingLabel, isSellFlow, selectedInstrument, selectedSellHolding],
   )
   const projectedDistribution = useMemo(() => {
     const baseItems = overview?.items ?? []
@@ -2104,7 +2327,35 @@ export function MyPortfolioPage() {
       .slice(0, 5)
   }, [overview, selectedInstrument, previewTotal, previewLots, tradePaymentCurrency, unitPriceUsed])
 
+  const openSellFromAllocation = useCallback(
+    (symbol: string) => {
+      if (selectedPortfolioId == null || selectedPortfolioId <= 0) return
+      const item = overview?.items.find((row) => row.symbol === symbol)
+      if (!item || item.quantity <= 0) return
+      setTradeSide('SELL')
+      setPurchaseMode('NOW')
+      setSelectedInstrumentId(item.instrumentId)
+      setLots(String(item.quantity))
+      setInputMode('LOTS')
+      setIsPreviewStep(false)
+      setTradeError(null)
+      setTradePreviewError(null)
+      setTradeSuccess(null)
+      setLastTradePreview(null)
+      selectPortfolioSection('markets')
+    },
+    [overview, selectedPortfolioId, selectPortfolioSection],
+  )
+
   const openTradePreview = useCallback(() => {
+    if (isSellFlow && previewLots > selectedSellHoldingQty) {
+      const message = t('marketsAdd.errors.exceedsHoldings', {
+        max: formatHoldingQuantity(selectedSellHoldingQty, i18n.language),
+      })
+      setTradePreviewError(message)
+      setTradeError(message)
+      return
+    }
     if (isTlDepositInstrument && purchaseMode === 'PAST' && !toUtcStartOfDay(acquiredAt)) {
       setDepositPastDateError(t('marketsAdd.depositPastDateRequired'))
       setTradeError(null)
@@ -2112,17 +2363,62 @@ export function MyPortfolioPage() {
       return
     }
     setDepositPastDateError(null)
+    setTradePreviewError(null)
+    setTradeError(null)
     setIsPreviewStep(true)
-  }, [isTlDepositInstrument, purchaseMode, acquiredAt, t])
+  }, [
+    isSellFlow,
+    previewLots,
+    selectedSellHoldingQty,
+    i18n.language,
+    isTlDepositInstrument,
+    purchaseMode,
+    acquiredAt,
+    t,
+  ])
+
+  const handleConfirmDeleteTransaction = async () => {
+    const target = deleteTxConfirm
+    if (!target) return
+    setDeleteTxSubmitting(true)
+    setDeleteTxError(null)
+    try {
+      await deleteTransaction(target.transactionId)
+      setDeleteTxConfirm(null)
+      const portfolioId = selectedPortfolioId === ALL_PORTFOLIOS_ID ? null : selectedPortfolioId
+      await loadHistoryPage(historyPage, appliedHistoryFilters, portfolioId)
+      const updatedOverview = await getMyPortfolioOverview(overviewApiPortfolioId, valuationCurrency)
+      setOverview(updatedOverview)
+      setPerformanceSeries(await getPortfolioPerformanceSeries(overviewApiPortfolioId, valuationCurrency, 'all'))
+      setPerformanceSeriesHydrated(true)
+      setTradeFlow(await loadTradeFlowForPortfolio(overviewApiPortfolioId, valuationCurrency))
+      if (activeSection === 'salesAnalysis') {
+        await loadSalesAnalysisPage(salesAnalysisPage, appliedSalesAnalysisFilters, portfolioId)
+      }
+    } catch (error) {
+      setDeleteTxError(extractApiErrorMessage(error) || t('history.deleteFailed'))
+    } finally {
+      setDeleteTxSubmitting(false)
+    }
+  }
 
   const submitTrade = async () => {
     if (selectedInstrumentId == null || effectiveTradePortfolioId == null || effectiveTradePortfolioId <= 0) {
       return
     }
+    if (isSellFlow && previewLots > selectedSellHoldingQty) {
+      const message = t('marketsAdd.errors.exceedsHoldings', {
+        max: formatHoldingQuantity(selectedSellHoldingQty, i18n.language),
+      })
+      setTradeError(message)
+      setTradePreviewError(message)
+      return
+    }
     setTradeError(null)
     setTradePreviewError(null)
     setTradeSuccess(null)
-    const normalizedAcquiredAt = purchaseMode === 'PAST' ? toUtcStartOfDay(acquiredAt) : undefined
+    const effectivePurchaseMode: PurchaseMode = purchaseMode
+    const normalizedAcquiredAt = effectivePurchaseMode === 'PAST' ? toUtcStartOfDay(acquiredAt) : undefined
     const tradePid = effectiveTradePortfolioId
     const pastUnitPayload =
       purchaseMode === 'PAST' && manualUnitPriceRequired && unitPrice.trim() !== ''
@@ -2136,7 +2432,7 @@ export function MyPortfolioPage() {
             inputMode,
             lots: Number(lots),
             inputCurrency: tradePaymentCurrency,
-            purchaseMode,
+            purchaseMode: effectivePurchaseMode,
             acquiredAt: normalizedAcquiredAt,
             unitPrice: pastUnitPayload,
           }
@@ -2146,11 +2442,11 @@ export function MyPortfolioPage() {
             inputMode,
             amount: Number(amount),
             inputCurrency: tradePaymentCurrency,
-            purchaseMode,
+            purchaseMode: effectivePurchaseMode,
             acquiredAt: normalizedAcquiredAt,
             unitPrice: pastUnitPayload,
           }
-    if (purchaseMode === 'PAST' && !normalizedAcquiredAt) {
+    if (effectivePurchaseMode === 'PAST' && !normalizedAcquiredAt) {
       const message = isTlDepositInstrument
         ? t('marketsAdd.depositPastDateRequired')
         : t('marketsAdd.errors.pastDateRequired')
@@ -2160,14 +2456,15 @@ export function MyPortfolioPage() {
       }
       return
     }
-    if (purchaseMode === 'PAST' && manualUnitPriceRequired && !unitPrice) {
+    if (effectivePurchaseMode === 'PAST' && manualUnitPriceRequired && !unitPrice) {
       setTradeError(t('marketsAdd.errors.pastDateAndPriceRequired'))
       return
     }
     setTradeSaving(true)
     try {
-      await buyTrade(payload)
-      setTradeSuccess(t('marketsAdd.messages.saved'))
+      await (isSellFlow ? sellTrade : buyTrade)(payload)
+      setTradeSuccess(isSellFlow ? t('marketsAdd.messages.sold') : t('marketsAdd.messages.saved'))
+      setTradeSide('BUY')
       setLastTradePreview(null)
       setIsPreviewStep(false)
       await loadHistoryPage(0, appliedHistoryFilters, isAggregatePortfolioView ? null : selectedPortfolioId)
@@ -2422,8 +2719,40 @@ export function MyPortfolioPage() {
 
         <div className="my-portfolio-content">
           {activeSection === 'markets' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
-              <h2 className="my-portfolio-trade-title">{t('marketsAdd.title')}</h2>
+            <article className="card my-portfolio-trade-card">
+              <div className="my-portfolio-trade-title-row">
+                <div
+                  className="my-portfolio-trade-toggle-group my-portfolio-trade-side-toggle"
+                  role="tablist"
+                  aria-label={t('sidebar.items.markets')}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={!isSellFlow}
+                    className={!isSellFlow ? 'is-active' : ''}
+                    onClick={() => {
+                      setTradeSide('BUY')
+                      setIsPreviewStep(false)
+                    }}
+                  >
+                    {t('marketsAdd.tradeSide.buy')}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isSellFlow}
+                    className={isSellFlow ? 'is-active' : ''}
+                    onClick={() => {
+                      setTradeSide('SELL')
+                      setPurchaseMode('NOW')
+                      setIsPreviewStep(false)
+                    }}
+                  >
+                    {t('marketsAdd.tradeSide.sell')}
+                  </button>
+                </div>
+              </div>
               {isAggregatePortfolioView && portfolios.length > 0 ? (
                 <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
                   <span>{t('sidebar.tradePickPortfolio')}</span>
@@ -2442,9 +2771,26 @@ export function MyPortfolioPage() {
               ) : null}
 
               <div className={`my-portfolio-trade-shell${isPreviewStep ? ' is-preview' : ''}`}>
+                {isSellFlow && effectiveTradePortfolioId == null ? (
+                  <p className="my-portfolio-trade-note my-portfolio-sell-empty-state" role="status">
+                    {t('marketsAdd.sellPickPortfolio')}
+                  </p>
+                ) : isSellFlow &&
+                  !sellHoldingsLoading &&
+                  sellHoldingOptions.length === 0 &&
+                  !(purchaseMode === 'PAST' && !toUtcStartOfDay(acquiredAt)) ? (
+                  <p className="my-portfolio-trade-note my-portfolio-sell-empty-state" role="status">
+                    {purchaseMode === 'PAST'
+                      ? t('marketsAdd.errors.noHoldingsOnDate')
+                      : t('marketsAdd.sellHoldingsEmpty')}
+                  </p>
+                ) : (
+                <>
                 <div className="my-portfolio-trade-form-panel">
                   <ol className="my-portfolio-trade-steps">
-                    <li className={!isPreviewStep ? 'is-active' : ''}>{t('marketsAdd.steps.details')}</li>
+                    <li className={!isPreviewStep ? 'is-active' : ''}>
+                      {isSellFlow ? t('marketsAdd.steps.detailsSell') : t('marketsAdd.steps.details')}
+                    </li>
                     <li className={isPreviewStep ? 'is-active' : ''}>{t('marketsAdd.steps.preview')}</li>
                   </ol>
 
@@ -2467,7 +2813,12 @@ export function MyPortfolioPage() {
                       <select
                         value={selectedAssetType}
                         onChange={(event) => setSelectedAssetType(event.target.value as MarketOptionAssetTypeFilter)}
-                        disabled={isPreviewStep || marketLoading || availableAssetTypes.length === 0}
+                        disabled={
+                          isPreviewStep ||
+                          marketLoading ||
+                          (isSellFlow && sellHoldingsLoading) ||
+                          availableAssetTypes.length === 0
+                        }
                       >
                         {assetTypeFilterOptions.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -2485,11 +2836,18 @@ export function MyPortfolioPage() {
                           const v = event.target.value
                           setSelectedInstrumentId(v === '' ? null : Number(v))
                         }}
-                        disabled={isPreviewStep || marketLoading || filteredMarketOptions.length === 0}
+                        disabled={
+                          isPreviewStep ||
+                          marketLoading ||
+                          (isSellFlow ? sellHoldingsLoading : false) ||
+                          filteredMarketOptions.length === 0
+                        }
                       >
                         {filteredMarketOptions.map((item) => (
                           <option key={item.instrumentId} value={String(item.instrumentId)}>
-                            {formatMarketOptionLabel(item)}
+                            {isSellFlow
+                              ? formatSellHoldingLabel(item as SellHoldingOption)
+                              : formatMarketOptionLabel(item)}
                           </option>
                         ))}
                       </select>
@@ -2509,10 +2867,15 @@ export function MyPortfolioPage() {
                         <button
                           type="button"
                           className={purchaseMode === 'NOW' ? 'is-active' : ''}
-                          onClick={() => setPurchaseMode('NOW')}
+                          onClick={() => {
+                            setPurchaseMode('NOW')
+                            setPastDateRollNotice(null)
+                          }}
                           disabled={isPreviewStep}
                         >
-                          {t('marketsAdd.purchaseMode.now')}
+                          {isSellFlow
+                            ? t('marketsAdd.purchaseMode.sellNow')
+                            : t('marketsAdd.purchaseMode.now')}
                         </button>
                         <button
                           type="button"
@@ -2523,12 +2886,14 @@ export function MyPortfolioPage() {
                           }}
                           disabled={isPreviewStep}
                         >
-                          {t('marketsAdd.purchaseMode.past')}
+                          {isSellFlow
+                            ? t('marketsAdd.purchaseMode.sellPast')
+                            : t('marketsAdd.purchaseMode.past')}
                         </button>
                       </div>
                     </div>
 
-                    {!isTlDepositInstrument ? (
+                    {!isTlDepositInstrument && !isSellFlow ? (
                     <div>
                       <div className="my-portfolio-trade-toggle-group">
                         <button
@@ -2568,17 +2933,32 @@ export function MyPortfolioPage() {
                         readOnly={isPreviewStep}
                         inputMode="decimal"
                       />
+                      {isSellFlow && selectedSellHoldingQty > 0 ? (
+                        <small className="my-portfolio-sell-holding-hint" role="status">
+                          {t('marketsAdd.sellAvailableQty', {
+                            qty: formatHoldingQuantity(selectedSellHoldingQty, i18n.language),
+                          })}
+                          {' · '}
+                          <button
+                            type="button"
+                            className="my-portfolio-sell-all-link"
+                            onClick={() => {
+                              setLastEditedField('lots')
+                              setInputMode('LOTS')
+                              setLots(String(selectedSellHoldingQty))
+                            }}
+                            disabled={isPreviewStep}
+                          >
+                            {t('marketsAdd.sellAll')}
+                          </button>
+                        </small>
+                      ) : null}
                     </label>
                     ) : null}
 
-                    {isTlDepositInstrument ? (
+                    {!isTlDepositInstrument ? (
                       <label className="my-portfolio-trade-field">
-                        <span>{t('marketsAdd.depositRateLabel')}</span>
-                        <input value={depositRateDisplay} readOnly />
-                      </label>
-                    ) : (
-                      <label className="my-portfolio-trade-field">
-                        <span>{t('marketsAdd.buyPriceLabel')}</span>
+                        <span>{isSellFlow ? t('marketsAdd.sellPriceLabel') : t('marketsAdd.buyPriceLabel')}</span>
                         <div className="my-portfolio-trade-money-input">
                           <span className="my-portfolio-trade-money-input__sym" aria-hidden>
                             {currencySymbolPrefix(instrumentQuoteCurrencyCode)}
@@ -2608,6 +2988,11 @@ export function MyPortfolioPage() {
                           </small>
                         ) : null}
                       </label>
+                    ) : (
+                      <label className="my-portfolio-trade-field">
+                        <span>{t('marketsAdd.depositRateLabel')}</span>
+                        <input value={depositRateDisplay} readOnly />
+                      </label>
                     )}
 
                     <label className="my-portfolio-trade-field">
@@ -2621,7 +3006,7 @@ export function MyPortfolioPage() {
                       >
                         {tradePaymentCurrencyOptions.map((c) => (
                           <option key={c} value={c}>
-                            {tradePaymentCurrencyLabel(c)}
+                            {tradePaymentCurrencyLabel(c, t('marketsAdd.tryCurrencyLabel'))}
                           </option>
                         ))}
                       </select>
@@ -2647,7 +3032,7 @@ export function MyPortfolioPage() {
                     </label>
                     {purchaseMode === 'PAST' ? (
                       <label className="my-portfolio-trade-field my-portfolio-trade-field-full">
-                        <span>{t('marketsAdd.acquiredAtLabel')}</span>
+                        <span>{isSellFlow ? t('marketsAdd.soldAtLabel') : t('marketsAdd.acquiredAtLabel')}</span>
                         <input
                           type="date"
                           value={acquiredAt}
@@ -2661,6 +3046,11 @@ export function MyPortfolioPage() {
                           }}
                           disabled={isPreviewStep}
                         />
+                        {isSellFlow && !toUtcStartOfDay(acquiredAt) ? (
+                          <small className="my-portfolio-trade-note" role="status">
+                            {t('marketsAdd.sellPickDate')}
+                          </small>
+                        ) : null}
                         {isTlDepositInstrument && depositPastDateError ? (
                           <small className="auth-error" role="alert">
                             {depositPastDateError}
@@ -2676,10 +3066,21 @@ export function MyPortfolioPage() {
                       {tradePreviewError}
                     </p>
                   ) : null}
+                  {!tradePreviewError &&
+                  isSellFlow &&
+                  !isPreviewStep &&
+                  previewLots > 0 &&
+                  previewLots > selectedSellHoldingQty ? (
+                    <p className="auth-error" role="alert">
+                      {t('marketsAdd.errors.exceedsHoldings', {
+                        max: formatHoldingQuantity(selectedSellHoldingQty, i18n.language),
+                      })}
+                    </p>
+                  ) : null}
 
                   {isPreviewStep ? (
                     <div className="my-portfolio-confirmation-box">
-                      <h5>{t('marketsAdd.confirmationTitle')}</h5>
+                      <h5>{isSellFlow ? t('marketsAdd.confirmationTitleSell') : t('marketsAdd.confirmationTitle')}</h5>
                       <p><span>{t('marketsAdd.instrumentLabel')}</span><strong>{selectedInstrumentDisplayLabel}</strong></p>
                       <p><span>{t('marketsAdd.transactionTypeLabel')}</span><strong>{purchaseMode === 'PAST' ? t('marketsAdd.purchaseMode.past') : t('marketsAdd.purchaseMode.now')}</strong></p>
                       <p><span>{t('marketsAdd.entryModeLabel')}</span><strong>{isTlDepositInstrument ? t('marketsAdd.entryModePrincipal') : inputMode === 'LOTS' ? t('marketsAdd.inputMode.lots') : t('marketsAdd.inputMode.amount')}</strong></p>
@@ -2719,9 +3120,14 @@ export function MyPortfolioPage() {
                       )}
                       <p>
                         <span>{t('marketsAdd.paymentCurrencyLabel')}</span>
-                        <strong>{tradePaymentCurrencyLabel(tradePaymentCurrency)}</strong>
+                        <strong>{tradePaymentCurrencyLabel(tradePaymentCurrency, t('marketsAdd.tryCurrencyLabel'))}</strong>
                       </p>
-                      {purchaseMode === 'PAST' ? <p><span>{t('marketsAdd.acquiredAtLabel')}</span><strong>{acquiredAt || '-'}</strong></p> : null}
+                      {purchaseMode === 'PAST' ? (
+                        <p>
+                          <span>{isSellFlow ? t('marketsAdd.soldAtLabel') : t('marketsAdd.acquiredAtLabel')}</span>
+                          <strong>{acquiredAt || '-'}</strong>
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -2748,26 +3154,106 @@ export function MyPortfolioPage() {
                       onClick={() => (isPreviewStep ? void submitTrade() : openTradePreview())}
                       disabled={tradeSaving}
                     >
-                      {tradeSaving ? t('marketsAdd.saving') : isPreviewStep ? t('marketsAdd.submit') : t('marketsAdd.continue')}
+                      {tradeSaving ? t('marketsAdd.saving') : isPreviewStep ? (isSellFlow ? t('marketsAdd.submitSell') : t('marketsAdd.submit')) : t('marketsAdd.continue')}
                     </button>
                   </div>
                 </div>
 
                 <aside className={`my-portfolio-trade-preview-panel${isPreviewStep ? ' is-expanded' : ''}`}>
-                  <h4>{t('marketsAdd.distributionTitle')}</h4>
-                  <div className="my-portfolio-preview-ring" />
-                  <div className="my-portfolio-preview-stats">
-                    <div><span>{t('marketsAdd.totalAmountLabel')}</span><strong>{formatMoneyPrefixed(previewTotal || 0, tradePaymentCurrency, i18n.language, 2)}</strong></div>
-                    <div><span>{isTlDepositInstrument ? t('marketsAdd.depositRateLabel') : t('marketsAdd.costPerLotLabel')}</span><strong>{isTlDepositInstrument ? depositRateDisplay : unitPriceUsed == null ? '—' : formatMoneyPrefixed(unitPriceUsed, instrumentQuoteCurrencyCode, i18n.language, 6)}</strong></div>
-                    <div><span>{isTlDepositInstrument ? t('marketsAdd.depositPrincipalLabel') : t('marketsAdd.totalLotsLabel')}</span><strong>{isTlDepositInstrument ? (depositPrincipalTry == null ? '—' : formatMoneyPrefixed(depositPrincipalTry, 'TRY', i18n.language, 2)) : previewLots.toFixed(4)}</strong></div>
-                    <div><span>{t('marketsAdd.instrumentCurrencyLabel')}</span><strong>{selectedInstrument?.nativeQuote ?? '—'}</strong></div>
+                  <h4>{isSellFlow ? t('marketsAdd.sellAnalysisTitle') : t('marketsAdd.distributionTitle')}</h4>
+                  {!isSellFlow ? <div className="my-portfolio-preview-ring" /> : null}
+                  <div className={`my-portfolio-preview-stats${isSellFlow ? ' my-portfolio-sell-analysis-panel' : ''}`}>
+                    {isSellFlow ? (
+                      <>
+                        <div>
+                          <span>{t('marketsAdd.sellPositionLabel')}</span>
+                          <strong>
+                            {t('marketsAdd.lotQuantity', {
+                              qty: formatHoldingQuantity(selectedSellHoldingQty, i18n.language),
+                            })}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.sellAvgBuyLabel')}</span>
+                          <strong>
+                            {sellOverviewItem == null
+                              ? '—'
+                              : formatMoneyPrefixed(sellOverviewItem.avgBuyPrice, instrumentQuoteCurrencyCode, i18n.language, 6)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.sellPriceLabel')}</span>
+                          <strong>
+                            {unitPriceUsed == null
+                              ? '—'
+                              : formatMoneyPrefixed(unitPriceUsed, instrumentQuoteCurrencyCode, i18n.language, 6)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.totalLotsLabel')}</span>
+                          <strong>{previewLots > 0 ? previewLots.toFixed(4) : '—'}</strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.sellProceedsLabel')}</span>
+                          <strong>
+                            {sellProceedsPreview == null
+                              ? '—'
+                              : formatMoneyPrefixed(sellProceedsPreview, instrumentQuoteCurrencyCode, i18n.language, 2)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.sellCostBasisLabel')}</span>
+                          <strong>
+                            {sellCostBasisPreview == null
+                              ? '—'
+                              : formatMoneyPrefixed(sellCostBasisPreview, instrumentQuoteCurrencyCode, i18n.language, 2)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.realizedPnlLabel')}</span>
+                          <strong className={Number(sellRealizedPnlPreview ?? 0) >= 0 ? 'is-up' : 'is-down'}>
+                            {sellRealizedPnlPreview == null
+                              ? '—'
+                              : formatMoneyPrefixed(sellRealizedPnlPreview, instrumentQuoteCurrencyCode, i18n.language, 2)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.sellRealizedPnlPct')}</span>
+                          <strong className={Number(sellRealizedPnlPct ?? 0) >= 0 ? 'is-up' : 'is-down'}>
+                            {sellRealizedPnlPct == null ? '—' : `${percentFormat.format(sellRealizedPnlPct)}%`}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.sellRemainingQty')}</span>
+                          <strong>
+                            {sellRemainingQty == null
+                              ? '—'
+                              : t('marketsAdd.lotQuantity', {
+                                  qty: formatHoldingQuantity(sellRemainingQty, i18n.language),
+                                })}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>{t('marketsAdd.instrumentCurrencyLabel')}</span>
+                          <strong>{selectedInstrument?.nativeQuote ?? '—'}</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div><span>{t('marketsAdd.totalAmountLabel')}</span><strong>{formatMoneyPrefixed(previewTotal || 0, tradePaymentCurrency, i18n.language, 2)}</strong></div>
+                        <div><span>{isTlDepositInstrument ? t('marketsAdd.depositRateLabel') : t('marketsAdd.costPerLotLabel')}</span><strong>{isTlDepositInstrument ? depositRateDisplay : unitPriceUsed == null ? '—' : formatMoneyPrefixed(unitPriceUsed, instrumentQuoteCurrencyCode, i18n.language, 6)}</strong></div>
+                        <div><span>{isTlDepositInstrument ? t('marketsAdd.depositPrincipalLabel') : t('marketsAdd.totalLotsLabel')}</span><strong>{isTlDepositInstrument ? (depositPrincipalTry == null ? '—' : formatMoneyPrefixed(depositPrincipalTry, 'TRY', i18n.language, 2)) : previewLots.toFixed(4)}</strong></div>
+                        <div><span>{t('marketsAdd.instrumentCurrencyLabel')}</span><strong>{selectedInstrument?.nativeQuote ?? '—'}</strong></div>
+                      </>
+                    )}
                   </div>
-                  {isPreviewStep && lastTradePreview?.acquisitionFxRates ? (
+                  {isPreviewStep && lastTradePreview?.acquisitionFxRates && !isSellFlow ? (
                     <AcquisitionFxPanel
                       snap={lastTradePreview.acquisitionFxRates}
                       purchaseMode={purchaseMode}
                     />
                   ) : null}
+                  {!isSellFlow ? (
                   <ul className="my-portfolio-preview-distribution">
                     {projectedDistribution.map((item) => (
                       <li key={item.symbol}>
@@ -2776,7 +3262,8 @@ export function MyPortfolioPage() {
                       </li>
                     ))}
                   </ul>
-                  {isPreviewStep ? (
+                  ) : null}
+                  {isPreviewStep && !isSellFlow ? (
                     <div className="my-portfolio-preview-performance">
                       <h5>{t('marketsAdd.instrumentChangesTitle')}</h5>
                       <div>
@@ -2813,24 +3300,28 @@ export function MyPortfolioPage() {
                   ) : null}
                   <p className="my-portfolio-preview-note">{t('marketsAdd.previewNote')}</p>
                 </aside>
+                </>
+                )}
               </div>
 
             </article>
           ) : null}
 
           {activeSection === 'portfolio' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card">
               <div className="my-portfolio-history-head">
                 <div>
-                  <h4>Islem Gecmisi</h4>
+                  <h4>{t('transactionHistoryTitle')}</h4>
                 </div>
-                <p className="my-portfolio-history-count">{historyTotalElements} kayit</p>
+                <p className="my-portfolio-history-count">
+                  {historyTotalElements} {t('transactionHistory.records')}
+                </p>
               </div>
               <div className="my-portfolio-history-filters">
                 <input
                   value={historyFilters.symbol ?? ''}
                   onChange={(event) => setHistoryFilters((prev) => ({ ...prev, symbol: event.target.value }))}
-                  placeholder="Sembol ara (AAPL, THYAO...)"
+                  placeholder={t('transactionHistory.symbolPlaceholder')}
                 />
                 <select
                   value={historyFilters.type ?? ''}
@@ -2838,9 +3329,9 @@ export function MyPortfolioPage() {
                     setHistoryFilters((prev) => ({ ...prev, type: event.target.value as TransactionHistoryFilters['type'] }))
                   }
                 >
-                  <option value="">Islem Tipi (Tum)</option>
-                  <option value="BUY">BUY</option>
-                  <option value="SELL">SELL</option>
+                  <option value="">{t('transactionHistory.typeAll')}</option>
+                  <option value="BUY">{t('txTypeBuy')}</option>
+                  <option value="SELL">{t('txTypeSell')}</option>
                 </select>
                 <select
                   value={historyFilters.purchaseMode ?? ''}
@@ -2851,9 +3342,9 @@ export function MyPortfolioPage() {
                     }))
                   }
                 >
-                  <option value="">Alim Tipi (Tum)</option>
-                  <option value="NOW">Piyasadan</option>
-                  <option value="PAST">Gecmis Alim</option>
+                  <option value="">{t('transactionHistory.purchaseModeAll')}</option>
+                  <option value="NOW">{t('marketsAdd.purchaseMode.now')}</option>
+                  <option value="PAST">{t('marketsAdd.purchaseMode.past')}</option>
                 </select>
                 <select
                   value={historyFilters.inputCurrency ?? ''}
@@ -2864,7 +3355,7 @@ export function MyPortfolioPage() {
                     }))
                   }
                 >
-                  <option value="">Odeme PB (Tum)</option>
+                  <option value="">{t('transactionHistory.paymentCurrencyAll')}</option>
                   <option value="TRY">TRY</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
@@ -2887,7 +3378,7 @@ export function MyPortfolioPage() {
                     setAppliedHistoryFilters(historyFilters)
                   }}
                 >
-                  Filtrele
+                  {t('transactionHistory.filter')}
                 </button>
               </div>
               {historyLoading ? (
@@ -2898,14 +3389,15 @@ export function MyPortfolioPage() {
                     <thead>
                       <tr>
                         {isAggregatePortfolioView ? <th>{t('sidebar.historyPortfolioColumn')}</th> : null}
-                        <th>Enstruman</th>
-                        <th>Islem</th>
-                        <th>Alim Tipi</th>
-                        <th>Lot</th>
-                        <th>Maliyet</th>
-                        <th>Liste PB</th>
-                        <th>Alim kuru</th>
-                        <th>Tarih</th>
+                        <th>{t('transactionHistory.columns.instrument')}</th>
+                        <th>{t('transactionHistory.columns.side')}</th>
+                        <th>{t('transactionHistory.columns.purchaseMode')}</th>
+                        <th>{t('transactionHistory.columns.lots')}</th>
+                        <th>{t('transactionHistory.columns.cost')}</th>
+                        <th>{t('transactionHistory.columns.quoteCurrency')}</th>
+                        <th>{t('transactionHistory.columns.fxRate')}</th>
+                        <th>{t('transactionHistory.columns.date')}</th>
+                        <th>{t('history.deleteColumn')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2915,10 +3407,12 @@ export function MyPortfolioPage() {
                             <td>{row.portfolioName?.trim() || (row.portfolioId != null ? `#${row.portfolioId}` : '—')}</td>
                           ) : null}
                           <td>{formatInstrumentSymbolLabel(row.instrumentSymbol)}</td>
-                          <td>{row.type}</td>
+                          <td>{row.type === 'SELL' ? t('txTypeSell') : t('txTypeBuy')}</td>
                           <td>
                             <span className={`my-portfolio-history-badge ${row.purchaseMode === 'PAST' ? 'is-past' : 'is-now'}`}>
-                              {row.purchaseMode === 'PAST' ? 'Gecmis alim' : 'Piyasadan ekleme'}
+                              {row.purchaseMode === 'PAST'
+                                ? t('transactionHistory.badgePast')
+                                : t('transactionHistory.badgeNow')}
                             </span>
                           </td>
                           <td>{row.quantity}</td>
@@ -2930,6 +3424,19 @@ export function MyPortfolioPage() {
                           </td>
                           <td className="my-portfolio-history-fx">{formatTxFxLegLabel(row, i18n.language)}</td>
                           <td>{new Date(row.acquiredAt ?? row.createdAt).toLocaleString(i18n.language)}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="my-portfolio-history-delete-btn"
+                              onClick={() => {
+                                setDeleteTxError(null)
+                                setDeleteTxConfirm(row)
+                              }}
+                              aria-label={t('history.deleteAria')}
+                            >
+                              {t('history.delete')}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -2939,10 +3446,13 @@ export function MyPortfolioPage() {
               {historyError ? <p className="my-portfolio-trade-note">{historyError}</p> : null}
               <div className="my-portfolio-history-pagination">
                 <button type="button" className="auth-submit auth-submit-secondary" disabled={historyPage <= 0} onClick={() => setHistoryPage((p) => p - 1)}>
-                  Onceki
+                  {t('transactionHistory.prev')}
                 </button>
                 <span>
-                  Sayfa {historyTotalPages === 0 ? 0 : historyPage + 1} / {Math.max(historyTotalPages, 1)}
+                  {t('transactionHistory.pageOf', {
+                    current: historyTotalPages === 0 ? 0 : historyPage + 1,
+                    total: Math.max(historyTotalPages, 1),
+                  })}
                 </span>
                 <button
                   type="button"
@@ -2950,14 +3460,14 @@ export function MyPortfolioPage() {
                   disabled={historyPage + 1 >= historyTotalPages}
                   onClick={() => setHistoryPage((p) => p + 1)}
                 >
-                  Sonraki
+                  {t('transactionHistory.next')}
                 </button>
               </div>
             </article>
           ) : null}
 
           {activeSection === 'allocation' ? (
-            <article className={`card my-portfolio-trade-card my-portfolio-allocation-detail${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card my-portfolio-allocation-detail">
               <header className="my-portfolio-allocation-head">
                 <button
                   type="button"
@@ -3120,6 +3630,9 @@ export function MyPortfolioPage() {
                               </button>
                             </th>
                           ))}
+                          {!isAggregatePortfolioView && selectedPortfolioId != null && selectedPortfolioId > 0 ? (
+                            <th scope="col">{t('allocation.action')}</th>
+                          ) : null}
                         </tr>
                       </thead>
                       <tbody>
@@ -3154,6 +3667,19 @@ export function MyPortfolioPage() {
                             >
                               {dashboardPctFormat.format(row.pnlPercent)}%
                             </td>
+                            {!isAggregatePortfolioView && selectedPortfolioId != null && selectedPortfolioId > 0 ? (
+                              <td>
+                                {row.quantity > 0 ? (
+                                  <button
+                                    type="button"
+                                    className="my-portfolio-alloc-sell-btn"
+                                    onClick={() => openSellFromAllocation(row.symbol)}
+                                  >
+                                    {t('allocation.sell')}
+                                  </button>
+                                ) : null}
+                              </td>
+                            ) : null}
                           </tr>
                         ))}
                       </tbody>
@@ -3162,6 +3688,128 @@ export function MyPortfolioPage() {
                   )}
                 </div>
               )}
+            </article>
+          ) : null}
+
+          {activeSection === 'salesAnalysis' ? (
+            <article className="card my-portfolio-trade-card">
+              <div className="my-portfolio-history-head">
+                <div>
+                  <h4>{t('salesAnalysis.title')}</h4>
+                </div>
+                <p className="my-portfolio-history-count">{salesAnalysisTotalElements} {t('salesAnalysis.records')}</p>
+              </div>
+              <div className="my-portfolio-history-filters">
+                <input
+                  value={salesAnalysisFilters.symbol ?? ''}
+                  onChange={(event) => setSalesAnalysisFilters((prev) => ({ ...prev, symbol: event.target.value }))}
+                  placeholder={t('salesAnalysis.symbolPlaceholder')}
+                />
+                <input
+                  type="date"
+                  value={salesAnalysisFilters.fromDate ?? ''}
+                  onChange={(event) => setSalesAnalysisFilters((prev) => ({ ...prev, fromDate: event.target.value }))}
+                />
+                <input
+                  type="date"
+                  value={salesAnalysisFilters.toDate ?? ''}
+                  onChange={(event) => setSalesAnalysisFilters((prev) => ({ ...prev, toDate: event.target.value }))}
+                />
+                <button
+                  type="button"
+                  className="auth-submit"
+                  onClick={() => {
+                    setSalesAnalysisPage(0)
+                    setAppliedSalesAnalysisFilters(salesAnalysisFilters)
+                  }}
+                >
+                  {t('salesAnalysis.filter')}
+                </button>
+              </div>
+              {salesAnalysisLoading ? (
+                <div className="markets-skeleton-row" />
+              ) : (
+                <div className="my-portfolio-history-wrap my-portfolio-sales-analysis-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        {isAggregatePortfolioView ? <th>{t('sidebar.historyPortfolioColumn')}</th> : null}
+                        <th>{t('salesAnalysis.instrument')}</th>
+                        <th>{t('salesAnalysis.quantity')}</th>
+                        <th>{t('salesAnalysis.avgCostAtSell')}</th>
+                        <th>{t('salesAnalysis.sellUnitPrice')}</th>
+                        <th>{t('salesAnalysis.sellProceeds')}</th>
+                        <th>{t('salesAnalysis.realizedPnl')}</th>
+                        <th>{t('salesAnalysis.hypotheticalValueNow')}</th>
+                        <th>{t('salesAnalysis.opportunityDelta')}</th>
+                        <th>{t('salesAnalysis.soldAt')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesAnalysisRows.map((row) => {
+                        const qcRaw = row.quoteCurrency?.trim().toUpperCase() || dashboardCurrency
+                        const rowCurrency: TradePaymentCurrency =
+                          qcRaw === 'TRY' || qcRaw === 'USD' || qcRaw === 'EUR'
+                            ? qcRaw
+                            : dashboardCurrency === 'TRY' ||
+                                dashboardCurrency === 'USD' ||
+                                dashboardCurrency === 'EUR'
+                              ? dashboardCurrency
+                              : 'USD'
+                        const fmt = (n: number | null | undefined, digits = 2) =>
+                          n == null || !Number.isFinite(n)
+                            ? '—'
+                            : formatMoneyPrefixed(n, rowCurrency, i18n.language, digits)
+                        return (
+                          <tr key={row.transactionId}>
+                            {isAggregatePortfolioView ? (
+                              <td>{row.portfolioName?.trim() || (row.portfolioId != null ? `#${row.portfolioId}` : '—')}</td>
+                            ) : null}
+                            <td>{formatInstrumentSymbolLabel(row.instrumentSymbol)}</td>
+                            <td>{formatHoldingQuantity(row.quantity, i18n.language)}</td>
+                            <td>{fmt(row.avgCostAtSell, 6)}</td>
+                            <td>{fmt(row.sellUnitPrice, 6)}</td>
+                            <td>{fmt(row.sellProceeds)}</td>
+                            <td className={row.realizedPnl >= 0 ? 'my-portfolio-up' : 'my-portfolio-down'}>
+                              {fmt(row.realizedPnl)} ({dashboardPctFormat.format(row.realizedPnlPct)}%)
+                            </td>
+                            <td>{fmt(row.hypotheticalValueNow)}</td>
+                            <td className={(row.opportunityDelta ?? 0) >= 0 ? 'my-portfolio-up' : 'my-portfolio-down'}>
+                              {fmt(row.opportunityDelta)}
+                            </td>
+                            <td>{new Date(row.soldAt).toLocaleString(i18n.language)}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {salesAnalysisError ? <p className="my-portfolio-trade-note">{salesAnalysisError}</p> : null}
+              <div className="my-portfolio-history-pagination">
+                <button
+                  type="button"
+                  className="auth-submit auth-submit-secondary"
+                  disabled={salesAnalysisPage <= 0}
+                  onClick={() => setSalesAnalysisPage((p) => p - 1)}
+                >
+                  {t('salesAnalysis.prev')}
+                </button>
+                <span>
+                  {t('salesAnalysis.pageOf', {
+                    current: salesAnalysisTotalPages === 0 ? 0 : salesAnalysisPage + 1,
+                    total: Math.max(salesAnalysisTotalPages, 1),
+                  })}
+                </span>
+                <button
+                  type="button"
+                  className="auth-submit auth-submit-secondary"
+                  disabled={salesAnalysisPage + 1 >= salesAnalysisTotalPages}
+                  onClick={() => setSalesAnalysisPage((p) => p + 1)}
+                >
+                  {t('salesAnalysis.next')}
+                </button>
+              </div>
             </article>
           ) : null}
 
@@ -3187,7 +3835,7 @@ export function MyPortfolioPage() {
           ) : null}
 
           {activeSection === 'settings' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card">
               <h2 className="my-portfolio-trade-title">{t('settingsPage.title')}</h2>
               <p className="my-portfolio-trade-subtitle">{t('settingsPage.scopeHint')}</p>
               {portfolioSettingsError ? <p className="auth-error">{portfolioSettingsError}</p> : null}
@@ -3269,14 +3917,7 @@ export function MyPortfolioPage() {
             </article>
           ) : null}
 
-          {activeSection !== 'watchlist' &&
-          activeSection !== 'news' &&
-          activeSection !== 'analysis' &&
-          activeSection !== 'targets' &&
-          activeSection !== 'markets' &&
-          activeSection !== 'portfolio' &&
-          activeSection !== 'allocation' &&
-          activeSection !== 'settings' ? (
+          {activeSection === 'dashboard' ? (
             <>
               <div className="my-portfolio-grid my-portfolio-grid--dashboard">
             <article className="card my-portfolio-card my-portfolio-card--dashboard-value">
@@ -3706,6 +4347,37 @@ export function MyPortfolioPage() {
                 onClick={() => void handleConfirmDeletePortfolio()}
               >
                 {deletePortfolioSubmitting ? t('settingsPage.deleting') : t('settingsPage.confirmDelete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTxConfirm ? (
+        <div className="my-portfolio-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tx-del-title">
+          <div className="my-portfolio-modal card">
+            <h3 id="tx-del-title">{t('history.deleteModalTitle')}</h3>
+            <p>{t('history.deleteModalBody')}</p>
+            {deleteTxError ? <p className="auth-error">{deleteTxError}</p> : null}
+            <div className="my-portfolio-modal-actions">
+              <button
+                type="button"
+                className="auth-submit auth-submit-secondary"
+                disabled={deleteTxSubmitting}
+                onClick={() => {
+                  setDeleteTxConfirm(null)
+                  setDeleteTxError(null)
+                }}
+              >
+                {t('history.deleteCancel')}
+              </button>
+              <button
+                type="button"
+                className="auth-submit"
+                disabled={deleteTxSubmitting}
+                onClick={() => void handleConfirmDeleteTransaction()}
+              >
+                {deleteTxSubmitting ? t('history.deleting') : t('history.deleteConfirm')}
               </button>
             </div>
           </div>

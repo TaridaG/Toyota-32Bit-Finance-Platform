@@ -209,6 +209,112 @@ public class PortfolioOverviewServiceImpl implements PortfolioOverviewService {
     return response;
   }
 
+  /** Satış tarihine göre satılabilir pozisyonları ledger'dan hesaplar. */
+  @Override
+  public PortfolioOverviewResponse getHoldingsAsOf(
+      String targetCurrency, Long portfolioId, LocalDate asOfDate) {
+    if (portfolioId == null) {
+      throw new IllegalArgumentException("portfolioId is required");
+    }
+    if (asOfDate == null) {
+      throw new IllegalArgumentException("asOf is required");
+    }
+    if (asOfDate.isAfter(LocalDate.now(ZoneOffset.UTC))) {
+      throw new IllegalArgumentException("asOf date cannot be in the future");
+    }
+
+    UUID userId = currentUserResolver.getCurrentUserId();
+    String normalizedCurrency = currencyConversionService.normalizeCurrency(targetCurrency);
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new IllegalStateException("User not found"));
+    var portfolio =
+        externalPortfolioRepository
+            .findByIdAndUserId(portfolioId, userId)
+            .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
+
+    List<Transaction> transactions =
+        transactionRepository.findByUserAndExternalPortfolioOrderByCreatedAtAsc(user, portfolio);
+    Map<Instrument, List<Transaction>> grouped =
+        transactions.stream().collect(Collectors.groupingBy(Transaction::getInstrument));
+
+    Instant cutoffExclusive = asOfDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+    List<PortfolioOverviewItemResponse> items = new ArrayList<>();
+    BigDecimal totalValue = BigDecimal.ZERO;
+    BigDecimal totalCost = BigDecimal.ZERO;
+
+    for (Map.Entry<Instrument, List<Transaction>> entry : grouped.entrySet()) {
+      Instrument instrument = entry.getKey();
+      PositionCostBasisCalculator.PositionCostBasis basis =
+          positionCostBasisCalculator.calculateHoldingsBefore(entry.getValue(), cutoffExclusive);
+      if (basis.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+        continue;
+      }
+
+      BigDecimal avgBuyPrice = convertAndScale(basis.averageCost(), instrument, normalizedCurrency);
+      BigDecimal positionCost = convertAndScale(basis.totalCost(), instrument, normalizedCurrency);
+      if (avgBuyPrice == null || positionCost == null) {
+        continue;
+      }
+      totalCost = totalCost.add(positionCost);
+
+      BigDecimal markPrice =
+          priceService
+              .getLatestValuationPriceBefore(instrument, cutoffExclusive)
+              .map(InstrumentPrice::getPrice)
+              .map(p -> convertAndScale(p, instrument, normalizedCurrency))
+              .orElse(null);
+
+      BigDecimal value = null;
+      BigDecimal pnl = null;
+      BigDecimal pnlPercent = null;
+      if (markPrice != null) {
+        value = applyScale(markPrice.multiply(basis.quantity()), instrument.getType());
+        pnl = applyScale(value.subtract(positionCost), instrument.getType());
+        if (positionCost.compareTo(BigDecimal.ZERO) > 0) {
+          pnlPercent =
+              pnl.multiply(BigDecimal.valueOf(100)).divide(positionCost, 4, RoundingMode.HALF_UP);
+        }
+        totalValue = totalValue.add(value);
+      }
+
+      items.add(
+          new PortfolioOverviewItemResponse(
+              instrument.getId(),
+              instrument.getSymbol(),
+              instrument.getName(),
+              instrument.getType().name(),
+              instrument.getExchange() != null ? instrument.getExchange().name() : null,
+              basis.quantity(),
+              avgBuyPrice,
+              markPrice,
+              value,
+              null,
+              pnl,
+              pnlPercent));
+    }
+
+    items.sort(
+        Comparator.comparing(PortfolioOverviewItemResponse::symbol, String.CASE_INSENSITIVE_ORDER));
+
+    BigDecimal totalPnl = totalValue.subtract(totalCost);
+    BigDecimal totalPnlPercent =
+        totalCost.compareTo(BigDecimal.ZERO) > 0
+            ? totalPnl.multiply(BigDecimal.valueOf(100)).divide(totalCost, 4, RoundingMode.HALF_UP)
+            : BigDecimal.ZERO;
+
+    return new PortfolioOverviewResponse(
+        normalizedCurrency,
+        applyScale(totalValue, InstrumentType.STOCK),
+        applyScale(totalCost, InstrumentType.STOCK),
+        applyScale(totalPnl, InstrumentType.STOCK),
+        totalPnlPercent,
+        BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
+        items);
+  }
+
   /**
    * Converts a value that is expressed in the instrument's listing/quote currency (TRY for XAUTRY,
    * USD for US equities, etc.) into the portfolio display currency. Historically this path

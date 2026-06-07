@@ -664,6 +664,37 @@
         "chartEmpty": "Keine Daten in diesem Zeitraum.",
         "chartFoot": "Die Linie zeigt Near-Contract-Alias-Preise aus den taeglichen BIST-VIOP-Settlement-Dateien."
       },
+      "bond": {
+        "tenorSelectAria": "Anleihelaufzeit wählen",
+        "tenorShort": {
+          "1Y": "1J",
+          "2Y": "2J",
+          "3Y": "3J",
+          "5Y": "5J",
+          "10Y": "10J"
+        },
+        "liveObservation": "Letzte Beobachtung",
+        "change1dSub": "1T: {{bp}} bp",
+        "liveNoData": "Noch keine Anleiherendite verfügbar.",
+        "liveNoDataHint": "Erscheint nach Abschluss der TCMB-EVDS-Anleihe-Synchronisation (einige Minuten).",
+        "liveLoadError": "Anleiherendite konnte nicht geladen werden.",
+        "liveSkeletonAria": "Aktuelle Anleiherendite wird geladen",
+        "chartOpenHint": "TR-Anleihe: Renditekurve, Verlauf und Simulator öffnen",
+        "detailTitle": "TR-Staatsanleihe — {{tenor}} Rendite",
+        "chartBackToYield": "Zur Leitzinsgrafik",
+        "chartAxisY": "Rendite (%)",
+        "chartLoading": "Diagramm wird geladen",
+        "chartError": "Historie konnte nicht geladen werden.",
+        "chartRetry": "Erneut versuchen",
+        "chartEmpty": "Keine täglichen Datensätze gefunden.",
+        "chartFoot": "Quelle: TCMB EVDS Sekundärmarkt-Renditen (TP.KTF*). Benchmark-Kurvenreferenz, kein Einzel-ISIN-Kurs.",
+        "curveTitle": "Renditekurve (aktuell)",
+        "curveHint": "TCMB-Referenzrenditen 1J–10J; gewählte Laufzeit hervorgehoben.",
+        "curveChange1d": "{{bp}} bp",
+        "edu1": "TR-Anleihe/Schatzwechsel: TRY-Staatsanleihen der Türkei.",
+        "edu2": "Rendite (%): Benchmark-Satz für die gewählte Laufzeit am Sekundärmarkt.",
+        "edu3": "Der Simulator nähert Halten-bis-Fälligkeit mit Null-Kupon-/Diskontannahme."
+      },
       "eurobond": {
         "cardTitle": "Türkei-Eurobonds",
         "cardSubtitle": "ISIN-basierte USD-Eurobond-Beispiele",
@@ -788,6 +819,22 @@
           "pickFromChart": "Aus Diagramm wählen",
           "pickHint": "Klicken Sie im Zinsdiagramm auf den Tag des Einlagenbeginns.",
           "pickCancel": "Abbrechen"
+        },
+        "bond": {
+          "title": "Anleihe-Simulator",
+          "yieldUsed": "Verwendete Rendite",
+          "pricePer100": "Gesch. sauberer Kurs (je 100)",
+          "maturityProceeds": "Gesch. Erlös bei Fälligkeit",
+          "totalReturn": "Gesamtrendite",
+          "headlineDisclaimer": "Null-Kupon-/Diskontanleihe-Näherung; Kuponflüsse, Stückzins, Steuer und Gebühren ausgeschlossen.",
+          "scenarioTitle": "Szenario",
+          "investment": "Investition heute (TRY)",
+          "investmentHint": "Heute investierter Betrag zur gewählten Rendite; Nominal bei Fälligkeit abgeleitet.",
+          "annualYield": "Jahresrendite (%)",
+          "tenorHint": "{{tenor}} ({{years}} Jahre) Laufzeitannahme",
+          "returnPct": "Rendite (%)",
+          "faceValue": "Nominal bei Fälligkeit",
+          "scenarioDisclaimer": "Rendite aus der gewählten TCMB-Referenzserie; echte Auktions-/Kuponanleihen können abweichen."
         }
       }
     }
@@ -1757,7 +1804,8 @@
       "losers": "Im Verlust",
       "empty": "Keine Positionen mit Gewinn oder Verlust.",
       "legendAria": "Gewinn-/Verlustaufteilung",
-      "ringShare": "Ringanteil: {{pct}}%"
+      "ringShare": "Ringanteil: {{pct}}%",
+      "moreAssetsShort": "++"
     },
     "allocation": {
       "detailTitle": "Portfolioallokation",
@@ -1774,6 +1822,8 @@
       "avgBuyPrice": "Kaufpreis",
       "currentPrice": "Aktueller Preis",
       "pnlPctShort": "G/V %",
+      "action": "Aktion",
+      "sell": "Verkaufen",
       "sortActivate": "Zum Sortieren klicken",
       "sortAsc": "Aufsteigend — Klick kehrt um",
       "sortDesc": "Absteigend — Klick kehrt um",
@@ -1829,9 +1879,10 @@
       "addPortfolioOptionMore": "+ Neues Portfolio hinzufügen",
       "items": {
         "dashboard": "Dashboard",
-        "markets": "Portfolio Hinzufugen",
+        "markets": "Vermögensverwaltung",
         "portfolio": "Transaktionsverlauf",
         "allocation": "Portfolioverteilung",
+        "salesAnalysis": "Verkaufsanalyse",
         "news": "Meine News",
         "analysis": "Meine Analyse",
         "targets": "Meine Ziele",
@@ -1859,18 +1910,26 @@
     },
     "marketsAdd": {
       "title": "Neues Instrument zum Portfolio hinzufügen",
+      "titleSell": "Aus Portfolio verkaufen",
       "assetTypeLabel": "Anlagetyp",
       "assetTypeAll": "Alle Typen",
       "steps": {
         "details": "Kaufdetails",
+        "detailsSell": "Verkaufsdetails",
         "preview": "Vorschau"
+      },
+      "tradeSide": {
+        "buy": "Kauf",
+        "sell": "Verkauf"
       },
       "searchLabel": "Instrument suchen",
       "searchPlaceholder": "Firma, Symbol oder ISIN suchen...",
       "instrumentLabel": "Instrument",
       "purchaseMode": {
         "now": "Zum Marktpreis hinzufügen",
-        "past": "Historischen Kauf hinzufügen"
+        "past": "Historischen Kauf hinzufügen",
+        "sellNow": "Zum Marktpreis verkaufen",
+        "sellPast": "Historischen Verkauf hinzufügen"
       },
       "inputMode": {
         "lots": "Per Lots eingeben",
@@ -1881,6 +1940,21 @@
       "lotsLabel": "Lot-Menge",
       "lotLabel": "Lot",
       "buyPriceLabel": "Kaufpreis",
+      "sellPriceLabel": "Verkaufspreis",
+      "sellProceedsLabel": "Erlös",
+      "sellCostBasisLabel": "Kosten (WAC)",
+      "realizedPnlLabel": "Realisierte G/V",
+      "sellAnalysisTitle": "Verkaufsanalyse",
+      "sellPositionLabel": "Aktuelle Position",
+      "sellAvgBuyLabel": "Ø Kauf (WAC)",
+      "sellAvailableQty": "Aktuelle Position: {{qty}} Lots",
+      "sellRemainingQty": "Verbleibend nach Verkauf",
+      "sellRealizedPnlPct": "Realisierte G/V (%)",
+      "sellHoldingsEmpty": "In diesem Portfolio gibt es keine verkaufbaren Positionen.",
+      "sellPickPortfolio": "Wählen Sie oben ein Portfolio für den Verkauf.",
+      "sellAll": "Alles verkaufen",
+      "soldAtLabel": "Verkaufsdatum",
+      "sellPickDate": "Wählen Sie ein Verkaufsdatum für den historischen Verkauf.",
       "buyPricePlaceholder": "Ihren Kaufpreis eingeben",
       "earliestPriceNotice": "Die frühesten Preisdaten stammen vom {{date}}; der Kauf wird mit diesem Datum gespeichert.",
       "manualPriceRequiredNotice": "Für dieses Instrument wurden keine Preisdaten gefunden. Versuchen Sie ein anderes Datum oder Instrument.",
@@ -1888,10 +1962,12 @@
       "totalAmountLabel": "Gesamtbetrag",
       "acquiredAtLabel": "Kaufdatum",
       "confirmationTitle": "Kaufdetails",
+      "confirmationTitleSell": "Verkaufsdetails",
       "transactionTypeLabel": "Transaktionstyp",
       "back": "Zurück",
       "saving": "Wird gespeichert...",
       "submit": "Bestätigen und Hinzufügen",
+      "submitSell": "Bestätigen und Verkaufen",
       "continue": "Weiter",
       "distributionTitle": "Portfolioverteilung",
       "costPerLotLabel": "Kosten / Lot",
@@ -1928,7 +2004,8 @@
         "MT06": "TL-Einlage"
       },
       "messages": {
-        "saved": "Transaktion erfolgreich gespeichert."
+        "saved": "Transaktion erfolgreich gespeichert.",
+        "sold": "Verkauf erfolgreich gespeichert."
       },
       "errors": {
         "previewFailed": "Vorschau fehlgeschlagen.",
@@ -1937,12 +2014,70 @@
         "pastDateRequired": "Für historische Käufe ist ein Kaufdatum erforderlich.",
         "pastDateAndPriceRequired": "Für historische Käufe sind Kaufdatum und Stückpreis erforderlich.",
         "saveFailed": "Die Transaktion konnte nicht gespeichert werden.",
-        "instrumentListLoadFailed": "Die Instrumentenliste konnte nicht geladen werden. Prüfen Sie API (/api/instruments, /api/market) und Gateway-Verbindung."
+        "instrumentListLoadFailed": "Die Instrumentenliste konnte nicht geladen werden. Prüfen Sie API (/api/instruments, /api/market) und Gateway-Verbindung.",
+        "exceedsHoldings": "Verkaufsmenge übersteigt die Position (max. {{max}} Lots).",
+        "sellDateFuture": "Das Verkaufsdatum darf nicht in der Zukunft liegen.",
+        "noHoldingsOnDate": "Am gewählten Datum gibt es keine verkaufbaren Positionen."
       },
       "listingHintTry": "Dieses Portfolio ist TRY-basiert. Es werden nur in TRY kotierte Instrumente gelistet (z. B. BIST, FX in Lira).",
       "listingHintUsd": "Dieses Portfolio ist USD-basiert. Es werden nur in USD kotierte Instrumente gelistet (z. B. US-Aktien, USD-Krypto).",
       "listingHintNeutral": "Dieses Portfolio ist nicht währungsgebunden. Übersicht und Liste nutzen Ihre Kopfzeilen-Anzeigewährung ({{currency}}) für die Kotierungsfilterung.",
-      "listingHintAll": "Alle kotierten Instrumente werden gelistet; die Zahlungswährung folgt dem gewählten Instrument."
+      "listingHintAll": "Alle kotierten Instrumente werden gelistet; die Zahlungswährung folgt dem gewählten Instrument.",
+      "tryCurrencyLabel": "TRY (TL)",
+      "lotQuantity": "{{qty}} Lots"
+    },
+    "transactionHistory": {
+      "records": "Einträge",
+      "symbolPlaceholder": "Symbol suchen (AAPL, THYAO…)",
+      "typeAll": "Seite (alle)",
+      "purchaseModeAll": "Kaufart (alle)",
+      "paymentCurrencyAll": "Zahlungswährung (alle)",
+      "filter": "Filtern",
+      "columns": {
+        "instrument": "Instrument",
+        "side": "Seite",
+        "purchaseMode": "Kaufart",
+        "lots": "Lots",
+        "cost": "Kosten",
+        "quoteCurrency": "Kotierung",
+        "fxRate": "Einstiegs-FX",
+        "date": "Datum"
+      },
+      "badgePast": "Historischer Kauf",
+      "badgeNow": "Marktzugang",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "pageOf": "Seite {{current}} / {{total}}"
+    },
+    "history": {
+      "deleteColumn": "Löschen",
+      "delete": "Löschen",
+      "deleteAria": "Transaktion dauerhaft löschen",
+      "deleteModalTitle": "Transaktion löschen",
+      "deleteModalBody": "Diese Transaktion wird dauerhaft entfernt; das Portfolio wird aktualisiert, als wäre sie nie erfolgt.",
+      "deleteCancel": "Abbrechen",
+      "deleteConfirm": "Löschen",
+      "deleting": "Wird gelöscht…",
+      "deleteFailed": "Transaktion konnte nicht gelöscht werden."
+    },
+    "salesAnalysis": {
+      "title": "Verkaufsanalyse",
+      "records": "Einträge",
+      "symbolPlaceholder": "Symbol suchen",
+      "filter": "Filtern",
+      "instrument": "Instrument",
+      "quantity": "Lots",
+      "avgCostAtSell": "Ø Kosten (WAC)",
+      "sellUnitPrice": "Verkaufspreis",
+      "sellProceeds": "Erlös",
+      "realizedPnl": "Realisierte G/V",
+      "hypotheticalValueNow": "Wert heute",
+      "opportunityDelta": "Differenz",
+      "soldAt": "Verkauft am",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "pageOf": "Seite {{current}} / {{total}}",
+      "loadError": "Verkaufsanalyse konnte nicht geladen werden."
     },
     "watchlist": {
       "title": "Favoriten",
@@ -1958,6 +2093,18 @@
         "symbol": "Symbol",
         "name": "Name",
         "price": "Preis"
+      },
+      "changeColumns": {
+        "1d": "1T",
+        "1m": "1M",
+        "1y": "1J"
+      },
+      "chartRanges": {
+        "24h": "24h",
+        "7d": "7T",
+        "30d": "30T",
+        "90d": "90T",
+        "1y": "1J"
       },
       "addPanel": {
         "title": "Zu Favoriten Hinzufugen",
@@ -2136,7 +2283,7 @@
         "userFlowSparkFoot": "Diagramm: tägliche Neuregistrierungen (Hauptlinie) · gestartete Kontolöschungen (gedämpft, UTC-Tag)",
         "portfolioFlowSparkFoot": "Diagramm: neue externe Portfolios (Haupt) · Aktualisierungen bestehender Portfolios (gedämpft)",
         "instrumentDataActivityFoot": "Anzahl verschiedener Instrumente mit mindestens einem Preis-Tick je UTC-Tag (letzte 7 Tage)",
-        "ingestRegistry": "Ingest-Registry",
+        "ingestRegistry": "Daten-Ingest-Register",
         "addInstrument": "Instrument hinzufugen",
         "portfolioCreationVelocityWow": "Neues-Portfolio-Momentum (7T / vorherige 7T)",
         "usersMetricLoadError": "Live-Nutzerzahl nicht verfügbar — API/Gateway und ADMIN-Rolle prüfen.",
@@ -2509,6 +2656,58 @@
         "portalUsers": "Portal-Metriken (Nutzer, Portfolios, Instrumente)",
         "portalPortfolios": "Externe Portfolio-Metriken"
       }
+    },
+    "ingestRegistryPage": {
+      "title": "Daten-Ingest-Register",
+      "lead": "Verwalten Sie, für welche Instrumente Live- und Historiendaten gezogen werden.",
+      "refresh": "Aktualisieren",
+      "loading": "Register wird geladen…",
+      "empty": "Noch keine Ingest-Konfiguration.",
+      "colInstrumentId": "Instrument-ID",
+      "colSymbol": "Symbol",
+      "colSegment": "Segment",
+      "colEnabled": "Aktiv",
+      "colTotalDays": "Gesamttage",
+      "colRecent365": "365T",
+      "colRecent30": "30T",
+      "colLastError": "Letzter Fehler",
+      "colActions": "Aktionen",
+      "segment": {
+        "CRYPTO": "Krypto",
+        "BIST": "BIST",
+        "NASDAQ": "NASDAQ"
+      },
+      "actionHistory": "Historie laden",
+      "actionLive": "Live laden",
+      "actionDelete": "Löschen",
+      "historyStarted": "Historischer Abruf für {{symbol}} gestartet. In einigen Minuten aktualisieren.",
+      "errorGeneric": "Vorgang fehlgeschlagen.",
+      "errorHistory": "Historischer Abruf fehlgeschlagen.",
+      "errorLive": "Live-Abruf fehlgeschlagen.",
+      "errorDelete": "Löschen fehlgeschlagen.",
+      "paginationAria": "Ingest-Register Paginierung",
+      "pageMeta": "Seite {{page}} / {{totalPages}} · {{total}} Einträge",
+      "prev": "Zurück",
+      "next": "Weiter"
+    },
+    "createInstrumentPage": {
+      "title": "Instrument hinzufügen",
+      "lead": "Symbol und Marktsegment wählen; Typ und Börse werden automatisch gesetzt.",
+      "symbol": "Symbol",
+      "symbolPlaceholder": "z. B. KCHOL oder BTCUSDT",
+      "name": "Name",
+      "namePlaceholder": "z. B. Koç Holding",
+      "marketSegment": "Marktsegment",
+      "segment": {
+        "CRYPTO": "Krypto",
+        "BIST": "BIST",
+        "NASDAQ": "US (NASDAQ)"
+      },
+      "submit": "Instrument hinzufügen",
+      "submitting": "Speichern…",
+      "errorRequired": "Symbol und Name sind erforderlich.",
+      "errorGeneric": "Instrument konnte nicht erstellt werden.",
+      "success": "Instrument erstellt (ID: {{id}}). Weiterleitung zum Ingest-Register…"
     },
     "sectionPages": {
       "kpiTotalUsers": "Nutzerstamm-Analytik: Listengröße, Anmelde-Tempo und künftige Segmentierung.",

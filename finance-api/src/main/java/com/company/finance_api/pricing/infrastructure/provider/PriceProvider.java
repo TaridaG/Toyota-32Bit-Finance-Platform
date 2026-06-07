@@ -7,7 +7,7 @@ import com.company.finance_api.pricing.domain.enums.PriceType;
 /** PriceProvider iş mantığını uygular (price provider). */
 public interface PriceProvider {
 
-  /** supports sözleşmesi. */
+  /** Provider'ın desteklediği fiyat tipini döner. */
   PriceType supports();
 
   InstrumentPrice fetchLatestPrice(Instrument instrument);

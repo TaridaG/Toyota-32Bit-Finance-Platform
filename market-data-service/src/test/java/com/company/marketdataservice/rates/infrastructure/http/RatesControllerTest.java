@@ -1,5 +1,6 @@
 package com.company.marketdataservice.rates.infrastructure.http;
 
+import com.company.marketdataservice.rates.application.BondYieldHistoryService;
 import com.company.marketdataservice.rates.application.CpiHistoryService;
 import com.company.marketdataservice.rates.application.PolicyRateHistoryService;
 import com.company.marketdataservice.rates.application.RepoRateHistoryService;
@@ -40,6 +41,8 @@ class RatesControllerTest {
     private CpiHistoryService cpiHistoryService;
     @Mock
     private DovizBankRatesService dovizBankRatesService;
+    @Mock
+    private BondYieldHistoryService bondYieldHistoryService;
 
     private WebTestClient webTestClient;
 
@@ -51,7 +54,8 @@ class RatesControllerTest {
                 tlDepositHistoryService,
                 tlDepositIndexService,
                 cpiHistoryService,
-                dovizBankRatesService
+                dovizBankRatesService,
+                bondYieldHistoryService
         );
         webTestClient = WebTestClient.bindToController(controller)
                 .controllerAdvice(new GlobalExceptionHandler())

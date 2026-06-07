@@ -1,6 +1,8 @@
 package com.company.finance_api.portfolio.infrastructure.http;
 
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -59,5 +61,15 @@ class TransactionHistoryControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].instrumentSymbol").value("AAPL"));
+  }
+
+  @Test
+  void deleteTransaction_returnsSuccess() throws Exception {
+    doNothing().when(transactionHistoryService).deleteMyTransaction(42L);
+
+    mockMvc
+        .perform(delete("/api/v1/history/transactions/42"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true));
   }
 }

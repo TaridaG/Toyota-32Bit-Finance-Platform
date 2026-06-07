@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
+/**
+ * VIOP settlement ve sözleşme satırlarından TLREF, DIBS ve FAIZ near alias sembollerini
+ * çözen application katmanı bileşeni.
+ */
 @Component
 public class ViopAliasResolver {
 
@@ -28,6 +32,9 @@ public class ViopAliasResolver {
         this.properties = properties;
     }
 
+    /**
+     * Verilen trade date için en yakın vadeli faiz/tahvil future sözleşmelerinden alias snapshot listesi üretir.
+     */
     public List<ViopAliasSnapshot> resolve(
             List<ViopContractRow> contracts,
             List<ViopSettlementRow> settlements,

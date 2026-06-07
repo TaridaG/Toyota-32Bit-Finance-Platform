@@ -72,8 +72,9 @@ public class TefasBindHistoryClient {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * TEFAS iş günü ve tarih penceresi hesapları için Türkiye saat diliminde
+     * ({@code Europe/Istanbul}) bugünün {@link LocalDate} değerini döner.
+     */
     public LocalDate todayTurkey() {
         return LocalDate.now(TURKEY);
     }

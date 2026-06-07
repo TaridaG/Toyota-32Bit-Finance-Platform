@@ -6,12 +6,12 @@ import java.util.List;
 /** WatchlistService iş mantığını uygular (watchlist service). */
 public interface WatchlistService {
 
-  /** addToWatchlist sözleşmesi. */
+  /** Enstrümanı kullanıcının watchlist'ine ekler. */
   void addToWatchlist(Long instrumentId);
 
-  /** removeFromWatchlist sözleşmesi. */
+  /** Enstrümanı watchlist'ten kaldırır. */
   void removeFromWatchlist(Long instrumentId);
 
-  /** getMyWatchlist sözleşmesi. */
+  /** Oturum açmış kullanıcının watchlist öğelerini döner. */
   List<WatchlistItemDto> getMyWatchlist();
 }

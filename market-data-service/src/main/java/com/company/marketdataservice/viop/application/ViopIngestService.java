@@ -26,6 +26,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+/**
+ * BIST türev dosyalarından VIOP sözleşme ve settlement verisini çekip persistence'a yazan
+ * application katmanı use-case servisi.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -43,6 +47,10 @@ public class ViopIngestService {
     private final InstrumentMappingService instrumentMappingService;
     private final MarketHistoryWriteService marketHistoryWriteService;
 
+    /**
+     * Günlük ingest akışını çalıştırır: sözleşme ve settlement dosyalarını indirir, parse eder,
+     * persistence'a upsert eder, alias history yazar ve ingest run kaydını günceller.
+     */
     public void ingestDaily() {
         long runId = runRepository.start(SOURCE);
         try {

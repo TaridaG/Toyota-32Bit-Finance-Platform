@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Single source of truth for platform ingest instrument definitions.
+ * Platform ingest enstrüman tanımları için tek kaynak (single source of truth) registry'sidir.
  */
 public final class PlatformIngestRegistry {
 
@@ -39,7 +39,7 @@ public final class PlatformIngestRegistry {
         return byKind(kind).stream().map(IngestInstrumentDef::symbol).toList();
     }
 
-    /** Crypto + BIST + US stocks/ETFs (poll universe for stock scheduler). */
+    /** Kripto + BIST + US stock/ETF tanımları (stock scheduler poll evreni). */
     public static List<IngestInstrumentDef> polledEquities() {
         List<IngestInstrumentDef> out = new ArrayList<>();
         out.addAll(BistRegistry.all());

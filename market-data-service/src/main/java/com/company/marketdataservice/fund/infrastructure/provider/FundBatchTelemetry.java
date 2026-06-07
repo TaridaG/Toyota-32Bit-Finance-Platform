@@ -12,15 +12,18 @@ public class FundBatchTelemetry {
     private final AtomicBoolean lastBatchUsedHttpFallback = new AtomicBoolean(false);
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Son fon fetch batch'inde HTTP fallback kullanıldığını işaretler;
+     * {@link com.company.marketdataservice.fund.infrastructure.scheduler.FundScheduler} özet logları için.
+     */
     public void markHttpFallback() {
         lastBatchUsedHttpFallback.set(true);
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Son batch'te HTTP fallback kullanılıp kullanılmadığını okur ve flag'i sıfırlar (consume-on-read).
+     *
+     * @return bir önceki batch HTTP fallback ile tamamlandıysa {@code true}
+     */
     public boolean consumeHttpFallback() {
         return lastBatchUsedHttpFallback.getAndSet(false);
     }

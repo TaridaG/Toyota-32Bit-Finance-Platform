@@ -158,11 +158,10 @@ public class Transaction {
 
   public static Transaction sell(
       User user, Instrument instrument, BigDecimal price, BigDecimal quantity) {
-    return new Transaction(
+    return sell(
         user,
         instrument,
         null,
-        TransactionType.SELL,
         price,
         quantity,
         PurchaseMode.NOW,
@@ -172,7 +171,7 @@ public class Transaction {
         "USD",
         price.multiply(quantity),
         BigDecimal.ONE,
-        "NOW_BOUGHT");
+        "NOW_SOLD");
   }
 
   public static Transaction sell(
@@ -181,11 +180,10 @@ public class Transaction {
       ExternalPortfolio externalPortfolio,
       BigDecimal price,
       BigDecimal quantity) {
-    return new Transaction(
+    return sell(
         user,
         instrument,
         externalPortfolio,
-        TransactionType.SELL,
         price,
         quantity,
         PurchaseMode.NOW,
@@ -195,6 +193,37 @@ public class Transaction {
         "USD",
         price.multiply(quantity),
         BigDecimal.ONE,
-        "NOW_BOUGHT");
+        "NOW_SOLD");
+  }
+
+  public static Transaction sell(
+      User user,
+      Instrument instrument,
+      ExternalPortfolio externalPortfolio,
+      BigDecimal price,
+      BigDecimal quantity,
+      PurchaseMode purchaseMode,
+      Instant acquiredAt,
+      BigDecimal unitPrice,
+      TradeInputMode inputMode,
+      String inputCurrency,
+      BigDecimal inputAmount,
+      BigDecimal fxRateUsed,
+      String sourceLabel) {
+    return new Transaction(
+        user,
+        instrument,
+        externalPortfolio,
+        TransactionType.SELL,
+        price,
+        quantity,
+        purchaseMode,
+        acquiredAt,
+        unitPrice,
+        inputMode,
+        inputCurrency,
+        inputAmount,
+        fxRateUsed,
+        sourceLabel);
   }
 }

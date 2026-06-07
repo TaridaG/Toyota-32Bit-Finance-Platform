@@ -44,7 +44,7 @@ public class IngestConfigEntry {
     }
 
     /**
-     * Composite key for {@link IngestConfigEntry}.
+     * {@link IngestConfigEntry} için bileşik JPA anahtarı ({@code instrumentId} + {@code segment}).
      */
     @Getter
     @Setter

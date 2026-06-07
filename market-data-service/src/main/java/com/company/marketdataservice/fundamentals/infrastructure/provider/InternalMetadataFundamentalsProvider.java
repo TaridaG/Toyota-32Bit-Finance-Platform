@@ -28,7 +28,7 @@ public class InternalMetadataFundamentalsProvider implements InstrumentFundament
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Provider kodunu ({@code INTERNAL_META}) döndürür.
          */
     @Override
     public String providerCode() {
@@ -36,8 +36,8 @@ public class InternalMetadataFundamentalsProvider implements InstrumentFundament
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param instrument girdi parametresi
+     * Tüm enstrümanlar için fallback provider olarak devreye girer.
+         * @param instrument katalog kaydı
          */
     @Override
     public boolean supports(InstrumentCatalogEntry instrument) {
@@ -45,10 +45,10 @@ public class InternalMetadataFundamentalsProvider implements InstrumentFundament
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param instrument girdi parametresi
-         * @param providerSymbol girdi parametresi
-         * @return işlem sonucu
+     * Katalog metadata ve yerel persistence'tan türetilmiş fundamentals snapshot'ını oluşturur.
+         * @param instrument katalog kaydı
+         * @param providerSymbol canonical veya provider sembolü
+         * @return fundamentals DTO
          */
     @Override
     public InstrumentFundamentalsDto fetch(InstrumentCatalogEntry instrument, String providerSymbol) {

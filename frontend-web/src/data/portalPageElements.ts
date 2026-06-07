@@ -54,6 +54,7 @@ export const PORTAL_PAGE_ELEMENTS: PortalPageElement[] = [
   el('FAIZ_VADELI', 'policy-rate', 'TCMB Politika Faizi', 'STAT', 'Özet kartları', 'Politika faizi'),
   el('FAIZ_VADELI', 'tl-mevduat', 'TL Mevduat', 'STAT', 'Özet kartları'),
   el('FAIZ_VADELI', 'tahvil', 'Tahvil', 'STAT', 'Özet kartları'),
+  el('FAIZ_VADELI', 'tr-bono', 'TR Bono', 'STAT', 'Özet kartları', 'TR Bono'),
   el('FAIZ_VADELI', 'repo', 'Repo', 'STAT', 'Özet kartları'),
   el('FAIZ_VADELI', 'eurobond', 'Eurobond', 'STAT', 'Özet kartları'),
   el('FAIZ_VADELI', 'enflasyon', 'Yıllık Enflasyon (TÜFE)', 'STAT', 'Özet kartları', 'TÜFE'),

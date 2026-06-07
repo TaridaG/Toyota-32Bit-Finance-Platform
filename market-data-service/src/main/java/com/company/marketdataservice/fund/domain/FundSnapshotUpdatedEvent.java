@@ -20,12 +20,13 @@ public record FundSnapshotUpdatedEvent(
 ) implements Serializable {
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param fundCode girdi parametresi
-         * @param instrumentId girdi parametresi
-         * @param nav girdi parametresi
-         * @param source provider adı
-         */
+     * Yeni {@code eventId} ve {@code occurredAt} ile fon NAV güncelleme domain event'i oluşturur.
+     *
+     * @param fundCode fon kodu (TEFAS)
+     * @param instrumentId finance catalog instrument ID; mapping yoksa {@code null}
+     * @param nav güncel birim fiyat (NAV)
+     * @param source veriyi sağlayan provider adı
+     */
     public static FundSnapshotUpdatedEvent of(String fundCode, Long instrumentId, BigDecimal nav, String source) {
         return new FundSnapshotUpdatedEvent(
                 UUID.randomUUID().toString(),

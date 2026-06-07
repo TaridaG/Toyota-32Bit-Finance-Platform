@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * US equities and ETF funds polled via Finnhub when enabled.
+ * Finnhub etkin olduğunda poll edilen US equity ve ETF fon tanımlarını tutan ingest registry'sidir.
  */
 public final class NasdaqRegistry {
 

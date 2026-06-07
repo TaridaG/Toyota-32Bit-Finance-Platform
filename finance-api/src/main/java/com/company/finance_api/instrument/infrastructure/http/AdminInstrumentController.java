@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+/** Admin enstrüman oluşturma ve pasifleştirme REST endpoint'leri. */
 @RestController
 @RequestMapping("/api/v1/admin/instruments")
 public class AdminInstrumentController {

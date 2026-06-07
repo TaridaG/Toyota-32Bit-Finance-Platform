@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * VIOP günlük settlement satırları için JDBC tabanlı persistence erişimi.
+ */
 @Repository
 @RequiredArgsConstructor
 public class ViopSettlementJdbcRepository {
@@ -31,6 +34,9 @@ public class ViopSettlementJdbcRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Günlük settlement satırlarını trade date + contract code anahtarıyla toplu upsert eder.
+     */
     public void upsertAll(List<ViopSettlementRow> rows) {
         if (rows == null || rows.isEmpty()) {
             return;

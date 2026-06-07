@@ -67,10 +67,11 @@ public class InstrumentMappingService {
     }
 
     /**
-     * Veriyi okur ve döner.
-         * @param instrumentId girdi parametresi
-         * @return işlem sonucu
-         */
+     * Verilen enstrüman kimliği için aktif provider mapping kayıtlarını öncelik sırasıyla döner.
+     *
+     * @param instrumentId katalog enstrüman kimliği
+     * @return aktif mapping listesi; kimlik {@code null} ise boş liste
+     */
     public List<ProviderInstrumentMapping> getMappingsForInstrument(Long instrumentId) {
         if (instrumentId == null) {
             return List.of();

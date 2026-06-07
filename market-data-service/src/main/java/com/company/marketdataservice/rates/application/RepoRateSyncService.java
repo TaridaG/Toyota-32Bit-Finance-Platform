@@ -18,6 +18,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * TCMB EVDS repo faizi serisini persistence'a senkronize eden `makro oran` application katmanı use-case servisi.
+ */
 @Service
 public class RepoRateSyncService {
 

@@ -7,12 +7,12 @@ import java.util.UUID;
 /** PortfolioSnapshotService iş mantığını uygular (portfolio snapshot service). */
 public interface PortfolioSnapshotService {
 
-  /** createSnapshotForUser sözleşmesi. */
+  /** Belirtilen kullanıcı için günlük portfolio snapshot kaydı oluşturur. */
   void createSnapshotForUser(UUID userId);
 
-  /** createSnapshotsForAllUsers sözleşmesi. */
+  /** Tüm aktif kullanıcılar için snapshot oluşturur (scheduler). */
   void createSnapshotsForAllUsers();
 
-  /** getMySnapshots sözleşmesi. */
+  /** Oturum açmış kullanıcının geçmiş snapshot listesini döner. */
   List<PortfolioSnapshot> getMySnapshots(Long portfolioId);
 }

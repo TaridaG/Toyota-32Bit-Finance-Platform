@@ -25,10 +25,10 @@ public interface NewsEnrichmentService {
 
   NewsWeeklySummaryResponse getWeeklySummary(String language, String portfolioSymbols);
 
-  /** getOriginalNews sözleşmesi. */
+  /** Haberin orijinal (kaynak) içeriğini döner. */
   NewsOriginalResponse getOriginalNews(Long id);
 
-  /** getEnrichedNewsDetail sözleşmesi. */
+  /** Zenginleştirilmiş haber detayını dil tercihiyle döner. */
   NewsEnrichedDetailResponse getEnrichedNewsDetail(Long id, String language);
 
   List<NewsEnrichedResponse> getEnrichedChartNews(

@@ -8,10 +8,10 @@ import java.util.UUID;
 /** UserService iş mantığını uygular (user service). */
 public interface UserService {
 
-  /** createUser sözleşmesi. */
+  /** E-posta ve kullanıcı adı ile yeni portal kullanıcısı oluşturur. */
   User createUser(String email, String username);
 
-  /** getUser sözleşmesi. */
+  /** Kullanıcı kimliğine göre profil özet response'unu döner. */
   ResponseUser getUser(UUID userId);
 
   BalanceResponse getUserBalance(UUID userId);

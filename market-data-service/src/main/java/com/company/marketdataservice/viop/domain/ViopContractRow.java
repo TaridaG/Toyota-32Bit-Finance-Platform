@@ -3,7 +3,7 @@ package com.company.marketdataservice.viop.domain;
 import java.time.LocalDate;
 
 /**
- * Canonical VIOP contract metadata row.
+ * VIOP sözleşme kataloğu metadata satırını temsil eden domain katmanı tipi.
  */
 public record ViopContractRow(
         String contractCode,

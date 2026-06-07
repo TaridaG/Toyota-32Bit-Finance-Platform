@@ -8,7 +8,7 @@ import com.company.marketdataservice.catalog.registry.QuoteCurrency;
 import java.util.List;
 
 /**
- * Turkish TEFAS fund codes; canonical symbol is {@code FUND_{code}}.
+ * Türk TEFAS fon kodları; canonical symbol {@code FUND_{code}} formatındadır.
  */
 public final class FundRegistry {
 

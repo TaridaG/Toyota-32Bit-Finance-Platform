@@ -33,7 +33,10 @@ public class BondPriceScheduler {
     /**
      * Tracked seriler için son EVDS değerini alır ve {@link MarketEventPublisher} ile market price event publish eder.
      */
-    @Scheduled(fixedDelayString = "${scheduler.bond.delay-ms:300000}")
+    @Scheduled(
+            cron = "${scheduler.live.cron:0 0 9,13,17 * * *}",
+            zone = "${scheduler.live.zone:Europe/Istanbul}"
+    )
     public void pullBondPrices() {
         List<TcmbBondMarketProperties.TcmbBondSeries> tracked = bondProperties.getTracked();
         if (tracked == null || tracked.isEmpty()) {

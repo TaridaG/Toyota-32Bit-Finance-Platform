@@ -39,8 +39,8 @@ public class ExchangeRateApiFxProvider implements FxProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Exchange Rate API tabanlı provider tanımlayıcısını ({@code EXCHANGE_RATE_API}) döner.
+     */
     @Override
     public String source() {
         return "EXCHANGE_RATE_API";

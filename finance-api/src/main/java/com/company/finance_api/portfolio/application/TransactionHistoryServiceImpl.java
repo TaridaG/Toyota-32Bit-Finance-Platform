@@ -1,12 +1,16 @@
 package com.company.finance_api.portfolio.application;
 
+import com.company.finance_api.portfolio.domain.PositionCostBasisCalculator;
 import com.company.finance_api.portfolio.domain.Transaction;
 import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
 import com.company.finance_api.portfolio.domain.enums.TransactionType;
 import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
-import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
+import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionAcquisitionFxRepository;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryPageResponse;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryResponse;
+import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
 import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
 import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
@@ -14,6 +18,7 @@ import jakarta.persistence.criteria.JoinType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -22,6 +27,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** TransactionHistoryServiceImpl iş mantığını uygular (transaction history service). */
 @Service
@@ -32,6 +38,8 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
   private final CurrentUserResolver currentUserResolver;
   private final UserRepository userRepository;
   private final ExternalPortfolioRepository externalPortfolioRepository;
+  private final TransactionAcquisitionFxRepository transactionAcquisitionFxRepository;
+  private final PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
 
   /** MyHistory sorgusunu döner. */
   @Override
@@ -138,6 +146,46 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         result.getSize(),
         result.getTotalElements(),
         result.getTotalPages());
+  }
+
+  @Override
+  @Transactional
+  public void deleteMyTransaction(Long transactionId) {
+    var user = resolveCurrentUser();
+    Transaction tx =
+        transactionRepository
+            .findById(transactionId)
+            .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
+    if (!tx.getUser().getId().equals(user.getId())) {
+      throw new IllegalArgumentException("Transaction not found");
+    }
+
+    Instrument instrument = tx.getInstrument();
+    ExternalPortfolio portfolio = tx.getExternalPortfolio();
+    List<Transaction> remaining =
+        transactionRepository
+            .findByUserAndInstrumentAndExternalPortfolio(user, instrument, portfolio)
+            .stream()
+            .filter(t -> !t.getId().equals(transactionId))
+            .sorted(
+                Comparator.comparing(TransactionHistoryServiceImpl::effectiveInstant)
+                    .thenComparing(Transaction::getId))
+            .toList();
+    PositionCostBasisCalculator.validateLedger(remaining);
+
+    if (transactionAcquisitionFxRepository.existsById(transactionId)) {
+      transactionAcquisitionFxRepository.deleteById(transactionId);
+    }
+    transactionRepository.delete(tx);
+
+    if (portfolio != null) {
+      portfolioPerformanceSeriesService.recomputePortfolioHistory(user.getId(), portfolio.getId());
+    }
+  }
+
+  private static Instant effectiveInstant(Transaction tx) {
+    Instant acquired = tx.getAcquiredAt();
+    return acquired != null ? acquired : tx.getCreatedAt();
   }
 
   private com.company.finance_api.profile.domain.User resolveCurrentUser() {

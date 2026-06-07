@@ -23,7 +23,7 @@ public class YahooFinanceProvider implements PriceProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Bu provider'ın kaynak kimliğini döner.
          */
     @Override
     public String source() {
@@ -31,9 +31,9 @@ public class YahooFinanceProvider implements PriceProvider {
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
+     * Yahoo chart provider'ından spot kotasyon fetch edip yalnızca fiyat alanını döner.
          * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+         * @return güncel spot fiyat
          */
     @Override
     public BigDecimal fetchPrice(String symbol) {
@@ -41,9 +41,9 @@ public class YahooFinanceProvider implements PriceProvider {
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+     * Yahoo chart REST API'sinden spot kotasyon fetch eder; aday sembol varyantlarını sırayla dener.
+         * @param symbol enstrüman sembolü (BIST için .IS suffix adayı da denenir)
+         * @return fiyat, zaman damgası ve piyasa meta verilerini içeren spot kotasyon
          */
     public YahooSpotQuote fetchSpotQuote(String symbol) {
         log.info("YAHOO FETCH START symbol={}", symbol);

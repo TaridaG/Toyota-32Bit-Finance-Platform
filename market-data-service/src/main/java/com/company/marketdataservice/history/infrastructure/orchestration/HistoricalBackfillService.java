@@ -172,11 +172,11 @@ public class HistoricalBackfillService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param assetType girdi parametresi
-         * @param rawSymbol girdi parametresi
+     * Backfill için bir sonraki chunk penceresini hesaplar.
+         * @param assetType varlık türü (ör. STOCK, FX)
+         * @param rawSymbol canonical olmayan veya ham sembol
          * @param provider provider adı
-         * @return işlem sonucu
+         * @return chunk başlangıç/bitiş tarihleri; backfill tamamlandıysa {@code null}
          */
     public ChunkWindow nextChunkWindow(String assetType, String rawSymbol, String provider) {
         if (rawSymbol == null || rawSymbol.isBlank()) {
@@ -524,9 +524,9 @@ public class HistoricalBackfillService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param chunkEnd girdi parametresi
+     * Chunk tamamlandığında state'in {@code lastFetchedAt} alanını günceller.
+         * @param state güncellenecek backfill state kaydı
+         * @param chunkEnd tamamlanan chunk'un bitiş tarihi (dahil)
          */
     @Transactional
     protected void markChunkDone(BackfillStateEntry state, LocalDate chunkEnd) {
@@ -541,9 +541,9 @@ public class HistoricalBackfillService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param start girdi parametresi
-         * @param end girdi parametresi
+     * Backfill chunk tarih aralığını temsil eden value object.
+         * @param start chunk başlangıç tarihi (dahil)
+         * @param end chunk bitiş tarihi (dahil)
          */
     public record ChunkWindow(LocalDate start, LocalDate end) {
     }

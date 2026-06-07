@@ -49,7 +49,7 @@ public class CpiMonthlySyncService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * CPI tablosu boşsa tek seferlik async initial sync başlatır (HTTP thread'lerini bloklamaz).
          */
     public void requestInitialSyncIfEmptyAsync() {
         if (cpiRepository.countByMetric(CpiMetric.INDEX) > 0) {

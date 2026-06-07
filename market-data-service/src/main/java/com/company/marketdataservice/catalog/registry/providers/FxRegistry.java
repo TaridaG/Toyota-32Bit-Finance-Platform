@@ -8,7 +8,7 @@ import com.company.marketdataservice.catalog.registry.QuoteCurrency;
 import java.util.List;
 
 /**
- * Fiat TRY crosses and precious-metal spot FX instruments synced to TCMB mappings.
+ * Fiat TRY cross'ları ve değerli metal spot FX enstrümanları; TCMB mapping'lerine sync edilir.
  */
 public final class FxRegistry {
 
@@ -45,7 +45,7 @@ public final class FxRegistry {
         );
     }
 
-    /** Base currency code for catalog {@code base_currency} column. */
+    /** Catalog {@code base_currency} kolonu için base currency kodunu döner. */
     public static String baseCurrencyFor(String symbol) {
         if (symbol == null || symbol.length() < 6 || !symbol.endsWith("TRY")) {
             return null;

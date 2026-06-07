@@ -21,9 +21,9 @@ public class CoinGeckoPriceProvider implements PriceProvider {
     private String baseUrl;
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+     * CoinGecko simple/price REST API'sinden verilen sembol için USD spot fiyat fetch eder.
+         * @param symbol enstrüman sembolü; USDT suffix'i CoinGecko coin id'sine dönüştürülür
+         * @return USD cinsinden spot fiyat
          */
     @Override
     public BigDecimal fetchPrice(String symbol) {
@@ -50,7 +50,7 @@ public class CoinGeckoPriceProvider implements PriceProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Bu provider'ın kaynak kimliğini döner.
          */
     @Override
     public String source() {

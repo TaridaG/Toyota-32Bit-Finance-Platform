@@ -19,6 +19,17 @@ export type AdminInstrumentType =
 export type AdminExchange = 'BINANCE' | 'BIST' | 'YAHOO' | 'TEFAS' | 'TCMB' | 'NASDAQ' | 'FINNHUB'
 export type AdminIngestSegment = 'CRYPTO' | 'BIST' | 'NASDAQ'
 
+export type IngestMarketSegment = AdminIngestSegment
+
+export const INGEST_SEGMENT_PRESETS: Record<
+  IngestMarketSegment,
+  { type: AdminInstrumentType; exchange: AdminExchange; segment: AdminIngestSegment }
+> = {
+  CRYPTO: { type: 'CRYPTO', exchange: 'BINANCE', segment: 'CRYPTO' },
+  BIST: { type: 'STOCK', exchange: 'BIST', segment: 'BIST' },
+  NASDAQ: { type: 'STOCK', exchange: 'NASDAQ', segment: 'NASDAQ' },
+}
+
 export type CreateAdminInstrumentPayload = {
   symbol: string
   name: string

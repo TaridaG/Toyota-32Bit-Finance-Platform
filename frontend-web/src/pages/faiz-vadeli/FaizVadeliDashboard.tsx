@@ -15,16 +15,20 @@ import { FaizVadeliTahvilStatCard } from './components/FaizVadeliTahvilStatCard'
 import { FaizVadeliViopDetailPanel } from './components/FaizVadeliViopDetailPanel'
 import { FaizVadeliEurobondStatCard } from './components/FaizVadeliEurobondStatCard'
 import { FaizVadeliEurobondDetailPanel } from './components/FaizVadeliEurobondDetailPanel'
+import { FaizVadeliBondStatCard } from './components/FaizVadeliBondStatCard'
+import { FaizVadeliBondDetailPanel } from './components/FaizVadeliBondDetailPanel'
 import type { TlDepositMaturityCode } from './lib/tlDepositMaturity'
+import { DEFAULT_BOND_TENOR, type BondTenorCode } from './lib/bondTenor'
 import { TR_USD_EUROBOND_DEFAULT_ISIN } from './lib/trUsdEurobondIsins'
 import type { EurobondInstrumentWire } from './api/eurobondMarketApi'
 
-type MidPanel = 'policy' | 'tl_deposit' | 'tahvil' | 'repo' | 'eurobond' | 'inflation'
+type MidPanel = 'policy' | 'tl_deposit' | 'tahvil' | 'tr_bond' | 'repo' | 'eurobond' | 'inflation'
 
 export function FaizVadeliDashboard() {
   const { i18n } = useTranslation()
   const [midChart, setMidChart] = useState<MidPanel>('policy')
   const [tlDepositMaturity, setTlDepositMaturity] = useState<TlDepositMaturityCode>('MT04')
+  const [bondTenor, setBondTenor] = useState<BondTenorCode>(DEFAULT_BOND_TENOR)
   const [eurobondInstruments, setEurobondInstruments] = useState<EurobondInstrumentWire[]>([])
   const [eurobondIsin, setEurobondIsin] = useState(TR_USD_EUROBOND_DEFAULT_ISIN)
   const [cpiMetric, setCpiMetric] = useState<CpiMetricCode>('YEARLY_PCT')
@@ -34,7 +38,7 @@ export function FaizVadeliDashboard() {
 
   return (
     <div className="fi-faiz-dash">
-      <div className="fi-faiz-stat-grid fi-faiz-stat-grid--cols-6" role="list">
+      <div className="fi-faiz-stat-grid fi-faiz-stat-grid--cols-7" role="list">
         {copy.stats.map((stat) => (
           <div key={stat.statSlot ?? stat.title} role="listitem">
             {stat.statSlot === 'policy_rate' ? (
@@ -50,6 +54,14 @@ export function FaizVadeliDashboard() {
               <FaizVadeliTahvilStatCard
                 template={stat}
                 onShowHistory={() => setMidChart('tahvil')}
+              />
+            ) : stat.statSlot === 'tr_bond' ? (
+              <FaizVadeliBondStatCard
+                template={stat}
+                tenor={bondTenor}
+                onTenorChange={setBondTenor}
+                active={midChart === 'tr_bond'}
+                onShowHistory={() => setMidChart('tr_bond')}
               />
             ) : stat.statSlot === 'repo' ? (
               <FaizVadeliRepoStatCard
@@ -91,6 +103,8 @@ export function FaizVadeliDashboard() {
           <FaizVadeliTlDepositChartPanel maturity={tlDepositMaturity} onBack={goPolicy} />
         ) : midChart === 'tahvil' ? (
           <FaizVadeliViopDetailPanel onBack={goPolicy} />
+        ) : midChart === 'tr_bond' ? (
+          <FaizVadeliBondDetailPanel tenor={bondTenor} onBack={goPolicy} />
         ) : midChart === 'repo' ? (
           <FaizVadeliRepoChartPanel onBack={goPolicy} />
         ) : midChart === 'eurobond' ? (

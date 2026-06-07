@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * TCMB repo faizi güncel değer ve haftalık geçmiş sorgularını sunan `makro oran` application katmanı use-case servisi.
+ */
 @Service
 public class RepoRateHistoryService {
 

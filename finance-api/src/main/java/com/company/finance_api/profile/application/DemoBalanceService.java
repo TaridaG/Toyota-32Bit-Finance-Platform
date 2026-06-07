@@ -6,9 +6,9 @@ import com.company.finance_api.profile.domain.User;
 /** DemoBalanceService iş mantığını uygular (demo balance service). */
 public interface DemoBalanceService {
 
-  /** createForUser sözleşmesi. */
+  /** Kullanıcı için başlangıç demo bakiyesi kaydı oluşturur. */
   DemoBalance createForUser(User user);
 
-  /** getByUser sözleşmesi. */
+  /** Kullanıcının demo bakiye kaydını döner. */
   DemoBalance getByUser(User user);
 }

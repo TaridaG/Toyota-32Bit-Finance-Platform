@@ -13,14 +13,13 @@ public interface PriceService {
   // Son fiyat (dashboard, alarm, notification)
   Optional<InstrumentPrice> getLatestPrice(Instrument instrument, PriceType priceType);
 
-  /** getLatestValuationPrice sözleşmesi. */
+  /** Enstrüman için güncel valuation fiyatını döner (mark-to-market). */
   Optional<InstrumentPrice> getLatestValuationPrice(Instrument instrument);
 
   /**
-   * Latest stored valuation tick strictly before {@code exclusiveEnd} (e.g. start of today UTC for
-   * “yesterday” snapshot).
+   * {@code exclusiveEnd} anından önceki son valuation tick'ini döner (ör. dün kapanış snapshot için
+   * bugün UTC başlangıcı).
    */
-  /** getLatestValuationPriceBefore sözleşmesi. */
   Optional<InstrumentPrice> getLatestValuationPriceBefore(
       Instrument instrument, Instant exclusiveEnd);
 
@@ -29,6 +28,6 @@ public interface PriceService {
       Instrument instrument, PriceType priceType, Instant start, Instant end);
 
   // İleride scheduler / kafka burayı kullanacak
-  /** savePrice sözleşmesi. */
+  /** Fiyat kaydını persist eder ve cache'i günceller. */
   InstrumentPrice savePrice(InstrumentPrice price);
 }

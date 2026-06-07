@@ -43,4 +43,11 @@ public class TransactionHistoryController {
         historyService.getMyHistoryPage(
             page, size, portfolioId, symbol, type, purchaseMode, inputCurrency, fromDate, toDate));
   }
+
+  /** Transaction kaydını ledger'dan kalıcı olarak siler. */
+  @DeleteMapping("/{id}")
+  public ApiResponse<Void> deleteTransaction(@PathVariable Long id) {
+    historyService.deleteMyTransaction(id);
+    return ApiResponse.success(null);
+  }
 }

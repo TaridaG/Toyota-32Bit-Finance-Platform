@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Startup sync from {@link PlatformIngestRegistry} into shared {@code instruments} and MDS catalog tables.
+ * Startup'ta {@link PlatformIngestRegistry} tanımlarını paylaşılan {@code instruments} ve MDS catalog tablolarına sync eder.
  */
 @Component
 public class InstrumentRegistryDbSync {

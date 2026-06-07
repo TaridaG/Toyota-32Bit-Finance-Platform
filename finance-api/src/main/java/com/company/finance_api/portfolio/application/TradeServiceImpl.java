@@ -2,6 +2,8 @@ package com.company.finance_api.portfolio.application;
 
 import com.company.finance_api.instrument.domain.Instrument;
 import com.company.finance_api.instrument.infrastructure.persistence.InstrumentRepository;
+import com.company.finance_api.portfolio.domain.PositionCostBasisCalculator;
+import com.company.finance_api.portfolio.domain.PositionCostBasisCalculator.PositionCostBasis;
 import com.company.finance_api.portfolio.domain.Transaction;
 import com.company.finance_api.portfolio.domain.TransactionAcquisitionFx;
 import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
@@ -33,8 +35,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -62,6 +67,7 @@ public class TradeServiceImpl implements TradeService {
   private final ExternalPortfolioRepository externalPortfolioRepository;
   private final TransactionEventPublisher transactionEventPublisher;
   private final TlDepositIndexQueryService tlDepositIndexQueryService;
+  private final PositionCostBasisCalculator positionCostBasisCalculator;
   private static final List<PriceType> VALUATION_PRICE_TYPES =
       List.of(PriceType.MARKET, PriceType.FX_MID, PriceType.FUND_NAV);
 
@@ -205,26 +211,42 @@ public class TradeServiceImpl implements TradeService {
     Computation computation = compute(request, instrument);
     BigDecimal quantity = computation.lots();
 
-    // 🔥 POSITION CHECK
-    BigDecimal netQuantity =
-        transactionRepository
-            .findByUserAndInstrumentAndExternalPortfolio(user, instrument, portfolio)
-            .stream()
-            .map(
-                tx ->
-                    tx.getType() == TransactionType.BUY
-                        ? tx.getQuantity()
-                        : tx.getQuantity().negate())
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    List<Transaction> ledger =
+        transactionRepository.findByUserAndInstrumentAndExternalPortfolio(user, instrument, portfolio);
+    PositionCostBasis available =
+        request.getPurchaseMode() == PurchaseMode.PAST
+            ? positionCostBasisCalculator.calculateHoldingsBefore(
+                ledger, sellCutoffExclusive(request, computation))
+            : positionCostBasisCalculator.calculate(ledger);
 
-    if (netQuantity.compareTo(quantity) < 0) {
+    if (available.quantity().compareTo(quantity) < 0) {
       throw new IllegalStateException("Insufficient position for sell");
     }
 
-    BigDecimal totalGain = computation.totalCost();
-
+    String sourceLabel =
+        request.getPurchaseMode() == PurchaseMode.PAST ? "PAST_SOLD" : "NOW_SOLD";
     Transaction transaction =
-        Transaction.sell(user, instrument, portfolio, computation.unitPriceUsed(), quantity);
+        Transaction.sell(
+            user,
+            instrument,
+            portfolio,
+            computation.unitPriceUsed(),
+            quantity,
+            request.getPurchaseMode(),
+            computation.acquiredAt(),
+            computation.unitPriceUsed(),
+            request.getInputMode(),
+            computation.inputCurrency(),
+            computation.inputAmount(),
+            computation.fxRateUsed(),
+            sourceLabel);
+
+    List<Transaction> ledgerWithSell = new ArrayList<>(ledger);
+    ledgerWithSell.add(transaction);
+    ledgerWithSell.sort(
+        Comparator.comparing(TradeServiceImpl::effectiveInstant)
+            .thenComparing(tx -> tx.getId() != null ? tx.getId() : Long.MAX_VALUE));
+    PositionCostBasisCalculator.validateLedger(ledgerWithSell);
 
     Transaction saved = transactionRepository.save(transaction);
 
@@ -753,6 +775,26 @@ public class TradeServiceImpl implements TradeService {
         "TL_DEPOSIT_INDEX_LIVE",
         Optional.empty(),
         false);
+  }
+
+  private static Instant sellCutoffExclusive(TradeExecutionRequest request, Computation computation) {
+    if (request.getPurchaseMode() != PurchaseMode.PAST) {
+      return Instant.now();
+    }
+    Instant acquired = computation.acquiredAt();
+    if (acquired == null) {
+      throw new IllegalArgumentException("acquiredAt is required for past sells");
+    }
+    LocalDate sellDay = LocalDate.ofInstant(acquired, ZoneOffset.UTC);
+    if (sellDay.isAfter(LocalDate.now(ZoneOffset.UTC))) {
+      throw new IllegalArgumentException("Sell date cannot be in the future");
+    }
+    return sellDay.atStartOfDay(ZoneOffset.UTC).toInstant();
+  }
+
+  private static Instant effectiveInstant(Transaction tx) {
+    Instant acquired = tx.getAcquiredAt();
+    return acquired != null ? acquired : tx.getCreatedAt();
   }
 
   private record Computation(

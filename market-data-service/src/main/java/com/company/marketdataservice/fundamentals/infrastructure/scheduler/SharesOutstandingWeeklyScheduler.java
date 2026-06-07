@@ -37,7 +37,7 @@ public class SharesOutstandingWeeklyScheduler {
     private final FinnhubClient finnhubClient;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Haftalık cron ile takip edilen hisselerin dolaşımdaki pay (shares outstanding) sayısını Finnhub'dan doğrular ve persist eder.
          */
     @Scheduled(cron = "${market.stock.shares-verification.cron:0 0 3 * * MON}", zone = "UTC")
     public void verifySharesOutstandingWeekly() {
@@ -45,7 +45,7 @@ public class SharesOutstandingWeeklyScheduler {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Uygulama açılışında shares outstanding snapshot'ını ısıtır (warmup).
          */
     @EventListener(ApplicationReadyEvent.class)
     public void warmupSharesOutstandingOnStartup() {

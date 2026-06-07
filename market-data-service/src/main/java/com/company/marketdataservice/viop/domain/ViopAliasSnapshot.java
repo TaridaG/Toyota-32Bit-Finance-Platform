@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Alias-to-active-contract resolved daily value (used by UI symbols).
+ * UI alias sembolü ile aktif sözleşme günlük değerini eşleyen domain katmanı tipi.
  */
 public record ViopAliasSnapshot(
         String aliasSymbol,

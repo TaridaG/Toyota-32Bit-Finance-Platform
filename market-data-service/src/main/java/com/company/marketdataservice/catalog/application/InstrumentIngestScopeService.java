@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Facade over {@link PlatformIngestRegistry} for schedulers and orchestrators.
+ * Scheduler ve orchestrator'lar için {@link PlatformIngestRegistry} üzerinde facade servisidir.
  */
 @Service
 public class InstrumentIngestScopeService {
@@ -83,7 +83,7 @@ public class InstrumentIngestScopeService {
     }
 
     /**
-     * Whether live stock ingest should use Finnhub for this canonical symbol.
+     * Bu canonical symbol için canlı stock ingest'in Finnhub kullanıp kullanmayacağını döner.
      */
     public boolean isFinnhubOwned(String symbol, FinnhubProperties finnhubProperties) {
         if (symbol == null || symbol.isBlank() || finnhubProperties == null || !finnhubProperties.isEnabled()) {

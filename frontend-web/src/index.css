@@ -2124,41 +2124,54 @@ body,
   gap: 0.5rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-card {
+.fi-faiz-stat-grid--cols-7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-card,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-card {
   padding: 0.55rem 0.45rem 0.65rem;
   min-height: 7rem;
   gap: 0.2rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-icon {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-icon,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-icon {
   width: 1.75rem;
   height: 1.75rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-icon-svg {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-icon-svg,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-icon-svg {
   width: 0.95rem;
   height: 0.95rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-title {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-title,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-title {
   font-size: 0.65rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-value {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-value,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-value {
   font-size: 1.05rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-value-skel {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-value-skel,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-value-skel {
   height: 1.2rem;
   width: 4.25rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-meta {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-stat-meta,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-stat-meta {
   font-size: 0.62rem;
   gap: 0.1rem;
 }
 
-.fi-faiz-stat-grid--cols-6 .fi-faiz-tl-dep-maturity-select {
+.fi-faiz-stat-grid--cols-6 .fi-faiz-tl-dep-maturity-select,
+.fi-faiz-stat-grid--cols-7 .fi-faiz-tl-dep-maturity-select {
   max-width: 4.6rem;
   font-size: 0.55rem;
   padding: 0.1rem 0.2rem;
@@ -2176,7 +2189,8 @@ body,
 
 @media (max-width: 1320px) {
   .fi-faiz-stat-grid,
-  .fi-faiz-stat-grid--cols-6 {
+  .fi-faiz-stat-grid--cols-6,
+  .fi-faiz-stat-grid--cols-7 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -2643,6 +2657,77 @@ body,
 
 .fi-faiz-simulator-layout-charts .fi-faiz-policy-panel-chart-outer {
   min-height: min(32vh, 280px);
+}
+
+.fi-faiz-bond-edu ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--color-text-soft);
+}
+
+.fi-faiz-bond-subtitle {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.fi-faiz-bond-hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.fi-faiz-bond-curve-block {
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+}
+
+.fi-faiz-bond-curve {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fi-faiz-bond-curve-row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr 3.5rem 3.2rem;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.fi-faiz-bond-curve-row--active .fi-faiz-bond-curve-tenor,
+.fi-faiz-bond-curve-row--active .fi-faiz-bond-curve-yield {
+  font-weight: 600;
+  color: var(--color-accent, #d97706);
+}
+
+.fi-faiz-bond-curve-bar-track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.18);
+  overflow: hidden;
+}
+
+.fi-faiz-bond-curve-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #fbbf24, #d97706);
+}
+
+.fi-faiz-bond-curve-d1 {
+  font-size: 0.62rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.fi-faiz-bond-detail .fi-faiz-simulator-layout-charts .fi-faiz-policy-panel-chart-outer {
+  min-height: min(28vh, 240px);
 }
 
 
@@ -7902,6 +7987,18 @@ button:disabled {
   align-self: stretch;
 }
 
+@media (max-width: 1200px) {
+  .my-portfolio-grid--dashboard .my-portfolio-card--dashboard-trade,
+  .my-portfolio-grid--dashboard .my-portfolio-card--dashboard-profit,
+  .my-portfolio-grid--dashboard .my-portfolio-card--dashboard-allocation,
+  .my-portfolio-grid--dashboard .my-portfolio-card--dashboard-tx,
+  .my-portfolio-grid--dashboard .my-portfolio-card--dashboard-goal,
+  .my-portfolio-grid--dashboard .my-portfolio-card--dashboard-news {
+    grid-column: span 6;
+    grid-row: auto;
+  }
+}
+
 .my-portfolio-card {
   grid-column: span 4;
   display: grid;
@@ -8832,21 +8929,17 @@ button.my-portfolio-dashboard-value-badge {
 .my-portfolio-trade-card {
   display: grid;
   gap: 0.75rem;
-  border: 1px solid rgba(59, 130, 246, 0.18);
-  background:
-    radial-gradient(circle at 12% 18%, rgba(59, 130, 246, 0.14), transparent 36%),
-    radial-gradient(circle at 88% 12%, rgba(56, 189, 248, 0.08), transparent 34%),
-    linear-gradient(135deg, rgba(11, 18, 32, 0.98), rgba(15, 23, 42, 0.96));
 }
 
 .my-portfolio-trade-title {
   margin: 0;
   font-size: 1.4rem;
+  color: var(--color-text);
 }
 
 .my-portfolio-trade-subtitle {
   margin: 0;
-  color: rgba(226, 232, 240, 0.82);
+  color: var(--color-text-soft);
   font-size: 0.88rem;
 }
 
@@ -8864,10 +8957,10 @@ button.my-portfolio-dashboard-value-badge {
 
 .my-portfolio-trade-form-panel,
 .my-portfolio-trade-preview-panel {
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 0.95rem;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--color-surface-muted);
   transition: transform 280ms ease, box-shadow 280ms ease;
   transform-origin: center right;
   align-self: stretch;
@@ -8878,13 +8971,13 @@ button.my-portfolio-dashboard-value-badge {
 
 .my-portfolio-trade-preview-panel.is-expanded {
   transform: scale(1.02, 1.04);
-  box-shadow: 0 18px 32px rgba(30, 64, 175, 0.22);
+  box-shadow: var(--shadow-soft);
 }
 
 .my-portfolio-acquisition-fx {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  border-top: 1px solid var(--color-border);
   font-size: 0.78rem;
 }
 
@@ -8892,7 +8985,7 @@ button.my-portfolio-dashboard-value-badge {
   margin: 0 0 0.45rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(226, 232, 240, 0.92);
+  color: var(--color-text);
 }
 
 .my-portfolio-acquisition-fx-asof {
@@ -8900,13 +8993,13 @@ button.my-portfolio-dashboard-value-badge {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  color: rgba(148, 163, 184, 0.9);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-acquisition-fx-asof code {
   font-size: 0.68rem;
   word-break: break-all;
-  color: rgba(226, 232, 240, 0.85);
+  color: var(--color-text-muted);
 }
 
 .my-portfolio-acquisition-fx-table {
@@ -8918,7 +9011,7 @@ button.my-portfolio-dashboard-value-badge {
 .my-portfolio-acquisition-fx-table td {
   padding: 0.28rem 0.35rem;
   text-align: right;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .my-portfolio-acquisition-fx-table th:first-child,
@@ -8928,14 +9021,14 @@ button.my-portfolio-dashboard-value-badge {
 
 .my-portfolio-acquisition-fx-table th {
   font-weight: 500;
-  color: rgba(148, 163, 184, 0.85);
+  color: var(--color-text-soft);
   font-size: 0.72rem;
 }
 
 .my-portfolio-acquisition-fx-note {
   margin: 0.45rem 0 0;
   font-size: 0.7rem;
-  color: rgba(148, 163, 184, 0.8);
+  color: var(--color-text-soft);
   line-height: 1.35;
 }
 
@@ -8951,16 +9044,17 @@ button.my-portfolio-dashboard-value-badge {
 .my-portfolio-trade-steps li {
   text-align: center;
   font-size: 0.76rem;
-  color: rgba(148, 163, 184, 0.95);
+  color: var(--color-text-soft);
   border-radius: 999px;
   padding: 0.42rem 0.35rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .my-portfolio-trade-steps li.is-active {
-  border-color: rgba(96, 165, 250, 0.6);
-  color: #eff6ff;
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.34), rgba(14, 165, 233, 0.2));
+  border-color: color-mix(in srgb, #2563eb 55%, var(--color-border));
+  color: var(--color-text);
+  background: color-mix(in srgb, #2563eb 12%, var(--color-surface-muted));
 }
 
 .my-portfolio-trade-grid {
@@ -8980,16 +9074,16 @@ button.my-portfolio-dashboard-value-badge {
 
 .my-portfolio-trade-field span {
   font-size: 0.8rem;
-  color: rgba(226, 232, 240, 0.75);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-trade-field select,
 .my-portfolio-trade-field input {
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   padding: 0.5rem 0.58rem;
-  background: rgba(11, 18, 32, 0.78);
-  color: #f8fafc;
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
 }
 
@@ -9004,7 +9098,7 @@ button.my-portfolio-dashboard-value-badge {
   flex: 0 0 auto;
   font-weight: 600;
   font-size: 0.95rem;
-  color: rgba(226, 232, 240, 0.95);
+  color: var(--color-text);
   line-height: 1.2;
   user-select: none;
 }
@@ -9025,7 +9119,7 @@ button.my-portfolio-dashboard-value-badge {
   display: block;
   margin-bottom: 0.35rem;
   font-size: 0.8rem;
-  color: rgba(226, 232, 240, 0.75);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-trade-toggle-group {
@@ -9035,18 +9129,27 @@ button.my-portfolio-dashboard-value-badge {
 }
 
 .my-portfolio-trade-toggle-group button {
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   padding: 0.52rem;
-  background: rgba(11, 18, 32, 0.68);
-  color: #cbd5e1;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   font-size: 0.83rem;
 }
 
 .my-portfolio-trade-toggle-group button.is-active {
-  border-color: rgba(96, 165, 250, 0.62);
-  color: #eff6ff;
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.36), rgba(14, 165, 233, 0.24));
+  border-color: color-mix(in srgb, #2563eb 55%, var(--color-border));
+  color: var(--color-text);
+  background: color-mix(in srgb, #2563eb 12%, var(--color-surface-muted));
+}
+
+.my-portfolio-trade-title-row {
+  margin-bottom: 1rem;
+}
+
+.my-portfolio-trade-side-toggle {
+  width: fit-content;
+  min-width: 12rem;
 }
 
 .my-portfolio-trade-submit {
@@ -9124,11 +9227,11 @@ button.my-portfolio-dashboard-value-badge {
 
 .my-portfolio-history-filters input,
 .my-portfolio-history-filters select {
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  border: 1px solid var(--color-border-strong);
   border-radius: 9px;
   padding: 0.45rem 0.6rem;
-  background: rgba(15, 23, 42, 0.42);
-  color: #f8fafc;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 0.82rem;
 }
 
@@ -9172,10 +9275,12 @@ button.my-portfolio-dashboard-value-badge {
 }
 
 .my-portfolio-modal input {
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   padding: 0.6rem 0.7rem;
   font-size: 0.9rem;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .my-portfolio-modal-actions {
@@ -9203,12 +9308,12 @@ button.my-portfolio-dashboard-value-badge {
 }
 
 .my-portfolio-currency-chip {
-  border: 1px solid rgba(148, 163, 184, 0.45);
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   padding: 0.55rem 0.6rem;
   font-size: 0.88rem;
-  background: transparent;
-  color: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   text-align: center;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -9248,7 +9353,7 @@ button.my-portfolio-dashboard-value-badge {
 .my-portfolio-history-wrap td {
   text-align: left;
   padding: 0.5rem 0.4rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  border-bottom: 1px solid var(--color-border);
   font-size: 0.8rem;
   white-space: nowrap;
 }
@@ -9274,7 +9379,7 @@ button.my-portfolio-dashboard-value-badge {
   border-radius: 50%;
   margin: 0.75rem auto 0.95rem;
   background:
-    radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 53%, transparent 55%),
+    radial-gradient(circle at center, var(--color-surface) 53%, transparent 55%),
     conic-gradient(#6366f1 0 47%, #a855f7 47% 100%);
 }
 
@@ -9288,12 +9393,47 @@ button.my-portfolio-dashboard-value-badge {
   justify-content: space-between;
   gap: 0.6rem;
   font-size: 0.8rem;
-  color: rgba(226, 232, 240, 0.84);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-preview-stats strong {
-  color: #f8fafc;
+  color: var(--color-text);
   font-weight: 700;
+}
+
+.my-portfolio-sell-holding-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--color-text-soft);
+}
+
+.my-portfolio-sell-all-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2563eb;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.my-portfolio-sell-all-link:hover:not(:disabled) {
+  color: #1d4ed8;
+}
+
+.my-portfolio-sell-all-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.my-portfolio-sell-analysis-panel {
+  margin-top: 0.25rem;
+}
+
+.my-portfolio-sell-empty-state {
+  padding: 1.25rem 0;
 }
 
 .my-portfolio-preview-distribution {
@@ -9308,12 +9448,12 @@ button.my-portfolio-dashboard-value-badge {
   display: flex;
   justify-content: space-between;
   font-size: 0.78rem;
-  color: rgba(226, 232, 240, 0.85);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-preview-performance {
   margin-top: 0.65rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  border-top: 1px solid var(--color-border);
   padding-top: 0.55rem;
   display: grid;
   gap: 0.28rem;
@@ -9322,7 +9462,7 @@ button.my-portfolio-dashboard-value-badge {
 .my-portfolio-preview-performance h5 {
   margin: 0 0 0.2rem;
   font-size: 0.78rem;
-  color: rgba(226, 232, 240, 0.92);
+  color: var(--color-text);
 }
 
 .my-portfolio-preview-performance div {
@@ -9330,7 +9470,7 @@ button.my-portfolio-dashboard-value-badge {
   justify-content: space-between;
   gap: 0.6rem;
   font-size: 0.76rem;
-  color: rgba(148, 163, 184, 0.95);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-preview-performance strong {
@@ -9338,11 +9478,11 @@ button.my-portfolio-dashboard-value-badge {
 }
 
 .my-portfolio-preview-performance .is-up {
-  color: #22c55e;
+  color: #16a34a;
 }
 
 .my-portfolio-preview-performance .is-down {
-  color: #f87171;
+  color: #dc2626;
 }
 
 .my-portfolio-history-badge {
@@ -9369,178 +9509,58 @@ button.my-portfolio-dashboard-value-badge {
 
 .my-portfolio-confirmation-box {
   margin-top: 0.2rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0.8rem 0.9rem;
-  background: rgba(15, 23, 42, 0.55);
+  background: var(--color-surface);
 }
 
 .my-portfolio-confirmation-box h5 {
   margin: 0 0 0.45rem;
   font-size: 0.88rem;
+  color: var(--color-text);
 }
 
 .my-portfolio-confirmation-box p {
   margin: 0.28rem 0;
   font-size: 0.82rem;
-  color: rgba(226, 232, 240, 0.9);
+  color: var(--color-text);
   display: flex;
   justify-content: space-between;
   gap: 0.7rem;
 }
 
 .my-portfolio-confirmation-box p span {
-  color: rgba(148, 163, 184, 0.95);
+  color: var(--color-text-soft);
 }
 
 .my-portfolio-confirmation-box p strong {
-  color: #f8fafc;
+  color: var(--color-text);
   font-weight: 700;
 }
 
 .my-portfolio-preview-note {
   margin: auto 0 0;
   font-size: 0.76rem;
-  color: rgba(148, 163, 184, 0.95);
+  color: var(--color-text-soft);
 }
 
-:root:not([data-theme='dark']) .my-portfolio-trade-card {
-  border-color: rgba(99, 102, 241, 0.22);
-  background:
-    radial-gradient(circle at 10% 20%, rgba(147, 197, 253, 0.2), transparent 42%),
-    radial-gradient(circle at 85% 10%, rgba(216, 180, 254, 0.18), transparent 45%),
-    linear-gradient(135deg, #f8fbff, #eef4ff);
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-form-panel,
-:root:not([data-theme='dark']) .my-portfolio-trade-preview-panel {
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.86);
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-title {
-  color: #0f172a;
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-subtitle,
-:root:not([data-theme='dark']) .my-portfolio-trade-field span,
-:root:not([data-theme='dark']) .my-portfolio-preview-stats div,
-:root:not([data-theme='dark']) .my-portfolio-preview-distribution li,
-:root:not([data-theme='dark']) .my-portfolio-preview-performance div,
-:root:not([data-theme='dark']) .my-portfolio-confirmation-box p span,
-:root:not([data-theme='dark']) .my-portfolio-preview-note {
-  color: #475569;
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-steps li {
-  color: #475569;
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.8);
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-steps li.is-active {
-  color: #1e1b4b;
-  border-color: rgba(99, 102, 241, 0.7);
-  background: linear-gradient(90deg, rgba(129, 140, 248, 0.35), rgba(217, 70, 239, 0.25));
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-field select,
-:root:not([data-theme='dark']) .my-portfolio-trade-field input {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: #ffffff;
-  color: #0f172a;
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-money-input__sym {
-  color: #0f172a;
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-toggle-group button {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: #ffffff;
-  color: #0f172a;
-}
-
-:root:not([data-theme='dark']) .my-portfolio-trade-toggle-group button.is-active {
-  color: #1e1b4b;
-  border-color: rgba(99, 102, 241, 0.75);
-  background: linear-gradient(90deg, rgba(129, 140, 248, 0.35), rgba(217, 70, 239, 0.28));
-}
-
-:root:not([data-theme='dark']) .my-portfolio-preview-ring {
-  background:
-    radial-gradient(circle at center, #ffffff 53%, transparent 55%),
-    conic-gradient(#6366f1 0 47%, #a855f7 47% 100%);
-}
-
-:root:not([data-theme='dark']) .my-portfolio-preview-stats strong,
-:root:not([data-theme='dark']) .my-portfolio-preview-performance h5,
-:root:not([data-theme='dark']) .my-portfolio-preview-performance strong,
-:root:not([data-theme='dark']) .my-portfolio-confirmation-box h5,
-:root:not([data-theme='dark']) .my-portfolio-confirmation-box p strong {
-  color: #0f172a;
-}
-
-:root:not([data-theme='dark']) .my-portfolio-confirmation-box {
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(248, 250, 252, 0.95);
-}
-
-.my-portfolio-trade-card.is-light {
-  border-color: rgba(99, 102, 241, 0.22);
-  background:
-    radial-gradient(circle at 10% 20%, rgba(147, 197, 253, 0.2), transparent 42%),
-    radial-gradient(circle at 85% 10%, rgba(216, 180, 254, 0.18), transparent 45%),
-    linear-gradient(135deg, #f8fbff, #eef4ff);
-}
-
-.my-portfolio-trade-card.is-light .my-portfolio-trade-form-panel,
-.my-portfolio-trade-card.is-light .my-portfolio-trade-preview-panel {
-  border-color: rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.88);
-}
-
-.my-portfolio-trade-card.is-light .my-portfolio-trade-title,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-stats strong,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-performance h5,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-performance strong,
-.my-portfolio-trade-card.is-light .my-portfolio-confirmation-box h5,
-.my-portfolio-trade-card.is-light .my-portfolio-confirmation-box p strong {
-  color: #0f172a;
-}
-
-.my-portfolio-trade-card.is-light .my-portfolio-trade-subtitle,
-.my-portfolio-trade-card.is-light .my-portfolio-trade-field span,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-stats div,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-distribution li,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-performance div,
-.my-portfolio-trade-card.is-light .my-portfolio-confirmation-box p span,
-.my-portfolio-trade-card.is-light .my-portfolio-preview-note {
-  color: #475569;
-}
-
-.my-portfolio-trade-card.is-light .my-portfolio-trade-field select,
-.my-portfolio-trade-card.is-light .my-portfolio-trade-field input,
-.my-portfolio-trade-card.is-light .my-portfolio-trade-toggle-group button {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: #ffffff;
-  color: #0f172a;
-}
-
-.my-portfolio-trade-card.is-light .my-portfolio-trade-money-input__sym {
-  color: #0f172a;
-}
-
-.my-portfolio-trade-card.is-light .my-portfolio-history-filters input,
-.my-portfolio-trade-card.is-light .my-portfolio-history-filters select {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: #ffffff;
-  color: #0f172a;
-}
-
-@media (max-width: 1080px) {
+@media (max-width: 920px) {
   .my-portfolio-trade-shell {
     grid-template-columns: 1fr;
+  }
+
+  .my-portfolio-trade-shell.is-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .my-portfolio-trade-preview-panel {
+    order: -1;
+  }
+
+  .my-portfolio-trade-preview-panel.is-expanded {
+    transform: none;
+    box-shadow: none;
   }
 
   .my-portfolio-trade-toggle-grid,
@@ -9554,6 +9574,34 @@ button.my-portfolio-dashboard-value-badge {
 
   .my-portfolio-history-filters {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .my-portfolio-history-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .my-portfolio-trade-submit-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .my-portfolio-trade-submit-row .auth-submit {
+    width: 100%;
+  }
+
+  .my-portfolio-dist-dashboard {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .my-portfolio-dist-dashboard .my-portfolio-dist-list {
+    width: 100%;
+  }
+
+  .my-portfolio-trade-flow-totals {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -10665,6 +10713,27 @@ col.my-portfolio-alloc-col-pnl {
   flex-shrink: 0;
 }
 
+.my-portfolio-alloc-sell-btn,
+.my-portfolio-history-delete-btn {
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.35));
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.my-portfolio-alloc-sell-btn:hover,
+.my-portfolio-history-delete-btn:hover {
+  border-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+}
+
+.my-portfolio-sales-analysis-wrap {
+  overflow-x: auto;
+}
+
 .my-portfolio-asset-list,
 .my-portfolio-my-assets,
 .my-portfolio-insight-list {
@@ -11088,7 +11157,8 @@ col.my-portfolio-alloc-col-pnl {
 }
 
 .my-portfolio-watchlist-table-wrap {
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-border);
   border-radius: 10px;
 }
@@ -16991,6 +17061,10 @@ col.my-portfolio-alloc-col-pnl {
     grid-template-columns: 1fr;
   }
 
+  .my-portfolio-content {
+    padding-left: 3.25rem;
+  }
+
   .my-portfolio-sidebar-mobile-trigger {
     position: fixed;
     left: 0.75rem;
@@ -17578,7 +17652,13 @@ col.my-portfolio-alloc-col-pnl {
 .fi-admin-nav-link-active {
   background: rgba(59, 130, 246, 0.18);
   border-color: rgba(59, 130, 246, 0.35);
-  color: #dbeafe;
+  color: var(--color-text, #dbeafe);
+}
+
+:root[data-theme='light'] .fi-admin-nav-link-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: var(--color-primary, #1d4ed8);
 }
 
 .fi-admin-sidebar-foot {
@@ -19284,6 +19364,60 @@ col.my-portfolio-alloc-col-pnl {
   line-height: 1.4;
 }
 
+.fi-admin-form-grid {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 32rem;
+}
+
+.fi-admin-form-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--color-text-soft, #94a3b8);
+}
+
+.fi-admin-form-field input,
+.fi-admin-form-field select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.28));
+  background: var(--color-surface, rgba(15, 23, 42, 0.72));
+  color: var(--color-text, #e2e8f0);
+  font-size: 0.88rem;
+}
+
+.fi-admin-form-field input:focus,
+.fi-admin-form-field select:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 1px;
+}
+
+.fi-admin-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.fi-admin-ingest-registry-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fi-admin-ingest-empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--color-text-soft, #94a3b8);
+}
+
+.fi-admin-ingest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .fi-admin-bar-chart {
   display: flex;
   align-items: flex-end;
@@ -19583,31 +19717,18 @@ col.my-portfolio-alloc-col-pnl {
 
 .fi-admin-dash-kpis {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
-}
-
-@media (max-width: 1320px) {
-  .fi-admin-dash-kpis {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .fi-admin-dash-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 400px) {
-  .fi-admin-dash-kpis {
-    grid-template-columns: 1fr;
-  }
 }
 
 .fi-admin-dash-kpi {
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.12));
+  background: var(--color-surface, rgba(15, 23, 42, 0.72));
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+}
+
+:root[data-theme='dark'] .fi-admin-dash-kpi {
   background: linear-gradient(155deg, rgba(22, 27, 34, 0.96), rgba(11, 14, 20, 0.99));
   box-shadow:
     0 4px 22px rgba(0, 0, 0, 0.35),

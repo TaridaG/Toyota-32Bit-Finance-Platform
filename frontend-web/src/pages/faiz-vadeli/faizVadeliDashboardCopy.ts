@@ -6,7 +6,7 @@ export type StatIconId = 'bank' | 'coins' | 'doc' | 'spread' | 'bell' | 'metal'
 
 export type StatCardCopy = {
   /** When set, dashboard replaces mock value with live TCMB policy rate from `/api/rates/policy-rate/latest`. */
-  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'repo' | 'eurobond' | 'inflation'
+  statSlot?: 'policy_rate' | 'tl_deposit' | 'tahvil' | 'tr_bond' | 'repo' | 'eurobond' | 'inflation'
   icon: StatIconId
   title: string
   value: string
@@ -48,6 +48,13 @@ const TR: FaizVadeliDashboardCopy = {
       sub1: 'Yakın vade faiz türevi',
       delta: '0,00',
       deltaTone: 'positive',
+    },
+    {
+      statSlot: 'tr_bond',
+      icon: 'doc',
+      title: 'TR Bono',
+      value: '—',
+      sub1: '',
     },
     {
       statSlot: 'repo',
@@ -106,6 +113,13 @@ const EN: FaizVadeliDashboardCopy = {
       deltaTone: 'positive',
     },
     {
+      statSlot: 'tr_bond',
+      icon: 'doc',
+      title: 'TR bond',
+      value: '—',
+      sub1: '',
+    },
+    {
       statSlot: 'repo',
       icon: 'doc',
       title: 'Repo',
@@ -160,6 +174,13 @@ const DE: FaizVadeliDashboardCopy = {
       sub1: 'Zinsderivat mit naher Faelligkeit',
       delta: '0,00',
       deltaTone: 'positive',
+    },
+    {
+      statSlot: 'tr_bond',
+      icon: 'doc',
+      title: 'TR-Anleihe',
+      value: '—',
+      sub1: '',
     },
     {
       statSlot: 'repo',

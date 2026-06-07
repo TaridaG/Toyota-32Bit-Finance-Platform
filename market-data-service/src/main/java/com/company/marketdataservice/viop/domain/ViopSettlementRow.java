@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Canonical VIOP daily settlement row.
+ * VIOP günlük uzlaşma (settlement) satırını temsil eden domain katmanı tipi.
  */
 public record ViopSettlementRow(
         LocalDate tradeDate,

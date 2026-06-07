@@ -5,7 +5,11 @@ import com.company.marketdataservice.viop.infrastructure.http.dto.ViopSettlement
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * VIOP piyasa verisini okuma use-case'lerini tanımlayan application katmanı port arayüzü.
+ */
 public interface ViopMarketReadService {
+
     List<ViopActiveContractDto> getActiveContracts();
 
     List<ViopSettlementHistoryPointDto> getContractHistory(String contractCode, LocalDate from, LocalDate to);

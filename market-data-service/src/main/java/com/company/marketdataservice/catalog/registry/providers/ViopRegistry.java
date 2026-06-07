@@ -8,7 +8,7 @@ import com.company.marketdataservice.viop.application.ViopAliasResolver;
 import java.util.List;
 
 /**
- * Stable VIOP aliases used by faiz-vadeli UI.
+ * faiz-vadeli UI tarafından kullanılan sabit VIOP alias tanımlarını tutan ingest registry'sidir.
  */
 public final class ViopRegistry {
 

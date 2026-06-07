@@ -21,11 +21,11 @@ public record MarketPriceUpdatedEvent(
 ) implements Serializable {
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Kafka'ya publish edilecek spot fiyat domain event'ini oluşturur; canonical instrumentId içermez.
          * @param symbol enstrüman sembolü
-         * @param price girdi parametresi
-         * @param priceType girdi parametresi
-         * @param source provider adı
+         * @param price gözlemlenen spot fiyat
+         * @param priceType fiyat tipi (ör. MARKET, OPEN, HIGH)
+         * @param source fiyatı sağlayan provider adı
          */
     public static MarketPriceUpdatedEvent of(
             String symbol,
@@ -37,12 +37,12 @@ public record MarketPriceUpdatedEvent(
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Kafka'ya publish edilecek spot fiyat domain event'ini oluşturur; occurredAt şu anki zamana set edilir.
          * @param symbol enstrüman sembolü
-         * @param price girdi parametresi
-         * @param priceType girdi parametresi
-         * @param source provider adı
-         * @param instrumentId girdi parametresi
+         * @param price gözlemlenen spot fiyat
+         * @param priceType fiyat tipi (ör. MARKET, OPEN, HIGH)
+         * @param source fiyatı sağlayan provider adı
+         * @param instrumentId finance catalog'daki canonical enstrüman kimliği; yoksa null
          */
     public static MarketPriceUpdatedEvent of(
             String symbol,

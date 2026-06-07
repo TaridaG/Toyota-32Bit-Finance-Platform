@@ -6,11 +6,11 @@ import java.util.List;
 /** NewsFavoriteService iş mantığını uygular (news favorite service). */
 public interface NewsFavoriteService {
 
-  /** addFavorite sözleşmesi. */
+  /** Haberi kullanıcının favorilerine ekler. */
   void addFavorite(Long newsId);
 
   void removeFavorite(Long newsId);
 
-  /** getMyFavorites sözleşmesi. */
+  /** Oturum açmış kullanıcının favori haber listesini döner. */
   List<NewsFavoriteItemDto> getMyFavorites();
 }

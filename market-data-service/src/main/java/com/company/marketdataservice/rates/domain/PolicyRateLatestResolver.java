@@ -17,10 +17,10 @@ public final class PolicyRateLatestResolver {
     public static final String CHANGE_DOWN = "DOWN";
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param value girdi parametresi
-         * @param decisionDate girdi parametresi
-         * @param changeVsPrior girdi parametresi
+     * Politika faizi latest snapshot sonucu.
+         * @param value güncel faiz oranı (yüzde)
+         * @param decisionDate son EVDS gözlem tarihi
+         * @param changeVsPrior bir önceki farklı değere göre değişim yönü ({@link #CHANGE_UP}, {@link #CHANGE_DOWN}, {@link #CHANGE_UNCHANGED})
          */
     public record Result(BigDecimal value, LocalDate decisionDate, String changeVsPrior) {}
 

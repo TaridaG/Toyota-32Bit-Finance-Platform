@@ -1,7 +1,7 @@
 package com.company.marketdataservice.catalog.registry;
 
 /**
- * Single ingest definition for platform registry sync and scheduler routing.
+ * Platform registry sync ve scheduler routing için tek ingest tanımı (definition).
  */
 public record IngestInstrumentDef(
         String symbol,
@@ -37,7 +37,7 @@ public record IngestInstrumentDef(
         }
     }
 
-    /** Resolved provider ticker for mapping rows (falls back to canonical symbol). */
+    /** Mapping satırları için çözümlenmiş provider ticker'ı (yoksa canonical symbol'e fallback eder). */
     public String resolvedProviderSymbol() {
         if (providerSymbol != null && !providerSymbol.isBlank()) {
             return providerSymbol.trim();

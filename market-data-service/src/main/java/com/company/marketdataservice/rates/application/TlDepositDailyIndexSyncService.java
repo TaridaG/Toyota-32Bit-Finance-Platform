@@ -18,6 +18,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.stereotype.Service;
 
+/**
+ * Haftalık TL mevduat faiz serisinden günlük endeks satırlarını türeten `makro oran` application katmanı use-case servisi.
+ */
 @Service
 public class TlDepositDailyIndexSyncService {
 

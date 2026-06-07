@@ -7,6 +7,9 @@ import com.company.marketdataservice.rates.infrastructure.http.dto.TlDepositInde
 import com.company.marketdataservice.rates.infrastructure.http.dto.TlDepositLatestDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.BankRatesResponseDto;
 import com.company.marketdataservice.rates.infrastructure.http.dto.RepoRateLatestDto;
+import com.company.marketdataservice.rates.infrastructure.http.dto.BondYieldCurveResponseDto;
+import com.company.marketdataservice.rates.infrastructure.http.dto.BondYieldLatestDto;
+import com.company.marketdataservice.rates.application.BondYieldHistoryService;
 import com.company.marketdataservice.rates.application.CpiHistoryService;
 import com.company.marketdataservice.rates.domain.CpiMetric;
 import com.company.marketdataservice.rates.application.PolicyRateHistoryService;
@@ -37,6 +40,7 @@ public class RatesController {
     private final TlDepositIndexService tlDepositIndexService;
     private final CpiHistoryService cpiHistoryService;
     private final DovizBankRatesService dovizBankRatesService;
+    private final BondYieldHistoryService bondYieldHistoryService;
 
     public RatesController(
             PolicyRateHistoryService policyRateHistoryService,
@@ -44,7 +48,8 @@ public class RatesController {
             TlDepositHistoryService tlDepositHistoryService,
             TlDepositIndexService tlDepositIndexService,
             CpiHistoryService cpiHistoryService,
-            DovizBankRatesService dovizBankRatesService
+            DovizBankRatesService dovizBankRatesService,
+            BondYieldHistoryService bondYieldHistoryService
     ) {
         this.policyRateHistoryService = policyRateHistoryService;
         this.repoRateHistoryService = repoRateHistoryService;
@@ -52,6 +57,7 @@ public class RatesController {
         this.tlDepositIndexService = tlDepositIndexService;
         this.cpiHistoryService = cpiHistoryService;
         this.dovizBankRatesService = dovizBankRatesService;
+        this.bondYieldHistoryService = bondYieldHistoryService;
     }
 
     @GetMapping("/bank-rates")
@@ -73,7 +79,7 @@ public class RatesController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * En güncel politika faizi (policy rate) snapshot'ını döndüren REST endpoint.
          */
     @GetMapping("/policy-rate/latest")
     public PolicyRateLatestDto policyRateLatest() {
@@ -107,6 +113,35 @@ public class RatesController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported range (use range=5Y)");
         }
         return repoRateHistoryService.loadFiveYearWeeklyFromDb();
+    }
+
+    @GetMapping("/bond/latest")
+    public BondYieldLatestDto bondYieldLatest(@RequestParam(required = false) String tenor) {
+        try {
+            return bondYieldHistoryService.loadLatest(tenor);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @GetMapping("/bond/history")
+    public PolicyRateHistoryResponseDto bondYieldHistory(
+            @RequestParam(required = false) String tenor,
+            @RequestParam(defaultValue = "5Y") String range
+    ) {
+        if (!"5Y".equalsIgnoreCase(range == null ? "" : range.trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported range (use range=5Y)");
+        }
+        try {
+            return bondYieldHistoryService.loadFiveYearDailyFromDb(tenor);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @GetMapping("/bond/curve/latest")
+    public BondYieldCurveResponseDto bondYieldCurveLatest() {
+        return bondYieldHistoryService.loadCurveLatest();
     }
 
     @GetMapping("/tl-deposit/latest")

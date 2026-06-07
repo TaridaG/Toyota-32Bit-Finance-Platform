@@ -7,7 +7,7 @@ import java.util.List;
 /** InstrumentService iş mantığını uygular (instrument service). */
 public interface InstrumentService {
 
-  /** getAllActive sözleşmesi. */
+  /** Aktif tüm enstrümanları listeler. */
   List<Instrument> getAllActive();
 
   List<Instrument> getByType(InstrumentType type);

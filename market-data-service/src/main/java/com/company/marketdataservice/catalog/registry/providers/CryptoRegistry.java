@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Crypto USDT pairs; live poll uses composite provider, DB sync writes BINANCE + COINGECKO mappings.
+ * Kripto USDT çiftleri; canlı poll composite provider kullanır, DB sync BINANCE + COINGECKO mapping yazar.
  */
 public final class CryptoRegistry {
 
@@ -20,7 +20,7 @@ public final class CryptoRegistry {
             "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
             "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "LINKUSDT", "TRXUSDT");
 
-    /** Base asset (e.g. BTC) → CoinGecko coin id. */
+    /** Base asset (ör. BTC) → CoinGecko coin id eşlemesi. */
     public static final Map<String, String> COINGECKO_ID_BY_BASE = Map.ofEntries(
             Map.entry("BTC", "bitcoin"),
             Map.entry("ETH", "ethereum"),

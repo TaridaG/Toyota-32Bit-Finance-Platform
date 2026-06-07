@@ -1,6 +1,7 @@
 package com.company.marketdataservice.catalog.infrastructure.service;
 
 import com.company.marketdataservice.catalog.infrastructure.http.dto.IngestCatalogItemDto;
+import com.company.marketdataservice.catalog.infrastructure.http.dto.IngestCatalogPageDto;
 import com.company.marketdataservice.catalog.infrastructure.persistence.IngestConfigEntry;
 import com.company.marketdataservice.catalog.infrastructure.persistence.IngestConfigRepository;
 import com.company.marketdataservice.catalog.infrastructure.persistence.InstrumentCatalogEntry;
@@ -29,15 +30,22 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * Ingest kataloğu görüntüleme, enable/disable ve manuel pull/delete aksiyonlarını yöneten
+ * application katmanı use-case servisi.
+ */
 @Service
 @Transactional(readOnly = true)
 public class IngestCatalogAdminService {
     private static final Logger log = LoggerFactory.getLogger(IngestCatalogAdminService.class);
+    private static final int CATALOG_PAGE_SIZE_MAX = 50;
     private static final Set<String> ALLOWED_SEGMENTS = Set.of("CRYPTO", "BIST", "NASDAQ");
     private static final Set<String> NASDAQ_EXCHANGES = Set.of("NASDAQ", "FINNHUB", "YAHOO");
 
@@ -89,13 +97,32 @@ public class IngestCatalogAdminService {
         this.financeApiBaseUrl = financeApiBaseUrl;
     }
 
-    public List<IngestCatalogItemDto> getCatalog() {
-        List<IngestConfigEntry> configs = ingestConfigRepository.findAll();
-        if (configs.isEmpty()) {
+    /**
+     * Ingest config kayıtlarını sayfalı olarak katalog metadata ve geçmiş kapsam metrikleriyle birleştirip döner.
+     */
+    public IngestCatalogPageDto getCatalogPage(int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), CATALOG_PAGE_SIZE_MAX);
+        Page<IngestConfigEntry> configPage = ingestConfigRepository.findAllByOrderBySegmentAscInstrumentIdAsc(
+                PageRequest.of(safePage, safeSize)
+        );
+        List<IngestCatalogItemDto> content = mapConfigsToCatalogItems(configPage.getContent());
+        return new IngestCatalogPageDto(
+                content,
+                configPage.getTotalElements(),
+                configPage.getTotalPages(),
+                configPage.getNumber(),
+                configPage.getSize()
+        );
+    }
+
+    private List<IngestCatalogItemDto> mapConfigsToCatalogItems(List<IngestConfigEntry> configs) {
+        if (configs == null || configs.isEmpty()) {
             return List.of();
         }
+        List<Long> instrumentIds = configs.stream().map(IngestConfigEntry::getInstrumentId).distinct().toList();
         Map<Long, InstrumentCatalogEntry> catalogById = new HashMap<>();
-        for (InstrumentCatalogEntry entry : instrumentCatalogRepository.findAll()) {
+        for (InstrumentCatalogEntry entry : instrumentCatalogRepository.findAllById(instrumentIds)) {
             catalogById.put(entry.getInstrumentId(), entry);
         }
         List<IngestCatalogItemDto> out = new ArrayList<>();

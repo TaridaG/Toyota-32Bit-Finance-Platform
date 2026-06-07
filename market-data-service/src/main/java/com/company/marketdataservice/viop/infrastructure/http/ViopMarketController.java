@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * `VIOP` REST endpoint'lerini expose eden HTTP controller.
+ */
 @RestController
 @RequestMapping("/api/v1/market/viop")
 public class ViopMarketController {
@@ -22,11 +25,17 @@ public class ViopMarketController {
         this.viopMarketReadService = viopMarketReadService;
     }
 
+    /**
+     * Faiz/tahvil odaklı aktif VIOP sözleşmelerini ve son settlement snapshot'ını döndüren REST endpoint.
+     */
     @GetMapping("/contracts/active")
     public List<ViopActiveContractDto> activeContracts() {
         return viopMarketReadService.getActiveContracts();
     }
 
+    /**
+     * Belirtilen sözleşme kodu için tarih aralığındaki günlük settlement geçmişini döndüren REST endpoint.
+     */
     @GetMapping("/contracts/{contractCode}/history")
     public List<ViopSettlementHistoryPointDto> contractHistory(
             @PathVariable String contractCode,

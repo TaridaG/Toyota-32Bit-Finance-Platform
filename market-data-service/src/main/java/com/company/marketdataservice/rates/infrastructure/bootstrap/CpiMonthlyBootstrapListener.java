@@ -24,7 +24,7 @@ public class CpiMonthlyBootstrapListener {
     private long startupDelayMs;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Uygulama hazır olduktan sonra gecikmeli virtual thread ile aylık CPI sync'ini tetikler.
          */
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() {
