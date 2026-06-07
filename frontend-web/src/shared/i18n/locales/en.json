@@ -674,9 +674,7 @@
         "tenorShort": {
           "1Y": "1Y",
           "2Y": "2Y",
-          "3Y": "3Y",
-          "5Y": "5Y",
-          "10Y": "10Y"
+          "3Y": "3Y"
         },
         "liveObservation": "Last observation",
         "change1dSub": "1D: {{bp}} bp",
@@ -694,7 +692,7 @@
         "chartEmpty": "No daily records found.",
         "chartFoot": "Source: TCMB EVDS secondary-market treasury yield series (TP.KTF*). Yields are benchmark curve references, not a single ISIN price.",
         "curveTitle": "Yield curve (latest)",
-        "curveHint": "TCMB reference yields for 1Y–10Y; selected tenor is highlighted.",
+        "curveHint": "TCMB reference yields for 1Y–3Y; selected tenor is highlighted.",
         "curveChange1d": "{{bp}} bp",
         "edu1": "TR bonds/bills: Turkish Treasury debt instruments denominated in TRY.",
         "edu2": "Yield (%): benchmark secondary-market rate for the chosen maturity bucket.",

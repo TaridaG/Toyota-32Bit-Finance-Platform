@@ -63,7 +63,7 @@ class PlatformIngestRegistryTest {
         assertTrue(symbols.contains("AAPL"));
         assertTrue(symbols.contains("SPY"));
         assertFalse(symbols.contains("BTCUSDT"));
-        assertFalse(symbols.contains("TRBOND5Y"));
+        assertFalse(symbols.contains("TRBOND3Y"));
     }
 
     @Test
