@@ -55,6 +55,8 @@ public class InternalRequestGuardFilter extends OncePerRequestFilter {
     if ("POST".equalsIgnoreCase(request.getMethod())
         && (path.endsWith("/api/v1/public/register")
             || path.endsWith("/api/v1/public/register/send-code")
+            || path.endsWith("/api/v1/public/password/send-reset-code")
+            || path.endsWith("/api/v1/public/password/reset")
             || path.endsWith("/api/v1/public/login")
             || path.endsWith("/api/v1/public/login/mfa")
             || path.endsWith("/api/v1/public/refresh"))) {

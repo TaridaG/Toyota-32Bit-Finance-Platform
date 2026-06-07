@@ -135,6 +135,35 @@ class GatewaySecurityTests {
     }
 
     @Test
+    void public_password_send_reset_code_should_be_permitted_without_token() {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"success\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        webTestClient.post()
+                .uri("/api/v1/public/password/send-reset-code")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("email", "user@example.com", "locale", "tr"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"success\":true}");
+    }
+
+    @Test
+    void public_password_send_reset_code_should_ignore_invalid_bearer_token() {
+        financeMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"success\":true}")
+                .addHeader("Content-Type", "application/json"));
+
+        webTestClient.post()
+                .uri("/api/v1/public/password/send-reset-code")
+                .headers(h -> h.setBearerAuth("not.a.valid.jwt.token"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("email", "user@example.com", "locale", "tr"))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("{\"success\":true}");
+    }
+
+    @Test
     void market_should_be_public_without_token() {
         marketMock.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")
                 .addHeader("Content-Type", "application/json"));
