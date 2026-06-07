@@ -98,11 +98,11 @@ export function BondSimulator({
       <SimulatorDivider />
       <SimulatorSectionTitle>{t('faizVadeliPage.simulator.bond.scenarioTitle')}</SimulatorSectionTitle>
       <SimulatorLabelField label={t('faizVadeliPage.simulator.bond.investment')}>
-        <SimulatorInput value={investment} onChange={setInvestment} inputMode="decimal" />
+        <SimulatorInput value={investment} onChange={(e) => setInvestment(e.target.value)} inputMode="decimal" />
       </SimulatorLabelField>
       <SimulatorHint>{t('faizVadeliPage.simulator.bond.investmentHint')}</SimulatorHint>
       <SimulatorLabelField label={t('faizVadeliPage.simulator.bond.annualYield')}>
-        <SimulatorInput value={yieldRate} onChange={setYieldRate} inputMode="decimal" />
+        <SimulatorInput value={yieldRate} onChange={(e) => setYieldRate(e.target.value)} inputMode="decimal" />
       </SimulatorLabelField>
       <SimulatorHint>
         {t('faizVadeliPage.simulator.bond.tenorHint', { years, tenor })}
