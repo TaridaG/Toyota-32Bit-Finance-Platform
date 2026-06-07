@@ -118,6 +118,32 @@
 
 <p align="center"><sub>Specific portal capabilities — full page tour above; individual features here</sub></p>
 
+<style>
+  .readme-stack img { max-width: 100%; height: auto; }
+  @media (max-width: 720px) {
+    .readme-stack table table > tbody > tr:not(:has(td[colspan])) { display: block; }
+    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td {
+      display: block;
+      width: 100% !important;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td[width] {
+      width: 100% !important;
+      text-align: center;
+      padding-bottom: 10px;
+    }
+    .readme-stack table table table tr { display: block; }
+    .readme-stack table table table td {
+      display: block;
+      width: 100% !important;
+      padding: 2px 0;
+    }
+  }
+</style>
+
+<div class="readme-stack">
+
 <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
   <tr>
     <td>
@@ -251,6 +277,8 @@
   </tr>
 </table>
 
+</div>
+
 ## Project structure
 
 **32 Bit Finance Platform** is a finance portal built on a microservice architecture. Users call a single address (**api-gateway**) from the **React** UI; the gateway authenticates identity with **Keycloak** and routes each request to the right service. Portal business rules such as portfolio, alarms, registration, and MFA live in **finance-api**; market prices, news, technical analysis, and notifications are handled by dedicated services. Services call each other over **HTTP** when needed; flows such as price updates, alarms, and logging proceed asynchronously over **Kafka**. Persistent data is stored in **PostgreSQL**; each service schema is managed separately with **Flyway**.
@@ -353,6 +381,8 @@ Shared components brought up with Docker Compose (`Docker/`):
 ## Data configuration
 
 <p align="center"><sub>Where to enable or disable live and historical market data in the Docker demo stack</sub></p>
+
+<div class="readme-stack">
 
 <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
   <tr>
@@ -522,6 +552,8 @@ Shared components brought up with Docker Compose (`Docker/`):
     </td>
   </tr>
 </table>
+
+</div>
 
 ## Adding instruments
 

@@ -118,6 +118,32 @@
 
 <p align="center"><sub>Belirli portal özellikleri — ekran turu üstte, burada tek tek yetenekler</sub></p>
 
+<style>
+  .readme-stack img { max-width: 100%; height: auto; }
+  @media (max-width: 720px) {
+    .readme-stack table table > tbody > tr:not(:has(td[colspan])) { display: block; }
+    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td {
+      display: block;
+      width: 100% !important;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td[width] {
+      width: 100% !important;
+      text-align: center;
+      padding-bottom: 10px;
+    }
+    .readme-stack table table table tr { display: block; }
+    .readme-stack table table table td {
+      display: block;
+      width: 100% !important;
+      padding: 2px 0;
+    }
+  }
+</style>
+
+<div class="readme-stack">
+
 <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
   <tr>
     <td>
@@ -251,6 +277,8 @@
   </tr>
 </table>
 
+</div>
+
 ## Proje yapısı
 
 **32 Bit Finance Platform**, mikroservis mimarisiyle çalışan bir finans portalıdır. Kullanıcı **React** arayüzünden tek adrese (**api-gateway**) istek atar; gateway kimliği **Keycloak** ile doğrular ve isteği ilgili servise yönlendirir. Portföy, alarm, kayıt ve MFA gibi portal iş kuralları **finance-api**’de toplanır; piyasa fiyatları, haber, teknik analiz ve bildirimler kendi servislerinde uzmanlaşmıştır. Servisler birbirini gerektiğinde **HTTP** ile çağırır; fiyat güncellemesi, alarm ve log gibi akışlar **Kafka** üzerinden asenkron ilerler. Kalıcı veriler **PostgreSQL**’de tutulur; her servisin şeması **Flyway** ile ayrı yönetilir.
@@ -353,6 +381,8 @@ Docker Compose (`Docker/`) ile gelen paylaşımlı bileşenler:
 ## Veri yapılandırması
 
 <p align="center"><sub>Docker demo ortamında canlı ve geçmiş piyasa verisini nereden açar/kapatırsınız?</sub></p>
+
+<div class="readme-stack">
 
 <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
   <tr>
@@ -522,6 +552,8 @@ Docker Compose (`Docker/`) ile gelen paylaşımlı bileşenler:
     </td>
   </tr>
 </table>
+
+</div>
 
 ## Varlık ekleme
 
