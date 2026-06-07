@@ -11,7 +11,7 @@ import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 /**
- * HTTP downloader for BIST derivatives files.
+ * BIST türev veri dosyalarını HTTP üzerinden indiren infrastructure client bileşeni.
  */
 @Component
 public class BistDerivativesFileClient {
@@ -28,6 +28,9 @@ public class BistDerivativesFileClient {
                         .build();
     }
 
+    /**
+     * Verilen URL'den dosyayı indirir ve içerik tipi ile ham byte gövdesini döner.
+     */
     public DownloadedFile fetch(String url) throws IOException, InterruptedException {
         HttpRequest request =
                 HttpRequest.newBuilder(URI.create(url))

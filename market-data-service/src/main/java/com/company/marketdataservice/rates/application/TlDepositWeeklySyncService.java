@@ -133,7 +133,7 @@ public class TlDepositWeeklySyncService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * UI kartında gösterilecek vade (maturity) kodunu döndürür; yapılandırma yoksa {@code MT04} varsayılanı kullanılır.
          */
     public String displayMaturityCode() {
         String code = evdsProperties.getTlDepositCardMaturity();

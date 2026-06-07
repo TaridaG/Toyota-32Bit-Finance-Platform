@@ -68,9 +68,9 @@ public class CompositePriceProvider implements PriceProvider {
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
+     * Provider zincirini sırayla dener; ilk başarılı resilient provider'dan spot fiyat fetch eder.
          * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+         * @return ilk başarılı provider'dan dönen spot fiyat
          */
     @Override
     public BigDecimal fetchPrice(String symbol) {
@@ -101,7 +101,7 @@ public class CompositePriceProvider implements PriceProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Birleşik provider zincirinin kaynak kimliğini döner.
          */
     @Override
     public String source() {

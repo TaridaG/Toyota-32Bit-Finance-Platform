@@ -7,6 +7,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * VIOP verisini cron ile BIST kaynaklarından fetch edip persistence'a yazan scheduler.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -15,6 +18,9 @@ public class ViopIngestScheduler {
 
     private final ViopIngestService viopIngestService;
 
+    /**
+     * Hafta içi cron ile günlük VIOP ingest akışını tetikler.
+     */
     @Scheduled(cron = "${market.viop.cron:0 40 19 * * MON-FRI}", zone = "${market.viop.zone:Europe/Istanbul}")
     public void runDailyIngest() {
         try {

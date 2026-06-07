@@ -30,18 +30,19 @@ public class TefasFundPriceProvider implements FundProvider {
     private final TefasBindHistoryClient bindHistoryClient;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * TEFAS Bind History API provider tanımlayıcısını ({@code TEFAS}) döner.
+     */
     @Override
     public String source() {
         return SRC;
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param fundCodes girdi parametresi
-         * @return işlem sonucu
-         */
+     * Her fon kodu için TEFAS Bind History API'den lookback penceresindeki en güncel NAV'ı çeker.
+     *
+     * @param fundCodes TEFAS'tan NAV sorgulanacak fon kodları
+     * @return başarıyla parse edilen {@link FundSnapshot} kayıtları
+     */
     @Override
     public List<FundSnapshot> fetchLatestNavs(List<String> fundCodes) {
         if (fundCodes == null || fundCodes.isEmpty()) {

@@ -13,15 +13,15 @@ public interface TradeService {
 
   Transaction sell(Long instrumentId, BigDecimal quantity);
 
-  /** preview sözleşmesi. */
+  /** Trade execution öncesi maliyet, FX ve fiyat kapsamı önizlemesi döner. */
   TradePreviewResponse preview(TradeExecutionRequest request);
 
-  /** buy sözleşmesi. */
+  /** Detaylı request ile alım (BUY) transaction'ı oluşturur. */
   Transaction buy(TradeExecutionRequest request);
 
-  /** sell sözleşmesi. */
+  /** Detaylı request ile satım (SELL) transaction'ı oluşturur. */
   Transaction sell(TradeExecutionRequest request);
 
-  /** getPriceCoverage sözleşmesi. */
+  /** Enstrüman için mevcut fiyat kapsamı ve valuation kaynak bilgisini döner. */
   InstrumentPriceCoverageResponse getPriceCoverage(Long instrumentId);
 }

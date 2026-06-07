@@ -14,8 +14,8 @@ public interface MarketDataReadService {
     List<MarketPriceDto> getLatestPrices();
 
     /**
-     * Latest merged prices, optionally restricted to a UI segment id (e.g. {@code crypto}, {@code bist})
-     * as defined by {@link com.company.marketdataservice.catalog.domain.MarketCatalogSegmentRules#pulseSegment}.
+     * Birleştirilmiş son fiyatları döner; isteğe bağlı olarak UI segment id'sine ({@code crypto}, {@code bist} vb.)
+     * göre filtreler — segment tanımı {@link MarketCatalogSegmentRules#pulseSegment} ile uyumludur.
      */
     List<MarketPriceDto> getLatestPrices(String segment);
 

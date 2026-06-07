@@ -43,7 +43,7 @@ public class ResilientPriceProvider implements PriceProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Sarmalanan delegate provider'ın kaynak kimliğini döner.
          */
     @Override
     public String source() {
@@ -51,9 +51,9 @@ public class ResilientPriceProvider implements PriceProvider {
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
+     * Delegate provider üzerinden timeout, retry ve circuit breaker korumalı spot fiyat fetch eder.
          * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+         * @return delegate provider'dan dönen spot fiyat
          */
     @Override
     public BigDecimal fetchPrice(String symbol) {

@@ -30,7 +30,7 @@ public class MarketDataController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Segment bazlı piyasa nabzını (pulse) döndüren REST endpoint.
          */
     @GetMapping("/segments/pulse")
     public MarketSegmentPulseResponse segmentPulse() {
@@ -38,7 +38,7 @@ public class MarketDataController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Güncel FX kurlarını listeleyen REST endpoint.
          */
     @GetMapping("/fx")
     public List<FxRateDto> fx() {
@@ -46,7 +46,7 @@ public class MarketDataController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Takip edilen fon fiyatlarını listeleyen REST endpoint.
          */
     @GetMapping("/funds")
     public List<FundDto> funds() {

@@ -20,7 +20,7 @@ public class BinancePriceProvider implements PriceProvider {
     private String baseUrl;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Bu provider'ın kaynak kimliğini döner.
          */
     @Override
     public String source() {
@@ -28,9 +28,9 @@ public class BinancePriceProvider implements PriceProvider {
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+     * Binance ticker REST API'sinden verilen sembol için spot fiyat fetch eder.
+         * @param symbol Binance trading pair sembolü (ör. BTCUSDT)
+         * @return parse edilmiş spot fiyat
          */
     @Override
     public BigDecimal fetchPrice(String symbol) {

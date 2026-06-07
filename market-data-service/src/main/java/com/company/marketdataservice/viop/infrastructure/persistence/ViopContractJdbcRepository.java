@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * VIOP sözleşme kataloğu satırları için JDBC tabanlı persistence erişimi.
+ */
 @Repository
 @RequiredArgsConstructor
 public class ViopContractJdbcRepository {
@@ -32,6 +35,9 @@ public class ViopContractJdbcRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Sözleşme satırlarını toplu upsert eder ve kaynak dosya bilgisini günceller.
+     */
     public void upsertAll(List<ViopContractRow> rows) {
         if (rows == null || rows.isEmpty()) {
             return;

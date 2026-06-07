@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
+/**
+ * Aktif VIOP sözleşmesi ve son settlement özeti için API transfer nesnesi (DTO/response).
+ */
 public record ViopActiveContractDto(
         String contractCode,
         String underlying,

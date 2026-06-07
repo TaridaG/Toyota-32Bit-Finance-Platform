@@ -156,10 +156,11 @@ public final class TefasBindHistoryParsing {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param fundCode girdi parametresi
-         * @param nav girdi parametresi
-         * @param timestamp girdi parametresi
-         */
+     * TEFAS Bind History yanıtından çıkarılan tek bir NAV satırının parse edilmiş temsilidir.
+     *
+     * @param fundCode normalize edilmiş fon kodu
+     * @param nav günlük birim fiyat (NAV)
+     * @param timestamp satırın {@code TARIH} alanından türetilen gözlem zamanı ({@link Instant})
+     */
     public record ParsedLatest(String fundCode, BigDecimal nav, Instant timestamp) {}
 }

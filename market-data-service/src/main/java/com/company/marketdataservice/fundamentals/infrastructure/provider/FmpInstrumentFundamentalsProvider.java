@@ -34,7 +34,7 @@ public class FmpInstrumentFundamentalsProvider implements InstrumentFundamentals
     private int maxAnnualReports;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Provider kodunu ({@code FMP}) döndürür.
          */
     @Override
     public String providerCode() {
@@ -42,8 +42,8 @@ public class FmpInstrumentFundamentalsProvider implements InstrumentFundamentals
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param instrument girdi parametresi
+     * FMP provider'ının desteklediği STOCK enstrüman olup olmadığını kontrol eder.
+         * @param instrument katalog kaydı
          */
     @Override
     public boolean supports(InstrumentCatalogEntry instrument) {
@@ -51,10 +51,10 @@ public class FmpInstrumentFundamentalsProvider implements InstrumentFundamentals
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param instrument girdi parametresi
-         * @param providerSymbol girdi parametresi
-         * @return işlem sonucu
+     * Financial Modeling Prep REST API üzerinden hisse fundamentals snapshot'ını fetch eder.
+         * @param instrument katalog kaydı
+         * @param providerSymbol FMP API için provider sembolü
+         * @return fundamentals DTO
          */
     @Override
     public InstrumentFundamentalsDto fetch(InstrumentCatalogEntry instrument, String providerSymbol) {

@@ -5,6 +5,6 @@ import com.company.finance_api.portfolio.infrastructure.http.dto.PortfolioValuat
 /** PortfolioValuationService iş mantığını uygular (portfolio valuation service). */
 public interface PortfolioValuationService {
 
-  /** getMyValuation sözleşmesi. */
+  /** Oturum açmış kullanıcının güncel portfolio değerlemesini döner. */
   PortfolioValuationResponse getMyValuation();
 }

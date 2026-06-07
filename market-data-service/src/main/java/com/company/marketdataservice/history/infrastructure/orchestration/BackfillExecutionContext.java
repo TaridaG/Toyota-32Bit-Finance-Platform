@@ -11,7 +11,7 @@ public final class BackfillExecutionContext {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Mevcut thread'de backfill execution context'ini aktifleştirir.
          */
     public static void activate() {
         ACTIVE.set(true);
@@ -23,7 +23,7 @@ public final class BackfillExecutionContext {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Thread-local backfill execution bayraklarını temizler.
          */
     public static void clear() {
         ACTIVE.remove();

@@ -15,6 +15,9 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+/**
+ * TL mevduat günlük endeks (index) güncel değer ve geçmiş sorgularını sunan `makro oran` application katmanı use-case servisi.
+ */
 @Service
 public class TlDepositIndexService {
 

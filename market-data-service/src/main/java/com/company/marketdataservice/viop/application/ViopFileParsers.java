@@ -25,7 +25,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
- * File parsers for BIST derivatives contracts and settlement datasets.
+ * BIST türev sözleşme ve settlement dosyalarını (ZIP, HTML tablo, ayraçlı metin) parse eden yardımcı sınıf.
  */
 public final class ViopFileParsers {
 
@@ -41,10 +41,16 @@ public final class ViopFileParsers {
 
     private ViopFileParsers() {}
 
+    /**
+     * İndirilen dosyadan VIOP sözleşme kataloğu satırlarını parse eder.
+     */
     public static List<ViopContractRow> parseContracts(DownloadedFile file) {
         return parseContracts(file.fileName(), file.contentType(), file.body());
     }
 
+    /**
+     * İndirilen dosyadan VIOP günlük settlement satırlarını parse eder.
+     */
     public static List<ViopSettlementRow> parseSettlements(DownloadedFile file, LocalDate fallbackTradeDate) {
         return parseSettlements(file.fileName(), file.contentType(), file.body(), fallbackTradeDate);
     }
@@ -114,31 +120,10 @@ public final class ViopFileParsers {
         List<Map<String, String>> rows = parseDelimitedRows(text);
         List<ViopSettlementRow> out = new ArrayList<>();
         for (Map<String, String> row : rows) {
-            String contractCode =
-                    first(row, "sozlesmekodu", "contractcode", "contract_code", "code", "kontrat", "contract");
-            if (contractCode == null || contractCode.isBlank()) {
-                continue;
+            ViopSettlementRow parsed = parseSettlementRow(row, fallbackTradeDate, sourceFile);
+            if (parsed != null) {
+                out.add(parsed);
             }
-            LocalDate tradeDate = parseDate(first(row, "tarih", "tradedate", "trade_date"));
-            if (tradeDate == null) {
-                tradeDate = fallbackTradeDate;
-            }
-            BigDecimal lastPrice =
-                    parseDecimal(first(row, "uzlasmafiyati", "sonfiyat", "lastprice", "settlement", "settlementprice"));
-            if (tradeDate == null || lastPrice == null) {
-                continue;
-            }
-            out.add(
-                    new ViopSettlementRow(
-                            tradeDate,
-                            normalizeCode(contractCode),
-                            lastPrice,
-                            parseDecimal(first(row, "degisim", "changepercent", "change_pct")),
-                            parseDecimal(first(row, "fark", "changeamount", "change_amount")),
-                            parseDecimal(first(row, "islemhacmi", "hacimtl", "volumetl", "volume_tl", "volume")),
-                            parseDecimal(first(row, "islemmiktari", "hacimadet", "volumeqty", "volume_qty", "quantity")),
-                            parseDecimal(first(row, "acikpozisyon", "openposition", "openinterest", "oi")),
-                            sourceFile));
         }
         return out;
     }
@@ -175,30 +160,10 @@ public final class ViopFileParsers {
         for (Element table : doc.select("table")) {
             List<Map<String, String>> rows = parseHtmlTable(table);
             for (Map<String, String> row : rows) {
-                String contractCode = first(row, "kontrat", "contract", "code", "sozlesmekodu", "contractcode");
-                if (contractCode == null || contractCode.isBlank()) {
-                    continue;
+                ViopSettlementRow parsed = parseSettlementRow(row, fallbackTradeDate, sourceFile);
+                if (parsed != null) {
+                    out.add(parsed);
                 }
-                LocalDate tradeDate = parseDate(first(row, "tarih", "tradedate", "trade_date"));
-                if (tradeDate == null) {
-                    tradeDate = fallbackTradeDate;
-                }
-                BigDecimal lastPrice =
-                        parseDecimal(first(row, "uzlasmafiyati", "sonfiyat", "lastprice", "settlement", "settlementprice"));
-                if (tradeDate == null || lastPrice == null) {
-                    continue;
-                }
-                out.add(
-                        new ViopSettlementRow(
-                                tradeDate,
-                                normalizeCode(contractCode),
-                                lastPrice,
-                                parseDecimal(first(row, "degisim", "changepercent", "change_pct")),
-                                parseDecimal(first(row, "fark", "changeamount", "change_amount")),
-                                parseDecimal(first(row, "islemhacmi", "hacimtl", "volumetl", "volume_tl", "volume")),
-                                parseDecimal(first(row, "islemmiktari", "hacimadet", "volumeqty", "volume_qty", "quantity")),
-                                parseDecimal(first(row, "acikpozisyon", "openposition", "openinterest", "oi")),
-                                sourceFile));
             }
         }
         return out;
@@ -389,16 +354,115 @@ public final class ViopFileParsers {
         return null;
     }
 
+    private static ViopSettlementRow parseSettlementRow(
+            Map<String, String> row, LocalDate fallbackTradeDate, String sourceFile) {
+        String tradeDateRaw = first(row, "tarih", "tradedate", "trade_date");
+        String contractCode =
+                first(
+                        row,
+                        "sozlesmekodu",
+                        "contractcode",
+                        "contract_code",
+                        "code",
+                        "kontrat",
+                        "contract",
+                        "instrumentseries");
+        if (contractCode == null || contractCode.isBlank() || isDuplicateHeaderRow(contractCode, tradeDateRaw)) {
+            return null;
+        }
+        LocalDate tradeDate = parseDate(tradeDateRaw);
+        if (tradeDate == null) {
+            tradeDate = fallbackTradeDate;
+        }
+        BigDecimal lastPrice = parseDecimal(settlementPriceRaw(row));
+        if (tradeDate == null || lastPrice == null) {
+            return null;
+        }
+        return new ViopSettlementRow(
+                tradeDate,
+                normalizeCode(contractCode),
+                lastPrice,
+                parseDecimal(changePercentRaw(row)),
+                parseDecimal(first(row, "fark", "changeamount", "change_amount")),
+                parseDecimal(volumeTlRaw(row)),
+                parseDecimal(volumeQtyRaw(row)),
+                parseDecimal(openInterestRaw(row)),
+                sourceFile);
+    }
+
+    private static String settlementPriceRaw(Map<String, String> row) {
+        return first(
+                row,
+                "uzlasmafiyati",
+                "sonfiyat",
+                "lastprice",
+                "settlement",
+                "settlementprice");
+    }
+
+    private static String changePercentRaw(Map<String, String> row) {
+        return first(
+                row,
+                "degisim",
+                "changepercent",
+                "change_pct",
+                "uzlasmafiyatidegisimi(percent)",
+                "changeofsettlementprice(percent)",
+                "uzlasmafiyatidegisimi");
+    }
+
+    private static String volumeTlRaw(Map<String, String> row) {
+        return first(row, "islemhacmi", "hacimtl", "volumetl", "volume_tl", "volume", "tradedvalue");
+    }
+
+    private static String volumeQtyRaw(Map<String, String> row) {
+        return first(
+                row,
+                "islemmiktari",
+                "hacimadet",
+                "volumeqty",
+                "volume_qty",
+                "quantity",
+                "tradedvolume",
+                "tradvolume");
+    }
+
+    private static String openInterestRaw(Map<String, String> row) {
+        return first(row, "acikpozisyon", "openposition", "openinterest", "oi", "openposition");
+    }
+
+    private static boolean isDuplicateHeaderRow(String contractCode, String tradeDateRaw) {
+        String code = contractCode.trim().toUpperCase(Locale.ROOT);
+        if ("INSTRUMENT SERIES".equals(code) || "SOZLESME KODU".equals(code) || "KONTRAT".equals(code)) {
+            return true;
+        }
+        if (tradeDateRaw != null) {
+            String date = tradeDateRaw.trim().toUpperCase(Locale.ROOT);
+            if ("TRADE DATE".equals(date) || "TARIH".equals(date)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static BigDecimal parseDecimal(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;
         }
         String t = raw.trim();
-        t = t.replace("%", "").replace("bp", "");
-        t = t.replace(".", "").replace(",", ".");
-        t = t.replace(" ", "");
+        t = t.replace("%", "").replace("bp", "").replace(" ", "");
         if (t.isBlank() || "-".equals(t) || "—".equals(t)) {
             return null;
+        }
+        if (t.contains(",")) {
+            // Turkish: 12.500.000,00
+            t = t.replace(".", "").replace(",", ".");
+        } else {
+            long dotCount = t.chars().filter(ch -> ch == '.').count();
+            if (dotCount > 1) {
+                t = t.replace(".", "");
+            }
+            // Single dot or no dot: ISO decimal (e.g. 39.41, 96.611)
         }
         try {
             return new BigDecimal(t);

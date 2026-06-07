@@ -10,12 +10,18 @@ import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Instant;
 
+/**
+ * VIOP ingest çalıştırma (run) kayıtları için JDBC tabanlı persistence erişimi.
+ */
 @Repository
 @RequiredArgsConstructor
 public class ViopIngestRunJdbcRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Yeni bir ingest run kaydı açar ve oluşan run kimliğini döner.
+     */
     public long start(String source) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(

@@ -5,6 +5,6 @@ import java.util.List;
 
 /** AlarmHistoryService iş mantığını uygular (alarm history service). */
 public interface AlarmHistoryService {
-  /** getMyTimeline sözleşmesi. */
+  /** Oturum açmış kullanıcının tetiklenmiş alarm geçmişini kronolojik döner. */
   List<AlarmHistoryResponse> getMyTimeline();
 }

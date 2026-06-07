@@ -5,6 +5,10 @@ import com.company.finance_api.instrument.domain.enums.InstrumentType;
 import java.util.Locale;
 import java.util.Optional;
 
+/**
+ * TL mevduat enstrümanlarını ({@code TLDEP_*} sembol prefix'i ve {@code DEPOSIT} tipi) tanır ve
+ * vade kodunu çözer.
+ */
 public final class TlDepositInstruments {
 
   public static final String SYMBOL_PREFIX = "TLDEP_";

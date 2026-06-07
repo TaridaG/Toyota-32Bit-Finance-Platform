@@ -24,16 +24,17 @@ public record FxSnapshotUpdatedEvent(
 ) implements Serializable {
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param canonicalSymbol girdi parametresi
-         * @param instrumentId girdi parametresi
-         * @param baseCurrency girdi parametresi
-         * @param quoteCurrency girdi parametresi
-         * @param bid girdi parametresi
-         * @param ask girdi parametresi
-         * @param mid girdi parametresi
-         * @param source provider adı
-         */
+     * Yeni bir {@code eventId} ve {@code occurredAt} atayarak FX snapshot güncelleme domain event'i oluşturur.
+     *
+     * @param canonicalSymbol platform canonical FX sembolü (ör. {@code USDTRY})
+     * @param instrumentId finance catalog instrument ID; mapping yoksa {@code null}
+     * @param baseCurrency baz para birimi kodu (ISO 4217)
+     * @param quoteCurrency karşı para birimi kodu (ISO 4217)
+     * @param bid alış (bid) fiyatı
+     * @param ask satış (ask) fiyatı
+     * @param mid orta (mid) fiyat
+     * @param source veriyi sağlayan provider adı
+     */
     public static FxSnapshotUpdatedEvent of(
             String canonicalSymbol,
             Long instrumentId,

@@ -32,7 +32,7 @@ public class FinnhubInstrumentFundamentalsProvider implements InstrumentFundamen
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Provider kodunu ({@code FINNHUB}) döndürür.
          */
     @Override
     public String providerCode() {
@@ -40,8 +40,8 @@ public class FinnhubInstrumentFundamentalsProvider implements InstrumentFundamen
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param instrument girdi parametresi
+     * Finnhub'un desteklediği STOCK enstrüman olup olmadığını kontrol eder.
+         * @param instrument katalog kaydı
          */
     @Override
     public boolean supports(InstrumentCatalogEntry instrument) {
@@ -52,10 +52,10 @@ public class FinnhubInstrumentFundamentalsProvider implements InstrumentFundamen
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param instrument girdi parametresi
-         * @param providerSymbol girdi parametresi
-         * @return işlem sonucu
+     * Finnhub REST API üzerinden hisse fundamentals snapshot'ını fetch eder.
+         * @param instrument katalog kaydı
+         * @param providerSymbol Finnhub API için provider sembolü
+         * @return fundamentals DTO
          */
     @Override
     public InstrumentFundamentalsDto fetch(InstrumentCatalogEntry instrument, String providerSymbol) {

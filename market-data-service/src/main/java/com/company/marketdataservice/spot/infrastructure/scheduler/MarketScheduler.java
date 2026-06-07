@@ -42,9 +42,13 @@ public class MarketScheduler {
     private final Set<String> mappingHitCanonicalFirstSeen = ConcurrentHashMap.newKeySet();
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Ingest scope'taki kripto sembollerini poll eder, provider'dan spot fiyat fetch eder,
+     * enstrüman eşlemesini çözümler ve {@link MarketPriceUpdatedEvent} olarak Kafka'ya publish eder.
          */
-    @Scheduled(fixedDelayString = "${scheduler.market.delay-ms:5000}")
+    @Scheduled(
+            cron = "${scheduler.live.cron:0 0 9,13,17 * * *}",
+            zone = "${scheduler.live.zone:Europe/Istanbul}"
+    )
     public void pullMarketData() {
 
 

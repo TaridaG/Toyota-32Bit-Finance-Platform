@@ -6,20 +6,20 @@ import com.company.finance_api.notification.infrastructure.http.dto.PortalNotifi
 /** PortalNotificationService iş mantığını uygular (portal notification service). */
 public interface PortalNotificationService {
 
-  /** getMyPage sözleşmesi. */
+  /** Oturum açmış kullanıcının bildirim inbox'unu sayfalı döner. */
   PortalNotificationPageResponse getMyPage(int page, int size);
 
-  /** getById sözleşmesi. */
+  /** Tek bildirim detayını döner. */
   PortalNotificationResponse getById(long id);
 
-  /** markRead sözleşmesi. */
+  /** Bildirimi okundu olarak işaretler. */
   PortalNotificationResponse markRead(long id);
 
-  /** markAllRead sözleşmesi. */
+  /** Tüm okunmamış bildirimleri okundu yapar. */
   void markAllRead();
 
   void delete(long id);
 
-  /** getUnreadCount sözleşmesi. */
+  /** Okunmamış bildirim sayısını döner. */
   long getUnreadCount();
 }

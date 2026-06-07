@@ -89,8 +89,8 @@ public class TcmbFxProvider implements FxProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Bu adaptörün veri kaynağı tanımlayıcısını ({@code TCMB}) döner; mapping ve telemetry etiketlerinde kullanılır.
+     */
     @Override
     public String source() {
         return "TCMB";

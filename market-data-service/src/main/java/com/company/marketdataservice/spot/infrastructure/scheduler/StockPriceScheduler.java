@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Polls BIST and US equity definitions from the platform registry.
+ * Platform registry'den BIST ve US equity tanımlarını poll eder.
  */
 @Slf4j
 @Component
@@ -45,7 +45,10 @@ public class StockPriceScheduler {
     private final Set<String> mappingMissWarnFirstSeen = ConcurrentHashMap.newKeySet();
     private final Set<String> mappingHitCanonicalFirstSeen = ConcurrentHashMap.newKeySet();
 
-    @Scheduled(fixedDelayString = "${scheduler.stock.delay-ms:30000}")
+    @Scheduled(
+            cron = "${scheduler.live.cron:0 0 9,13,17 * * *}",
+            zone = "${scheduler.live.zone:Europe/Istanbul}"
+    )
     public void pullStockPrices() {
         log.info("STOCK SCHEDULER RUNNING");
         List<String> bistSymbols = ingestScope.symbolsForSegment(IngestScopeSegment.BIST);

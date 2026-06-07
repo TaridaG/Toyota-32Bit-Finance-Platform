@@ -10,9 +10,9 @@ public record YahooFinanceResponse(
         Chart chart
 ) {
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param result girdi parametresi
-         * @param error girdi parametresi
+     * Yahoo chart REST yanıtının üst seviye chart payload'ını temsil eder.
+         * @param result sembol kotasyonu ve mum verisi içeren sonuç listesi
+         * @param error Yahoo API hata detayı; başarılı yanıtta null olabilir
          */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Chart(
@@ -22,9 +22,9 @@ public record YahooFinanceResponse(
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param code girdi parametresi
-         * @param description girdi parametresi
+     * Yahoo chart API hata gövdesini deserialize eden DTO.
+         * @param code Yahoo hata kodu
+         * @param description insan okunur hata açıklaması
          */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Error(
@@ -34,10 +34,10 @@ public record YahooFinanceResponse(
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param meta girdi parametresi
-         * @param timestamp girdi parametresi
-         * @param indicators girdi parametresi
+     * Tek bir sembol için Yahoo chart sonucu; meta, zaman serisi ve indicator verisini taşır.
+         * @param meta regular market fiyatı ve borsa meta verileri
+         * @param timestamp mum veya kotasyon epoch saniye listesi
+         * @param indicators OHLC quote serilerini içeren indicator bloğu
          */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Result(
@@ -48,20 +48,20 @@ public record YahooFinanceResponse(
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Yahoo chart meta bloğu; spot kotasyon ve piyasa özet alanlarını deserialize eder.
          * @param symbol enstrüman sembolü
-         * @param regularMarketPrice girdi parametresi
-         * @param regularMarketTime girdi parametresi
-         * @param regularMarketVolume girdi parametresi
-         * @param regularMarketOpen girdi parametresi
-         * @param regularMarketDayHigh girdi parametresi
-         * @param regularMarketDayLow girdi parametresi
-         * @param openInterest girdi parametresi
-         * @param exchangeName girdi parametresi
-         * @param fullExchangeName girdi parametresi
-         * @param shortName girdi parametresi
-         * @param underlyingSymbol girdi parametresi
-         * @param expireDate girdi parametresi
+         * @param regularMarketPrice güncel regular market spot fiyatı
+         * @param regularMarketTime regular market fiyatının epoch saniye zaman damgası
+         * @param regularMarketVolume günlük işlem hacmi
+         * @param regularMarketOpen gün açılış fiyatı
+         * @param regularMarketDayHigh gün içi en yüksek fiyat
+         * @param regularMarketDayLow gün içi en düşük fiyat
+         * @param openInterest açık pozisyon (varant/vadeli için)
+         * @param exchangeName kısa borsa adı
+         * @param fullExchangeName tam borsa adı
+         * @param shortName enstrüman kısa adı
+         * @param underlyingSymbol türev enstrümanın dayanak sembolü
+         * @param expireDate vade bitiş epoch saniyesi
          */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Meta(
@@ -82,8 +82,8 @@ public record YahooFinanceResponse(
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param quote girdi parametresi
+     * Yahoo chart indicator bloğu; OHLC quote serilerini gruplar.
+         * @param quote open/high/low/close zaman serisi listelerini taşıyan quote kaydı
          */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Indicators(
@@ -92,11 +92,11 @@ public record YahooFinanceResponse(
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param open girdi parametresi
-         * @param high girdi parametresi
-         * @param low girdi parametresi
-         * @param close girdi parametresi
+     * Yahoo chart OHLC quote serilerini deserialize eden DTO.
+         * @param open açılış fiyatı zaman serisi
+         * @param high en yüksek fiyat zaman serisi
+         * @param low en düşük fiyat zaman serisi
+         * @param close kapanış fiyatı zaman serisi
          */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Quote(

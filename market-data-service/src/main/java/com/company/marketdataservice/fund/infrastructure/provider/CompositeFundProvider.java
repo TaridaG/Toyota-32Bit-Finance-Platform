@@ -36,18 +36,19 @@ public class CompositeFundProvider implements FundProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * TEFAS fon provider zincirinin birleşik kaynak tanımlayıcısını ({@code TEFAS}) döner.
+     */
     @Override
     public String source() {
         return SRC;
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param fundCodes girdi parametresi
-         * @return işlem sonucu
-         */
+     * Önce TEFAS Bind History, ardından yapılandırılmış HTTP ve son çare mock provider'ı dener.
+     *
+     * @param fundCodes NAV'ı istenen fon kodları listesi
+     * @return bulunan {@link FundSnapshot} kayıtları; hiçbir kaynak yanıt vermezse boş liste
+     */
     @Override
     public List<FundSnapshot> fetchLatestNavs(List<String> fundCodes) {
         List<FundSnapshot> bindSnapshots = List.of();

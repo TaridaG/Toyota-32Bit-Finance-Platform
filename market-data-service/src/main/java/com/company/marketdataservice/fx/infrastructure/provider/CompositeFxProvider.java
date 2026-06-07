@@ -40,8 +40,8 @@ public class CompositeFxProvider implements FxProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Birleşik (composite) FX provider zincirinin tanımlayıcısını ({@code COMPOSITE_FX}) döner.
+     */
     @Override
     public String source() {
         return "COMPOSITE_FX";

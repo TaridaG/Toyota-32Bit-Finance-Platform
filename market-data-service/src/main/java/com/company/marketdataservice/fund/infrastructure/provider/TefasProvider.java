@@ -15,18 +15,19 @@ public class TefasProvider implements FundProvider {
     private static final String SRC = "TEFAS_MOCK";
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Geliştirme/test fallback mock provider tanımlayıcısını ({@code TEFAS_MOCK}) döner.
+     */
     @Override
     public String source() {
         return SRC;
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param fundCodes girdi parametresi
-         * @return işlem sonucu
-         */
+     * Gerçek TEFAS API'si kullanılamadığında deterministik sentetik NAV üretir.
+     *
+     * @param fundCodes sentetik NAV üretilecek fon kodları
+     * @return her geçerli kod için mock {@link FundSnapshot} listesi
+     */
     @Override
     public List<FundSnapshot> fetchLatestNavs(List<String> fundCodes) {
         if (fundCodes == null || fundCodes.isEmpty()) {

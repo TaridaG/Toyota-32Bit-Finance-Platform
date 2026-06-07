@@ -39,18 +39,19 @@ public class FundScheduler {
     @PostConstruct
     void logSchedulerBeanActive() {
         log.info(
-                "FUND_SCHEDULER_BEAN_ACTIVE trackedFundCodes={} delayMs={}",
-                fundMarketProperties.getTrackedFundCodes(),
-                fundMarketProperties.getDelayMs()
+                "FUND_SCHEDULER_BEAN_ACTIVE trackedFundCodes={} schedule=scheduler.live.cron",
+                fundMarketProperties.getTrackedFundCodes()
         );
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
+     * Takip edilen fon kodları için {@link FundProvider} üzerinden güncel NAV snapshot'larını çeker,
+     * pozitif NAV doğrulaması ve instrument mapping sonrası {@link FundSnapshotUpdatedEvent} Kafka'ya publish eder.
+     * Batch telemetry ve Micrometer metriklerini günceller.
+     */
     @Scheduled(
-            initialDelayString = "${market.fund.scheduler-initial-delay-ms:120000}",
-            fixedDelayString = "${market.fund.delay-ms:3600000}"
+            cron = "${scheduler.live.cron:0 0 9,13,17 * * *}",
+            zone = "${scheduler.live.zone:Europe/Istanbul}"
     )
     public void pullFundNavs() {
         List<String> codes = fundMarketProperties.getTrackedFundCodes();

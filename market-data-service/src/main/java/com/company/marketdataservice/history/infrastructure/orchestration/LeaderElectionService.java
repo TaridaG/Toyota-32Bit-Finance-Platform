@@ -23,8 +23,8 @@ public class LeaderElectionService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param env girdi parametresi
+     * Ingestion orchestrator leader lock adını ortam (env) bazında üretir.
+         * @param env dağıtım ortamı etiketi
          */
     public String buildLeaderLockName(String env) {
         String resolved = (env == null || env.isBlank()) ? "dev" : env.trim().toLowerCase();
@@ -32,15 +32,15 @@ public class LeaderElectionService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Yapılandırılmış ortam için leader lock adını döndürür.
          */
     public String buildLeaderLockName() {
         return buildLeaderLockName(marketDataProperties.getIngestion().getEnv());
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param instanceId girdi parametresi
+     * Leader lock heartbeat'ini günceller; lock bu instance'a aitse {@code true} döner.
+         * @param instanceId orchestrator instance kimliği
          */
     public boolean heartbeat(String instanceId) {
         String sql = """

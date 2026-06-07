@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * VIOP aktif sözleşme ve settlement geçmişi sorguları için JDBC tabanlı persistence erişimi.
+ */
 @Repository
 @RequiredArgsConstructor
 public class ViopMarketReadJdbcRepository {

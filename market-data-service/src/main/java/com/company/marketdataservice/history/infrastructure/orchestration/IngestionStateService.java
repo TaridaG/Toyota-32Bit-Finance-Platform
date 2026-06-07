@@ -26,9 +26,9 @@ public class IngestionStateService {
 
     /**
      * Veriyi okur ve döner.
-         * @param assetType girdi parametresi
+         * @param assetType varlık türü (ör. STOCK, FX)
          * @param symbol enstrüman sembolü
-         * @return işlem sonucu
+         * @return mevcut veya yeni oluşturulan backfill state kaydı
          */
     @Transactional
     public BackfillStateEntry getOrCreate(String assetType, String symbol) {
@@ -45,9 +45,9 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param runId girdi parametresi
+     * Backfill state'i {@link BackfillStatus#RUNNING} durumuna geçirir.
+         * @param state güncellenecek backfill state kaydı
+         * @param runId aktif orchestrator run kimliği
          */
     @Transactional
     public void markRunning(BackfillStateEntry state, String runId) {
@@ -59,9 +59,9 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param lastFetchedAt girdi parametresi
+     * Backfill state'i {@link BackfillStatus#COMPLETED} durumuna geçirir ve son fetch zamanını kaydeder.
+         * @param state güncellenecek backfill state kaydı
+         * @param lastFetchedAt tamamlanan chunk'un son gözlem anı
          */
     @Transactional
     public void markCompleted(BackfillStateEntry state, Instant lastFetchedAt) {
@@ -76,11 +76,11 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param errorCode girdi parametresi
-         * @param errorMessage girdi parametresi
-         * @param nextRetryAt girdi parametresi
+     * Geçici hatayı {@link BackfillStatus#RETRYABLE} durumuna işler ve bir sonraki retry zamanını planlar.
+         * @param state güncellenecek backfill state kaydı
+         * @param errorCode kısa hata kodu
+         * @param errorMessage hata açıklaması
+         * @param nextRetryAt bir sonraki retry denemesi zamanı
          */
     @Transactional
     public void markRetryable(BackfillStateEntry state, String errorCode, String errorMessage, Instant nextRetryAt) {
@@ -95,10 +95,10 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param errorCode girdi parametresi
-         * @param errorMessage girdi parametresi
+     * Kalıcı hatayı {@link BackfillStatus#FAILED} durumuna işler.
+         * @param state güncellenecek backfill state kaydı
+         * @param errorCode kısa hata kodu
+         * @param errorMessage hata açıklaması
          */
     @Transactional
     public void markFailed(BackfillStateEntry state, String errorCode, String errorMessage) {
@@ -113,10 +113,10 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param nextRetryAt girdi parametresi
-         * @param runId girdi parametresi
+     * Yarım kalan run'ı {@link BackfillStatus#RETRYABLE} durumuna alır (INTERRUPTED).
+         * @param state güncellenecek backfill state kaydı
+         * @param nextRetryAt bir sonraki retry denemesi zamanı
+         * @param runId yeni orchestrator run kimliği
          */
     @Transactional
     public void markInterruptedAsRetryable(BackfillStateEntry state, Instant nextRetryAt, String runId) {
@@ -131,8 +131,8 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
+     * Backfill state'i {@link BackfillStatus#NOT_STARTED} durumuna sıfırlar.
+         * @param state sıfırlanacak backfill state kaydı
          */
     @Transactional
     public void markNotStarted(BackfillStateEntry state) {
@@ -148,9 +148,9 @@ public class IngestionStateService {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         * @param state girdi parametresi
-         * @param lastFetchedAt girdi parametresi
+     * Transition guard olmadan state'i {@link BackfillStatus#COMPLETED} olarak işaretler (bootstrap senaryoları).
+         * @param state güncellenecek backfill state kaydı
+         * @param lastFetchedAt tamamlanan chunk'un son gözlem anı
          */
     @Transactional
     public void markCompletedWithoutGuard(BackfillStateEntry state, Instant lastFetchedAt) {

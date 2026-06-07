@@ -8,12 +8,12 @@ import java.util.UUID;
 /** PortfolioService iş mantığını uygular (portfolio service). */
 public interface PortfolioService {
 
-  /** getMyPortfolio sözleşmesi. */
+  /** Oturum açmış kullanıcının açık pozisyonlarını listeler. */
   List<PortfolioPositionResponse> getMyPortfolio();
 
-  /** getPortfolioSummary sözleşmesi. */
+  /** Oturum açmış kullanıcı için portfolio özet metriklerini döner. */
   PortfolioSummaryResponse getPortfolioSummary();
 
-  /** getPortfolioSummary sözleşmesi. */
+  /** Belirtilen kullanıcı için portfolio özet metriklerini döner (admin/internal). */
   PortfolioSummaryResponse getPortfolioSummary(UUID userId);
 }

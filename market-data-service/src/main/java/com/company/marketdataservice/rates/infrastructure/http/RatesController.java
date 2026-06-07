@@ -73,7 +73,7 @@ public class RatesController {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * En güncel politika faizi (policy rate) snapshot'ını döndüren REST endpoint.
          */
     @GetMapping("/policy-rate/latest")
     public PolicyRateLatestDto policyRateLatest() {

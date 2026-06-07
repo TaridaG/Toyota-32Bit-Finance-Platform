@@ -8,30 +8,27 @@ import java.util.Optional;
 /** CurrencyConversionService iş mantığını uygular (currency conversion service). */
 public interface CurrencyConversionService {
 
-  /** convert sözleşmesi. */
+  /** Güncel FX mid snapshot ile {@code from} para biriminden {@code to} para birimine fiyat dönüştürür. */
   BigDecimal convert(BigDecimal price, String from, String to);
 
   /**
-   * Converts using FX mids from {@code mds_fx_rate_history} at or before {@code fxAsOfEndExclusive}
-   * (UTC).
+   * {@code mds_fx_rate_history} tablosundaki FX mid'leri {@code fxAsOfEndExclusive} (UTC) anına kadar
+   * kullanarak dönüştürür.
    */
-  /** convertAt sözleşmesi. */
   BigDecimal convertAt(Instant fxAsOfEndExclusive, BigDecimal price, String from, String to);
 
-  /** normalizeCurrency sözleşmesi. */
+  /** Para birimi kodunu normalize eder (TRY hub ve alias kuralları). */
   String normalizeCurrency(String currency);
 
-  /** getRate sözleşmesi. */
+  /** Enstrüman sembolü için güncel FX oranını döner. */
   Optional<BigDecimal> getRate(String symbol);
 
   /**
-   * TRY-hub (+ USD legs) panel for trade audit / preview.
+   * Trade audit / preview için TRY-hub (+ USD leg) FX paneli.
    *
-   * @param fxAsOfEndExclusive upper bound for MDS {@code observed_at} when {@code historical} is
-   *     true; when false, live {@link #convert} snapshot is used (instant is still echoed in the
-   *     DTO).
+   * @param fxAsOfEndExclusive {@code historical} true iken MDS {@code observed_at} üst sınırı; false
+   *     iken canlı {@link #convert} snapshot kullanılır (instant yine DTO'da yansıtılır)
    */
-  /** acquisitionFxHubSnapshot sözleşmesi. */
   AcquisitionFxRatesSnapshot acquisitionFxHubSnapshot(
       Instant fxAsOfEndExclusive, boolean historical);
 }

@@ -34,11 +34,11 @@ public class FinnhubHistoricalPriceProvider implements HistoricalPriceProvider {
     }
 
     /**
-     * Harici kaynaktan veri fetch eder.
-         * @param symbol enstrüman sembolü
-         * @param startDate girdi parametresi
-         * @param endDate girdi parametresi
-         * @return işlem sonucu
+     * Finnhub stock/candle REST API'sinden günlük OHLC mumlarını fetch edip tarih aralığına map eder.
+         * @param symbol Finnhub tarafından yönetilen hisse sembolü
+         * @param startDate aralık başlangıç tarihi (dahil)
+         * @param endDate aralık bitiş tarihi (dahil)
+         * @return OPEN/HIGH/LOW/MARKET tipindeki historical price point listesi
          */
     @Override
     public List<HistoricalPricePoint> fetchRange(String symbol, LocalDate startDate, LocalDate endDate) {
@@ -62,7 +62,7 @@ public class FinnhubHistoricalPriceProvider implements HistoricalPriceProvider {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Konfigürasyonda tanımlı ve bu provider tarafından yönetilen sembol kümesini döner.
          */
     public Set<String> ownedSymbols() {
         return properties.getSymbols() == null

@@ -9,18 +9,18 @@ import java.util.List;
 /** ChartDrawingSaveService iş mantığını uygular (chart drawing save service). */
 public interface ChartDrawingSaveService {
 
-  /** create sözleşmesi. */
+  /** Yeni chart drawing save kaydı oluşturur. */
   ChartDrawingSaveDetailDto create(CreateChartDrawingSaveRequest request);
 
-  /** listForAsset sözleşmesi. */
+  /** Belirtilen asset key için kayıtlı çizimleri listeler. */
   List<ChartDrawingSaveSummaryDto> listForAsset(String assetKey);
 
-  /** listPage sözleşmesi. */
+  /** Kullanıcının tüm chart drawing save kayıtlarını sayfalı döner. */
   ChartDrawingSavePageResponse listPage(int page, int size);
 
-  /** getById sözleşmesi. */
+  /** Kimliğe göre drawing save detayını döner. */
   ChartDrawingSaveDetailDto getById(Long id);
 
-  /** delete sözleşmesi. */
+  /** Drawing save kaydını siler. */
   void delete(Long id);
 }

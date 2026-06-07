@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-/** {@code notification.portal.inbox} topic consumer. */
+/** notification.portal.inbox topic'inden gelen mesajları consume eder. */
 @Component
 @Profile("kafka")
 @RequiredArgsConstructor

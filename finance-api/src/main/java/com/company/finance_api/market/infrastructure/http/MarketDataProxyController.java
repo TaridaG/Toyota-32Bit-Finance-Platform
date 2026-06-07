@@ -20,14 +20,11 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- * Forwards browser / SPA traffic for market-data-service routes through finance-api so local Vite
- * only needs {@code VITE_PROXY_TARGET} (:8080). API gateway sends {@code
- * /api/v1/market/instruments/.../fundamentals} straight to market-data-service; finance still exposes
- * {@link MarketFundamentalsPassthroughController} for direct finance calls. {@code
- * /api/v1/market/overview} stays on {@link MarketOverviewController}.
- * Policy rate history ({@code /api/v1/rates/**}) is proxied the same way as market prices.
+ * market-data-service'e HTTP proxy; SPA/browser trafiğini finance-api üzerinden upstream'e iletir
+ * (local Vite yalnızca {@code VITE_PROXY_TARGET} :8080 kullanır). {@code /api/v1/market/overview}
+ * {@link MarketOverviewController} üzerinde kalır; policy rate history ({@code /api/v1/rates/**})
+ * market price route'ları ile aynı şekilde proxy edilir.
  */
-/** market-data-service'e HTTP proxy; portal isteklerini upstream'e iletir. */
 @RestController
 public class MarketDataProxyController {
 

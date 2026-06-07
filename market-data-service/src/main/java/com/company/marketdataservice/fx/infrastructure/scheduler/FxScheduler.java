@@ -49,9 +49,15 @@ public class FxScheduler {
     }
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
-         */
-    @Scheduled(fixedDelayString = "${scheduler.fx.delay-ms:300000}")
+     * Zamanlanmış tick'te {@link FxProvider} üzerinden güncel FX snapshot'larını çeker,
+     * history bootstrap gate ve instrument mapping kontrollerinden geçirir,
+     * ardından her kabul edilen kayıt için {@link FxSnapshotUpdatedEvent} Kafka'ya publish eder.
+     * Başarı, boş sonuç ve hata durumlarında Micrometer counter/gauge metriklerini günceller.
+     */
+    @Scheduled(
+            cron = "${scheduler.live.cron:0 0 9,13,17 * * *}",
+            zone = "${scheduler.live.zone:Europe/Istanbul}"
+    )
     public void pullFxSnapshots() {
         long startNanos = System.nanoTime();
         try {

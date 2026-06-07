@@ -25,7 +25,7 @@ public class PolicyRateWeeklyBootstrapListener {
     private long startupDelayMs;
 
     /**
-     * İş mantığı operasyonunu çalıştırır.
+     * Uygulama hazır olduktan sonra gecikmeli virtual thread ile haftalık politika faizi sync'ini tetikler.
          */
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() {
