@@ -109,8 +109,12 @@ export function useMainPriceData(
     if (!chart || !series) return
 
     const seriesChanged = series !== prevSeriesRef.current
+    const instrumentChanged =
+      prevFitKeyRef.current != null && prevFitKeyRef.current !== fitContentKey
     if (seriesChanged) {
       prevSeriesRef.current = series
+      prevCandlesRef.current = []
+    } else if (instrumentChanged) {
       prevCandlesRef.current = []
     }
 
@@ -118,6 +122,7 @@ export function useMainPriceData(
       const prev = prevCandlesRef.current
       const canIncremental =
         !seriesChanged &&
+        !instrumentChanged &&
         prev.length > 0 &&
         candles.length >= prev.length &&
         prev.every((point, index) => candles[index]?.time === point.time)
