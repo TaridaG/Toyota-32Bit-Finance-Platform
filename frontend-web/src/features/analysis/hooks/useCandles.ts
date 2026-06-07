@@ -51,6 +51,7 @@ export function useCandles(symbol: string, interval: AnalysisRange, opts?: UseCa
       setLoading(false)
       return
     }
+    setCandles([])
     void refetch()
   }, [currencyKey, enabled, refetch])
 

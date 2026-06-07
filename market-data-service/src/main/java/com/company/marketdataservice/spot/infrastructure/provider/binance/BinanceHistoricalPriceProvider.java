@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * `spot fiyat` harici veri kaynağından fiyat veya snapshot fetch eden provider adaptörü.
@@ -22,7 +21,6 @@ import java.util.Map;
 public class BinanceHistoricalPriceProvider implements HistoricalPriceProvider {
 
     private static final String SOURCE = "BINANCE";
-    private static final String PRICE_TYPE = "MARKET";
 
     private final WebClient webClient;
 
@@ -72,22 +70,31 @@ public class BinanceHistoricalPriceProvider implements HistoricalPriceProvider {
             if (!(row instanceof List<?> columns) || columns.size() < 7) {
                 continue;
             }
-            BigDecimal closePrice = toBigDecimal(columns.get(4));
-            Instant observedAt = toInstant(columns.get(6));
-            if (closePrice == null || observedAt == null) {
+            Instant observedAt = toInstant(columns.get(0));
+            if (observedAt == null) {
                 continue;
             }
-            out.add(new HistoricalPricePoint(
-                    normalized,
-                    closePrice,
-                    PRICE_TYPE,
-                    SOURCE,
-                    observedAt,
-                    null
-            ));
+            addKlinePoint(out, normalized, columns.get(1), "OPEN", observedAt);
+            addKlinePoint(out, normalized, columns.get(2), "HIGH", observedAt);
+            addKlinePoint(out, normalized, columns.get(3), "LOW", observedAt);
+            addKlinePoint(out, normalized, columns.get(4), "MARKET", observedAt);
         }
         out.sort(Comparator.comparing(HistoricalPricePoint::occurredAt));
         return out;
+    }
+
+    private static void addKlinePoint(
+            List<HistoricalPricePoint> out,
+            String symbol,
+            Object rawPrice,
+            String priceType,
+            Instant observedAt
+    ) {
+        BigDecimal price = toBigDecimal(rawPrice);
+        if (price == null) {
+            return;
+        }
+        out.add(new HistoricalPricePoint(symbol, price, priceType, SOURCE, observedAt, null));
     }
 
     private static BigDecimal toBigDecimal(Object raw) {

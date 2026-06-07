@@ -19,9 +19,7 @@ public final class BondRegistry {
     private static final List<BondRow> ROWS = List.of(
             new BondRow("TRBOND1Y", "TP.KTF10"),
             new BondRow("TRBOND2Y", "TP.KTF11"),
-            new BondRow("TRBOND3Y", "TP.KTF12"),
-            new BondRow("TRBOND5Y", "TP.KTF13"),
-            new BondRow("TRBOND10Y", "TP.KTF14"));
+            new BondRow("TRBOND3Y", "TP.KTF12"));
 
     public static List<IngestInstrumentDef> all() {
         return ROWS.stream().map(BondRegistry::def).toList();

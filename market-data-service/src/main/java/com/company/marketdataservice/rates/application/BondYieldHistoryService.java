@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 public class BondYieldHistoryService {
 
     private static final ZoneId TR = ZoneId.of("Europe/Istanbul");
-    private static final String DEFAULT_TENOR = "5Y";
-    private static final List<String> TENOR_ORDER = List.of("1Y", "2Y", "3Y", "5Y", "10Y");
+    private static final String DEFAULT_TENOR = "3Y";
+    private static final List<String> TENOR_ORDER = List.of("1Y", "2Y", "3Y");
 
     private final MarketPriceHistoryRepository marketPriceHistoryRepository;
     private final TcmbBondMarketProperties bondProperties;

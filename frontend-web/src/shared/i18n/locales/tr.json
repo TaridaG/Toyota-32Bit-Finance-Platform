@@ -668,9 +668,7 @@
         "tenorShort": {
           "1Y": "1Y",
           "2Y": "2Y",
-          "3Y": "3Y",
-          "5Y": "5Y",
-          "10Y": "10Y"
+          "3Y": "3Y"
         },
         "liveObservation": "Son gözlem",
         "change1dSub": "1G: {{bp}} bp",
@@ -688,7 +686,7 @@
         "chartEmpty": "Kayıtlı günlük veri bulunamadı.",
         "chartFoot": "Kaynak: TCMB EVDS ikincil piyasa Hazine getiri serileri (TP.KTF*). Gösterilen getiri, seçilen vade için piyasa eğrisi referansıdır; tek bir ISIN fiyatı değildir.",
         "curveTitle": "Getiri eğrisi (güncel)",
-        "curveHint": "1Y–10Y vade dilimlerinde TCMB referans getirileri; seçili vade vurgulanır.",
+        "curveHint": "1Y–3Y vade dilimlerinde TCMB referans getirileri; seçili vade vurgulanır.",
         "curveChange1d": "{{bp}} bp",
         "edu1": "TR bono/tahvil: Türkiye Hazinesi'nin TL cinsi borçlanma enstrümanlarıdır.",
         "edu2": "Getiri (%): İkincil piyasada aynı vade dilimine denk gelen referans faiz seviyesidir.",

@@ -669,9 +669,7 @@
         "tenorShort": {
           "1Y": "1J",
           "2Y": "2J",
-          "3Y": "3J",
-          "5Y": "5J",
-          "10Y": "10J"
+          "3Y": "3J"
         },
         "liveObservation": "Letzte Beobachtung",
         "change1dSub": "1T: {{bp}} bp",
@@ -689,7 +687,7 @@
         "chartEmpty": "Keine täglichen Datensätze gefunden.",
         "chartFoot": "Quelle: TCMB EVDS Sekundärmarkt-Renditen (TP.KTF*). Benchmark-Kurvenreferenz, kein Einzel-ISIN-Kurs.",
         "curveTitle": "Renditekurve (aktuell)",
-        "curveHint": "TCMB-Referenzrenditen 1J–10J; gewählte Laufzeit hervorgehoben.",
+        "curveHint": "TCMB-Referenzrenditen 1J–3J; gewählte Laufzeit hervorgehoben.",
         "curveChange1d": "{{bp}} bp",
         "edu1": "TR-Anleihe/Schatzwechsel: TRY-Staatsanleihen der Türkei.",
         "edu2": "Rendite (%): Benchmark-Satz für die gewählte Laufzeit am Sekundärmarkt.",

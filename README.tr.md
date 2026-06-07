@@ -48,9 +48,13 @@
 ## İçindekiler
 
 - [Ekranlar](#ekranlar)
+- [Finansal özellikler](#finansal-özellikler)
 - [Proje yapısı](#proje-yapısı)
 - [Platform özeti](#platform-özeti)
+- [Veri yapılandırması](#veri-yapılandırması)
+- [Varlık ekleme](#varlık-ekleme)
 - [Hızlı başlangıç (Docker)](#hızlı-başlangıç-docker--önerilen)
+- [Detaylı başlangıç](#detaylı-başlangıç)
 - [Yerel geliştirme (özet)](#yerel-geliştirme-özet)
 - [Dokümantasyon](#dokümantasyon)
 - [Lisans](#lisans)
@@ -106,6 +110,143 @@
     <td align="center" valign="top" width="50%">
       <strong>Profil</strong><br>
       <img src="docs/assets/screens/profil.gif" alt="Profil" width="100%">
+    </td>
+  </tr>
+</table>
+
+## Finansal özellikler
+
+<p align="center"><sub>Belirli portal özellikleri — ekran turu üstte, burada tek tek yetenekler</sub></p>
+
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td>
+      <table border="0" cellpadding="14" cellspacing="0" width="100%">
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f1-markets.webp" alt="Portföy simülasyonu — varlık seçimi ve getiri analizi" width="172" loading="lazy">
+            <br><sub>Portföy simülasyonu</sub>
+          </td>
+          <td valign="top">
+            <h4>① Portföy simülasyonu</h4>
+            <p>Piyasalar tablosundan istediğin varlığı seçip simülatöre ekleyebilirsin. Eklediğin varlıklarla <strong>bugün ile geçmiş</strong> arasında portföy getirisini, <strong>bireysel varlık getirilerini</strong> ve dağılım değiştikçe <strong>genel portföy getirisinin</strong> nasıl değiştiğini inceleyebilirsin.</p>
+            <p><strong>Para birimi:</strong> TRY ve USD bazlı yatırım senaryolarını karşılaştır — aynı dağılımda döviz farkı getiriyi nasıl etkiler görürsün. Başlangıç tarihi, ağırlık düzenleme (eşit dağıt / %100) ve parite + kur bileşenleri tek ekranda.</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f2-treasury-bond-simulator.webp" alt="TR Hazine bonosu getiri grafiği ve bono simülatörü" width="172" loading="lazy">
+            <br><sub>Faiz / Vadeli</sub>
+          </td>
+          <td valign="top">
+            <h4>② TR Hazine bonosu — Getiri grafiği &amp; simülatör</h4>
+            <p>TCMB EVDS ikincil piyasa verisiyle <strong>1Y / 2Y / 3Y</strong> Hazine getiri eğrisini ve seçtiğin vadenin <strong>geçmiş getiri grafiğini</strong> izle. Vade değiştirdikçe hem güncel eğri hem tarihsel seri güncellenir.</p>
+            <p><strong>Bono simülatörü:</strong> bugünkü yatırım tutarını ve yıllık getiriyi gir — tahmini temiz fiyat, vade sonu tahsil ve toplam getiri anında hesaplanır. İskontolu bono varsayımıyla yaklaşık vadeye-kadar-getiri senaryosu kur; politika faizi grafiğine tek tıkla geç.</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f3-eurobond-simulator.webp" alt="TR USD Eurobond kupon ve getiri grafiği ile nakit akış simülatörü" width="172" loading="lazy">
+            <br><sub>Faiz / Vadeli · Eurobond</sub>
+          </td>
+          <td valign="top">
+            <h4>③ TR USD Eurobond — Kupon &amp; getiri simülatörü</h4>
+            <p>ISIN bazlı eurobond listesinde <strong>temiz fiyat</strong>, <strong>kupon oranı</strong> ve <strong>vadeye kadar getiri (YTM)</strong> yan yana; seçtiğin kağıt için <strong>fiyat</strong> ve <strong>getiri</strong> geçmişi ayrı grafiklerde (1Y / 5Y / tümü).</p>
+            <p><strong>Nakit akışı:</strong> nominal (USD) girince yıllık ve 6 aylık kupon tutarı, yaklaşık alış maliyeti ve vade sonu anapara otomatik hesaplanır.</p>
+            <p><strong>Geçmiş alım senaryosu:</strong> alış tarihi ve temiz fiyatı grafikten işaretle — o günkü kapanış fiyatı ve tarih otomatik dolar. Tahmini <strong>kupon nakdi</strong>, satış tutarı, net sonuç (USD) ve alış bazlı getiri % görürsün; istersen satışı grafikteki son güne sabitle.</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f4-inflation-simulator.webp" alt="TÜFE enflasyon grafiği ve satın alma gücü simülatörü" width="172" loading="lazy">
+            <br><sub>Faiz / Vadeli · TÜFE</sub>
+          </td>
+          <td valign="top">
+            <h4>④ TÜFE enflasyon — Satın alma gücü simülatörü</h4>
+            <p>TCMB genel TÜFE endeksi (2003=100) ile <strong>yıllık %</strong>, <strong>aylık %</strong> ve <strong>endeks</strong> görünümlerinde enflasyon trendini izle. Başlangıç tarihini grafikten işaretleyebilirsin.</p>
+            <p><strong>Reel değer kaybı:</strong> nominal TL tutarı ve dönem seç — bileşik enflasyon (I<sub>bitiş</sub>/I<sub>başlangıç</sub>), <strong>satın alma gücü kaybı</strong> (TL ve %), bugünkü reel karşılık ve <strong>yıllıklandırılmış enflasyon</strong> hesaplanır.</p>
+            <p><strong>Güç koruma eşiği:</strong> aynı satın alma gücünü korumak için dönem sonunda gereken <strong>nominal tutar</strong> gösterilir — yani enflasyonu telafi etmek için yatırımın en az hangi getiriyi hedeflemesi gerektiğini reel bazda okursun (vergi ve kişisel tüketim sepeti hariç bilgilendirme).</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f5-chart-drawing.webp" alt="Analiz sayfası — grafik üzeri teknik çizim araçları" width="172" loading="lazy">
+            <br><sub>Analiz · Teknik çizim</sub>
+          </td>
+          <td valign="top">
+            <h4>⑤ Teknik analiz — Grafik çizimleri &amp; kayıtlı senaryolar</h4>
+            <p>Seçili enstrümanın mum/çizgi grafiğinde araç başına <strong>ayrı renk</strong> ile çizim yap: <strong>trend çizgisi</strong>, <strong>ışın (ray)</strong>, <strong>yatay destek-direnç</strong>, <strong>dikey zaman işareti</strong>, <strong>konsolidasyon alanı (dikdörtgen)</strong>, <strong>Fibonacci geri çekilme</strong> ve <strong>ankor noktası</strong>. <strong>Fiyat aralığı ölçümü</strong> ile iki uç arası bar ve getiri farkını oku.</p>
+            <p><strong>Katmanlar:</strong> MA20 / MA50, RSI, hacim ve en fazla üç sembol <strong>overlay karşılaştırma</strong> aynı zaman ekseninde.</p>
+            <p><strong>Kayıt &amp; öğrenme:</strong> çizim setini isim vererek kaydet; <strong>geçmiş çizimlerin</strong>i varlık bazında açıp önceki destek-direnç ve senaryolarını incele. Tekrarlayan kurulumlarla kendi teknik okuryazarlığını geliştirir, pozisyon planını geçmiş notlarına göre şekillendirirsin (giriş gerekli).</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f6-my-analysis.webp" alt="Portföy — Analizim: kayıtlı çizimler ve canlı fiyat üzerinde önizleme" width="172" loading="lazy">
+            <br><sub>Portföy · Analizim</sub>
+          </td>
+          <td valign="top">
+            <h4>⑥ Analizim — Kayıtlı çizimler &amp; canlı karşılık takibi</h4>
+            <p>Portföy menüsündeki <strong>Analizim</strong> sekmesinde analiz sayfasında kaydettiğin çizim setlerini sıralı listede görürsün. Her kayıtta sembol, tarih, <strong>çizim sayısı</strong>, kullanılan araç rozetleri ve <strong>fiyat aralığı</strong> özetlenir.</p>
+            <p>Kartı genişlettiğinde çizimler <strong>güncel mum verisiyle</strong> yeniden yüklenir; Fibonacci seviyeleri, destek-direnç kutuları ve trend çizgilerinin <strong>bugünkü fiyatla</strong> ilişkisini okuyarak senaryonun tutup tutmadığını canlı takip edersin. <strong>Analiz sayfasında aç</strong> ile tam ekran düzenlemeye devam edebilirsin (giriş gerekli).</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f7-chart-news.webp" alt="Analiz sayfası — grafik üzeri haber işaretleri ve ertesi gün fiyat etkisi" width="172" loading="lazy">
+            <br><sub>Analiz · Grafik haberleri</sub>
+          </td>
+          <td valign="top">
+            <h4>⑦ Analiz — Grafik üzeri haber &amp; etki analizi</h4>
+            <p>Analiz sayfasında <strong>Haber</strong> katmanını açarak seçili varlığa ilişkin başlıkları fiyat zaman çizgisinde işaretleyebilirsin. Haber noktasına tıkladığında başlık, özet, kaynak ve eşleşme nedeni (varlık / kategori / <strong>favori</strong>) görünür.</p>
+            <p><strong>Ertesi gün değişimi:</strong> haber günü kapanışından sonraki güne göre hesaplanan <strong>% fiyat değişimini</strong> okuyarak olayın kısa vadeli piyasa etkisini ölçersin. <strong>Yıldız filtresi</strong> ile yalnızca favorilediğin haberleri grafikte tutup gerçek etkisini izole analiz edebilirsin.</p>
+            <p><strong>Favoriler:</strong> yıldızladığın haberler <strong>Haberler</strong> sayfasında favori filtresiyle ve portföyde <strong>Haberlerim</strong> bölümünde de listelenir (giriş gerekli).</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f8-info-cards-literacy.webp" alt="Finansal Okuryazarlık — bilgi kartları ve terim sözlüğü" width="172" loading="lazy">
+            <br><sub>Bilgi kartları · Okuryazarlık</sub>
+          </td>
+          <td valign="top">
+            <h4>⑧ Bilgi kartları &amp; finansal okuryazarlık</h4>
+            <p>Header’daki <strong>? (ipucu modu)</strong> butonuyla adminin portal öğelerine bağladığı bilgi kartlarına anında erişirsin: ilgili <strong>buton veya terime tıklayarak</strong> kısa tanım, yorum ipucu ve tam içerik bağlantısını görürsün.</p>
+            <p><strong>Finansal Okuryazarlık sözlüğü:</strong> terimler, grafik türleri, makro göstergeler ve analiz araçları filtreli katalogda; zorluk, içerik tipi ve sayfa bazında aranır.</p>
+            <p><strong>Admin &amp; AI:</strong> yönetici sayfada öğe seçerek veya sözlüğe kart ekleyerek içerik oluşturur; <strong>AI ile eksik alanları doldurma</strong> ve <strong>TR / EN / DE çeviri</strong> sürecini hızlandırır — admin tarafında kolaylık, kullanıcı tarafında sade eğitim hedeflenir.</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f9-admin-add-asset.webp" alt="Admin — yeni varlık ekleme ve piyasa segmenti seçimi" width="172" loading="lazy">
+            <br><sub>Admin · Varlık ekleme</sub>
+          </td>
+          <td valign="top">
+            <h4>⑨ Admin — Dinamik varlık ekleme &amp; veri tetikleme</h4>
+            <p>Yönetim panelindeki <strong>Yeni varlık ekle</strong> formuyla yeni listelenen veya farklı bir enstrümanı <strong>Kripto / BIST / NASDAQ</strong> segmentinden seçerek dinamik olarak kataloğa eklersin; <strong>tür ve borsa</strong> segmente göre otomatik atanır.</p>
+            <p>Kayıt sonrası <strong>Veri çekme kaydı</strong> ekranına yönlendirilirsin: enstrümanı aktif/pasif yapabilir, <strong>tarihsel veri çek</strong> ve <strong>canlı veri çek</strong> işlemlerini satır bazında tetikleyebilirsin — geçmiş kapsama (30 / 365 gün) ve son hata durumu tek tabloda izlenir.</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <img src="docs/assets/features/f10-admin-user-management.webp" alt="Admin — kullanıcı dizini: mesaj, dondur ve sil işlemleri" width="172" loading="lazy">
+            <br><sub>Admin · Kullanıcı yönetimi</sub>
+          </td>
+          <td valign="top">
+            <h4>⑩ Admin — Kullanıcı yönetimi &amp; hesap müdahalesi</h4>
+            <p><strong>Toplam kullanıcı</strong> dizininde kullanıcı bazında <strong>Mesaj</strong> gönderebilir (portal bildirimi + e-posta), hesabı <strong>Dondur</strong>abilir veya <strong>kalıcı olarak Sil</strong>ebilirsin. Dondurma gerekçesi isteğe bağlı iletilir; silmede e-postayı yeni kayıtlardan engelleme seçeneği vardır.</p>
+            <p><strong>Anlık etki:</strong> dondurulan veya silinen hesaplar sistemde gezinirken API yanıtıyla tespit edilir; oturum sonlandırılır ve giriş ekranında <strong>bilgilendirici uyarı</strong> gösterilerek portal dışına atılır. Dondurma açılabilir; silme geri alınamaz.</p>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
 </table>
@@ -208,6 +349,407 @@ Docker Compose (`Docker/`) ile gelen paylaşımlı bileşenler:
 | `Docker/` | `docker-compose`, Keycloak realm, observability stack |
 | `docs/` | Mimari, servisler, API, kurulum, gözlemlenebilirlik (`turkce/`, `english/`, `deutsch/`) |
 | `photos/` | Profil avatar dosyaları (yerel / volume) |
+
+## Veri yapılandırması
+
+<p align="center"><sub>Docker demo ortamında canlı ve geçmiş piyasa verisini nereden açar/kapatırsınız?</sub></p>
+
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td>
+      <table border="0" cellpadding="14" cellspacing="0" width="100%">
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="Docker/.env.example" title="Docker/.env.example dosyasını aç">
+              <img src="docs/assets/config/v1-docker-env.webp" alt="Docker .env.example — PİYASA VERİSİ bloğu" width="172" loading="lazy">
+            </a>
+            <br><sub><code>Docker/.env.example</code></sub>
+          </td>
+          <td valign="top">
+            <h4>① Docker/.env — Piyasa verisi anahtarları</h4>
+            <p>Demo stack’te <strong>canlı ingest</strong> ve <strong>geçmiş backfill</strong> pipeline’larını tek dosyadan yönetirsiniz. <code>cp .env.example .env</code> ile oluşturup bu bloğu düzenleyin. Öncelik sırası: <code>docker-compose.yml</code> → <code>Docker/.env</code> → <code>application.yml</code>.</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="42%" valign="top"><code>MARKET_HISTORY_BACKFILL_*</code></td>
+                <td valign="top">BIST, NASDAQ ve kripto <strong>geçmiş fiyat</strong> kolonları; startup’ta çalıştırma</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>PROVIDERS_FINNHUB_ENABLED</code></td>
+                <td valign="top">NASDAQ canlı fiyat ve geçmiş veri (Finnhub)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_FUND_*</code></td>
+                <td valign="top">TEFAS fon NAV güncelleme ve geçmiş bootstrap</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_BOND_*</code> · <code>MARKET_TRGOVUSD_*</code></td>
+                <td valign="top">TCMB tahvil getirisi ve TR USD eurobond grafikleri</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_VIOP_ENABLED</code></td>
+                <td valign="top">VIOP türev verisi (Faiz/Vadeli kartı)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_*_SYNC_ENABLED</code></td>
+                <td valign="top">Politika faizi, repo, TL mevduat, TÜFE makro senkronu</td>
+              </tr>
+            </table>
+            <p><strong>Değişiklik sonrası:</strong> <code>docker compose up -d --force-recreate market-data-service</code><br>
+            <strong>İzleme:</strong> <code>docker compose logs -f market-data-service</code> · Ayrıntılar: <a href="docs/turkce/configuration.md">docs/turkce/configuration.md</a></p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/resources/application.yml" title="application.yml dosyasını aç">
+              <img src="docs/assets/config/v2-scheduler-live.webp" alt="application.yml — scheduler.live cron ayarları" width="172" loading="lazy">
+            </a>
+            <br><sub><code>market-data-service/.../application.yml</code></sub>
+          </td>
+          <td valign="top">
+            <h4>② application.yml — Canlı veri zamanlayıcısı</h4>
+            <p>Kripto, BIST, NASDAQ, döviz, fon ve tahvil <strong>canlı fiyat</strong> scheduler’ları aynı cron ifadesini paylaşır. Varsayılan: günde <strong>3 kez</strong> — 09:00, 13:00, 17:00 (<code>Europe/Istanbul</code>).</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="42%" valign="top"><code>SCHEDULER_LIVE_CRON</code></td>
+                <td valign="top">Canlı ingest saatleri (cron); örn. <code>0 0 9,13,17 * * *</code></td>
+              </tr>
+              <tr>
+                <td valign="top"><code>SCHEDULER_LIVE_ZONE</code></td>
+                <td valign="top">Saat dilimi; varsayılan <code>Europe/Istanbul</code></td>
+              </tr>
+              <tr>
+                <td valign="top"><code>market.scheduler.enabled</code></td>
+                <td valign="top">Kripto canlı çekme (varsayılan: açık)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>market.stock.scheduler.enabled</code></td>
+                <td valign="top">BIST + NASDAQ canlı çekme (varsayılan: açık)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>market.fx.scheduler-enabled</code></td>
+                <td valign="top">Döviz kurları canlı çekme (varsayılan: açık)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>scheduler.*.delay-ms</code></td>
+                <td valign="top">Bootstrap / yardımcı görev aralıkları (fx 5 dk, hisse 1 dk, tahvil 5 dk)</td>
+              </tr>
+            </table>
+            <p><strong>Not:</strong> VIOP ve makro oranlar (politika faizi, TÜFE) kendi cron’larını kullanır — aynı dosyada <code>market.viop.cron</code> ve <code>market.*.weekly-sync</code> blokları.</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/resources/application.yml#L150" title="application.yml — history.backfill bloğu">
+              <img src="docs/assets/config/v3-history-backfill.webp" alt="application.yml — market.history.backfill ayarları" width="172" loading="lazy">
+            </a>
+            <br><sub><code>market.history.backfill</code></sub>
+          </td>
+          <td valign="top">
+            <h4>③ application.yml — Geçmiş veri (backfill)</h4>
+            <p>BIST, NASDAQ, kripto ve döviz <strong>geçmiş fiyat</strong> serilerini dolduran merkezi orchestrator. Yerel geliştirmede varsayılan <strong>kapalı</strong>; Docker demo’da <code>Docker/.env</code> ile <strong>açık</strong>.</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="42%" valign="top"><code>MARKET_HISTORY_BACKFILL_ENABLED</code></td>
+                <td valign="top">Geçmiş veri çekmeyi aç/kapa</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP</code></td>
+                <td valign="top">Stack ayağa kalkınca hemen başlat</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>years</code> · <code>chunk-days</code></td>
+                <td valign="top">Kaç yıl geriye (5) ve parça boyutu (90 gün)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>schedule-delay-ms</code></td>
+                <td valign="top">Periyodik tekrar: 15 dakika (900000 ms)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>gate-live-until-history-ready</code></td>
+                <td valign="top"><code>true</code> → geçmiş dolana kadar canlı fiyat gecikir</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>kafka.enabled</code></td>
+                <td valign="top">Backfill sırasında Kafka yayını (varsayılan: kapalı, doğrudan DB)</td>
+              </tr>
+            </table>
+            <p><strong>İpucu:</strong> Hızlı demo için <code>Docker/.env</code> yeterli; derinlik ve retry ayarları için bu YAML bloğunu düzenleyin. Tahvil, fon NAV ve eurobond geçmişi ayrı bootstrap bayraklarıyla yönetilir (<code>market.bond.history-bootstrap</code>, <code>market.fund.nav-history-bootstrap</code>).</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="Docker/docker-compose.yml#L220" title="docker-compose.yml — market-data-service">
+              <img src="docs/assets/config/v4-docker-compose.webp" alt="docker-compose.yml — market-data-service environment bloğu" width="172" loading="lazy">
+            </a>
+            <br><sub><code>Docker/docker-compose.yml</code></sub>
+          </td>
+          <td valign="top">
+            <h4>④ docker-compose.yml — Docker demo override’ları</h4>
+            <p><code>market-data-service</code> konteynerine geçirilen ortam değişkenleri; <code>Docker/.env</code> değerlerini <strong>varsayılanlarla birleştirir</strong>. <code>application.yml</code>’de kapalı olan birçok pipeline burada demo için <strong>açık</strong> gelir.</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="42%" valign="top"><code>SPRING_PROFILES_ACTIVE=docker</code></td>
+                <td valign="top"><code>application-docker.yml</code> profilini yükler (fon scheduler vb.)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>TCMB_API_KEY=${...:?}</code></td>
+                <td valign="top">Zorunlu — EVDS tahvil, makro, döviz verisi</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_HISTORY_BACKFILL_*:-true</code></td>
+                <td valign="top">Geçmiş fiyat: yerelde kapalı → Docker’da açık</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_FUND_*:-true</code></td>
+                <td valign="top">TEFAS NAV scheduler + geçmiş bootstrap</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_VIOP_CRON:-0 */2 * * * *</code></td>
+                <td valign="top">VIOP: demo’da 2 dakikada bir (yerelde hafta içi 19:40)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>${VAR:-default}</code> sözdizimi</td>
+                <td valign="top"><code>.env</code> boşsa sağdaki varsayılan kullanılır</td>
+              </tr>
+            </table>
+            <p><strong>Öncelik:</strong> compose satırı → <code>Docker/.env</code> → <code>application.yml</code>. Değişiklik: <code>docker compose up -d --force-recreate market-data-service</code></p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+## Varlık ekleme
+
+<p align="center"><sub>Takip edilen enstrümanlar Java registry dosyalarında tanımlıdır — startup’ta DB’ye senkronize edilir</sub></p>
+
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td>
+      <table border="0" cellpadding="14" cellspacing="0" width="100%">
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/CryptoRegistry.java" title="CryptoRegistry.java">
+              <img src="docs/assets/assets-registry/a1-crypto-registry.webp" alt="CryptoRegistry.java — kripto sembol listesi" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/CryptoRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>① Kripto — CryptoRegistry</h4>
+            <p>USDT çiftlerini (BTC, ETH, SOL…) platform kataloğuna ekler. Canlı fiyat <strong>composite</strong> sağlayıcıdan gelir: Yahoo → CoinGecko → Binance.</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>SYMBOLS</code></td>
+                <td valign="top">Takip listesi — örn. <code>"BTCUSDT"</code> ekle</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>COINGECKO_ID_BY_BASE</code></td>
+                <td valign="top">Base varlık → CoinGecko id (ör. <code>BTC → bitcoin</code>)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>IngestProvider.COMPOSITE</code></td>
+                <td valign="top">Provider eşlemesi; DB sync otomatik</td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> sembolü <code>SYMBOLS</code> listesine ekle → gerekirse <code>COINGECKO_ID_BY_BASE</code> güncelle → <code>docker compose up -d --build market-data-service</code></p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/BistRegistry.java" title="BistRegistry.java">
+              <img src="docs/assets/assets-registry/a2-bist-registry.webp" alt="BistRegistry.java — BIST hisse listesi" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/BistRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>② BIST — BistRegistry</h4>
+            <p>Borsa İstanbul hisselerini kataloğa ekler. Canlı ve geçmiş fiyat <strong>Yahoo Finance</strong> üzerinden gelir; ticker formatı <code>SEMBOL.IS</code> (ör. <code>GARAN.IS</code>).</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>SYMBOLS</code></td>
+                <td valign="top">BIST kodları — örn. <code>"GARAN"</code>, <code>"THYAO"</code></td>
+              </tr>
+              <tr>
+                <td valign="top"><code>symbol + ".IS"</code></td>
+                <td valign="top">Yahoo provider ticker’ı otomatik üretilir</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>IngestProvider.YAHOO</code></td>
+                <td valign="top">Borsa: <code>BIST</code>, para birimi: <code>TRY</code></td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> kodu <code>SYMBOLS</code> listesine ekle → <code>docker compose up -d --build market-data-service</code> → geçmiş için <code>MARKET_HISTORY_BACKFILL_ENABLED=true</code> olduğundan emin ol</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/NasdaqRegistry.java" title="NasdaqRegistry.java">
+              <img src="docs/assets/assets-registry/a3-nasdaq-registry.webp" alt="NasdaqRegistry.java — NASDAQ hisse ve ETF listesi" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/NasdaqRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>③ NASDAQ + ETF — NasdaqRegistry</h4>
+            <p>ABD hisseleri ve ETF’leri kataloğa ekler. <strong>Finnhub</strong> etkinse canlı/geçmiş veri oradan gelir; kapalıysa veya hata olursa <strong>Yahoo</strong> yedeği devreye girer.</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>STOCK_SYMBOLS</code></td>
+                <td valign="top">Hisseler — <code>AAPL</code>, <code>NVDA</code>, <code>MSFT</code>…</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>ETF_SYMBOLS</code></td>
+                <td valign="top">ETF’ler — <code>SPY</code>, <code>QQQ</code>, <code>VOO</code>, <code>VTI</code>, <code>IVV</code></td>
+              </tr>
+              <tr>
+                <td valign="top"><code>PROVIDERS_FINNHUB_ENABLED</code></td>
+                <td valign="top"><code>Docker/.env</code> — NASDAQ ingest ana anahtarı</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>FINNHUB_API_KEY</code></td>
+                <td valign="top">Zorunlu (Finnhub açıkken); yoksa liste/grafik boş kalır</td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> hisseyi <code>STOCK_SYMBOLS</code>’a veya ETF’yi <code>ETF_SYMBOLS</code>’a ekle → <code>FINNHUB_API_KEY</code> tanımla → rebuild</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/FundRegistry.java" title="FundRegistry.java">
+              <img src="docs/assets/assets-registry/a4-fund-registry.webp" alt="FundRegistry.java — TEFAS fon kodları" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/FundRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>④ TEFAS fon — FundRegistry</h4>
+            <p>Türkiye yatırım fonlarını kataloğa ekler. NAV verisi <strong>TEFAS API</strong>’den gelir; platform sembolü <code>FUND_{kod}</code> formatındadır (ör. <code>FUND_TI2</code>).</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>TEFAS_CODES</code></td>
+                <td valign="top">Fon kodları — <code>TI2</code>, <code>TP2</code>, <code>AFT</code>…</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>FUND_{code}</code></td>
+                <td valign="top">Katalogdaki canonical sembol otomatik üretilir</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_FUND_SCHEDULER_ENABLED</code></td>
+                <td valign="top">Canlı NAV güncelleme (<code>Docker/.env</code>)</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_FUND_NAV_*</code></td>
+                <td valign="top">Geçmiş NAV bootstrap ve boşluk onarımı</td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> kodu <code>TEFAS_CODES</code>’a ekle → <code>MARKET_FUND_SCHEDULER_ENABLED=true</code> → rebuild. API URL: <code>application.yml</code> → <code>market.fund.tefas-fon-gnl-blg-url</code></p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/BondRegistry.java" title="BondRegistry.java">
+              <img src="docs/assets/assets-registry/a5-bond-registry.webp" alt="BondRegistry.java — TCMB tahvil getiri serileri" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/BondRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>⑤ TCMB tahvil — BondRegistry</h4>
+            <p>Hazine tahvil getiri eğrilerini kataloğa ekler. Veri <strong>TCMB EVDS</strong>’den gelir; her satır sembol → EVDS seri kodu eşlemesi içerir (ör. <code>TRBOND1Y → TP.KTF10</code>).</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>ROWS</code></td>
+                <td valign="top"><code>TRBOND1Y</code>, <code>TRBOND2Y</code>, <code>TRBOND3Y</code> + EVDS kodları</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>IngestProvider.TCMB_BOND</code></td>
+                <td valign="top">Canlı getiri + geçmiş bootstrap</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>TCMB_API_KEY</code></td>
+                <td valign="top"><code>Docker/.env</code> — EVDS erişimi zorunlu</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_BOND_*</code></td>
+                <td valign="top">Geçmiş bootstrap ve günlük yenileme (<code>Docker/.env</code>)</td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> yeni vade için <code>BondRow</code> ekle → <code>TCMB_API_KEY</code> tanımla → <code>MARKET_BOND_HISTORY_BOOTSTRAP_ENABLED=true</code> → rebuild</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/FxRegistry.java" title="FxRegistry.java">
+              <img src="docs/assets/assets-registry/a6-fx-registry.webp" alt="FxRegistry.java — döviz ve metal sembolleri" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/FxRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>⑥ Döviz + metal — FxRegistry</h4>
+            <p>TRY çapraz kurları ve değerli metalleri kataloğa ekler. Fiat kurlar <strong>TCMB XML</strong> + fallback; metaller (XAU, XAG…) Stooq × USDTRY türetilir.</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>fx(...)</code> satırları</td>
+                <td valign="top"><code>USDTRY</code>, <code>EURTRY</code> … <code>XAUTRY</code>, <code>XAGTRY</code></td>
+              </tr>
+              <tr>
+                <td valign="top"><code>IngestProvider.TCMB</code></td>
+                <td valign="top">Fiat için birincil kaynak</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>market.fx.provider-order</code></td>
+                <td valign="top"><code>application.yml</code> — TCMB, sonra ExchangeRate API</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>market.fx.scheduler-enabled</code></td>
+                <td valign="top">Canlı FX güncelleme (varsayılan: açık)</td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> yeni çapraz için <code>fx("SYMBOL", "Ad", "BASE")</code> ekle → <code>market.fx.provider-currencies</code> listesini güncelle (fiat ise) → rebuild</p>
+          </td>
+        </tr>
+        <tr><td colspan="2" height="20"></td></tr>
+        <tr>
+          <td width="190" align="center" valign="top">
+            <a href="market-data-service/src/main/java/com/company/marketdataservice/catalog/registry/providers/EurobondRegistry.java" title="EurobondRegistry.java">
+              <img src="docs/assets/assets-registry/a7-eurobond-registry.webp" alt="EurobondRegistry.java — TR USD eurobond serileri" width="172" loading="lazy">
+            </a>
+            <br><sub><code>.../providers/EurobondRegistry.java</code></sub>
+          </td>
+          <td valign="top">
+            <h4>⑦ TR USD eurobond — EurobondRegistry</h4>
+            <p>Türkiye USD Hazine benchmark getirilerini kataloğa ekler. Veri <strong>Yahoo Finance</strong> chart ticker’larından gelir (ör. <code>GTUSDTR5Y:GOV</code>).</p>
+            <table border="0" cellpadding="4" cellspacing="0">
+              <tr>
+                <td width="38%" valign="top"><code>EurobondRow</code></td>
+                <td valign="top"><code>TRGOVUSD1Y</code> … <code>TRGOVUSD15Y</code> + Yahoo sembolü</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>IngestProvider.YAHOO</code></td>
+                <td valign="top">MDS geçmiş bootstrap + günlük yenileme</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>MARKET_TRGOVUSD_*</code></td>
+                <td valign="top"><code>Docker/.env</code> — geçmiş ve refresh aç/kapa</td>
+              </tr>
+              <tr>
+                <td valign="top"><code>finance-api</code></td>
+                <td valign="top">Ayrı modül: <code>MARKET_TR_USD_EUROBOND_YAHOO_*</code> (ETF proxy grafikleri)</td>
+              </tr>
+            </table>
+            <p><strong>Adımlar:</strong> yeni vade için <code>EurobondRow</code> ekle → Yahoo ticker’ı doğrula → <code>MARKET_TRGOVUSD_HISTORY_BOOTSTRAP_ENABLED=true</code> → rebuild</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 ## Hızlı başlangıç (Docker — önerilen)
 
