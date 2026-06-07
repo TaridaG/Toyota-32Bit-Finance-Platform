@@ -669,6 +669,37 @@
         "chartEmpty": "No data in this range.",
         "chartFoot": "The line shows near-contract alias pricing built from BIST VIOP daily settlement files."
       },
+      "bond": {
+        "tenorSelectAria": "Select treasury bond tenor",
+        "tenorShort": {
+          "1Y": "1Y",
+          "2Y": "2Y",
+          "3Y": "3Y",
+          "5Y": "5Y",
+          "10Y": "10Y"
+        },
+        "liveObservation": "Last observation",
+        "change1dSub": "1D: {{bp}} bp",
+        "liveNoData": "No bond yield to display yet.",
+        "liveNoDataHint": "Shows here after the TCMB EVDS bond sync completes (may take a few minutes).",
+        "liveLoadError": "Could not load bond yield. Check your connection.",
+        "liveSkeletonAria": "Loading current bond yield",
+        "chartOpenHint": "Open TR bond yield curve, history chart and simulator",
+        "detailTitle": "TR treasury bond — {{tenor}} yield",
+        "chartBackToYield": "Back to policy rate chart",
+        "chartAxisY": "Yield (%)",
+        "chartLoading": "Loading chart",
+        "chartError": "Could not load history.",
+        "chartRetry": "Retry",
+        "chartEmpty": "No daily records found.",
+        "chartFoot": "Source: TCMB EVDS secondary-market treasury yield series (TP.KTF*). Yields are benchmark curve references, not a single ISIN price.",
+        "curveTitle": "Yield curve (latest)",
+        "curveHint": "TCMB reference yields for 1Y–10Y; selected tenor is highlighted.",
+        "curveChange1d": "{{bp}} bp",
+        "edu1": "TR bonds/bills: Turkish Treasury debt instruments denominated in TRY.",
+        "edu2": "Yield (%): benchmark secondary-market rate for the chosen maturity bucket.",
+        "edu3": "The simulator approximates hold-to-maturity return using a zero-coupon / discount bond assumption."
+      },
       "eurobond": {
         "cardTitle": "Turkey eurobonds",
         "cardSubtitle": "ISIN-based USD eurobond samples",
@@ -793,6 +824,22 @@
           "pickFromChart": "Pick from chart",
           "pickHint": "Click a day on the rate chart for the deposit start date.",
           "pickCancel": "Cancel"
+        },
+        "bond": {
+          "title": "Bond simulator",
+          "yieldUsed": "Yield used",
+          "pricePer100": "Est. clean price (per 100)",
+          "maturityProceeds": "Est. proceeds at maturity",
+          "totalReturn": "Total return",
+          "headlineDisclaimer": "Zero-coupon / discount bond approximation; coupon flows, accrued interest, tax and fees excluded.",
+          "scenarioTitle": "Scenario",
+          "investment": "Investment today (TRY)",
+          "investmentHint": "Amount invested today at the selected yield; nominal at maturity is derived.",
+          "annualYield": "Annual yield (%)",
+          "tenorHint": "{{tenor}} ({{years}} years) maturity assumption",
+          "returnPct": "Return (%)",
+          "faceValue": "Nominal at maturity",
+          "scenarioDisclaimer": "Yield comes from the selected TCMB reference series; actual auction/coupon bonds may differ."
         }
       }
     }
@@ -1764,7 +1811,8 @@
       "losers": "In loss",
       "empty": "No positions with gain or loss yet.",
       "legendAria": "Profit vs loss split",
-      "ringShare": "Ring share: {{pct}}%"
+      "ringShare": "Ring share: {{pct}}%",
+      "moreAssetsShort": "++"
     },
     "allocation": {
       "detailTitle": "Portfolio allocation",
@@ -1981,7 +2029,32 @@
       "listingHintTry": "This portfolio is TRY-based. Only TRY-quoted instruments are listed (e.g. BIST, FX in lira).",
       "listingHintUsd": "This portfolio is USD-based. Only USD-quoted instruments are listed (e.g. US equities, USD crypto).",
       "listingHintNeutral": "This portfolio is not currency-locked. Summary and list use your header display currency ({{currency}}) for quote filtering.",
-      "listingHintAll": "All quoted instruments are listed; payment currency follows the instrument you select."
+      "listingHintAll": "All quoted instruments are listed; payment currency follows the instrument you select.",
+      "tryCurrencyLabel": "TRY (TL)",
+      "lotQuantity": "{{qty}} lots"
+    },
+    "transactionHistory": {
+      "records": "records",
+      "symbolPlaceholder": "Search symbol (AAPL, THYAO…)",
+      "typeAll": "Side (all)",
+      "purchaseModeAll": "Purchase type (all)",
+      "paymentCurrencyAll": "Payment CCY (all)",
+      "filter": "Filter",
+      "columns": {
+        "instrument": "Instrument",
+        "side": "Side",
+        "purchaseMode": "Purchase type",
+        "lots": "Lots",
+        "cost": "Cost",
+        "quoteCurrency": "Listing CCY",
+        "fxRate": "Entry FX",
+        "date": "Date"
+      },
+      "badgePast": "Past purchase",
+      "badgeNow": "Market add",
+      "prev": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{current}} / {{total}}"
     },
     "history": {
       "deleteColumn": "Delete",
@@ -2027,6 +2100,18 @@
         "symbol": "Symbol",
         "name": "Name",
         "price": "Price"
+      },
+      "changeColumns": {
+        "1d": "1D",
+        "1m": "1M",
+        "1y": "1Y"
+      },
+      "chartRanges": {
+        "24h": "24h",
+        "7d": "7d",
+        "30d": "30d",
+        "90d": "90d",
+        "1y": "1y"
       },
       "addPanel": {
         "title": "Add To Favorites",

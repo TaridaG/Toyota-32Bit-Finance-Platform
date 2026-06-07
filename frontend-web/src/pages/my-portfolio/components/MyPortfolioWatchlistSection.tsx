@@ -201,9 +201,9 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
                   <th>{t('watchlist.columns.symbol')}</th>
                   <th>{t('watchlist.columns.name')}</th>
                   <th>{t('watchlist.columns.price')}</th>
-                  <th>1D</th>
-                  <th>1M</th>
-                  <th>1Y</th>
+                  <th>{t('watchlist.changeColumns.1d')}</th>
+                  <th>{t('watchlist.changeColumns.1m')}</th>
+                  <th>{t('watchlist.changeColumns.1y')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,7 +295,7 @@ export function MyPortfolioWatchlistSection({ currencyFormat, percentFormat }: P
                       className={`fi-range-chip${expandedRange === range ? ' fi-range-chip-active' : ''}`}
                       onClick={() => setExpandedRange(range)}
                     >
-                      {range}
+                      {t(`watchlist.chartRanges.${range}`)}
                     </button>
                   ))}
                 </div>

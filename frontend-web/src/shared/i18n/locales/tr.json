@@ -663,6 +663,37 @@
         "chartEmpty": "Bu aralıkta kayıtlı veri yok.",
         "chartFoot": "Çizgi, BIST VIOP günlük uzlaşma verisinden oluşturulan near-contract alias fiyatını gösterir."
       },
+      "bond": {
+        "tenorSelectAria": "Hazine bono vadesi seçin",
+        "tenorShort": {
+          "1Y": "1Y",
+          "2Y": "2Y",
+          "3Y": "3Y",
+          "5Y": "5Y",
+          "10Y": "10Y"
+        },
+        "liveObservation": "Son gözlem",
+        "change1dSub": "1G: {{bp}} bp",
+        "liveNoData": "Henüz gösterilecek bono getirisi yok.",
+        "liveNoDataHint": "TCMB EVDS tahvil senkronu tamamlanınca (birkaç dakika) burada görünür.",
+        "liveLoadError": "Bono getirisi alınamadı. Bağlantıyı kontrol edin.",
+        "liveSkeletonAria": "Güncel bono getirisi yükleniyor",
+        "chartOpenHint": "TR bono getiri eğrisi, geçmiş grafiği ve simülatörü aç",
+        "detailTitle": "TR Hazine bono — {{tenor}} getirisi",
+        "chartBackToYield": "Politika faizi grafiğine dön",
+        "chartAxisY": "Getiri (%)",
+        "chartLoading": "Grafik yükleniyor",
+        "chartError": "Geçmiş veri yüklenemedi.",
+        "chartRetry": "Tekrar dene",
+        "chartEmpty": "Kayıtlı günlük veri bulunamadı.",
+        "chartFoot": "Kaynak: TCMB EVDS ikincil piyasa Hazine getiri serileri (TP.KTF*). Gösterilen getiri, seçilen vade için piyasa eğrisi referansıdır; tek bir ISIN fiyatı değildir.",
+        "curveTitle": "Getiri eğrisi (güncel)",
+        "curveHint": "1Y–10Y vade dilimlerinde TCMB referans getirileri; seçili vade vurgulanır.",
+        "curveChange1d": "{{bp}} bp",
+        "edu1": "TR bono/tahvil: Türkiye Hazinesi'nin TL cinsi borçlanma enstrümanlarıdır.",
+        "edu2": "Getiri (%): İkincil piyasada aynı vade dilimine denk gelen referans faiz seviyesidir.",
+        "edu3": "Simülatör, sıfır kupon / iskontolu senet varsayımıyla vadeye kadar tutma getirisini yaklaşık hesaplar."
+      },
       "eurobond": {
         "cardTitle": "Türkiye Eurobondları",
         "cardSubtitle": "ISIN bazlı USD Eurobond örnekleri",
@@ -787,6 +818,22 @@
           "pickFromChart": "Grafikten seç",
           "pickHint": "Faiz grafiğinde yatırım başlangıcı için bir güne tıklayın.",
           "pickCancel": "Vazgeç"
+        },
+        "bond": {
+          "title": "Bono simülatörü",
+          "yieldUsed": "Kullanılan getiri",
+          "pricePer100": "Tahmini temiz fiyat (100 nominal)",
+          "maturityProceeds": "Vade sonu tahsil (nominal)",
+          "totalReturn": "Toplam getiri",
+          "headlineDisclaimer": "Sıfır kupon / iskontolu senet yaklaşımı; kupon akışı, birikmiş faiz, vergi ve işlem masrafları dahil değildir.",
+          "scenarioTitle": "Senaryo",
+          "investment": "Bugünkü yatırım (TRY)",
+          "investmentHint": "Seçilen vade getirisiyle bugün alınan tutar; vade sonunda nominal karşılığı hesaplanır.",
+          "annualYield": "Yıllık getiri (%)",
+          "tenorHint": "{{tenor}} ({{years}} yıl) vade varsayımı",
+          "returnPct": "Getiri (%)",
+          "faceValue": "Vade sonu nominal",
+          "scenarioDisclaimer": "Getiri, kartta seçilen TCMB referans serisinden gelir; gerçek ihale/kuponlu bonolar farklı olabilir."
         }
       }
     }
@@ -1755,7 +1802,8 @@
       "losers": "Zarar edenler",
       "empty": "Kar veya zararda pozisyon yok.",
       "legendAria": "Kar / zarar dağılımı",
-      "ringShare": "Halka payı: %{{pct}}"
+      "ringShare": "Halka payı: %{{pct}}",
+      "moreAssetsShort": "++"
     },
     "allocation": {
       "detailTitle": "Portföy dağılımı detayı",
@@ -1972,7 +2020,32 @@
       "listingHintTry": "Bu portföy TRY bazlıdır. Yalnızca TL kotasyonlu enstrümanlar listelenir (ör. BIST, TL döviz çiftleri).",
       "listingHintUsd": "Bu portföy USD bazlıdır. Yalnızca dolar kotasyonlu enstrümanlar listelenir (ör. ABD hisseleri, USD kripto).",
       "listingHintNeutral": "Bu portföy döviz bazlı değildir. Özet ve liste, üst menüde seçtiğiniz görüntüleme para birimine ({{currency}}) göre kotasyon filtresiyle çalışır.",
-      "listingHintAll": "Tüm kotasyonlu enstrümanlar listelenir; ödeme para birimi seçtiğiniz varlığın kotasyonuna göre belirlenir."
+      "listingHintAll": "Tüm kotasyonlu enstrümanlar listelenir; ödeme para birimi seçtiğiniz varlığın kotasyonuna göre belirlenir.",
+      "tryCurrencyLabel": "TRY (TL)",
+      "lotQuantity": "{{qty}} lot"
+    },
+    "transactionHistory": {
+      "records": "kayıt",
+      "symbolPlaceholder": "Sembol ara (AAPL, THYAO…)",
+      "typeAll": "İşlem tipi (tümü)",
+      "purchaseModeAll": "Alım tipi (tümü)",
+      "paymentCurrencyAll": "Ödeme PB (tümü)",
+      "filter": "Filtrele",
+      "columns": {
+        "instrument": "Enstrüman",
+        "side": "İşlem",
+        "purchaseMode": "Alım tipi",
+        "lots": "Lot",
+        "cost": "Maliyet",
+        "quoteCurrency": "Liste PB",
+        "fxRate": "Alım kuru",
+        "date": "Tarih"
+      },
+      "badgePast": "Geçmiş alım",
+      "badgeNow": "Piyasadan ekleme",
+      "prev": "Önceki",
+      "next": "Sonraki",
+      "pageOf": "Sayfa {{current}} / {{total}}"
     },
     "history": {
       "deleteColumn": "Sil",
@@ -2018,6 +2091,18 @@
         "symbol": "Sembol",
         "name": "Ad",
         "price": "Fiyat"
+      },
+      "changeColumns": {
+        "1d": "1G",
+        "1m": "1A",
+        "1y": "1Y"
+      },
+      "chartRanges": {
+        "24h": "24s",
+        "7d": "7g",
+        "30d": "30g",
+        "90d": "90g",
+        "1y": "1y"
       },
       "addPanel": {
         "title": "Favorilere Ekle",

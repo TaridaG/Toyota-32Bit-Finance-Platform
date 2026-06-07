@@ -591,8 +591,8 @@ function normalizeToTradePaymentCurrency(raw: string | null | undefined): TradeP
   return null
 }
 
-function tradePaymentCurrencyLabel(c: TradePaymentCurrency): string {
-  return c === 'TRY' ? 'TRY (TL)' : c
+function tradePaymentCurrencyLabel(c: TradePaymentCurrency, tryLabel: string): string {
+  return c === 'TRY' ? tryLabel : c
 }
 
 function currencySymbolPrefix(iso: TradePaymentCurrency): string {
@@ -2285,8 +2285,8 @@ export function MyPortfolioPage() {
   )
   const formatSellHoldingLabel = useCallback(
     (item: SellHoldingOption) =>
-      `${item.symbol} — ${formatHoldingQuantity(item.holdingQty, i18n.language)} lot`,
-    [i18n.language],
+      `${item.symbol} — ${t('marketsAdd.lotQuantity', { qty: formatHoldingQuantity(item.holdingQty, i18n.language) })}`,
+    [i18n.language, t],
   )
   const formatInstrumentSymbolLabel = useCallback(
     (symbol: string) => formatDepositMaturityLabel(symbol, null, t),
@@ -2719,7 +2719,7 @@ export function MyPortfolioPage() {
 
         <div className="my-portfolio-content">
           {activeSection === 'markets' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card">
               <div className="my-portfolio-trade-title-row">
                 <div
                   className="my-portfolio-trade-toggle-group my-portfolio-trade-side-toggle"
@@ -3006,7 +3006,7 @@ export function MyPortfolioPage() {
                       >
                         {tradePaymentCurrencyOptions.map((c) => (
                           <option key={c} value={c}>
-                            {tradePaymentCurrencyLabel(c)}
+                            {tradePaymentCurrencyLabel(c, t('marketsAdd.tryCurrencyLabel'))}
                           </option>
                         ))}
                       </select>
@@ -3120,7 +3120,7 @@ export function MyPortfolioPage() {
                       )}
                       <p>
                         <span>{t('marketsAdd.paymentCurrencyLabel')}</span>
-                        <strong>{tradePaymentCurrencyLabel(tradePaymentCurrency)}</strong>
+                        <strong>{tradePaymentCurrencyLabel(tradePaymentCurrency, t('marketsAdd.tryCurrencyLabel'))}</strong>
                       </p>
                       {purchaseMode === 'PAST' ? (
                         <p>
@@ -3167,7 +3167,11 @@ export function MyPortfolioPage() {
                       <>
                         <div>
                           <span>{t('marketsAdd.sellPositionLabel')}</span>
-                          <strong>{`${formatHoldingQuantity(selectedSellHoldingQty, i18n.language)} lot`}</strong>
+                          <strong>
+                            {t('marketsAdd.lotQuantity', {
+                              qty: formatHoldingQuantity(selectedSellHoldingQty, i18n.language),
+                            })}
+                          </strong>
                         </div>
                         <div>
                           <span>{t('marketsAdd.sellAvgBuyLabel')}</span>
@@ -3224,7 +3228,9 @@ export function MyPortfolioPage() {
                           <strong>
                             {sellRemainingQty == null
                               ? '—'
-                              : `${formatHoldingQuantity(sellRemainingQty, i18n.language)} lot`}
+                              : t('marketsAdd.lotQuantity', {
+                                  qty: formatHoldingQuantity(sellRemainingQty, i18n.language),
+                                })}
                           </strong>
                         </div>
                         <div>
@@ -3302,18 +3308,20 @@ export function MyPortfolioPage() {
           ) : null}
 
           {activeSection === 'portfolio' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card">
               <div className="my-portfolio-history-head">
                 <div>
-                  <h4>Islem Gecmisi</h4>
+                  <h4>{t('transactionHistoryTitle')}</h4>
                 </div>
-                <p className="my-portfolio-history-count">{historyTotalElements} kayit</p>
+                <p className="my-portfolio-history-count">
+                  {historyTotalElements} {t('transactionHistory.records')}
+                </p>
               </div>
               <div className="my-portfolio-history-filters">
                 <input
                   value={historyFilters.symbol ?? ''}
                   onChange={(event) => setHistoryFilters((prev) => ({ ...prev, symbol: event.target.value }))}
-                  placeholder="Sembol ara (AAPL, THYAO...)"
+                  placeholder={t('transactionHistory.symbolPlaceholder')}
                 />
                 <select
                   value={historyFilters.type ?? ''}
@@ -3321,9 +3329,9 @@ export function MyPortfolioPage() {
                     setHistoryFilters((prev) => ({ ...prev, type: event.target.value as TransactionHistoryFilters['type'] }))
                   }
                 >
-                  <option value="">Islem Tipi (Tum)</option>
-                  <option value="BUY">BUY</option>
-                  <option value="SELL">SELL</option>
+                  <option value="">{t('transactionHistory.typeAll')}</option>
+                  <option value="BUY">{t('txTypeBuy')}</option>
+                  <option value="SELL">{t('txTypeSell')}</option>
                 </select>
                 <select
                   value={historyFilters.purchaseMode ?? ''}
@@ -3334,9 +3342,9 @@ export function MyPortfolioPage() {
                     }))
                   }
                 >
-                  <option value="">Alim Tipi (Tum)</option>
-                  <option value="NOW">Piyasadan</option>
-                  <option value="PAST">Gecmis Alim</option>
+                  <option value="">{t('transactionHistory.purchaseModeAll')}</option>
+                  <option value="NOW">{t('marketsAdd.purchaseMode.now')}</option>
+                  <option value="PAST">{t('marketsAdd.purchaseMode.past')}</option>
                 </select>
                 <select
                   value={historyFilters.inputCurrency ?? ''}
@@ -3347,7 +3355,7 @@ export function MyPortfolioPage() {
                     }))
                   }
                 >
-                  <option value="">Odeme PB (Tum)</option>
+                  <option value="">{t('transactionHistory.paymentCurrencyAll')}</option>
                   <option value="TRY">TRY</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
@@ -3370,7 +3378,7 @@ export function MyPortfolioPage() {
                     setAppliedHistoryFilters(historyFilters)
                   }}
                 >
-                  Filtrele
+                  {t('transactionHistory.filter')}
                 </button>
               </div>
               {historyLoading ? (
@@ -3381,14 +3389,14 @@ export function MyPortfolioPage() {
                     <thead>
                       <tr>
                         {isAggregatePortfolioView ? <th>{t('sidebar.historyPortfolioColumn')}</th> : null}
-                        <th>Enstruman</th>
-                        <th>Islem</th>
-                        <th>Alim Tipi</th>
-                        <th>Lot</th>
-                        <th>Maliyet</th>
-                        <th>Liste PB</th>
-                        <th>Alim kuru</th>
-                        <th>Tarih</th>
+                        <th>{t('transactionHistory.columns.instrument')}</th>
+                        <th>{t('transactionHistory.columns.side')}</th>
+                        <th>{t('transactionHistory.columns.purchaseMode')}</th>
+                        <th>{t('transactionHistory.columns.lots')}</th>
+                        <th>{t('transactionHistory.columns.cost')}</th>
+                        <th>{t('transactionHistory.columns.quoteCurrency')}</th>
+                        <th>{t('transactionHistory.columns.fxRate')}</th>
+                        <th>{t('transactionHistory.columns.date')}</th>
                         <th>{t('history.deleteColumn')}</th>
                       </tr>
                     </thead>
@@ -3399,10 +3407,12 @@ export function MyPortfolioPage() {
                             <td>{row.portfolioName?.trim() || (row.portfolioId != null ? `#${row.portfolioId}` : '—')}</td>
                           ) : null}
                           <td>{formatInstrumentSymbolLabel(row.instrumentSymbol)}</td>
-                          <td>{row.type}</td>
+                          <td>{row.type === 'SELL' ? t('txTypeSell') : t('txTypeBuy')}</td>
                           <td>
                             <span className={`my-portfolio-history-badge ${row.purchaseMode === 'PAST' ? 'is-past' : 'is-now'}`}>
-                              {row.purchaseMode === 'PAST' ? 'Gecmis alim' : 'Piyasadan ekleme'}
+                              {row.purchaseMode === 'PAST'
+                                ? t('transactionHistory.badgePast')
+                                : t('transactionHistory.badgeNow')}
                             </span>
                           </td>
                           <td>{row.quantity}</td>
@@ -3436,10 +3446,13 @@ export function MyPortfolioPage() {
               {historyError ? <p className="my-portfolio-trade-note">{historyError}</p> : null}
               <div className="my-portfolio-history-pagination">
                 <button type="button" className="auth-submit auth-submit-secondary" disabled={historyPage <= 0} onClick={() => setHistoryPage((p) => p - 1)}>
-                  Onceki
+                  {t('transactionHistory.prev')}
                 </button>
                 <span>
-                  Sayfa {historyTotalPages === 0 ? 0 : historyPage + 1} / {Math.max(historyTotalPages, 1)}
+                  {t('transactionHistory.pageOf', {
+                    current: historyTotalPages === 0 ? 0 : historyPage + 1,
+                    total: Math.max(historyTotalPages, 1),
+                  })}
                 </span>
                 <button
                   type="button"
@@ -3447,14 +3460,14 @@ export function MyPortfolioPage() {
                   disabled={historyPage + 1 >= historyTotalPages}
                   onClick={() => setHistoryPage((p) => p + 1)}
                 >
-                  Sonraki
+                  {t('transactionHistory.next')}
                 </button>
               </div>
             </article>
           ) : null}
 
           {activeSection === 'allocation' ? (
-            <article className={`card my-portfolio-trade-card my-portfolio-allocation-detail${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card my-portfolio-allocation-detail">
               <header className="my-portfolio-allocation-head">
                 <button
                   type="button"
@@ -3679,7 +3692,7 @@ export function MyPortfolioPage() {
           ) : null}
 
           {activeSection === 'salesAnalysis' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card">
               <div className="my-portfolio-history-head">
                 <div>
                   <h4>{t('salesAnalysis.title')}</h4>
@@ -3822,7 +3835,7 @@ export function MyPortfolioPage() {
           ) : null}
 
           {activeSection === 'settings' ? (
-            <article className={`card my-portfolio-trade-card${isDarkTheme ? ' is-dark' : ' is-light'}`}>
+            <article className="card my-portfolio-trade-card">
               <h2 className="my-portfolio-trade-title">{t('settingsPage.title')}</h2>
               <p className="my-portfolio-trade-subtitle">{t('settingsPage.scopeHint')}</p>
               {portfolioSettingsError ? <p className="auth-error">{portfolioSettingsError}</p> : null}

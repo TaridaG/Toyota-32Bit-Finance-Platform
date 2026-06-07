@@ -398,7 +398,9 @@ export function PnlSplitDonut({
                       </li>
                     ))}
                 {seg.hasMoreAssets ? (
-                  <li className="my-portfolio-pnl-donut-legend-asset my-portfolio-pnl-donut-legend-more">++</li>
+                  <li className="my-portfolio-pnl-donut-legend-asset my-portfolio-pnl-donut-legend-more">
+                    {t('pnlDonut.moreAssetsShort')}
+                  </li>
                 ) : null}
               </ul>
             ) : null}

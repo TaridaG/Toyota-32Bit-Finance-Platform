@@ -664,6 +664,37 @@
         "chartEmpty": "Keine Daten in diesem Zeitraum.",
         "chartFoot": "Die Linie zeigt Near-Contract-Alias-Preise aus den taeglichen BIST-VIOP-Settlement-Dateien."
       },
+      "bond": {
+        "tenorSelectAria": "Anleihelaufzeit wählen",
+        "tenorShort": {
+          "1Y": "1J",
+          "2Y": "2J",
+          "3Y": "3J",
+          "5Y": "5J",
+          "10Y": "10J"
+        },
+        "liveObservation": "Letzte Beobachtung",
+        "change1dSub": "1T: {{bp}} bp",
+        "liveNoData": "Noch keine Anleiherendite verfügbar.",
+        "liveNoDataHint": "Erscheint nach Abschluss der TCMB-EVDS-Anleihe-Synchronisation (einige Minuten).",
+        "liveLoadError": "Anleiherendite konnte nicht geladen werden.",
+        "liveSkeletonAria": "Aktuelle Anleiherendite wird geladen",
+        "chartOpenHint": "TR-Anleihe: Renditekurve, Verlauf und Simulator öffnen",
+        "detailTitle": "TR-Staatsanleihe — {{tenor}} Rendite",
+        "chartBackToYield": "Zur Leitzinsgrafik",
+        "chartAxisY": "Rendite (%)",
+        "chartLoading": "Diagramm wird geladen",
+        "chartError": "Historie konnte nicht geladen werden.",
+        "chartRetry": "Erneut versuchen",
+        "chartEmpty": "Keine täglichen Datensätze gefunden.",
+        "chartFoot": "Quelle: TCMB EVDS Sekundärmarkt-Renditen (TP.KTF*). Benchmark-Kurvenreferenz, kein Einzel-ISIN-Kurs.",
+        "curveTitle": "Renditekurve (aktuell)",
+        "curveHint": "TCMB-Referenzrenditen 1J–10J; gewählte Laufzeit hervorgehoben.",
+        "curveChange1d": "{{bp}} bp",
+        "edu1": "TR-Anleihe/Schatzwechsel: TRY-Staatsanleihen der Türkei.",
+        "edu2": "Rendite (%): Benchmark-Satz für die gewählte Laufzeit am Sekundärmarkt.",
+        "edu3": "Der Simulator nähert Halten-bis-Fälligkeit mit Null-Kupon-/Diskontannahme."
+      },
       "eurobond": {
         "cardTitle": "Türkei-Eurobonds",
         "cardSubtitle": "ISIN-basierte USD-Eurobond-Beispiele",
@@ -788,6 +819,22 @@
           "pickFromChart": "Aus Diagramm wählen",
           "pickHint": "Klicken Sie im Zinsdiagramm auf den Tag des Einlagenbeginns.",
           "pickCancel": "Abbrechen"
+        },
+        "bond": {
+          "title": "Anleihe-Simulator",
+          "yieldUsed": "Verwendete Rendite",
+          "pricePer100": "Gesch. sauberer Kurs (je 100)",
+          "maturityProceeds": "Gesch. Erlös bei Fälligkeit",
+          "totalReturn": "Gesamtrendite",
+          "headlineDisclaimer": "Null-Kupon-/Diskontanleihe-Näherung; Kuponflüsse, Stückzins, Steuer und Gebühren ausgeschlossen.",
+          "scenarioTitle": "Szenario",
+          "investment": "Investition heute (TRY)",
+          "investmentHint": "Heute investierter Betrag zur gewählten Rendite; Nominal bei Fälligkeit abgeleitet.",
+          "annualYield": "Jahresrendite (%)",
+          "tenorHint": "{{tenor}} ({{years}} Jahre) Laufzeitannahme",
+          "returnPct": "Rendite (%)",
+          "faceValue": "Nominal bei Fälligkeit",
+          "scenarioDisclaimer": "Rendite aus der gewählten TCMB-Referenzserie; echte Auktions-/Kuponanleihen können abweichen."
         }
       }
     }
@@ -1757,7 +1804,8 @@
       "losers": "Im Verlust",
       "empty": "Keine Positionen mit Gewinn oder Verlust.",
       "legendAria": "Gewinn-/Verlustaufteilung",
-      "ringShare": "Ringanteil: {{pct}}%"
+      "ringShare": "Ringanteil: {{pct}}%",
+      "moreAssetsShort": "++"
     },
     "allocation": {
       "detailTitle": "Portfolioallokation",
@@ -1974,7 +2022,32 @@
       "listingHintTry": "Dieses Portfolio ist TRY-basiert. Es werden nur in TRY kotierte Instrumente gelistet (z. B. BIST, FX in Lira).",
       "listingHintUsd": "Dieses Portfolio ist USD-basiert. Es werden nur in USD kotierte Instrumente gelistet (z. B. US-Aktien, USD-Krypto).",
       "listingHintNeutral": "Dieses Portfolio ist nicht währungsgebunden. Übersicht und Liste nutzen Ihre Kopfzeilen-Anzeigewährung ({{currency}}) für die Kotierungsfilterung.",
-      "listingHintAll": "Alle kotierten Instrumente werden gelistet; die Zahlungswährung folgt dem gewählten Instrument."
+      "listingHintAll": "Alle kotierten Instrumente werden gelistet; die Zahlungswährung folgt dem gewählten Instrument.",
+      "tryCurrencyLabel": "TRY (TL)",
+      "lotQuantity": "{{qty}} Lots"
+    },
+    "transactionHistory": {
+      "records": "Einträge",
+      "symbolPlaceholder": "Symbol suchen (AAPL, THYAO…)",
+      "typeAll": "Seite (alle)",
+      "purchaseModeAll": "Kaufart (alle)",
+      "paymentCurrencyAll": "Zahlungswährung (alle)",
+      "filter": "Filtern",
+      "columns": {
+        "instrument": "Instrument",
+        "side": "Seite",
+        "purchaseMode": "Kaufart",
+        "lots": "Lots",
+        "cost": "Kosten",
+        "quoteCurrency": "Kotierung",
+        "fxRate": "Einstiegs-FX",
+        "date": "Datum"
+      },
+      "badgePast": "Historischer Kauf",
+      "badgeNow": "Marktzugang",
+      "prev": "Zurück",
+      "next": "Weiter",
+      "pageOf": "Seite {{current}} / {{total}}"
     },
     "history": {
       "deleteColumn": "Löschen",
@@ -2020,6 +2093,18 @@
         "symbol": "Symbol",
         "name": "Name",
         "price": "Preis"
+      },
+      "changeColumns": {
+        "1d": "1T",
+        "1m": "1M",
+        "1y": "1J"
+      },
+      "chartRanges": {
+        "24h": "24h",
+        "7d": "7T",
+        "30d": "30T",
+        "90d": "90T",
+        "1y": "1J"
       },
       "addPanel": {
         "title": "Zu Favoriten Hinzufugen",
