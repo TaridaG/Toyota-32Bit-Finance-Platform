@@ -3,10 +3,14 @@ package com.company.finance_api.auth.infrastructure.http;
 import com.company.finance_api.auth.domain.LoginAttemptContext;
 import com.company.finance_api.auth.domain.LoginCompletionResult;
 import com.company.finance_api.auth.application.PortalLoginService;
+import com.company.finance_api.auth.application.PublicPasswordResetService;
 import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginMfaRequest;
 import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginRequest;
 import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicPasswordResetRequest;
 import com.company.finance_api.auth.infrastructure.http.dto.PublicRefreshRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeRequest;
+import com.company.finance_api.auth.infrastructure.http.dto.PublicSendVerificationCodeResponse;
 import com.company.finance_api.shared.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,9 +28,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicAuthenticationController {
 
   private final PortalLoginService portalLoginService;
+  private final PublicPasswordResetService publicPasswordResetService;
 
-  public PublicAuthenticationController(PortalLoginService portalLoginService) {
+  public PublicAuthenticationController(
+      PortalLoginService portalLoginService,
+      PublicPasswordResetService publicPasswordResetService) {
     this.portalLoginService = portalLoginService;
+    this.publicPasswordResetService = publicPasswordResetService;
   }
 
   /** Kullanıcı adı/şifre ile portal girişi. */
@@ -60,6 +68,28 @@ public class PublicAuthenticationController {
   public ApiResponse<PublicLoginResponse> refresh(
       @Valid @RequestBody PublicRefreshRequest request) {
     return ApiResponse.success(portalLoginService.refresh(request));
+  }
+
+  /** Kayıtlı e-posta adresine şifre sıfırlama doğrulama kodu gönderir. */
+  @PostMapping("/password/send-reset-code")
+  public ApiResponse<PublicSendVerificationCodeResponse> sendPasswordResetCode(
+      @Valid @RequestBody PublicSendVerificationCodeRequest request) {
+    return ApiResponse.success(
+        publicPasswordResetService.sendResetCode(request.getEmail(), request.getLocale()));
+  }
+
+  /** E-posta kodu ile şifreyi sıfırlar (oturum gerekmez). */
+  @PostMapping("/password/reset")
+  public ApiResponse<Void> resetPassword(
+      @Valid @RequestBody PublicPasswordResetRequest request,
+      @RequestHeader(value = "X-Language", required = false) String language,
+      @RequestHeader(value = "X-Forwarded-For", required = false) String forwardedFor,
+      @RequestHeader(value = "User-Agent", required = false) String userAgent,
+      HttpServletRequest httpRequest) {
+    LoginAttemptContext context =
+        LoginAttemptContext.from(language, forwardedFor, userAgent, httpRequest);
+    publicPasswordResetService.resetPassword(request, context);
+    return ApiResponse.success(null);
   }
 
   private static ResponseEntity<ApiResponse<PublicLoginResponse>> toResponse(

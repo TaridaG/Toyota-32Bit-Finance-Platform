@@ -78,6 +78,22 @@ public class RegistrationEmailVerificationService {
     } else {
       registrationEmailAvailabilityService.assertAvailableForProfileChange(email, excludeUserId);
     }
+    return dispatchCode(email, localeHint);
+  }
+
+  /** Kayıtlı hesap için şifre sıfırlama doğrulama kodu gönderir (müsaitlik kontrolü yok). */
+  @Transactional
+  public PublicSendVerificationCodeResponse sendCodeForPasswordReset(
+      String rawEmail, String localeHint) {
+    if (!properties.isEnabled()) {
+      throw new ResponseStatusException(
+          HttpStatus.SERVICE_UNAVAILABLE, "Email verification is disabled");
+    }
+    String email = normalizeEmail(rawEmail);
+    return dispatchCode(email, localeHint);
+  }
+
+  private PublicSendVerificationCodeResponse dispatchCode(String email, String localeHint) {
     Instant now = Instant.now();
     EmailVerificationCodeEntry entry = repository.findById(email).orElse(null);
     if (entry != null

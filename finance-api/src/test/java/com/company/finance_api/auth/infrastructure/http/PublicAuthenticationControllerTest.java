@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.company.finance_api.auth.domain.LoginCompletionResult;
 import com.company.finance_api.auth.application.PortalLoginService;
+import com.company.finance_api.auth.application.PublicPasswordResetService;
 import com.company.finance_api.auth.infrastructure.http.dto.PublicLoginResponse;
 import com.company.finance_api.shared.web.GlobalExceptionHandler;
 import com.company.finance_api.test.support.WebMvcTestSecuritySupport;
@@ -30,6 +31,8 @@ class PublicAuthenticationControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockBean private PortalLoginService portalLoginService;
+
+  @MockBean private PublicPasswordResetService publicPasswordResetService;
 
   @Test
   void login_returnsSuccessEnvelope() throws Exception {

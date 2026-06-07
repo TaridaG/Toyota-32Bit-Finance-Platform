@@ -11,6 +11,8 @@ final class GatewaySecurityPaths {
         return new String[] {
                 V1 + "/public/register",
                 V1 + "/public/register/send-code",
+                V1 + "/public/password/send-reset-code",
+                V1 + "/public/password/reset",
                 V1 + "/public/login",
                 V1 + "/public/login/mfa",
                 V1 + "/public/refresh"
