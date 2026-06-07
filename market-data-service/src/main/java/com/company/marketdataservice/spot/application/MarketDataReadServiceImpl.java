@@ -98,9 +98,8 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
             }
         }
         /*
-         * DB union: when the in-memory snapshot is empty, hydrate the full catalog from mds_market_price_history.
-         * When the snapshot is warm, still merge TRBOND* rows — bonds often exist only in DB (EVDS backfill)
-         * until the bond scheduler publishes live ticks into {@link MarketSnapshotStore}.
+         * DB union: hydrate missing symbols from mds_market_price_history (last known print).
+         * putIfAbsent keeps live snapshot ticks authoritative when present.
          */
         if (merged.isEmpty()) {
             List<MarketPriceDto> dbLatest = mapLatestPriceViews(marketPriceHistoryRepository.findLatestPricesPerSymbol());
@@ -109,10 +108,7 @@ public class MarketDataReadServiceImpl implements MarketDataReadService {
                 merged.putIfAbsent(norm(p.symbol()), p);
             }
         } else {
-            for (MarketPriceDto p : mapLatestPriceViews(marketPriceHistoryRepository.findLatestTrbondPricesPerSymbol())) {
-                merged.putIfAbsent(norm(p.symbol()), p);
-            }
-            for (MarketPriceDto p : mapLatestPriceViews(marketPriceHistoryRepository.findLatestCryptoPricesPerSymbol())) {
+            for (MarketPriceDto p : mapLatestPriceViews(marketPriceHistoryRepository.findLatestPricesPerSymbol())) {
                 merged.putIfAbsent(norm(p.symbol()), p);
             }
         }
