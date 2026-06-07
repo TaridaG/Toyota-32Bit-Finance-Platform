@@ -2,6 +2,9 @@ package com.company.marketdataservice.catalog.infrastructure.http.dto;
 
 import java.time.Instant;
 
+/**
+ * Ingest kataloğu öğesi için API transfer nesnesi (DTO/response).
+ */
 public record IngestCatalogItemDto(
         Long instrumentId,
         String symbol,

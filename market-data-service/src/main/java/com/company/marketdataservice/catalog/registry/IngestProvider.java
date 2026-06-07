@@ -1,7 +1,7 @@
 package com.company.marketdataservice.catalog.registry;
 
 /**
- * Live/history provider identifier; values match {@code mds_provider_instrument_mapping.provider}.
+ * Canlı ve history provider tanımlayıcısı; değerler {@code mds_provider_instrument_mapping.provider} ile eşleşir.
  */
 public enum IngestProvider {
     YAHOO,

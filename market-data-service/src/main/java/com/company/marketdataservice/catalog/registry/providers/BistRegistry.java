@@ -8,7 +8,7 @@ import com.company.marketdataservice.catalog.registry.QuoteCurrency;
 import java.util.List;
 
 /**
- * BIST equities polled via Yahoo Finance ({@code *.IS} tickers).
+ * Yahoo Finance ({@code *.IS} ticker) üzerinden poll edilen BIST equity tanımlarını tutan ingest registry'sidir.
  */
 public final class BistRegistry {
 

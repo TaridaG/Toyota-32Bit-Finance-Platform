@@ -4,8 +4,8 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * US equities / ETFs in the platform ingest registry ({@link providers.NasdaqRegistry}).
- * Used for market segment classification when live quotes fall back to Yahoo ({@code source=YAHOO}).
+ * Platform ingest registry'deki US equity ve ETF sembolleri ({@link providers.NasdaqRegistry}).
+ * Canlı quote Yahoo'ya fallback ettiğinde ({@code source=YAHOO}) market segment sınıflandırması için kullanılır.
  */
 public final class UsEquitySymbols {
 

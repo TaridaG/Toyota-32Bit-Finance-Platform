@@ -8,7 +8,7 @@ import com.company.marketdataservice.catalog.registry.QuoteCurrency;
 import java.util.List;
 
 /**
- * TCMB government bond yield series (EVDS).
+ * TCMB devlet tahvil getiri serileri (EVDS) ingest registry'sidir.
  */
 public final class BondRegistry {
 

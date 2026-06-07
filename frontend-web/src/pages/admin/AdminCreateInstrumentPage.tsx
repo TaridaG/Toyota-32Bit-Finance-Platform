@@ -1,64 +1,34 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
   createAdminInstrument,
-  type AdminExchange,
-  type AdminIngestSegment,
-  type AdminInstrumentType,
+  INGEST_SEGMENT_PRESETS,
+  type IngestMarketSegment,
 } from '../../features/admin/api/adminInstrumentsApi'
 import { PortalAlert } from '../../shared/components/PortalAlert'
-
-const TYPE_OPTIONS: AdminInstrumentType[] = ['CRYPTO', 'STOCK', 'FX', 'FUND', 'BOND', 'EUROBOND', 'DEPOSIT']
-const SEGMENT_OPTIONS: AdminIngestSegment[] = ['CRYPTO', 'BIST', 'NASDAQ']
-const EXCHANGES_BY_TYPE: Record<AdminInstrumentType, AdminExchange[]> = {
-  CRYPTO: ['BINANCE'],
-  STOCK: ['BIST', 'NASDAQ', 'FINNHUB', 'YAHOO'],
-  FX: ['TCMB'],
-  FUND: ['TEFAS'],
-  BOND: ['TCMB'],
-  EUROBOND: ['YAHOO'],
-  DEPOSIT: ['TCMB'],
-}
 
 type FormState = {
   symbol: string
   name: string
-  type: AdminInstrumentType
-  exchange: AdminExchange
-  segment: AdminIngestSegment | ''
+  marketSegment: IngestMarketSegment
 }
 
 const DEFAULT_FORM: FormState = {
   symbol: '',
   name: '',
-  type: 'STOCK',
-  exchange: 'BIST',
-  segment: 'BIST',
+  marketSegment: 'BIST',
 }
 
+const MARKET_SEGMENTS: IngestMarketSegment[] = ['CRYPTO', 'BIST', 'NASDAQ']
+
 export function AdminCreateInstrumentPage() {
+  const { t } = useTranslation('admin')
   const navigate = useNavigate()
   const [form, setForm] = useState<FormState>(DEFAULT_FORM)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const allowedExchanges = EXCHANGES_BY_TYPE[form.type]
-  const allowedSegments =
-    form.type === 'CRYPTO'
-      ? (['CRYPTO'] as AdminIngestSegment[])
-      : form.type === 'STOCK'
-        ? (SEGMENT_OPTIONS.filter((segment) => segment !== 'CRYPTO') as AdminIngestSegment[])
-        : ([] as AdminIngestSegment[])
-
-  const defaultSegmentFor = (type: AdminInstrumentType, exchange: AdminExchange): AdminIngestSegment | '' => {
-    if (type === 'CRYPTO') {
-      return 'CRYPTO'
-    }
-    if (type === 'STOCK') {
-      return exchange === 'BIST' ? 'BIST' : 'NASDAQ'
-    }
-    return ''
-  }
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -67,32 +37,25 @@ export function AdminCreateInstrumentPage() {
     const symbol = form.symbol.trim().toUpperCase()
     const name = form.name.trim()
     if (!symbol || !name) {
-      setError('Symbol ve isim zorunludur.')
+      setError(t('createInstrumentPage.errorRequired'))
       return
     }
-    if (form.segment && !allowedSegments.includes(form.segment)) {
-      setError('Secilen type icin segment uyumsuz.')
-      return
-    }
-    if (!allowedExchanges.includes(form.exchange)) {
-      setError('Secilen type icin exchange uyumsuz.')
-      return
-    }
+    const preset = INGEST_SEGMENT_PRESETS[form.marketSegment]
     setBusy(true)
     try {
       const instrumentId = await createAdminInstrument({
         symbol,
         name,
-        type: form.type,
-        exchange: form.exchange,
-        segment: form.segment || undefined,
+        type: preset.type,
+        exchange: preset.exchange,
+        segment: preset.segment,
       })
-      setSuccess(`Enstrüman oluşturuldu (ID: ${instrumentId}). Ingest registry sayfasına yönlendiriliyorsun...`)
+      setSuccess(t('createInstrumentPage.success', { id: instrumentId }))
       window.setTimeout(() => {
         navigate('/admin/kpi/ingest-registry')
       }, 700)
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Enstrüman oluşturulamadı.'
+      const message = e instanceof Error ? e.message : t('createInstrumentPage.errorGeneric')
       setError(message)
     } finally {
       setBusy(false)
@@ -103,10 +66,8 @@ export function AdminCreateInstrumentPage() {
     <div className="fi-admin-page">
       <header className="fi-admin-page-head">
         <div>
-          <h1 className="fi-admin-h1">Yeni varlık ekle</h1>
-          <p className="fi-admin-lead">
-            Admin panelinden yeni enstrüman ekleyin ve ingest segmentini seçerek otomatik ingest kaydı oluşturun.
-          </p>
+          <h1 className="fi-admin-h1">{t('createInstrumentPage.title')}</h1>
+          <p className="fi-admin-lead">{t('createInstrumentPage.lead')}</p>
         </div>
       </header>
       {error ? <PortalAlert variant="error">{error}</PortalAlert> : null}
@@ -114,86 +75,41 @@ export function AdminCreateInstrumentPage() {
       <section className="fi-admin-card">
         <form className="fi-admin-form-grid" onSubmit={onSubmit}>
           <label className="fi-admin-form-field">
-            <span>Symbol</span>
+            <span>{t('createInstrumentPage.marketSegment')}</span>
+            <select
+              value={form.marketSegment}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, marketSegment: e.target.value as IngestMarketSegment }))
+              }
+            >
+              {MARKET_SEGMENTS.map((segment) => (
+                <option key={segment} value={segment}>
+                  {t(`createInstrumentPage.segment.${segment}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="fi-admin-form-field">
+            <span>{t('createInstrumentPage.symbol')}</span>
             <input
               value={form.symbol}
               onChange={(e) => setForm((prev) => ({ ...prev, symbol: e.target.value }))}
-              placeholder="BTCUSDT"
+              placeholder={t('createInstrumentPage.symbolPlaceholder')}
               autoComplete="off"
             />
           </label>
           <label className="fi-admin-form-field">
-            <span>Name</span>
+            <span>{t('createInstrumentPage.name')}</span>
             <input
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="Bitcoin / USDT"
+              placeholder={t('createInstrumentPage.namePlaceholder')}
               autoComplete="off"
             />
           </label>
-          <label className="fi-admin-form-field">
-            <span>Type</span>
-            <select
-              value={form.type}
-              onChange={(e) => {
-                const nextType = e.target.value as AdminInstrumentType
-                const nextExchanges = EXCHANGES_BY_TYPE[nextType]
-                const nextExchange = nextExchanges[0]
-                setForm((prev) => ({
-                  ...prev,
-                  type: nextType,
-                  exchange: nextExchange,
-                  segment: defaultSegmentFor(nextType, nextExchange),
-                }))
-              }}
-            >
-              {TYPE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="fi-admin-form-field">
-            <span>Exchange</span>
-            <select
-              value={form.exchange}
-              onChange={(e) => {
-                const nextExchange = e.target.value as AdminExchange
-                setForm((prev) => ({
-                  ...prev,
-                  exchange: nextExchange,
-                  segment:
-                    prev.segment && allowedSegments.includes(prev.segment)
-                      ? prev.segment
-                      : defaultSegmentFor(prev.type, nextExchange),
-                }))
-              }}
-            >
-              {allowedExchanges.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="fi-admin-form-field">
-            <span>Ingest segment (optional)</span>
-            <select
-              value={form.segment}
-              onChange={(e) => setForm((prev) => ({ ...prev, segment: e.target.value as AdminIngestSegment | '' }))}
-            >
-              <option value="">Seçme</option>
-              {allowedSegments.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </label>
           <div className="fi-admin-form-actions">
             <button type="submit" className="fi-admin-dir-btn fi-admin-dir-btn--primary" disabled={busy}>
-              {busy ? 'Kaydediliyor...' : 'Varlık ekle'}
+              {busy ? t('createInstrumentPage.submitting') : t('createInstrumentPage.submit')}
             </button>
           </div>
         </form>

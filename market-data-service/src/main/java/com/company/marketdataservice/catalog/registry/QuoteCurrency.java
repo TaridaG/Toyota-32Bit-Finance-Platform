@@ -1,7 +1,7 @@
 package com.company.marketdataservice.catalog.registry;
 
 /**
- * Quote currency for catalog rows and ingest definitions.
+ * Catalog satırları ve ingest definition'ları için quote currency enum sabitleri.
  */
 public enum QuoteCurrency {
     USDT,

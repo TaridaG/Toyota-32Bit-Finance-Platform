@@ -1,7 +1,7 @@
 package com.company.marketdataservice.catalog.registry;
 
 /**
- * Canonical asset classification aligned with {@code public.instruments.type}.
+ * {@code public.instruments.type} ile hizalı canonical asset sınıflandırması.
  */
 public enum AssetKind {
     STOCK,

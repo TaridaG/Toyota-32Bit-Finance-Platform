@@ -8,7 +8,7 @@ import com.company.marketdataservice.catalog.registry.QuoteCurrency;
 import java.util.List;
 
 /**
- * Turkey USD sovereign benchmark yields (Yahoo chart tickers).
+ * Türkiye USD benchmark getiri enstrümanları (Yahoo chart ticker'ları) ingest registry'sidir.
  */
 public final class EurobondRegistry {
 

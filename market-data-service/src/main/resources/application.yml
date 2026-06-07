@@ -58,6 +58,11 @@ providers:
     api-key: ${FINNHUB_API_KEY:}
 
 scheduler:
+  live:
+    # Canlı ingest: günde 3 kez (09:00, 13:00, 17:00 Europe/Istanbul). Override: SCHEDULER_LIVE_CRON
+    cron: ${SCHEDULER_LIVE_CRON:0 0 9,13,17 * * *}
+    zone: ${SCHEDULER_LIVE_ZONE:Europe/Istanbul}
+  # Deprecated: live schedulers artık scheduler.live.cron kullanır (geri dönüş için tutuldu).
   market:
     delay-ms: 30000
   binance:
