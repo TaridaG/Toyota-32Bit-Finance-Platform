@@ -141,6 +141,8 @@ public class WebSecurityConfig {
         }
         return "/api/v1/public/register".equals(p)
                 || "/api/v1/public/register/send-code".equals(p)
+                || "/api/v1/public/password/send-reset-code".equals(p)
+                || "/api/v1/public/password/reset".equals(p)
                 || "/api/v1/public/login".equals(p)
                 || "/api/v1/public/login/mfa".equals(p)
                 || "/api/v1/public/refresh".equals(p);

@@ -161,6 +161,7 @@ function isPublicAnonymousApiRequest(config: { baseURL?: string; url?: string })
   const path = (config.baseURL ?? '') + (config.url ?? '')
   return (
     path.includes('/api/v1/public/register') ||
+    path.includes('/api/v1/public/password') ||
     path.includes('/api/v1/public/login') ||
     path.includes('/api/v1/public/refresh')
   )
