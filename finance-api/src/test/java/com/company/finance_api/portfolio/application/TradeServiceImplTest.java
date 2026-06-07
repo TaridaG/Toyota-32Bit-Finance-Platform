@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.company.finance_api.instrument.domain.Instrument;
 import com.company.finance_api.pricing.domain.InstrumentPrice;
+import com.company.finance_api.portfolio.domain.PositionCostBasisCalculator;
 import com.company.finance_api.portfolio.domain.Transaction;
 import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.instrument.domain.enums.Exchange;
@@ -34,9 +35,13 @@ import com.company.finance_api.pricing.application.CurrencyConversionService;
 import com.company.finance_api.shared.security.CurrentUserResolver;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -61,6 +66,14 @@ class TradeServiceImplTest {
   @Mock TlDepositIndexQueryService tlDepositIndexQueryService;
 
   @InjectMocks TradeServiceImpl tradeService;
+
+  private final PositionCostBasisCalculator positionCostBasisCalculator =
+      new PositionCostBasisCalculator();
+
+  @BeforeEach
+  void injectCalculator() {
+    ReflectionTestUtils.setField(tradeService, "positionCostBasisCalculator", positionCostBasisCalculator);
+  }
 
   @Test
   void preview_shouldThrow_whenInstrumentMissing() {
@@ -121,6 +134,149 @@ class TradeServiceImplTest {
     assertEquals(TransactionType.BUY, result.getType());
     verify(transactionAcquisitionFxRepository).save(any());
     verify(transactionEventPublisher).publish(any());
+  }
+
+  @Test
+  void sell_shouldPersistTransaction_withNowSoldMetadata() {
+    UUID userId = UUID.randomUUID();
+    User user = new User("trader@example.com", "trader");
+    long instrumentId = 42L;
+    Instrument instrument =
+        new Instrument("AAPL", "Apple", InstrumentType.STOCK, Exchange.NASDAQ);
+    ReflectionTestUtils.setField(instrument, "id", instrumentId);
+
+    TradeExecutionRequest request = liveLotsRequest(instrumentId, "2");
+    InstrumentPrice market =
+        new InstrumentPrice(instrument, PriceType.MARKET, new BigDecimal("150"), Instant.now());
+    Transaction existingBuy =
+        Transaction.buy(user, instrument, new BigDecimal("150"), new BigDecimal("10"));
+
+    when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
+    when(instrumentPriceRepository.findTopByInstrumentAndPriceTypeOrderByTimestampDesc(
+            instrument, PriceType.MARKET))
+        .thenReturn(Optional.of(market));
+    when(currencyConversionService.normalizeCurrency("USD")).thenReturn("USD");
+    when(currencyConversionService.convert(eq(BigDecimal.ONE), eq("USD"), eq("USD")))
+        .thenReturn(BigDecimal.ONE);
+    when(currencyConversionService.acquisitionFxHubSnapshot(any(), eq(false)))
+        .thenReturn(emptyFxSnapshot());
+    when(transactionRepository.findByUserAndInstrumentAndExternalPortfolio(user, instrument, null))
+        .thenReturn(List.of(existingBuy));
+    when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    Transaction result = tradeService.sell(request);
+
+    assertNotNull(result);
+    assertEquals(TransactionType.SELL, result.getType());
+    assertEquals("NOW_SOLD", result.getSourceLabel());
+    assertEquals(PurchaseMode.NOW, result.getPurchaseMode());
+    verify(transactionEventPublisher).publish(any());
+  }
+
+  @Test
+  void sellPast_shouldPersistWithPastSoldMetadata_whenHoldingsSufficientAsOfDate() {
+    UUID userId = UUID.randomUUID();
+    User user = new User("trader@example.com", "trader");
+    long instrumentId = 42L;
+    Instrument instrument =
+        new Instrument("AKBNK", "Akbank", InstrumentType.STOCK, Exchange.BIST);
+    ReflectionTestUtils.setField(instrument, "id", instrumentId);
+    Instant sellDay = LocalDate.of(2025, 10, 11).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+    TradeExecutionRequest request = new TradeExecutionRequest();
+    request.setInstrumentId(instrumentId);
+    request.setInputMode(TradeInputMode.LOTS);
+    request.setLots(new BigDecimal("15"));
+    request.setInputCurrency("TRY");
+    request.setPurchaseMode(PurchaseMode.PAST);
+    request.setAcquiredAt(sellDay);
+    request.setUnitPrice(new BigDecimal("50"));
+
+    Transaction sepBuy = pastBuy(user, instrument, LocalDate.of(2025, 9, 10), "10");
+    Transaction octBuy = pastBuy(user, instrument, LocalDate.of(2025, 10, 10), "10");
+
+    when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
+    when(currencyConversionService.normalizeCurrency("TRY")).thenReturn("TRY");
+    when(currencyConversionService.convertAt(any(), eq(BigDecimal.ONE), eq("TRY"), eq("TRY")))
+        .thenReturn(BigDecimal.ONE);
+    when(currencyConversionService.acquisitionFxHubSnapshot(any(), eq(true)))
+        .thenReturn(emptyFxSnapshot());
+    when(transactionRepository.findByUserAndInstrumentAndExternalPortfolio(user, instrument, null))
+        .thenReturn(List.of(sepBuy, octBuy));
+    when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    Transaction result = tradeService.sell(request);
+
+    assertEquals(TransactionType.SELL, result.getType());
+    assertEquals("PAST_SOLD", result.getSourceLabel());
+    assertEquals(PurchaseMode.PAST, result.getPurchaseMode());
+    assertEquals(sellDay, result.getAcquiredAt());
+  }
+
+  @Test
+  void sellPast_shouldFail_whenAsOfQuantityInsufficient() {
+    UUID userId = UUID.randomUUID();
+    User user = new User("trader@example.com", "trader");
+    long instrumentId = 7L;
+    Instrument instrument =
+        new Instrument("AKBNK", "Akbank", InstrumentType.STOCK, Exchange.BIST);
+    ReflectionTestUtils.setField(instrument, "id", instrumentId);
+    Instant sellDay = LocalDate.of(2025, 10, 8).atStartOfDay(ZoneOffset.UTC).toInstant();
+
+    TradeExecutionRequest request = new TradeExecutionRequest();
+    request.setInstrumentId(instrumentId);
+    request.setInputMode(TradeInputMode.LOTS);
+    request.setLots(new BigDecimal("15"));
+    request.setInputCurrency("TRY");
+    request.setPurchaseMode(PurchaseMode.PAST);
+    request.setAcquiredAt(sellDay);
+    request.setUnitPrice(new BigDecimal("50"));
+
+    Transaction sepBuy = pastBuy(user, instrument, LocalDate.of(2025, 9, 10), "10");
+    Transaction octBuy = pastBuy(user, instrument, LocalDate.of(2025, 10, 10), "10");
+
+    when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(instrumentRepository.findByIdAndActiveTrue(instrumentId)).thenReturn(Optional.of(instrument));
+    when(currencyConversionService.normalizeCurrency("TRY")).thenReturn("TRY");
+    when(currencyConversionService.convertAt(any(), eq(BigDecimal.ONE), eq("TRY"), eq("TRY")))
+        .thenReturn(BigDecimal.ONE);
+    when(currencyConversionService.acquisitionFxHubSnapshot(any(), eq(true)))
+        .thenReturn(emptyFxSnapshot());
+    when(transactionRepository.findByUserAndInstrumentAndExternalPortfolio(user, instrument, null))
+        .thenReturn(List.of(sepBuy, octBuy));
+
+    IllegalStateException ex =
+        assertThrows(IllegalStateException.class, () -> tradeService.sell(request));
+    assertEquals("Insufficient position for sell", ex.getMessage());
+    verify(transactionRepository, never()).save(any());
+  }
+
+  private static Transaction pastBuy(
+      User user, Instrument instrument, LocalDate day, String quantity) {
+    Instant acquiredAt = day.atStartOfDay(ZoneOffset.UTC).toInstant();
+    Transaction tx =
+        Transaction.buy(
+            user,
+            instrument,
+            null,
+            new BigDecimal("100"),
+            new BigDecimal(quantity),
+            PurchaseMode.PAST,
+            acquiredAt,
+            new BigDecimal("100"),
+            TradeInputMode.LOTS,
+            "TRY",
+            new BigDecimal("1000"),
+            BigDecimal.ONE,
+            "PAST_BOUGHT");
+    ReflectionTestUtils.setField(tx, "id", day.toEpochDay());
+    ReflectionTestUtils.setField(tx, "createdAt", acquiredAt);
+    return tx;
   }
 
   @Test

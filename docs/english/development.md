@@ -142,6 +142,20 @@ mvn -pl api-gateway -am spring-boot:run -Dspring-boot.run.profiles=dev
 
 If you use an IDE, start the main class with the same profiles; add environment variables to the Run Configuration.
 
+### Javadoc (Java API documentation)
+
+The `finance-api` module configures `maven-javadoc-plugin`. HTML output is **not** produced during normal `package` / `verify`; run optionally:
+
+```bash
+cd finance-api
+./mvnw javadoc:javadoc
+# Windows: mvnw.cmd javadoc:javadoc
+```
+
+Output: `finance-api/target/site/apidocs/index.html` — open in a browser to browse class and method Javadoc.
+
+For HTTP REST contracts use **springdoc-openapi** (Swagger UI); Javadoc is for backend code documentation. Writing rules: [coding-standards-javadoc.md](../coding-standards-javadoc.md).
+
 ---
 
 ## Spring profiles
@@ -461,6 +475,7 @@ Profile photos: `photos/{userId}/` at repo root — mounted via Docker volume; c
 |-------|----------|
 | Initial setup | [getting-started.md](getting-started.md) |
 | API routes / Swagger | [api.md](api.md) |
+| Javadoc writing rules | [coding-standards-javadoc.md](../coding-standards-javadoc.md) |
 | Environment variables | [configuration.md](configuration.md) |
 | Metrics, trace, logs | [observability.md](observability.md) |
 | Service ports | [services.md](services.md) |

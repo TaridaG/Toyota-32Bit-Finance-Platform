@@ -17,7 +17,7 @@ public final class MarketCatalogSegmentRules {
 
     private MarketCatalogSegmentRules() {}
 
-    /** TRY spot precious metals quoted as troy oz (Minted/Yahoo-derived), not TCMB gram crosses. */
+    /** Troy ons TRY spot değerli metaller (Minted/Yahoo türevi); TCMB gram cross'ları değildir. */
     public static boolean isSpotMetalSymbol(String symbol) {
         if (symbol == null || symbol.isBlank()) {
             return false;

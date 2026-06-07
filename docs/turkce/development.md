@@ -142,6 +142,20 @@ mvn -pl api-gateway -am spring-boot:run -Dspring-boot.run.profiles=dev
 
 IDE kullanıyorsanız main sınıfını aynı profillerle başlatın; ortam değişkenlerini Run Configuration’a ekleyin.
 
+### Javadoc (Java API dokümantasyonu)
+
+`finance-api` modülünde `maven-javadoc-plugin` yapılandırılmıştır. HTML çıktısı normal `package` / `verify` akışında **üretilmez**; isteğe bağlı olarak:
+
+```bash
+cd finance-api
+./mvnw javadoc:javadoc
+# Windows: mvnw.cmd javadoc:javadoc
+```
+
+Çıktı: `finance-api/target/site/apidocs/index.html` — tarayıcıda açarak sınıf ve metot Javadoc'larını gezebilirsiniz.
+
+HTTP REST sözleşmesi için **springdoc-openapi** (Swagger UI) kullanılır; Javadoc backend kod dokümantasyonu içindir. Yazım kuralları: [coding-standards-javadoc.md](../coding-standards-javadoc.md).
+
 ---
 
 ## Spring profilleri
@@ -461,6 +475,7 @@ Profil fotoğrafları: repo kökünde `photos/{userId}/` — Docker volume ile m
 |------|-------|
 | İlk kurulum | [getting-started.md](getting-started.md) |
 | API rotaları / Swagger | [api.md](api.md) |
+| Javadoc yazım kuralları | [coding-standards-javadoc.md](../coding-standards-javadoc.md) |
 | Ortam değişkenleri | [configuration.md](configuration.md) |
 | Metrik, trace, log | [observability.md](observability.md) |
 | Servis portları | [services.md](services.md) |

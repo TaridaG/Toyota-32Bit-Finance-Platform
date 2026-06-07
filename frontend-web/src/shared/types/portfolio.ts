@@ -151,6 +151,40 @@ export type TransactionHistoryFilters = {
   toDate?: string
 }
 
+export type SalesAnalysisItem = {
+  transactionId: number
+  portfolioId: number | null
+  portfolioName: string | null
+  instrumentId: number
+  instrumentSymbol: string
+  quantity: number
+  avgCostAtSell: number
+  sellUnitPrice: number
+  sellProceeds: number
+  costBasis: number
+  realizedPnl: number
+  realizedPnlPct: number
+  currentUnitPrice: number | null
+  hypotheticalValueNow: number | null
+  opportunityDelta: number | null
+  quoteCurrency: string | null
+  soldAt: string
+}
+
+export type SalesAnalysisPage = {
+  content: SalesAnalysisItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export type SalesAnalysisFilters = {
+  symbol?: string
+  fromDate?: string
+  toDate?: string
+}
+
 export type PortfolioOverviewItem = {
   instrumentId: number
   symbol: string

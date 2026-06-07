@@ -158,6 +158,15 @@ jobs:
             mvn -B -ntp -f "${{ matrix.pom }}" test
           fi
 
+      - name: Generate Javadoc (finance-api)
+        if: matrix.module == 'finance-api'
+        run: |
+          if [ -f "${{ matrix.wrapper }}" ]; then
+            "${{ matrix.wrapper }}" -B -ntp -f "${{ matrix.pom }}" javadoc:javadoc
+          else
+            mvn -B -ntp -f "${{ matrix.pom }}" javadoc:javadoc
+          fi
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -166,4 +175,12 @@ jobs:
           path: |
             ${{ matrix.reports }}/surefire-reports/**
             ${{ matrix.reports }}/failsafe-reports/**
+          if-no-files-found: ignore
+
+      - name: Upload Javadoc (finance-api)
+        if: always() && matrix.module == 'finance-api'
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-api-javadoc
+          path: finance-api/target/site/apidocs/**
           if-no-files-found: ignore

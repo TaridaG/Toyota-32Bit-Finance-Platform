@@ -1,6 +1,7 @@
 package com.company.finance_api.portfolio.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import com.company.finance_api.instrument.domain.Instrument;
@@ -9,6 +10,8 @@ import com.company.finance_api.profile.domain.User;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +55,75 @@ class PositionCostBasisCalculatorTest {
     assertEquals(BigDecimal.ZERO, result.quantity());
     assertEquals(BigDecimal.ZERO, result.totalCost());
     assertEquals(BigDecimal.ZERO, result.averageCost());
+  }
+
+  @Test
+  void validateLedger_shouldPass_forBalancedLedger() {
+    Transaction buy = tx(1L, Instant.parse("2026-01-01T10:00:00Z"), "100", "5", true);
+    Transaction sell = tx(2L, Instant.parse("2026-01-01T11:00:00Z"), "120", "3", false);
+
+    PositionCostBasisCalculator.validateLedger(List.of(buy, sell));
+  }
+
+  @Test
+  void validateLedger_shouldReject_whenSellExceedsHoldings() {
+    Transaction sell = tx(1L, Instant.parse("2026-01-01T11:00:00Z"), "120", "5", false);
+
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> PositionCostBasisCalculator.validateLedger(List.of(sell)));
+    assertEquals("Cannot delete: would leave insufficient holdings for later sells", ex.getMessage());
+  }
+
+  @Test
+  void calculateHoldingsBefore_shouldExcludeSameDayBuys_forPastSellDate() {
+    Transaction sepBuy =
+        pastBuy(1L, LocalDate.of(2025, 9, 10), "100", "10");
+    Transaction octBuy =
+        pastBuy(2L, LocalDate.of(2025, 10, 10), "110", "10");
+    Transaction novBuy =
+        pastBuy(3L, LocalDate.of(2025, 11, 10), "120", "10");
+
+    Instant oct8Cutoff = LocalDate.of(2025, 10, 8).atStartOfDay(ZoneOffset.UTC).toInstant();
+    PositionCostBasisCalculator.PositionCostBasis onOct8 =
+        calculator.calculateHoldingsBefore(List.of(sepBuy, octBuy, novBuy), oct8Cutoff);
+    assertEquals(new BigDecimal("10.000000"), onOct8.quantity().setScale(6));
+
+    Instant oct10Cutoff = LocalDate.of(2025, 10, 10).atStartOfDay(ZoneOffset.UTC).toInstant();
+    PositionCostBasisCalculator.PositionCostBasis onOct10 =
+        calculator.calculateHoldingsBefore(List.of(sepBuy, octBuy, novBuy), oct10Cutoff);
+    assertEquals(new BigDecimal("10.000000"), onOct10.quantity().setScale(6));
+
+    Instant oct11Cutoff = LocalDate.of(2025, 10, 11).atStartOfDay(ZoneOffset.UTC).toInstant();
+    PositionCostBasisCalculator.PositionCostBasis onOct11 =
+        calculator.calculateHoldingsBefore(List.of(sepBuy, octBuy, novBuy), oct11Cutoff);
+    assertEquals(new BigDecimal("20.000000"), onOct11.quantity().setScale(6));
+  }
+
+  private static Transaction pastBuy(
+      Long id, LocalDate acquiredDay, String price, String quantity) {
+    User user = mock(User.class);
+    Instrument instrument = mock(Instrument.class);
+    Instant acquiredAt = acquiredDay.atStartOfDay(ZoneOffset.UTC).toInstant();
+    Transaction tx =
+        Transaction.buy(
+            user,
+            instrument,
+            null,
+            new BigDecimal(price),
+            new BigDecimal(quantity),
+            com.company.finance_api.portfolio.domain.enums.PurchaseMode.PAST,
+            acquiredAt,
+            new BigDecimal(price),
+            com.company.finance_api.portfolio.domain.enums.TradeInputMode.LOTS,
+            "TRY",
+            new BigDecimal(price).multiply(new BigDecimal(quantity)),
+            BigDecimal.ONE,
+            "PAST_BOUGHT");
+    setField(tx, "id", id);
+    setField(tx, "createdAt", acquiredAt);
+    return tx;
   }
 
   private static Transaction tx(

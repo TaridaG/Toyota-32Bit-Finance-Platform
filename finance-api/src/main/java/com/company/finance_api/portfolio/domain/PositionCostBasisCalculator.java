@@ -86,6 +86,23 @@ public class PositionCostBasisCalculator {
     return new PositionCostBasis(quantity, totalCost, averageCost);
   }
 
+  /** Kronolojik ledger'da hiçbir satışın mevcut pozisyonu aşmadığını doğrular. */
+  public static void validateLedger(List<Transaction> orderedTransactions) {
+    BigDecimal quantity = BigDecimal.ZERO;
+    for (Transaction tx : orderedTransactions) {
+      BigDecimal txQuantity = tx.getQuantity();
+      if (tx.getType() == TransactionType.BUY) {
+        quantity = quantity.add(txQuantity);
+        continue;
+      }
+      if (quantity.compareTo(txQuantity) < 0) {
+        throw new IllegalStateException(
+            "Cannot delete: would leave insufficient holdings for later sells");
+      }
+      quantity = quantity.subtract(txQuantity);
+    }
+  }
+
   /** Hesaplanmış pozisyon miktarı, toplam maliyet ve ortalama maliyet snapshot'ı. */
   public record PositionCostBasis(
       BigDecimal quantity, BigDecimal totalCost, BigDecimal averageCost) {}

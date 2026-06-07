@@ -1,7 +1,10 @@
 package com.company.finance_api.portfolio.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.instrument.domain.Instrument;
@@ -13,6 +16,7 @@ import com.company.finance_api.portfolio.domain.enums.TransactionType;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.external.infrastructure.persistence.ExternalPortfolioRepository;
 import com.company.finance_api.portfolio.infrastructure.http.dto.TransactionHistoryResponse;
+import com.company.finance_api.portfolio.infrastructure.persistence.TransactionAcquisitionFxRepository;
 import com.company.finance_api.portfolio.infrastructure.persistence.TransactionRepository;
 import com.company.finance_api.profile.infrastructure.persistence.UserRepository;
 import com.company.finance_api.shared.security.CurrentUserResolver;
@@ -32,6 +36,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 class TransactionHistoryServiceImplTest {
 
   @Mock private TransactionRepository transactionRepository;
+  @Mock private TransactionAcquisitionFxRepository transactionAcquisitionFxRepository;
+  @Mock private PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
   @Mock private CurrentUserResolver currentUserResolver;
   @Mock private UserRepository userRepository;
   @Mock private ExternalPortfolioRepository externalPortfolioRepository;
@@ -80,5 +86,64 @@ class TransactionHistoryServiceImplTest {
     assertEquals(1, history.size());
     assertEquals(TransactionType.BUY.name(), history.get(0).type());
     assertEquals("AAPL", history.get(0).instrumentSymbol());
+  }
+
+  @Test
+  void deleteMyTransaction_shouldRemoveBuy_whenLedgerRemainsValid() {
+    UUID userId = UUID.randomUUID();
+    User user = new User("trader@example.com", "trader");
+    ReflectionTestUtils.setField(user, "id", userId);
+    ExternalPortfolio portfolio = new ExternalPortfolio(user, "Growth", "USD");
+    ReflectionTestUtils.setField(portfolio, "id", 10L);
+    Instrument instrument =
+        new Instrument("AAPL", "Apple", InstrumentType.STOCK, Exchange.NASDAQ);
+    ReflectionTestUtils.setField(instrument, "id", 1L);
+    Transaction buy =
+        Transaction.buy(user, instrument, BigDecimal.TEN, BigDecimal.ONE);
+    ReflectionTestUtils.setField(buy, "id", 99L);
+    ReflectionTestUtils.setField(buy, "externalPortfolio", portfolio);
+
+    when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(transactionRepository.findById(99L)).thenReturn(Optional.of(buy));
+    when(transactionRepository.findByUserAndInstrumentAndExternalPortfolio(user, instrument, portfolio))
+        .thenReturn(List.of(buy));
+    when(transactionAcquisitionFxRepository.existsById(99L)).thenReturn(true);
+
+    service.deleteMyTransaction(99L);
+
+    verify(transactionAcquisitionFxRepository).deleteById(99L);
+    verify(transactionRepository).delete(buy);
+    verify(portfolioPerformanceSeriesService).recomputePortfolioHistory(userId, 10L);
+  }
+
+  @Test
+  void deleteMyTransaction_shouldReject_whenLaterSellWouldBreakLedger() {
+    UUID userId = UUID.randomUUID();
+    User user = new User("trader@example.com", "trader");
+    ReflectionTestUtils.setField(user, "id", userId);
+    Instrument instrument =
+        new Instrument("AAPL", "Apple", InstrumentType.STOCK, Exchange.NASDAQ);
+    ReflectionTestUtils.setField(instrument, "id", 1L);
+    Transaction buy =
+        Transaction.buy(user, instrument, BigDecimal.TEN, BigDecimal.valueOf(5));
+    ReflectionTestUtils.setField(buy, "id", 1L);
+    ReflectionTestUtils.setField(buy, "createdAt", Instant.parse("2026-01-01T10:00:00Z"));
+    Transaction sell =
+        Transaction.sell(user, instrument, BigDecimal.valueOf(12), BigDecimal.valueOf(5));
+    ReflectionTestUtils.setField(sell, "id", 2L);
+    ReflectionTestUtils.setField(sell, "createdAt", Instant.parse("2026-01-01T11:00:00Z"));
+
+    when(currentUserResolver.getCurrentUserId()).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(transactionRepository.findById(1L)).thenReturn(Optional.of(buy));
+    when(transactionRepository.findByUserAndInstrumentAndExternalPortfolio(user, instrument, null))
+        .thenReturn(List.of(buy, sell));
+
+    IllegalStateException ex =
+        assertThrows(IllegalStateException.class, () -> service.deleteMyTransaction(1L));
+    assertEquals(
+        "Cannot delete: would leave insufficient holdings for later sells", ex.getMessage());
+    verify(transactionRepository, never()).delete(buy);
   }
 }

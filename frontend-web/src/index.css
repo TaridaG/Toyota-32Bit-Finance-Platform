@@ -9049,6 +9049,15 @@ button.my-portfolio-dashboard-value-badge {
   background: linear-gradient(90deg, rgba(37, 99, 235, 0.36), rgba(14, 165, 233, 0.24));
 }
 
+.my-portfolio-trade-title-row {
+  margin-bottom: 1rem;
+}
+
+.my-portfolio-trade-side-toggle {
+  width: fit-content;
+  min-width: 12rem;
+}
+
 .my-portfolio-trade-submit {
   margin-top: 0.4rem;
 }
@@ -9294,6 +9303,41 @@ button.my-portfolio-dashboard-value-badge {
 .my-portfolio-preview-stats strong {
   color: #f8fafc;
   font-weight: 700;
+}
+
+.my-portfolio-sell-holding-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.my-portfolio-sell-all-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #818cf8;
+  font: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.my-portfolio-sell-all-link:hover:not(:disabled) {
+  color: #a5b4fc;
+}
+
+.my-portfolio-sell-all-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.my-portfolio-sell-analysis-panel {
+  margin-top: 0.25rem;
+}
+
+.my-portfolio-sell-empty-state {
+  padding: 1.25rem 0;
 }
 
 .my-portfolio-preview-distribution {
@@ -10663,6 +10707,27 @@ col.my-portfolio-alloc-col-pnl {
 
 .my-portfolio-allocation-table td:first-child .my-portfolio-allocation-symbol .my-portfolio-dot {
   flex-shrink: 0;
+}
+
+.my-portfolio-alloc-sell-btn,
+.my-portfolio-history-delete-btn {
+  border: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.35));
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.my-portfolio-alloc-sell-btn:hover,
+.my-portfolio-history-delete-btn:hover {
+  border-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+}
+
+.my-portfolio-sales-analysis-wrap {
+  overflow-x: auto;
 }
 
 .my-portfolio-asset-list,
@@ -17578,7 +17643,13 @@ col.my-portfolio-alloc-col-pnl {
 .fi-admin-nav-link-active {
   background: rgba(59, 130, 246, 0.18);
   border-color: rgba(59, 130, 246, 0.35);
-  color: #dbeafe;
+  color: var(--color-text, #dbeafe);
+}
+
+:root[data-theme='light'] .fi-admin-nav-link-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: var(--color-primary, #1d4ed8);
 }
 
 .fi-admin-sidebar-foot {
@@ -19284,6 +19355,60 @@ col.my-portfolio-alloc-col-pnl {
   line-height: 1.4;
 }
 
+.fi-admin-form-grid {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 32rem;
+}
+
+.fi-admin-form-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--color-text-soft, #94a3b8);
+}
+
+.fi-admin-form-field input,
+.fi-admin-form-field select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.28));
+  background: var(--color-surface, rgba(15, 23, 42, 0.72));
+  color: var(--color-text, #e2e8f0);
+  font-size: 0.88rem;
+}
+
+.fi-admin-form-field input:focus,
+.fi-admin-form-field select:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 1px;
+}
+
+.fi-admin-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+.fi-admin-ingest-registry-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fi-admin-ingest-empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--color-text-soft, #94a3b8);
+}
+
+.fi-admin-ingest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .fi-admin-bar-chart {
   display: flex;
   align-items: flex-end;
@@ -19583,31 +19708,18 @@ col.my-portfolio-alloc-col-pnl {
 
 .fi-admin-dash-kpis {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.75rem;
-}
-
-@media (max-width: 1320px) {
-  .fi-admin-dash-kpis {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 720px) {
-  .fi-admin-dash-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 400px) {
-  .fi-admin-dash-kpis {
-    grid-template-columns: 1fr;
-  }
 }
 
 .fi-admin-dash-kpi {
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--color-border, rgba(148, 163, 184, 0.12));
+  background: var(--color-surface, rgba(15, 23, 42, 0.72));
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+}
+
+:root[data-theme='dark'] .fi-admin-dash-kpi {
   background: linear-gradient(155deg, rgba(22, 27, 34, 0.96), rgba(11, 14, 20, 0.99));
   box-shadow:
     0 4px 22px rgba(0, 0, 0, 0.35),

@@ -1772,6 +1772,8 @@
       "avgBuyPrice": "Alım fiyatı",
       "currentPrice": "Güncel fiyat",
       "pnlPctShort": "K/Z %",
+      "action": "İşlem",
+      "sell": "Sat",
       "sortActivate": "Sıralamak için tıklayın",
       "sortAsc": "Artan — tersine çevirmek için tıklayın",
       "sortDesc": "Azalan — tersine çevirmek için tıklayın",
@@ -1827,9 +1829,10 @@
       "addPortfolioOptionMore": "+ Yeni portföy ekle",
       "items": {
         "dashboard": "Dashboard",
-        "markets": "Portföye Ekle",
+        "markets": "Varlık Yönetimi",
         "portfolio": "İşlem Geçmişi",
         "allocation": "Portföy Dağılımı",
+        "salesAnalysis": "Satış Analizleri",
         "news": "Haberlerim",
         "analysis": "Analizim",
         "targets": "Hedefim",
@@ -1857,18 +1860,26 @@
     },
     "marketsAdd": {
       "title": "Portföye Yeni Enstrüman Ekle",
+      "titleSell": "Portföyden Sat",
       "assetTypeLabel": "Varlık Tipi",
       "assetTypeAll": "Tüm Tipler",
       "steps": {
         "details": "Alım Detayları",
+        "detailsSell": "Satış Detayları",
         "preview": "Önizleme"
+      },
+      "tradeSide": {
+        "buy": "Alım",
+        "sell": "Satış"
       },
       "searchLabel": "Enstrüman Ara",
       "searchPlaceholder": "Şirket, sembol veya ISIN ara...",
       "instrumentLabel": "Enstrüman",
       "purchaseMode": {
         "now": "Piyasadan Ekle",
-        "past": "Geçmiş Alım Ekle"
+        "past": "Geçmiş Alım Ekle",
+        "sellNow": "Piyasadan Sat",
+        "sellPast": "Geçmiş Satış Ekle"
       },
       "inputMode": {
         "lots": "Lot ile Gir",
@@ -1879,6 +1890,21 @@
       "lotsLabel": "Lot Miktarı",
       "lotLabel": "Lot",
       "buyPriceLabel": "Alım Fiyatı",
+      "sellPriceLabel": "Satış Fiyatı",
+      "sellProceedsLabel": "Satış Tutarı",
+      "sellCostBasisLabel": "Maliyet (WAC)",
+      "realizedPnlLabel": "Gerçekleşen K/Z",
+      "sellAnalysisTitle": "Satış analizi",
+      "sellPositionLabel": "Mevcut pozisyon",
+      "sellAvgBuyLabel": "Ort. alım (WAC)",
+      "sellAvailableQty": "Mevcut pozisyon: {{qty}} lot",
+      "sellRemainingQty": "Satış sonrası kalan",
+      "sellRealizedPnlPct": "Gerçekleşen K/Z (%)",
+      "sellHoldingsEmpty": "Bu portföyde satılabilir pozisyon yok.",
+      "sellPickPortfolio": "Satış için üstten bir portföy seçin.",
+      "sellAll": "Tamamını sat",
+      "soldAtLabel": "Satış Tarihi",
+      "sellPickDate": "Geçmiş satış için satış tarihi seçin.",
       "buyPricePlaceholder": "Aldığınız fiyatı girin",
       "earliestPriceNotice": "En eski fiyat bilgisi {{date}} tarihindedir; alım bu tarihle kaydedilir.",
       "manualPriceRequiredNotice": "Bu enstrüman için sistemde fiyat verisi bulunamadı. Farklı bir tarih veya enstrüman deneyin.",
@@ -1886,10 +1912,12 @@
       "totalAmountLabel": "Toplam Tutar",
       "acquiredAtLabel": "Alım Tarihi",
       "confirmationTitle": "Alım Bilgileri",
+      "confirmationTitleSell": "Satış Bilgileri",
       "transactionTypeLabel": "İşlem Tipi",
       "back": "Geri",
       "saving": "Kaydediliyor...",
       "submit": "Onayla ve Ekle",
+      "submitSell": "Onayla ve Sat",
       "continue": "Devam Et",
       "distributionTitle": "Portföy Dağılımı",
       "costPerLotLabel": "Maliyet / Lot",
@@ -1926,7 +1954,8 @@
         "MT06": "TL Mevduat"
       },
       "messages": {
-        "saved": "İşlem başarıyla kaydedildi."
+        "saved": "İşlem başarıyla kaydedildi.",
+        "sold": "Satış başarıyla kaydedildi."
       },
       "errors": {
         "previewFailed": "Önizleme başarısız.",
@@ -1935,12 +1964,45 @@
         "pastDateRequired": "Geçmiş alımda tarih zorunludur.",
         "pastDateAndPriceRequired": "Geçmiş alımda tarih ve birim fiyat zorunludur.",
         "saveFailed": "İşlem kaydedilemedi.",
-        "instrumentListLoadFailed": "Enstrüman listesi yüklenemedi. API (/api/instruments, /api/market) ve gateway erişimini kontrol edin."
+        "instrumentListLoadFailed": "Enstrüman listesi yüklenemedi. API (/api/instruments, /api/market) ve gateway erişimini kontrol edin.",
+        "exceedsHoldings": "Satış miktarı mevcut pozisyonu aşıyor (max {{max}} lot).",
+        "sellDateFuture": "Satış tarihi gelecekte olamaz.",
+        "noHoldingsOnDate": "Seçilen tarihte satılabilir pozisyon yok."
       },
       "listingHintTry": "Bu portföy TRY bazlıdır. Yalnızca TL kotasyonlu enstrümanlar listelenir (ör. BIST, TL döviz çiftleri).",
       "listingHintUsd": "Bu portföy USD bazlıdır. Yalnızca dolar kotasyonlu enstrümanlar listelenir (ör. ABD hisseleri, USD kripto).",
       "listingHintNeutral": "Bu portföy döviz bazlı değildir. Özet ve liste, üst menüde seçtiğiniz görüntüleme para birimine ({{currency}}) göre kotasyon filtresiyle çalışır.",
       "listingHintAll": "Tüm kotasyonlu enstrümanlar listelenir; ödeme para birimi seçtiğiniz varlığın kotasyonuna göre belirlenir."
+    },
+    "history": {
+      "deleteColumn": "Sil",
+      "delete": "Sil",
+      "deleteAria": "İşlemi kalıcı olarak sil",
+      "deleteModalTitle": "İşlemi sil",
+      "deleteModalBody": "Bu işlem kalıcı olarak silinir; portföy hiç eklenmemiş gibi güncellenir.",
+      "deleteCancel": "Vazgeç",
+      "deleteConfirm": "Sil",
+      "deleting": "Siliniyor…",
+      "deleteFailed": "İşlem silinemedi."
+    },
+    "salesAnalysis": {
+      "title": "Satış Analizleri",
+      "records": "kayıt",
+      "symbolPlaceholder": "Sembol ara",
+      "filter": "Filtrele",
+      "instrument": "Enstrüman",
+      "quantity": "Lot",
+      "avgCostAtSell": "Ort. alım (WAC)",
+      "sellUnitPrice": "Satış fiyatı",
+      "sellProceeds": "Satış tutarı",
+      "realizedPnl": "Gerçekleşen K/Z",
+      "hypotheticalValueNow": "Bugün olsaydı",
+      "opportunityDelta": "Fark",
+      "soldAt": "Satış tarihi",
+      "prev": "Önceki",
+      "next": "Sonraki",
+      "pageOf": "Sayfa {{current}} / {{total}}",
+      "loadError": "Satış analizleri yüklenemedi."
     },
     "watchlist": {
       "title": "Favoriler",
@@ -2134,7 +2196,7 @@
         "userFlowSparkFoot": "Grafik: günlük yeni kayıt (ana çizgi) · hesap silme talebi (soluk, UTC günü)",
         "portfolioFlowSparkFoot": "Grafik: yeni harici portföy (ana) · önceden var olan portföyde güncelleme (soluk)",
         "instrumentDataActivityFoot": "Son 7 UTC gününde en az bir fiyat kaydı alan farklı enstrüman sayısı",
-        "ingestRegistry": "Ingest registry",
+        "ingestRegistry": "Veri çekme kaydı",
         "addInstrument": "Yeni varlık ekle",
         "portfolioCreationVelocityWow": "Yeni portföy momentumu (7g / önceki 7g)",
         "usersMetricLoadError": "Canlı kullanıcı sayısı alınamadı — API veya ADMIN yetkisi (gateway).",
@@ -2507,6 +2569,58 @@
         "portalUsers": "Portal metrikleri (kullanıcı + portföy + enstrüman)",
         "portalPortfolios": "Harici portföy metrikleri"
       }
+    },
+    "ingestRegistryPage": {
+      "title": "Veri çekme kaydı",
+      "lead": "Hangi enstrümanlar için canlı ve geçmiş veri çekildiğini yönetin.",
+      "refresh": "Yenile",
+      "loading": "Kayıtlar yükleniyor…",
+      "empty": "Henüz ingest konfigürasyonu bulunmuyor.",
+      "colInstrumentId": "Enstrüman ID",
+      "colSymbol": "Sembol",
+      "colSegment": "Segment",
+      "colEnabled": "Aktif",
+      "colTotalDays": "Toplam gün",
+      "colRecent365": "365 gün",
+      "colRecent30": "30 gün",
+      "colLastError": "Son hata",
+      "colActions": "İşlemler",
+      "segment": {
+        "CRYPTO": "Kripto",
+        "BIST": "BIST",
+        "NASDAQ": "NASDAQ"
+      },
+      "actionHistory": "Tarihsel veri çek",
+      "actionLive": "Canlı veri çek",
+      "actionDelete": "Sil",
+      "historyStarted": "{{symbol}} için tarihsel veri arka planda çekiliyor. Birkaç dakika sonra yenileyin.",
+      "errorGeneric": "İşlem başarısız.",
+      "errorHistory": "Tarihsel veri çekme başarısız.",
+      "errorLive": "Canlı veri çekme başarısız.",
+      "errorDelete": "Silme işlemi başarısız.",
+      "paginationAria": "Veri çekme kaydı sayfalama",
+      "pageMeta": "Sayfa {{page}} / {{totalPages}} · {{total}} kayıt",
+      "prev": "Önceki",
+      "next": "Sonraki"
+    },
+    "createInstrumentPage": {
+      "title": "Yeni varlık ekle",
+      "lead": "Sembol ve piyasa segmentini seçin; tür ve borsa otomatik ayarlanır.",
+      "symbol": "Sembol",
+      "symbolPlaceholder": "Örn. KCHOL veya BTCUSDT",
+      "name": "Ad",
+      "namePlaceholder": "Örn. Koç Holding",
+      "marketSegment": "Piyasa segmenti",
+      "segment": {
+        "CRYPTO": "Kripto",
+        "BIST": "BIST",
+        "NASDAQ": "ABD (NASDAQ)"
+      },
+      "submit": "Varlık ekle",
+      "submitting": "Kaydediliyor…",
+      "errorRequired": "Sembol ve ad zorunludur.",
+      "errorGeneric": "Enstrüman oluşturulamadı.",
+      "success": "Enstrüman oluşturuldu (ID: {{id}}). Veri çekme kaydına yönlendiriliyorsunuz…"
     },
     "sectionPages": {
       "kpiTotalUsers": "Kullanıcı tabanı analitiği: roster, kayıt hızı ve ileride segmentasyon.",

@@ -5,11 +5,28 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
   flyway:
-    enabled: true
-    table: notification_flyway_schema_history
-    locations: classpath:db/migration
+    enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    listener:
+      auto-startup: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  task:
+    scheduling:
+      enabled: false
+
+services:
+  finance-api:
+    base-url: http://localhost:8080
+
+notification:
+  mail:
+    from: test@example.com
+    portal-public-url: http://localhost:5173

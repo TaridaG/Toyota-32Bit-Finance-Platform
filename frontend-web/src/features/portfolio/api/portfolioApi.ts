@@ -16,6 +16,8 @@ import type {
   TransactionHistoryFilters,
   TransactionHistoryPage,
   TransactionHistoryItem,
+  SalesAnalysisFilters,
+  SalesAnalysisPage,
 } from '../../../shared/types/portfolio'
 
 export async function getPortfolios() {
@@ -130,6 +132,34 @@ export async function buyTrade(payload: TradePreviewPayload) {
   return response.data.data
 }
 
+export async function sellTrade(payload: TradePreviewPayload) {
+  const response = await apiClient.post<ApiResponse<TradeExecution>>('/api/v1/trades/sell/order', payload)
+  return response.data.data
+}
+
+export async function deleteTransaction(transactionId: number) {
+  await apiClient.delete(`/api/v1/history/transactions/${transactionId}`)
+}
+
+export async function getSalesAnalysisPage(
+  page: number,
+  size: number,
+  filters: SalesAnalysisFilters,
+  portfolioId?: number | null,
+) {
+  const params = new URLSearchParams()
+  params.set('page', String(page))
+  params.set('size', String(size))
+  if (portfolioId != null) params.set('portfolioId', String(portfolioId))
+  if (filters.symbol) params.set('symbol', filters.symbol)
+  if (filters.fromDate) params.set('fromDate', filters.fromDate)
+  if (filters.toDate) params.set('toDate', filters.toDate)
+  const response = await apiClient.get<ApiResponse<SalesAnalysisPage>>(
+    `/api/v1/history/sales-analysis/page?${params.toString()}`,
+  )
+  return response.data.data
+}
+
 export async function getTransactionHistory(portfolioId?: number | null) {
   const query = portfolioId != null ? `?portfolioId=${portfolioId}` : ''
   const response = await apiClient.get<ApiResponse<TransactionHistoryItem[]>>(`/api/v1/history/transactions${query}`)
@@ -158,6 +188,25 @@ export async function getMyPortfolioOverview(portfolioId?: number | null, displa
       ? { 'X-Currency': displayCurrency.trim().toUpperCase() }
       : undefined
   const response = await apiClient.get<ApiResponse<PortfolioOverview>>(`/api/v1/portfolio/overview${query}`, { headers })
+  return response.data.data
+}
+
+export async function getPortfolioHoldingsAsOf(
+  portfolioId: number,
+  asOf: string,
+  displayCurrency?: string | null,
+) {
+  const params = new URLSearchParams()
+  params.set('portfolioId', String(portfolioId))
+  params.set('asOf', asOf)
+  const headers =
+    displayCurrency != null && displayCurrency.trim().length > 0
+      ? { 'X-Currency': displayCurrency.trim().toUpperCase() }
+      : undefined
+  const response = await apiClient.get<ApiResponse<PortfolioOverview>>(
+    `/api/v1/portfolio/holdings-as-of?${params.toString()}`,
+    { headers },
+  )
   return response.data.data
 }
 

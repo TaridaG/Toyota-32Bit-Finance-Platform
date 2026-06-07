@@ -7,9 +7,10 @@ import java.util.List;
 
 /** TransactionHistoryService iş mantığını uygular (transaction history service). */
 public interface TransactionHistoryService {
-  /** getMyHistory sözleşmesi. */
+  /** Oturum açmış kullanıcının transaction geçmişini portfolio filtresiyle listeler. */
   List<TransactionHistoryResponse> getMyHistory(Long portfolioId);
 
+  /** Transaction geçmişini sayfalama ve çoklu filtre ile döner. */
   TransactionHistoryPageResponse getMyHistoryPage(
       int page,
       int size,
@@ -20,4 +21,7 @@ public interface TransactionHistoryService {
       String inputCurrency,
       LocalDate fromDate,
       LocalDate toDate);
+
+  /** Transaction'ı ledger'dan kaldırır; hiç gerçekleşmemiş gibi davranır (soft delete). */
+  void deleteMyTransaction(Long transactionId);
 }
