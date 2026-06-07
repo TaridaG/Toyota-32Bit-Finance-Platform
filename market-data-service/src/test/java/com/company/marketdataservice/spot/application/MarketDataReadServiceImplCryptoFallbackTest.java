@@ -53,9 +53,8 @@ class MarketDataReadServiceImplCryptoFallbackTest {
                 .thenReturn(List.of(MarketPriceDto.basic("GARAN", new BigDecimal("410"), "YAHOO", Instant.now())));
         when(snapshotStore.listFunds()).thenReturn(List.of());
         when(fundNavHistoryRepository.findLatestRowPerFundCode()).thenReturn(List.of());
-        when(marketPriceHistoryRepository.findLatestTrbondPricesPerSymbol()).thenReturn(List.of());
-        when(marketPriceHistoryRepository.findLatestCryptoPricesPerSymbol())
-                .thenReturn(List.of(cryptoRow("BTCUSDT", "95000")));
+        when(marketPriceHistoryRepository.findLatestPricesPerSymbol())
+                .thenReturn(List.of(historyRow("BTCUSDT", "95000", "BINANCE")));
 
         MarketDataReadServiceImpl svc =
                 new MarketDataReadServiceImpl(
@@ -74,7 +73,40 @@ class MarketDataReadServiceImplCryptoFallbackTest {
         assertTrue(crypto.get(0).price().compareTo(new BigDecimal("95000")) == 0);
     }
 
-    private static MarketPriceHistoryRepository.LatestMarketPriceView cryptoRow(String symbol, String price) {
+    @Test
+    void getLatestPrices_mergesBistFromDbWhenSnapshotWarmAndSymbolMissing() {
+        HotReadCacheProperties hotReadCacheProperties = new HotReadCacheProperties();
+        hotReadCacheProperties.setEnabled(false);
+        when(snapshotStore.listPrices())
+                .thenReturn(List.of(MarketPriceDto.basic("GARAN", new BigDecimal("410"), "YAHOO", Instant.now())));
+        when(snapshotStore.listFunds()).thenReturn(List.of());
+        when(fundNavHistoryRepository.findLatestRowPerFundCode()).thenReturn(List.of());
+        when(marketPriceHistoryRepository.findLatestPricesPerSymbol())
+                .thenReturn(List.of(historyRow("AKBNK", "82.40", "YAHOO")));
+
+        MarketDataReadServiceImpl svc =
+                new MarketDataReadServiceImpl(
+                        snapshotStore,
+                        marketPriceHistoryRepository,
+                        fxRateHistoryRepository,
+                        fundNavHistoryRepository,
+                        bondMarketProperties,
+                        tcmbBondEvdsClient,
+                        jsonCacheService,
+                        hotReadCacheProperties);
+
+        List<MarketPriceDto> all = svc.getLatestPrices(null);
+        MarketPriceDto akbnk =
+                all.stream().filter(p -> "AKBNK".equals(p.symbol())).findFirst().orElseThrow();
+        assertTrue(akbnk.price().compareTo(new BigDecimal("82.40")) == 0);
+
+        MarketPriceDto garan =
+                all.stream().filter(p -> "GARAN".equals(p.symbol())).findFirst().orElseThrow();
+        assertTrue(garan.price().compareTo(new BigDecimal("410")) == 0);
+    }
+
+    private static MarketPriceHistoryRepository.LatestMarketPriceView historyRow(
+            String symbol, String price, String source) {
         return new MarketPriceHistoryRepository.LatestMarketPriceView() {
             @Override
             public String getSymbol() {
@@ -88,7 +120,7 @@ class MarketDataReadServiceImplCryptoFallbackTest {
 
             @Override
             public String getSource() {
-                return "BINANCE";
+                return source;
             }
 
             @Override
