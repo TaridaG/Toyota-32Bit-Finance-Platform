@@ -118,29 +118,6 @@
 
 <p align="center"><sub>Specific portal capabilities — full page tour above; individual features here</sub></p>
 
-<style>
-  .readme-stack img { max-width: 100%; height: auto; }
-  @media (max-width: 720px) {
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) { display: block; }
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td {
-      display: block;
-      width: 100% !important;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td[width] {
-      width: 100% !important;
-      text-align: center;
-      padding-bottom: 10px;
-    }
-    .readme-stack table table table tr { display: block; }
-    .readme-stack table table table td {
-      display: block;
-      width: 100% !important;
-      padding: 2px 0;
-    }
-  }
-</style>
 
 <div class="readme-stack">
 
