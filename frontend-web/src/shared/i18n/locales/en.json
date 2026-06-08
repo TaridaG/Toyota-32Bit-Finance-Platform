@@ -1850,6 +1850,19 @@
       "ringShare": "Ring share: {{pct}}%",
       "moreAssetsShort": "++"
     },
+    "breakdown": {
+      "byPortfolio": "By portfolio",
+      "symbolInPortfolio": "{{symbol}} · {{portfolio}}",
+      "segmentWinDetail": "Profit by portfolio",
+      "segmentLoseDetail": "Loss by portfolio",
+      "tradeNet": "Net buy/sell",
+      "tradeBuy": "Buy",
+      "tradeSell": "Sell",
+      "tradeDiff": "Difference",
+      "totalValue": "Portfolio value",
+      "dayChange": "Day change",
+      "portfolioColumn": "Portfolio"
+    },
     "allocation": {
       "detailTitle": "Portfolio allocation",
       "byInstrumentTitle": "Asset allocation",

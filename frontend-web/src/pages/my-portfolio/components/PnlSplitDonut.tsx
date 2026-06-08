@@ -1,6 +1,8 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PortfolioOverviewItem } from '../../../shared/types/portfolio'
+import { groupPnlByPortfolio, type SymbolPortfolioLine } from '../lib/portfolioAggregateBreakdown'
+import { PortfolioBreakdownList } from './PortfolioBreakdownList'
 
 const CX = 50
 const CY = 50
@@ -60,6 +62,7 @@ type Props = {
   pctFormat: Intl.NumberFormat
   sharePctDisplay: Intl.NumberFormat
   hideAmounts?: boolean
+  portfolioPnlBreakdown?: { win: SymbolPortfolioLine[]; lose: SymbolPortfolioLine[] }
 }
 
 export function PnlSplitDonut({
@@ -70,6 +73,7 @@ export function PnlSplitDonut({
   pctFormat,
   sharePctDisplay,
   hideAmounts = false,
+  portfolioPnlBreakdown,
 }: Props) {
   const { t } = useTranslation('portfolio')
   const visualRef = useRef<HTMLDivElement>(null)
@@ -77,6 +81,10 @@ export function PnlSplitDonut({
   const valueRef = useRef<HTMLElement>(null)
   const [hovered, setHovered] = useState<number | null>(null)
   const [tooltipAnchor, setTooltipAnchor] = useState<{ x: number; y: number } | null>(null)
+  const [legendSymbolHover, setLegendSymbolHover] = useState<{
+    symbol: string
+    pos: { x: number; y: number }
+  } | null>(null)
 
   const { segments, hasData } = useMemo(() => {
     const eps = 1e-9
@@ -205,10 +213,35 @@ export function PnlSplitDonut({
   const clearHover = useCallback(() => {
     setHovered(null)
     setTooltipAnchor(null)
+    setLegendSymbolHover(null)
   }, [])
 
   const active = hovered != null ? segments[hovered] : null
   const totalPnlText = currencyFormat.format(totalPnl)
+
+  const activeSegmentBreakdown = useMemo(() => {
+    if (!portfolioPnlBreakdown || active == null) return []
+    const lines = active.key === 'win' ? portfolioPnlBreakdown.win : portfolioPnlBreakdown.lose
+    return groupPnlByPortfolio(lines).map((group) => ({
+      portfolioId: group.portfolioId,
+      portfolioName: group.portfolioName,
+      amount: group.totalPnl,
+      subRows: group.symbols.map((s) => ({ label: s.symbol, amount: s.pnl })),
+    }))
+  }, [active, portfolioPnlBreakdown])
+
+  const legendSymbolBreakdown = useMemo(() => {
+    if (!portfolioPnlBreakdown || !legendSymbolHover) return []
+    const symbol = legendSymbolHover.symbol
+    const lines = [...portfolioPnlBreakdown.win, ...portfolioPnlBreakdown.lose].filter(
+      (line) => line.symbol === symbol,
+    )
+    return lines.map((line) => ({
+      portfolioId: line.portfolioId,
+      portfolioName: line.portfolioName,
+      amount: line.pnl,
+    }))
+  }, [legendSymbolHover, portfolioPnlBreakdown])
 
   const fitCenterValue = useCallback(() => {
     const wrap = visualRef.current
@@ -356,6 +389,33 @@ export function PnlSplitDonut({
             <p className="my-portfolio-pnl-donut-tooltip-share">
               {t('pnlDonut.ringShare', { pct: sharePctDisplay.format(active.sharePct) })}
             </p>
+            {activeSegmentBreakdown.length > 0 ? (
+              <PortfolioBreakdownList
+                title={active.key === 'win' ? t('breakdown.segmentWinDetail') : t('breakdown.segmentLoseDetail')}
+                rows={activeSegmentBreakdown}
+                currencyFormat={currencyFormat}
+                hideAmounts={hideAmounts}
+              />
+            ) : null}
+          </div>
+        ) : null}
+
+        {legendSymbolHover != null && legendSymbolBreakdown.length > 0 ? (
+          <div
+            className="my-portfolio-allocation-tooltip my-portfolio-pnl-donut-tooltip my-portfolio-breakdown-tooltip"
+            style={{
+              position: 'fixed',
+              left: legendSymbolHover.pos.x + 16,
+              top: legendSymbolHover.pos.y + 16,
+            }}
+            role="tooltip"
+          >
+            <p className="my-portfolio-pnl-donut-tooltip-title">{legendSymbolHover.symbol}</p>
+            <PortfolioBreakdownList
+              rows={legendSymbolBreakdown}
+              currencyFormat={currencyFormat}
+              hideAmounts={hideAmounts}
+            />
           </div>
         ) : null}
       </div>
@@ -393,7 +453,19 @@ export function PnlSplitDonut({
                       </li>
                     ))
                   : seg.previewSymbols.map((symbol) => (
-                      <li key={`${seg.key}-${symbol}`} className="my-portfolio-pnl-donut-legend-asset">
+                      <li
+                        key={`${seg.key}-${symbol}`}
+                        className="my-portfolio-pnl-donut-legend-asset"
+                        onMouseEnter={(e: MouseEvent) => {
+                          if (!portfolioPnlBreakdown) return
+                          setLegendSymbolHover({ symbol, pos: { x: e.clientX, y: e.clientY } })
+                        }}
+                        onMouseMove={(e: MouseEvent) => {
+                          if (!portfolioPnlBreakdown) return
+                          setLegendSymbolHover({ symbol, pos: { x: e.clientX, y: e.clientY } })
+                        }}
+                        onMouseLeave={() => setLegendSymbolHover(null)}
+                      >
                         {symbol}
                       </li>
                     ))}
