@@ -1,10 +1,13 @@
 package com.company.finance_api.portfolio.application;
 
+import com.company.finance_api.portfolio.domain.FxDisplayLeg;
+import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
 import com.company.finance_api.portfolio.domain.PositionCostBasisCalculator;
 import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.TransactionAcquisitionFx;
+import com.company.finance_api.portfolio.domain.TransactionFxDisplayResolver;
 import com.company.finance_api.portfolio.domain.enums.PurchaseMode;
 import com.company.finance_api.portfolio.domain.enums.TransactionType;
-import com.company.finance_api.portfolio.domain.InstrumentListingCurrency;
 import com.company.finance_api.instrument.domain.Instrument;
 import com.company.finance_api.portfolio.external.domain.ExternalPortfolio;
 import com.company.finance_api.portfolio.infrastructure.persistence.TransactionAcquisitionFxRepository;
@@ -21,7 +24,11 @@ import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,6 +47,7 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
   private final ExternalPortfolioRepository externalPortfolioRepository;
   private final TransactionAcquisitionFxRepository transactionAcquisitionFxRepository;
   private final PortfolioPerformanceSeriesService portfolioPerformanceSeriesService;
+  private final TransactionFxDisplayResolver transactionFxDisplayResolver;
 
   /** MyHistory sorgusunu döner. */
   @Override
@@ -51,15 +59,10 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
       if (portfolio == null) {
         return List.of();
       }
-      return transactionRepository
-          .findByUserAndExternalPortfolioOrderByCreatedAtDesc(user, portfolio)
-          .stream()
-          .map(this::toResponse)
-          .toList();
+      return mapResponses(
+          transactionRepository.findByUserAndExternalPortfolioOrderByCreatedAtDesc(user, portfolio));
     }
-    return transactionRepository.findByUserOrderByCreatedAtDesc(user).stream()
-        .map(this::toResponse)
-        .toList();
+    return mapResponses(transactionRepository.findByUserOrderByCreatedAtDesc(user));
   }
 
   /** MyHistoryPage sorgusunu döner. */
@@ -141,7 +144,7 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
 
     var result = transactionRepository.findAll(spec, pageable);
     return new TransactionHistoryPageResponse(
-        result.getContent().stream().map(this::toResponse).toList(),
+        mapResponses(result.getContent()),
         result.getNumber(),
         result.getSize(),
         result.getTotalElements(),
@@ -193,7 +196,26 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
     return userRepository.findById(userId).orElseThrow();
   }
 
-  private TransactionHistoryResponse toResponse(Transaction tx) {
+  private List<TransactionHistoryResponse> mapResponses(List<Transaction> transactions) {
+    Map<Long, TransactionAcquisitionFx> acquisitionFxByTxId = loadAcquisitionFx(transactions);
+    return transactions.stream()
+        .map(tx -> toResponse(tx, acquisitionFxByTxId.get(tx.getId())))
+        .toList();
+  }
+
+  private Map<Long, TransactionAcquisitionFx> loadAcquisitionFx(List<Transaction> transactions) {
+    List<Long> ids =
+        transactions.stream().map(Transaction::getId).filter(Objects::nonNull).toList();
+    if (ids.isEmpty()) {
+      return Map.of();
+    }
+    return transactionAcquisitionFxRepository.findAllById(ids).stream()
+        .collect(Collectors.toMap(TransactionAcquisitionFx::getTransactionId, Function.identity()));
+  }
+
+  private TransactionHistoryResponse toResponse(
+      Transaction tx, TransactionAcquisitionFx acquisitionFx) {
+    FxDisplayLeg fxLeg = transactionFxDisplayResolver.resolve(tx, acquisitionFx);
     return new TransactionHistoryResponse(
         tx.getId(),
         tx.getExternalPortfolio() == null ? null : tx.getExternalPortfolio().getId(),
@@ -210,7 +232,10 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         tx.getFxRateUsed(),
         tx.getAcquiredAt(),
         tx.getCreatedAt(),
-        InstrumentListingCurrency.resolve(tx.getInstrument()));
+        InstrumentListingCurrency.resolve(tx.getInstrument()),
+        fxLeg == null ? null : fxLeg.fromCurrency(),
+        fxLeg == null ? null : fxLeg.toCurrency(),
+        fxLeg == null ? null : fxLeg.rate());
   }
 
   private TransactionType safeTransactionType(String raw) {

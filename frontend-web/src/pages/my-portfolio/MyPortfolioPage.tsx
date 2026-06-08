@@ -34,6 +34,7 @@ import {
   previewTrade,
   sellTrade,
 } from '../../features/portfolio/api/portfolioApi'
+import { formatTxFxLegLabel } from '../../features/portfolio/lib/transactionHistoryFx'
 import type {
   AcquisitionFxRatesSnapshot,
   Portfolio,
@@ -54,8 +55,13 @@ import type {
 import type { MarketOverviewPageResponse } from '../../shared/types/market'
 import { AllocationDonut, type AllocationCategoryGroup, type AllocationDonutRow } from './components/AllocationDonut'
 import { PnlSplitDonut } from './components/PnlSplitDonut'
+import { PortfolioBreakdownHover } from './components/PortfolioBreakdownHover'
 import { PortfolioHistorySparkline } from './components/PortfolioHistorySparkline'
 import { tradeFlowTotals } from './components/tradeFlowStats'
+import {
+  buildAggregateBreakdown,
+  type AggregateBreakdown,
+} from './lib/portfolioAggregateBreakdown'
 import { PortfolioValueHistoryChart, type PortfolioChartMetric } from './components/PortfolioValueHistoryChart'
 import { RANGE_TO_MS, VALUE_CHART_RANGES, valueChartRangeLabel, type ValueChartRange } from './components/portfolioChartShared'
 import { loadTradeFlowForPortfolio } from '../../features/portfolio/lib/loadTradeFlowForPortfolio'
@@ -621,30 +627,6 @@ function formatDecimalForLocale(value: number, language: string, maxFractionDigi
   }).format(value)
 }
 
-const HISTORY_QUOTE_ISO = new Set(['TRY', 'USD', 'EUR', 'GBP', 'JPY', 'AED'])
-
-/** Listing / quote currency for history row (API `quoteCurrency` when present). */
-function resolveHistoryQuoteCurrency(row: TransactionHistoryItem): string {
-  const q = row.quoteCurrency?.trim().toUpperCase()
-  if (q && HISTORY_QUOTE_ISO.has(q)) return q
-  return inferInstrumentQuoteCurrency(row.instrumentSymbol)
-}
-
-/**
- * Effective acquisition FX: DB `fx_rate_used` = units of listing currency per 1 unit of payment currency.
- * Shown as "1 USD = 45,37 TRY" when cross; "—" when missing or same currency.
- */
-function formatTxFxLegLabel(row: TransactionHistoryItem, language: string): string {
-  const rate = parseApiDecimal(row.fxRateUsed, Number.NaN)
-  if (!Number.isFinite(rate) || rate <= 0) return '—'
-  const pay = normalizeToTradePaymentCurrency(row.inputCurrency)
-  const quote = resolveHistoryQuoteCurrency(row)
-  if (pay == null) return '—'
-  if (pay === quote) return '—'
-  const rateStr = formatDecimalForLocale(rate, language, 8)
-  return `1 ${pay} = ${rateStr} ${quote}`
-}
-
 function formatMoneyPrefixed(
   value: number | null | undefined,
   iso: TradePaymentCurrency,
@@ -1070,6 +1052,7 @@ export function MyPortfolioPage() {
   const [tradeFlowHydrated, setTradeFlowHydrated] = useState(false)
   const [recentTxPreview, setRecentTxPreview] = useState<TransactionHistoryItem[]>([])
   const [recentTxLoading, setRecentTxLoading] = useState(false)
+  const [aggregateBreakdown, setAggregateBreakdown] = useState<AggregateBreakdown | null>(null)
   const [allocationSortKey, setAllocationSortKey] = useState<AllocationSortKey>('value')
   const [allocationSortDir, setAllocationSortDir] = useState<AllocationSortDir>('desc')
   const [, setValueSnapshots] = useState<PortfolioValueSnapshot[]>([])
@@ -1397,6 +1380,72 @@ export function MyPortfolioPage() {
     }
     return { kind: 'infinity' as const }
   }, [tradeFlowStats, tradeFlowHydrated])
+
+  const showAggregateBreakdown = isAggregatePortfolioView && aggregateBreakdown != null
+
+  const breakdownTotalValueRows = useMemo(
+    () =>
+      aggregateBreakdown?.portfolioTotals.map((p) => ({
+        portfolioId: p.portfolioId,
+        portfolioName: p.portfolioName,
+        amount: p.totalValue,
+      })) ?? [],
+    [aggregateBreakdown],
+  )
+
+  const breakdownDayChangeRows = useMemo(
+    () =>
+      aggregateBreakdown?.portfolioTotals.map((p) => ({
+        portfolioId: p.portfolioId,
+        portfolioName: p.portfolioName,
+        amount: p.dayOverDayChange,
+      })) ?? [],
+    [aggregateBreakdown],
+  )
+
+  const breakdownTradeNetRows = useMemo(
+    () =>
+      aggregateBreakdown?.portfolioTotals.map((p) => ({
+        portfolioId: p.portfolioId,
+        portfolioName: p.portfolioName,
+        amount: p.tradeNet,
+      })) ?? [],
+    [aggregateBreakdown],
+  )
+
+  const breakdownTradeBuyRows = useMemo(
+    () =>
+      aggregateBreakdown?.portfolioTotals.map((p) => ({
+        portfolioId: p.portfolioId,
+        portfolioName: p.portfolioName,
+        amount: p.tradeBuy,
+      })) ?? [],
+    [aggregateBreakdown],
+  )
+
+  const breakdownTradeSellRows = useMemo(
+    () =>
+      aggregateBreakdown?.portfolioTotals.map((p) => ({
+        portfolioId: p.portfolioId,
+        portfolioName: p.portfolioName,
+        amount: p.tradeSell,
+      })) ?? [],
+    [aggregateBreakdown],
+  )
+
+  const breakdownTradeDiffRows = useMemo(
+    () =>
+      aggregateBreakdown?.portfolioTotals.map((p) => ({
+        portfolioId: p.portfolioId,
+        portfolioName: p.portfolioName,
+        amount: p.tradeNet,
+        subRows: [
+          { label: t('tradeFlow.buyLabel'), amount: p.tradeBuy },
+          { label: t('tradeFlow.sellLabel'), amount: p.tradeSell },
+        ],
+      })) ?? [],
+    [aggregateBreakdown, t],
+  )
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -1994,6 +2043,39 @@ export function MyPortfolioPage() {
       cancelled = true
     }
   }, [activeSection, selectedPortfolioId, portfolios])
+
+  useEffect(() => {
+    const needsAggregateBreakdown = activeSection === 'dashboard' || activeSection === 'allocation'
+    if (!isAggregatePortfolioView || !needsAggregateBreakdown || portfolios.length === 0) {
+      setAggregateBreakdown(null)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      try {
+        const [overviewRows, flowRows] = await Promise.all([
+          Promise.all(
+            portfolios.map((portfolio) =>
+              getMyPortfolioOverview(portfolio.id, valuationCurrency).then((overview) => ({ portfolio, overview })),
+            ),
+          ),
+          Promise.all(
+            portfolios.map((portfolio) =>
+              loadTradeFlowForPortfolio(portfolio.id, valuationCurrency).then((flow) => ({ portfolio, flow })),
+            ),
+          ),
+        ])
+        if (!cancelled) {
+          setAggregateBreakdown(buildAggregateBreakdown(overviewRows, flowRows))
+        }
+      } catch {
+        if (!cancelled) setAggregateBreakdown(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isAggregatePortfolioView, activeSection, portfolios, valuationCurrency])
 
   useEffect(() => {
     if (activeSection !== 'markets' || selectedInstrumentId == null) {
@@ -3521,6 +3603,10 @@ export function MyPortfolioPage() {
                           sharePctDisplay={sharePctDisplay}
                           currencyFormat={displayDashboardCurrencyFormat}
                           ariaLabel={`${t('allocation.byInstrumentTitle')} — ${t('distributionTitle')}`}
+                          hideAmounts={hideMoney}
+                          symbolPortfolioBreakdown={
+                            showAggregateBreakdown ? aggregateBreakdown!.symbolByKey : undefined
+                          }
                         />
                       </section>
                       <section className="my-portfolio-allocation-panel">
@@ -3533,6 +3619,10 @@ export function MyPortfolioPage() {
                           currencyFormat={displayDashboardCurrencyFormat}
                           ariaLabel={`${t('allocation.byCategoryTitle')} — ${t('distributionTitle')}`}
                           donutVariant="category"
+                          hideAmounts={hideMoney}
+                          categoryPortfolioBreakdown={
+                            showAggregateBreakdown ? aggregateBreakdown!.categoryByKey : undefined
+                          }
                         />
                       </section>
                     </div>
@@ -3639,10 +3729,23 @@ export function MyPortfolioPage() {
                         {allocationTableRows.map((row) => (
                           <tr key={row.symbol}>
                             <td>
-                              <span className="my-portfolio-allocation-symbol">
-                                <span className={`my-portfolio-dot ${row.colorClass}`} />
-                                {formatInstrumentSymbolLabel(row.symbol)}
-                              </span>
+                              <PortfolioBreakdownHover
+                                enabled={showAggregateBreakdown}
+                                rows={
+                                  aggregateBreakdown?.symbolByKey[row.symbol]?.map((line) => ({
+                                    portfolioId: line.portfolioId,
+                                    portfolioName: line.portfolioName,
+                                    amount: line.value,
+                                  })) ?? []
+                                }
+                                currencyFormat={displayDashboardCurrencyFormat}
+                                hideAmounts={hideMoney}
+                              >
+                                <span className="my-portfolio-allocation-symbol">
+                                  <span className={`my-portfolio-dot ${row.colorClass}`} />
+                                  {formatInstrumentSymbolLabel(row.symbol)}
+                                </span>
+                              </PortfolioBreakdownHover>
                             </td>
                             <td className="my-portfolio-allocation-num my-portfolio-allocation-muted">
                               {formatHoldingQuantity(row.quantity, i18n.language)}
@@ -3957,11 +4060,21 @@ export function MyPortfolioPage() {
                     </button>
                   </div>
                   <p className="my-portfolio-main-value">
-                    {selectedPortfolioId == null
-                      ? '—'
-                      : overview
-                        ? displayDashboardCurrencyFormat.format(Number(overview.totalValue ?? 0))
-                        : '…'}
+                    {selectedPortfolioId == null ? (
+                      '—'
+                    ) : overview ? (
+                      <PortfolioBreakdownHover
+                        enabled={showAggregateBreakdown}
+                        title={t('breakdown.totalValue')}
+                        rows={breakdownTotalValueRows}
+                        currencyFormat={displayDashboardCurrencyFormat}
+                        hideAmounts={hideMoney}
+                      >
+                        {displayDashboardCurrencyFormat.format(Number(overview.totalValue ?? 0))}
+                      </PortfolioBreakdownHover>
+                    ) : (
+                      '…'
+                    )}
                   </p>
                   <p
                     className={`my-portfolio-sub-value${
@@ -3985,7 +4098,15 @@ export function MyPortfolioPage() {
                         const pct = showPct ? (dod / priorClose) * 100 : null
                         return (
                           <>
-                            <span className="my-portfolio-dod-amount">{displayDashboardDayChangeFormat.format(dod)}</span>
+                            <PortfolioBreakdownHover
+                              enabled={showAggregateBreakdown}
+                              title={t('breakdown.dayChange')}
+                              rows={breakdownDayChangeRows}
+                              currencyFormat={displayDashboardDayChangeFormat}
+                              hideAmounts={hideMoney}
+                            >
+                              <span className="my-portfolio-dod-amount">{displayDashboardDayChangeFormat.format(dod)}</span>
+                            </PortfolioBreakdownHover>
                             {pct != null && showPct ? (
                               <span className="my-portfolio-dod-pct">
                                 {' '}
@@ -4088,49 +4209,89 @@ export function MyPortfolioPage() {
                 <h3 id="portfolio-change-heading">{t('changeTitle')}</h3>
               </div>
               <div className="my-portfolio-trade-flow-net">
-                {selectedPortfolioId == null
-                  ? '—'
-                  : !tradeFlowHydrated
-                    ? t('tradeFlow.loading')
-                    : hideMoney
-                      ? '•••'
-                      : displayDashboardCurrencyFormat.format(tradeFlowStats.net)}
+                {selectedPortfolioId == null ? (
+                  '—'
+                ) : !tradeFlowHydrated ? (
+                  t('tradeFlow.loading')
+                ) : hideMoney ? (
+                  '•••'
+                ) : (
+                  <PortfolioBreakdownHover
+                    enabled={showAggregateBreakdown}
+                    title={t('breakdown.tradeNet')}
+                    rows={breakdownTradeNetRows}
+                    currencyFormat={displayDashboardCurrencyFormat}
+                    hideAmounts={hideMoney}
+                  >
+                    {displayDashboardCurrencyFormat.format(tradeFlowStats.net)}
+                  </PortfolioBreakdownHover>
+                )}
               </div>
               <div className="my-portfolio-trade-flow-totals">
                 <div>
                   <span className="trade-flow-stat-label">{t('tradeFlow.buyLabel')}</span>
                   <strong>
-                    {selectedPortfolioId == null
-                      ? '—'
-                      : !tradeFlowHydrated
-                        ? t('tradeFlow.loading')
-                        : displayDashboardCurrencyFormat.format(tradeFlowStats.buy)}
+                    {selectedPortfolioId == null ? (
+                      '—'
+                    ) : !tradeFlowHydrated ? (
+                      t('tradeFlow.loading')
+                    ) : (
+                      <PortfolioBreakdownHover
+                        enabled={showAggregateBreakdown}
+                        title={t('breakdown.tradeBuy')}
+                        rows={breakdownTradeBuyRows}
+                        currencyFormat={displayDashboardCurrencyFormat}
+                        hideAmounts={hideMoney}
+                      >
+                        {displayDashboardCurrencyFormat.format(tradeFlowStats.buy)}
+                      </PortfolioBreakdownHover>
+                    )}
                   </strong>
                 </div>
                 <div>
                   <span className="trade-flow-stat-label">{t('tradeFlow.diffLabel')}</span>
                   <strong className="trade-flow-fark-val">
-                    {selectedPortfolioId == null
-                      ? '—'
-                      : tradeFlowFark.kind === 'loading'
-                        ? t('tradeFlow.loading')
-                        : tradeFlowFark.kind === 'empty'
-                          ? '—'
-                          : tradeFlowFark.kind === 'infinity'
-                            ? `+${t('tradeFlow.pctInfinity')}%`
-                            : Math.abs(tradeFlowFark.pct) < 1e-6
-                              ? '0%'
-                              : `${percentFormat.format(tradeFlowFark.pct)}%`}
+                    {selectedPortfolioId == null ? (
+                      '—'
+                    ) : tradeFlowFark.kind === 'loading' ? (
+                      t('tradeFlow.loading')
+                    ) : tradeFlowFark.kind === 'empty' ? (
+                      '—'
+                    ) : (
+                      <PortfolioBreakdownHover
+                        enabled={showAggregateBreakdown}
+                        title={t('breakdown.tradeDiff')}
+                        rows={breakdownTradeDiffRows}
+                        currencyFormat={displayDashboardCurrencyFormat}
+                        hideAmounts={hideMoney}
+                      >
+                        {tradeFlowFark.kind === 'infinity'
+                          ? `+${t('tradeFlow.pctInfinity')}%`
+                          : Math.abs(tradeFlowFark.pct) < 1e-6
+                            ? '0%'
+                            : `${percentFormat.format(tradeFlowFark.pct)}%`}
+                      </PortfolioBreakdownHover>
+                    )}
                   </strong>
                 </div>
                 <div>
                   <span className="trade-flow-stat-label">{t('tradeFlow.sellLabel')}</span>
                   <strong>
-                    {selectedPortfolioId == null
-                      ? '—'
-                      : !tradeFlowHydrated
-                        ? t('tradeFlow.loading')
-                        : displayDashboardCurrencyFormat.format(tradeFlowStats.sell)}
+                    {selectedPortfolioId == null ? (
+                      '—'
+                    ) : !tradeFlowHydrated ? (
+                      t('tradeFlow.loading')
+                    ) : (
+                      <PortfolioBreakdownHover
+                        enabled={showAggregateBreakdown}
+                        title={t('breakdown.tradeSell')}
+                        rows={breakdownTradeSellRows}
+                        currencyFormat={displayDashboardCurrencyFormat}
+                        hideAmounts={hideMoney}
+                      >
+                        {displayDashboardCurrencyFormat.format(tradeFlowStats.sell)}
+                      </PortfolioBreakdownHover>
+                    )}
                   </strong>
                 </div>
               </div>
@@ -4164,6 +4325,11 @@ export function MyPortfolioPage() {
                   pctFormat={dashboardPctFormat}
                   sharePctDisplay={sharePctDisplay}
                   hideAmounts={hideMoney}
+                  portfolioPnlBreakdown={
+                    showAggregateBreakdown
+                      ? { win: aggregateBreakdown!.pnlWin, lose: aggregateBreakdown!.pnlLose }
+                      : undefined
+                  }
                 />
               )}
             </article>
@@ -4200,6 +4366,10 @@ export function MyPortfolioPage() {
                       currencyFormat={displayDashboardCurrencyFormat}
                       sharePctDisplay={sharePctDisplay}
                       ariaLabel={`${t('allocation.byInstrumentTitle')} — ${t('distributionTitle')}`}
+                      hideAmounts={hideMoney}
+                      symbolPortfolioBreakdown={
+                        showAggregateBreakdown ? aggregateBreakdown!.symbolByKey : undefined
+                      }
                     />
                     <div className="my-portfolio-dist-list" role="table" aria-label={t('distributionTitle')}>
                       <div className="my-portfolio-dist-list-head" role="row">
@@ -4212,7 +4382,20 @@ export function MyPortfolioPage() {
                           <li key={row.symbol} role="row">
                             <span className="my-portfolio-dist-list-symbol" role="cell">
                               <span className={`my-portfolio-dot ${row.colorClass}`} aria-hidden />
-                              <strong>{formatInstrumentSymbolLabel(row.symbol)}</strong>
+                              <PortfolioBreakdownHover
+                                enabled={showAggregateBreakdown}
+                                rows={
+                                  aggregateBreakdown?.symbolByKey[row.symbol]?.map((line) => ({
+                                    portfolioId: line.portfolioId,
+                                    portfolioName: line.portfolioName,
+                                    amount: line.value,
+                                  })) ?? []
+                                }
+                                currencyFormat={displayDashboardCurrencyFormat}
+                                hideAmounts={hideMoney}
+                              >
+                                <strong>{formatInstrumentSymbolLabel(row.symbol)}</strong>
+                              </PortfolioBreakdownHover>
                             </span>
                             <span className="my-portfolio-dist-list-weight" role="cell">
                               {sharePctDisplay.format(row.sharePct)}%
@@ -4283,7 +4466,25 @@ export function MyPortfolioPage() {
                             return (
                               <tr key={row.transactionId}>
                                 <td>
-                                  <span className="my-portfolio-dashboard-mini-symbol">{formatInstrumentSymbolLabel(row.instrumentSymbol)}</span>
+                                  <PortfolioBreakdownHover
+                                    enabled={isAggregatePortfolioView}
+                                    title={t('breakdown.portfolioColumn')}
+                                    rows={[
+                                      {
+                                        portfolioId: row.portfolioId ?? 0,
+                                        portfolioName:
+                                          row.portfolioName?.trim() ||
+                                          (row.portfolioId != null ? `#${row.portfolioId}` : '—'),
+                                        amount: Number(row.totalAmount) || 0,
+                                      },
+                                    ]}
+                                    currencyFormat={displayDashboardCurrencyFormat}
+                                    hideAmounts={hideMoney}
+                                  >
+                                    <span className="my-portfolio-dashboard-mini-symbol">
+                                      {formatInstrumentSymbolLabel(row.instrumentSymbol)}
+                                    </span>
+                                  </PortfolioBreakdownHover>
                                 </td>
                                 <td className="is-num is-muted">× {qtyStr}</td>
                                 <td className="is-num">

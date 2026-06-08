@@ -8,7 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.company.finance_api.instrument.domain.Instrument;
+import com.company.finance_api.portfolio.domain.FxDisplayLeg;
 import com.company.finance_api.portfolio.domain.Transaction;
+import com.company.finance_api.portfolio.domain.TransactionFxDisplayResolver;
 import com.company.finance_api.profile.domain.User;
 import com.company.finance_api.instrument.domain.enums.Exchange;
 import com.company.finance_api.instrument.domain.enums.InstrumentType;
@@ -41,6 +43,7 @@ class TransactionHistoryServiceImplTest {
   @Mock private CurrentUserResolver currentUserResolver;
   @Mock private UserRepository userRepository;
   @Mock private ExternalPortfolioRepository externalPortfolioRepository;
+  @Mock private TransactionFxDisplayResolver transactionFxDisplayResolver;
 
   @InjectMocks private TransactionHistoryServiceImpl service;
 
@@ -80,12 +83,18 @@ class TransactionHistoryServiceImplTest {
         .thenReturn(Optional.of(portfolio));
     when(transactionRepository.findByUserAndExternalPortfolioOrderByCreatedAtDesc(user, portfolio))
         .thenReturn(List.of(tx));
+    when(transactionAcquisitionFxRepository.findAllById(List.of(99L))).thenReturn(List.of());
+    when(transactionFxDisplayResolver.resolve(tx, null))
+        .thenReturn(new FxDisplayLeg("USD", "TRY", new BigDecimal("40.000000")));
 
     List<TransactionHistoryResponse> history = service.getMyHistory(10L);
 
     assertEquals(1, history.size());
     assertEquals(TransactionType.BUY.name(), history.get(0).type());
     assertEquals("AAPL", history.get(0).instrumentSymbol());
+    assertEquals("USD", history.get(0).fxDisplayFrom());
+    assertEquals("TRY", history.get(0).fxDisplayTo());
+    assertEquals(new BigDecimal("40.000000"), history.get(0).fxDisplayRate());
   }
 
   @Test

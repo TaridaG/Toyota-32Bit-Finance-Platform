@@ -1841,6 +1841,19 @@
       "ringShare": "Halka payı: %{{pct}}",
       "moreAssetsShort": "++"
     },
+    "breakdown": {
+      "byPortfolio": "Portföye göre",
+      "symbolInPortfolio": "{{symbol}} · {{portfolio}}",
+      "segmentWinDetail": "Portföy bazlı kar",
+      "segmentLoseDetail": "Portföy bazlı zarar",
+      "tradeNet": "Net alım-satım",
+      "tradeBuy": "Alım",
+      "tradeSell": "Satım",
+      "tradeDiff": "Fark",
+      "totalValue": "Portföy değeri",
+      "dayChange": "Günlük değişim",
+      "portfolioColumn": "Portföy"
+    },
     "allocation": {
       "detailTitle": "Portföy dağılımı detayı",
       "byInstrumentTitle": "Varlık dağılımı",

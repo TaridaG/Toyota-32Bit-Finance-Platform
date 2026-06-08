@@ -10504,6 +10504,89 @@ button.my-portfolio-dashboard-value-badge {
   opacity: 0.9;
 }
 
+.my-portfolio-breakdown-hover {
+  position: relative;
+  display: inline;
+  cursor: default;
+}
+
+.my-portfolio-breakdown-tooltip {
+  pointer-events: none;
+}
+
+.my-portfolio-breakdown-list {
+  margin: 0;
+}
+
+.my-portfolio-breakdown-list-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+
+.my-portfolio-breakdown-list > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-portfolio-breakdown-row + .my-portfolio-breakdown-row {
+  margin-top: 0.45rem;
+}
+
+.my-portfolio-breakdown-row-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.76rem;
+}
+
+.my-portfolio-breakdown-row-name {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.my-portfolio-breakdown-row-amount {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.my-portfolio-breakdown-sublist {
+  margin: 0.2rem 0 0;
+  padding: 0 0 0 0.55rem;
+  list-style: none;
+  border-left: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.my-portfolio-breakdown-subrow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--color-text-soft);
+}
+
+.my-portfolio-breakdown-subrow + .my-portfolio-breakdown-subrow {
+  margin-top: 0.15rem;
+}
+
+.my-portfolio-breakdown-subrow-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.my-portfolio-allocation-tooltip .my-portfolio-breakdown-list {
+  margin-top: 0.55rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 @media (max-width: 920px) {
   .my-portfolio-allocation-detail {
     min-width: 0;

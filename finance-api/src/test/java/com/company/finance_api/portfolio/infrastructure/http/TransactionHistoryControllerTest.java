@@ -54,7 +54,10 @@ class TransactionHistoryControllerTest {
                     BigDecimal.ONE,
                     Instant.now(),
                     Instant.now(),
-                    "USD")));
+                    "USD",
+                    null,
+                    null,
+                    null)));
 
     mockMvc
         .perform(get("/api/v1/history/transactions"))

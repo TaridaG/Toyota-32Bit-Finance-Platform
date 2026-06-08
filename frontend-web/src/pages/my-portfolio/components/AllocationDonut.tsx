@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { fetchMarketOverview } from '../../../features/markets/api/marketService'
 import type { MarketOverviewItem } from '../../../shared/types/market'
 import type { PortfolioOverviewItem } from '../../../shared/types/portfolio'
+import { PortfolioBreakdownList } from './PortfolioBreakdownList'
+import type { SymbolPortfolioLine } from '../lib/portfolioAggregateBreakdown'
 
 export type AllocationDonutRow = {
   /** Stable id for React/SVG keys (e.g. category bucket); falls back to symbol. */
@@ -85,6 +87,10 @@ type Props = {
   /** Instrument: live market % in tooltip; category: bucket value/weight 1D metrics from overview. */
   donutVariant?: 'instrument' | 'category'
   hideAmounts?: boolean
+  /** Genel Bakış: per-portfolio lines keyed by symbol. */
+  symbolPortfolioBreakdown?: Record<string, SymbolPortfolioLine[]>
+  /** Genel Bakış: per-portfolio lines keyed by category bucket (rowKey). */
+  categoryPortfolioBreakdown?: Record<string, SymbolPortfolioLine[]>
 }
 
 function formatPricePct(fmt: Intl.NumberFormat, v: number | null | undefined): string {
@@ -99,6 +105,8 @@ export function AllocationDonut({
   ariaLabel,
   donutVariant = 'instrument',
   hideAmounts = false,
+  symbolPortfolioBreakdown,
+  categoryPortfolioBreakdown,
 }: Props) {
   const { t } = useTranslation('portfolio')
   const [hovered, setHovered] = useState<number | null>(null)
@@ -194,6 +202,14 @@ export function AllocationDonut({
   }, [])
 
   const activeRow = hovered != null ? rows[hovered] : null
+  const activeBreakdown = useMemo(() => {
+    if (activeRow == null) return []
+    const key =
+      donutVariant === 'category' ? activeRow.rowKey : (activeRow.rowKey ?? activeRow.symbol)
+    if (!key) return []
+    const map = donutVariant === 'category' ? categoryPortfolioBreakdown : symbolPortfolioBreakdown
+    return map?.[key] ?? []
+  }, [activeRow, categoryPortfolioBreakdown, donutVariant, symbolPortfolioBreakdown])
 
   const weekPriceRef =
     marketRow?.change1M != null && Number.isFinite(marketRow.change1M)
@@ -376,6 +392,17 @@ export function AllocationDonut({
               </>
             )}
           </div>
+          {activeBreakdown.length > 0 ? (
+            <PortfolioBreakdownList
+              rows={activeBreakdown.map((line) => ({
+                portfolioId: line.portfolioId,
+                portfolioName: line.portfolioName,
+                amount: line.value,
+              }))}
+              currencyFormat={currencyFormat}
+              hideAmounts={hideAmounts}
+            />
+          ) : null}
           <p className="my-portfolio-allocation-tooltip-foot">
             {donutVariant === 'category' ? t('allocation.tooltipFootnoteCategory') : t('allocation.tooltipFootnote')}
           </p>
