@@ -132,6 +132,10 @@ export type TransactionHistoryItem = {
   fxRateUsed: number | null
   acquiredAt: string | null
   createdAt: string
+  /** Resolved display leg from API (e.g. 1 USD = fxDisplayRate TRY). */
+  fxDisplayFrom?: string | null
+  fxDisplayTo?: string | null
+  fxDisplayRate?: number | null
 }
 
 export type TransactionHistoryPage = {
