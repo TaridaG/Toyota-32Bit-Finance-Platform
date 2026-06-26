@@ -7,9 +7,9 @@
   padding: 0;
   min-height: auto;
   background:
-    radial-gradient(circle at 78% 48%, rgba(37, 99, 235, 0.05), transparent 44%),
-    radial-gradient(circle at 18% 22%, rgba(99, 102, 241, 0.03), transparent 38%),
-    linear-gradient(180deg, #0b1220 0%, #0a101c 72%, #0a101c 100%);
+    radial-gradient(circle at 78% 48%, rgba(214, 45, 32, 0.05), transparent 44%),
+    radial-gradient(circle at 18% 22%, rgba(185, 28, 28, 0.03), transparent 38%),
+    linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 72%, #0a0a0a 100%);
   align-items: stretch;
   justify-content: center;
   box-sizing: border-box;
@@ -27,14 +27,14 @@
   right: 0;
   bottom: 0;
   height: clamp(80px, 14vh, 160px);
-  background: linear-gradient(to bottom, transparent, rgba(10, 16, 28, 0.92));
+  background: linear-gradient(to bottom, transparent, #0a0a0a);
   pointer-events: none;
   z-index: 4;
 }
 
 :root:not([data-theme='dark']) .global-markets-section {
   background:
-    radial-gradient(circle at 78% 48%, rgba(37, 99, 235, 0.06), transparent 44%),
+    radial-gradient(circle at 78% 48%, rgba(214, 45, 32, 0.05), transparent 44%),
     linear-gradient(180deg, #f8fafc 0%, #f1f5f9 72%, #f1f5f9 100%);
 }
 
@@ -135,11 +135,11 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 30%, rgba(96, 165, 250, 0.16), transparent 45%),
-    radial-gradient(circle at 50% 50%, #142033 0%, #09111f 68%, #020617 100%);
+    radial-gradient(circle at 35% 30%, rgba(160, 160, 160, 0.14), transparent 45%),
+    radial-gradient(circle at 50% 50%, #1c1c1c 0%, #141414 68%, #0a0a0a 100%);
   box-shadow:
-    0 0 56px rgba(59, 130, 246, 0.16),
-    inset 0 0 40px rgba(15, 23, 42, 0.8);
+    0 0 56px rgba(0, 0, 0, 0.4),
+    inset 0 0 40px rgba(10, 10, 10, 0.8);
 }
 
 :root:not([data-theme='dark']) .gm-globe-fallback-sphere {
@@ -166,12 +166,12 @@
 .gm-star {
   position: absolute;
   border-radius: 50%;
-  background: #cbd5e1;
+  background: #d4d4d4;
   animation: gm-star-twinkle 5.6s ease-in-out infinite;
 }
 
 .gm-star-bright {
-  background: #e2e8f0;
+  background: #e5e5e5;
   box-shadow: 0 0 6px rgba(191, 219, 254, 0.45);
 }
 
@@ -203,7 +203,7 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--brand-accent-bg);
   z-index: 0;
 }
 
@@ -213,9 +213,9 @@
   gap: 0.45rem;
   border-radius: 999px;
   padding: 0.28rem 0.72rem;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  background: rgba(22, 163, 74, 0.12);
-  color: #86efac;
+  border: 1px solid var(--brand-accent-border);
+  background: var(--brand-accent-bg-strong);
+  color: var(--brand-accent-text-soft);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -223,9 +223,9 @@
 }
 
 :root:not([data-theme='dark']) .gm-kicker {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: rgba(255, 255, 255, 0.82);
-  color: #64748b;
+  border-color: var(--brand-accent-border);
+  background: var(--brand-accent-bg);
+  color: var(--brand-accent-text);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
@@ -233,12 +233,12 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+  background: var(--brand-accent-dot);
+  box-shadow: 0 0 10px var(--brand-accent-dot-glow);
 }
 
 :root:not([data-theme='dark']) .gm-kicker-dot {
-  background: #22c55e;
+  background: var(--brand-accent-dot);
   box-shadow: none;
 }
 
@@ -256,7 +256,7 @@
 }
 
 .gm-title-accent {
-  background: linear-gradient(135deg, #818cf8 0%, #60a5fa 45%, #38bdf8 100%);
+  background: var(--brand-accent-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -266,7 +266,7 @@
   background: none;
   -webkit-background-clip: initial;
   background-clip: initial;
-  color: #4f8ee8;
+  color: var(--brand-accent-text);
 }
 
 .gm-subtitle {
@@ -312,15 +312,15 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #86efac;
-  background: rgba(22, 163, 74, 0.16);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: var(--brand-accent-check-icon);
+  background: var(--brand-accent-bg-strong);
+  border: 1px solid var(--brand-accent-border);
 }
 
 :root:not([data-theme='dark']) .gm-feature-check {
-  color: #16a34a;
-  background: #dcfce7;
-  border-color: #86efac;
+  color: var(--brand-accent-check-icon);
+  background: var(--brand-accent-check-bg);
+  border-color: var(--brand-accent-check-border);
 }
 
 .gm-feature-check svg {
@@ -338,33 +338,33 @@
   text-decoration: none;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #2563eb 0%, #6366f1 55%, #7c3aed 100%);
+  border: 1px solid var(--cta-brand-border);
+  background: var(--cta-brand-gradient);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-    0 10px 30px rgba(37, 99, 235, 0.35);
+    var(--cta-brand-shadow);
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease;
 }
 
 :root:not([data-theme='dark']) .gm-cta {
-  background: linear-gradient(135deg, #d62d20 0%, #ef4444 52%, #b91c1c 100%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.72) inset,
-    0 12px 28px rgba(220, 38, 38, 0.22);
+    var(--cta-brand-shadow);
 }
 
 .gm-cta:hover {
   transform: translateY(-2px);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-    0 14px 36px rgba(59, 130, 246, 0.45);
+    var(--cta-brand-shadow-hover);
 }
 
 :root:not([data-theme='dark']) .gm-cta:hover {
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.78) inset,
-    0 14px 32px rgba(220, 38, 38, 0.28);
+    var(--cta-brand-shadow-hover);
 }
 
 .gm-cta-arrow {
@@ -383,11 +383,11 @@
 
 .gm-market-table-shell {
   border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(160, 160, 160, 0.16);
+  background: rgba(10, 10, 10, 0.58);
   backdrop-filter: blur(16px);
   box-shadow:
-    0 24px 60px rgba(2, 6, 23, 0.45),
+    0 24px 60px rgba(0, 0, 0, 0.45),
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   padding: 0.85rem 0.75rem 0.7rem;
   max-width: 100%;
@@ -405,7 +405,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0 0.15rem 0.65rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid rgba(160, 160, 160, 0.12);
 }
 
 .gm-market-table-head h3 {
@@ -425,9 +425,9 @@
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #86efac;
-  background: rgba(22, 163, 74, 0.14);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: var(--brand-accent-text-soft);
+  background: var(--brand-accent-bg);
+  border: 1px solid var(--brand-accent-border);
 }
 
 .gm-market-table-scroll {
@@ -449,8 +449,8 @@
   padding: 0.42rem 0.28rem;
   text-align: left;
   font-weight: 700;
-  color: rgba(148, 163, 184, 0.95);
-  background: rgba(15, 23, 42, 0.92);
+  color: rgba(160, 160, 160, 0.95);
+  background: rgba(10, 10, 10, 0.92);
   white-space: nowrap;
 }
 
@@ -461,9 +461,9 @@
 
 .gm-market-table tbody td {
   padding: 0.42rem 0.28rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.08);
+  border-top: 1px solid rgba(160, 160, 160, 0.08);
   vertical-align: middle;
-  color: #e2e8f0;
+  color: #e5e5e5;
 }
 
 :root:not([data-theme='dark']) .gm-market-table tbody td {
@@ -486,7 +486,7 @@
 }
 
 .gm-market-table tbody tr:hover td {
-  background: rgba(59, 130, 246, 0.06);
+  background: var(--brand-accent-bg);
 }
 
 .gm-market-symbol-cell {
@@ -505,7 +505,7 @@
 .gm-market-symbol-cell small {
   display: block;
   margin-top: 0.12rem;
-  color: rgba(148, 163, 184, 0.9);
+  color: rgba(160, 160, 160, 0.9);
   font-size: 0.6rem;
   max-width: 7rem;
   overflow: hidden;
@@ -517,8 +517,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #60a5fa;
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.65);
+  background: var(--brand-accent-dot);
+  box-shadow: 0 0 8px var(--brand-accent-dot-glow);
 }
 
 .gm-market-num {
@@ -570,7 +570,7 @@
 .gm-market-table-state-row {
   padding: 0.75rem 0.2rem;
   font-size: 0.78rem;
-  color: rgba(148, 163, 184, 0.95);
+  color: rgba(160, 160, 160, 0.95);
 }
 
 .gm-market-table-state-row {
@@ -580,9 +580,9 @@
 }
 
 .gm-market-table-state-row button {
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.5);
-  color: #e2e8f0;
+  border: 1px solid rgba(160, 160, 160, 0.25);
+  background: rgba(10, 10, 10, 0.5);
+  color: #e5e5e5;
   border-radius: 8px;
   padding: 0.28rem 0.55rem;
   cursor: pointer;

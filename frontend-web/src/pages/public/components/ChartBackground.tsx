@@ -26,7 +26,7 @@ export function ChartBackground({ isReducedMotion, theme }: ChartBackgroundProps
       grid: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
       bull: isDark ? '#22c55e' : '#16a34a',
       bear: isDark ? '#ef4444' : '#dc2626',
-      bg: isDark ? '#0b1220' : '#f8fafc',
+      bg: isDark ? '#0a0a0a' : '#f8fafc',
     }
 
     const chartInstance = createChart(host, {
