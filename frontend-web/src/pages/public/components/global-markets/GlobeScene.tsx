@@ -21,7 +21,7 @@ type GlobeSceneProps = {
 
 const EARTH_RADIUS = 1.26
 
-function NetworkLines({ isMobile }: { isMobile: boolean }) {
+function NetworkLines({ isMobile, isDark }: { isMobile: boolean; isDark: boolean }) {
   const lines = useMemo(() => {
     const pinById = new Map(FLOATING_MARKET_PINS.map((pin) => [pin.id, pin]))
     return NETWORK_CONNECTIONS.map(([fromId, toId], index) => {
@@ -47,7 +47,14 @@ function NetworkLines({ isMobile }: { isMobile: boolean }) {
   return (
     <group>
       {lines.map((line) => (
-        <Line key={line.id} points={line.points} color="#3b82f6" transparent opacity={0.18} lineWidth={0.6} />
+        <Line
+          key={line.id}
+          points={line.points}
+          color={isDark ? '#6b7280' : '#3b82f6'}
+          transparent
+          opacity={isDark ? 0.14 : 0.18}
+          lineWidth={0.6}
+        />
       ))}
     </group>
   )
@@ -82,7 +89,7 @@ function AtmosphereShell({ isDark }: { isDark: boolean }) {
     <mesh scale={[1.025, 1.025, 1.025]}>
       <sphereGeometry args={[EARTH_RADIUS, 32, 32]} />
       <meshBasicMaterial
-        color={isDark ? '#7fb3ff' : '#bfdbfe'}
+        color={isDark ? '#a3a3a3' : '#bfdbfe'}
         transparent
         opacity={isDark ? 0.038 : 0.16}
         side={THREE.BackSide}
@@ -126,7 +133,7 @@ export const GlobeScene = memo(function GlobeScene({ tiltRef, reduceMotion, isMo
       <group ref={groupRef}>
         <EarthMesh key={isDark ? 'night' : 'day'} segments={segments} isDark={isDark} />
         <AtmosphereShell isDark={isDark} />
-        <NetworkLines isMobile={isMobile} />
+        <NetworkLines isMobile={isMobile} isDark={isDark} />
       </group>
     </>
   )

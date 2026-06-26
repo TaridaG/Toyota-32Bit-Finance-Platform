@@ -5,25 +5,25 @@ export function getAnalysisChartLayoutOptions(isDark: boolean) {
   if (isDark) {
     return {
       layout: {
-        background: { type: ColorType.Solid, color: '#0f172a' },
-        textColor: '#cbd5e1',
+        background: { type: ColorType.Solid, color: '#111111' },
+        textColor: '#d4d4d4',
       },
-      rightPriceScale: { borderColor: '#334155' },
+      rightPriceScale: { borderColor: '#3a3a3a' },
       timeScale: {
-        borderColor: '#334155',
+        borderColor: '#3a3a3a',
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 40,
         fixRightEdge: false,
       },
       grid: {
-        vertLines: { color: 'rgba(148, 163, 184, 0.12)' },
-        horzLines: { color: 'rgba(148, 163, 184, 0.12)' },
+        vertLines: { color: 'rgba(160, 160, 160, 0.12)' },
+        horzLines: { color: 'rgba(160, 160, 160, 0.12)' },
       },
       crosshair: {
         mode: CrosshairMode.MagnetOHLC,
-        vertLine: { color: '#64748b', labelBackgroundColor: '#334155' },
-        horzLine: { color: '#64748b', labelBackgroundColor: '#334155' },
+        vertLine: { color: '#737373', labelBackgroundColor: '#3a3a3a' },
+        horzLine: { color: '#737373', labelBackgroundColor: '#3a3a3a' },
       },
       handleScroll: true,
       handleScale: true,

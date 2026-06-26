@@ -22,7 +22,7 @@ export function buildTradingAreaChartOptions(a: TradingChartPresentationArgs) {
     height: a.height,
     layout: {
       background: { type: ColorType.Solid, color: 'transparent' },
-      textColor: a.isDark ? '#94a3b8' : '#64748b',
+      textColor: a.isDark ? '#a3a3a3' : '#64748b',
       fontSize: 11,
       attributionLogo: false,
     },
@@ -54,8 +54,8 @@ export function buildTradingAreaChartOptions(a: TradingChartPresentationArgs) {
     },
     crosshair: {
       mode: CrosshairMode.Magnet,
-      vertLine: { color: 'rgba(148, 163, 184, 0.35)', labelBackgroundColor: a.isDark ? '#334155' : '#e2e8f0' },
-      horzLine: { color: 'rgba(148, 163, 184, 0.35)', labelBackgroundColor: a.isDark ? '#334155' : '#e2e8f0' },
+      vertLine: { color: a.isDark ? 'rgba(160, 160, 160, 0.35)' : 'rgba(148, 163, 184, 0.35)', labelBackgroundColor: a.isDark ? '#3a3a3a' : '#e2e8f0' },
+      horzLine: { color: a.isDark ? 'rgba(160, 160, 160, 0.35)' : 'rgba(148, 163, 184, 0.35)', labelBackgroundColor: a.isDark ? '#3a3a3a' : '#e2e8f0' },
     },
     handleScroll: {
       mouseWheel: false,

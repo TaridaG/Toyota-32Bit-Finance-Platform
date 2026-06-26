@@ -79,10 +79,10 @@ export function LandingPage() {
           <h1 className={`hero-title${isDark ? ' hero-title-dark' : ' hero-title-light'}`}>{t('hero.title')}</h1>
           <p className={`landing-subtitle${isDark ? ' landing-subtitle-dark' : ' landing-subtitle-light'}`}>{t('hero.subtitle')}</p>
           <div className="landing-cta-row">
-            <Link to="/login" className="landing-cta-primary">
+            <Link to="/login" className="landing-cta-secondary">
               {t('hero.ctaLogin')}
             </Link>
-            <Link to="/register" className="landing-cta-secondary">
+            <Link to="/register" className="landing-cta-primary">
               {t('hero.ctaRegister')}
             </Link>
           </div>
@@ -141,9 +141,11 @@ export function LandingPage() {
           <div className="landing-copy bank-rates-copy analysis-copy">
             <h2 className="analysis-title">{t('portfolio.title')}</h2>
             <p className="analysis-subtitle">{t('portfolio.subtitle')}</p>
-            <Link to="/bank-rates" className="landing-inline-link">
-              {t('portfolio.cta')}
-            </Link>
+            <div className="landing-cta-row analysis-cta-row">
+              <Link to="/bank-rates" className="landing-cta-primary">
+                {t('portfolio.cta')}
+              </Link>
+            </div>
           </div>
           <div className="bank-rates-visual-wrap">
             <BankRatesPreview />
@@ -156,9 +158,11 @@ export function LandingPage() {
           <div className="landing-copy literacy-copy analysis-copy">
             <h2 className="analysis-title">{t('security.title')}</h2>
             <p className="analysis-subtitle">{t('security.subtitle')}</p>
-            <Link to="/finansal-okuryazarlik" className="landing-inline-link">
-              {t('security.cta')}
-            </Link>
+            <div className="landing-cta-row analysis-cta-row">
+              <Link to="/finansal-okuryazarlik" className="landing-cta-primary">
+                {t('security.cta')}
+              </Link>
+            </div>
           </div>
           <div className="literacy-visual-wrap">
             <LiteracyInfoPreview />
@@ -172,10 +176,10 @@ export function LandingPage() {
             <h2 className="analysis-title">{t('finalCta.title')}</h2>
             <p className="analysis-subtitle">{t('finalCta.subtitle')}</p>
             <div className="landing-cta-row analysis-cta-row">
-              <Link to="/login" className="landing-cta-primary">
+              <Link to="/login" className="landing-cta-secondary">
                 {t('finalCta.login')}
               </Link>
-              <Link to="/register" className="landing-cta-secondary">
+              <Link to="/register" className="landing-cta-primary">
                 {t('finalCta.register')}
               </Link>
             </div>

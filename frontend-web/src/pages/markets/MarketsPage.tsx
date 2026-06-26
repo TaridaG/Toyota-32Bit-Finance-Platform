@@ -16,6 +16,7 @@ import { instrumentHelpRowProps } from '../../components/help/instrumentHelpAttr
 import { resolveInstrumentDisplayLabel } from '../../features/markets/lib/tefasFundDisplay'
 import { useAlarmUi } from '../../features/alarms/AlarmUiContext'
 import { scheduleIdleWork } from '../../shared/browser/scheduleIdleWork'
+import { requestLoginAttention } from '../../shared/auth/requestLoginAttention'
 
 type SortDirection = 'asc' | 'desc'
 const DEFAULT_PAGE = 0
@@ -294,17 +295,13 @@ export function MarketsPage() {
 
   const clampedPage = Math.min(Math.max(page, 0), Math.max(totalPages - 1, 0))
 
-  const showFavoriteLoginNotice = () => {
-    const message = t('favoritesLoginRequired')
-    setFavoriteNotice(message)
-    window.setTimeout(() => {
-      setFavoriteNotice((current) => (current === message ? null : current))
-    }, 3500)
+  const promptLogin = () => {
+    requestLoginAttention()
   }
 
   const toggleFavorite = async (row: MarketOverviewItem) => {
     if (!authenticated) {
-      showFavoriteLoginNotice()
+      promptLogin()
       return
     }
     if (row.instrumentId == null) {
@@ -570,11 +567,12 @@ export function MarketsPage() {
 
   return (
     <section className="markets-page">
-      <div className={`markets-status markets-status-${globalMarketStatus.toLowerCase()}`}>
-        <span className="markets-status-dot" />
-        <span>{marketStatusLabel}</span>
-      </div>
-
+      {globalMarketStatus !== 'LIVE' ? (
+        <div className={`markets-status markets-status-${globalMarketStatus.toLowerCase()}`}>
+          <span className="markets-status-dot" />
+          <span>{marketStatusLabel}</span>
+        </div>
+      ) : null}
 
       <MarketsPortfolioSimulationCard />
 
@@ -634,7 +632,7 @@ export function MarketsPage() {
               onClick={() => {
                 if (!authenticated) {
                   if (!showFavoritesOnly) {
-                    showFavoriteLoginNotice()
+                    promptLogin()
                   } else {
                     setShowFavoritesOnly(false)
                   }
@@ -895,7 +893,7 @@ export function MarketsPage() {
                                 onClick={(event) => {
                                   event.stopPropagation()
                                   if (!authenticated) {
-                                    showFavoriteLoginNotice()
+                                    promptLogin()
                                     return
                                   }
                                   if (row.instrumentId == null) {

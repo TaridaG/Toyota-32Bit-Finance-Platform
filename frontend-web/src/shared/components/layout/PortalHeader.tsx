@@ -46,6 +46,7 @@ import {
   PUBLIC_MARKETS_ROUTE,
 } from '../../../app/routes/publicCatalogRoutes'
 import { scheduleIdleWork } from '../../browser/scheduleIdleWork'
+import { LOGIN_ATTENTION_EVENT } from '../../auth/requestLoginAttention'
 
 type PortalHeaderProps = {
   isAuthenticated: boolean
@@ -212,6 +213,8 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
   const [serverAvatarUpdatedAt, setServerAvatarUpdatedAt] = useState<string | null>(null)
   const [portalUsername, setPortalUsername] = useState<string | null>(null)
   const [profileImgBroken, setProfileImgBroken] = useState(false)
+  const [loginAttention, setLoginAttention] = useState(false)
+  const loginAttentionTimeoutRef = useRef<number | null>(null)
   const profileAnchorRef = useRef<HTMLDivElement>(null)
   const { theme, setTheme, toggleTheme } = useTheme()
   const { t, i18n } = useTranslation()
@@ -308,6 +311,26 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
     window.addEventListener('finance-profile-avatar', onAvatar)
     return () => window.removeEventListener('finance-profile-avatar', onAvatar)
   }, [isAuthenticated])
+
+  useEffect(() => {
+    const onLoginAttention = () => {
+      setLoginAttention(true)
+      if (loginAttentionTimeoutRef.current != null) {
+        window.clearTimeout(loginAttentionTimeoutRef.current)
+      }
+      loginAttentionTimeoutRef.current = window.setTimeout(() => {
+        setLoginAttention(false)
+        loginAttentionTimeoutRef.current = null
+      }, 3400)
+    }
+    window.addEventListener(LOGIN_ATTENTION_EVENT, onLoginAttention)
+    return () => {
+      window.removeEventListener(LOGIN_ATTENTION_EVENT, onLoginAttention)
+      if (loginAttentionTimeoutRef.current != null) {
+        window.clearTimeout(loginAttentionTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!profileOpen) {
@@ -869,7 +892,10 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
             </div>
           ) : (
             <>
-              <Link to="/login" className="portal-action-secondary">
+              <Link
+                to="/login"
+                className={`portal-action-secondary${loginAttention ? ' portal-action-secondary--attention' : ''}`}
+              >
                 {t('header.actions.login')}
               </Link>
               <Link to="/register" className="portal-action-primary">
@@ -1074,7 +1100,11 @@ export function PortalHeader({ isAuthenticated, onLogout }: PortalHeaderProps) {
 
             {!isAuthenticated ? (
               <div className="portal-mobile-auth-row portal-mobile-section">
-                <Link to="/login" className="portal-mobile-auth-secondary" onClick={closeMenu}>
+                <Link
+                  to="/login"
+                  className={`portal-mobile-auth-secondary${loginAttention ? ' portal-mobile-auth-secondary--attention' : ''}`}
+                  onClick={closeMenu}
+                >
                   {t('header.actions.login')}
                 </Link>
                 <Link to="/register" className="portal-mobile-auth-primary" onClick={closeMenu}>

@@ -33,11 +33,14 @@ import {
 } from '../../features/analysis/api/chartDrawingService'
 import { fetchCandles } from '../../features/analysis/api/analysisService'
 import { isAuthenticated } from '../../shared/auth/session'
+import { requestLoginAttention } from '../../shared/auth/requestLoginAttention'
+import { scheduleIdleWork } from '../../shared/browser/scheduleIdleWork'
 import { useCandles } from '../../features/analysis/hooks/useCandles'
 import { useIndicators } from '../../features/analysis/hooks/useIndicators'
 import { useAnalysisInstrumentCatalog } from './hooks/useAnalysisInstrumentCatalog'
 import { useInstrumentPeriodSummary } from './hooks/useInstrumentPeriodSummary'
 import { fetchMarketOverviewItemBySymbol } from '../../features/markets/api/marketService'
+import { addWatchlistItem, fetchWatchlist, removeWatchlistItem } from '../../features/markets/api/watchlistApi'
 import { fetchNewsForChart, type NewsApiItem } from '../../features/news/api/newsService'
 import { fetchFavoriteNewsEnriched } from '../../features/news/api/newsFavoritesApi'
 import {
@@ -96,6 +99,9 @@ export function AnalysisPage() {
   const [drawingSaveLoading, setDrawingSaveLoading] = useState(false)
   const [drawingSaveError, setDrawingSaveError] = useState<string | null>(null)
   const [drawingHistoryLoadingId, setDrawingHistoryLoadingId] = useState<number | null>(null)
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([])
+  const [favoriteSymbols, setFavoriteSymbols] = useState<string[]>([])
+  const [favoritePendingIds, setFavoritePendingIds] = useState<number[]>([])
 
   const chartDrawingAuth = isAuthenticated()
 
@@ -228,6 +234,75 @@ export function AnalysisPage() {
       ),
     [catalogRowBySymbol, deepLinkedRow, overview, selectedAsset],
   )
+
+  const selectedInstrumentId = useMemo(() => {
+    if (!selectedAsset) return null
+    const catalogRow = catalogRowBySymbol.get(selectedAsset.symbol.toUpperCase())
+    return overview?.instrumentId ?? catalogRow?.instrumentId ?? null
+  }, [catalogRowBySymbol, overview, selectedAsset])
+
+  const isSelectedFavorite = useMemo(() => {
+    if (!selectedAsset) return false
+    return (
+      (selectedInstrumentId != null && favoriteIds.includes(selectedInstrumentId)) ||
+      favoriteSymbols.includes(selectedAsset.symbol)
+    )
+  }, [favoriteIds, favoriteSymbols, selectedAsset, selectedInstrumentId])
+
+  const promptLogin = () => {
+    requestLoginAttention()
+  }
+
+  const toggleSelectedFavorite = async () => {
+    if (!selectedAsset) return
+    if (!chartDrawingAuth) {
+      promptLogin()
+      return
+    }
+    if (selectedInstrumentId == null) {
+      return
+    }
+    if (favoritePendingIds.includes(selectedInstrumentId)) {
+      return
+    }
+    const currentlyFavorite = isSelectedFavorite
+    setFavoritePendingIds((prev) => [...prev, selectedInstrumentId])
+    try {
+      if (currentlyFavorite) {
+        await removeWatchlistItem(selectedInstrumentId)
+        setFavoriteIds((prev) => prev.filter((id) => id !== selectedInstrumentId))
+        setFavoriteSymbols((prev) => prev.filter((symbol) => symbol !== selectedAsset.symbol))
+      } else {
+        await addWatchlistItem(selectedInstrumentId)
+        setFavoriteIds((prev) => (prev.includes(selectedInstrumentId) ? prev : [...prev, selectedInstrumentId]))
+        setFavoriteSymbols((prev) =>
+          prev.includes(selectedAsset.symbol) ? prev : [...prev, selectedAsset.symbol],
+        )
+      }
+    } catch {
+      // keep current client state if watchlist update fails
+    } finally {
+      setFavoritePendingIds((prev) => prev.filter((id) => id !== selectedInstrumentId))
+    }
+  }
+
+  useEffect(() => {
+    if (!chartDrawingAuth) {
+      setFavoriteIds([])
+      setFavoriteSymbols([])
+      return
+    }
+    return scheduleIdleWork(() => {
+      void fetchWatchlist()
+        .then((rows) => {
+          setFavoriteIds(rows.map((item) => item.instrumentId))
+          setFavoriteSymbols(rows.map((item) => item.symbol))
+        })
+        .catch(() => {
+          // keep current client state if watchlist fetch fails
+        })
+    }, 1_200)
+  }, [chartDrawingAuth])
 
   const comparisonAssetIds = useMemo(() => compareSlotIds.filter((id): id is string => id != null), [compareSlotIds])
 
@@ -577,13 +652,12 @@ export function AnalysisPage() {
       .slice(0, 3)
       .map((assetId, index) => {
         const windowed = sliceLast(comparisonSeriesByAsset[assetId] ?? [], compareTail)
-        const base = windowed[0]?.close || 1
         return {
           id: assetId,
           color: comparePalette[index % comparePalette.length],
           data: windowed.map((point) => ({
             time: point.time,
-            value: Number(((point.close / base) * 100).toFixed(4)),
+            value: point.close,
           })),
         }
       })
@@ -763,6 +837,12 @@ export function AnalysisPage() {
                     instrumentPickerOpen={instrumentPickerOpen}
                     onInstrumentTriggerClick={() => setInstrumentPickerOpen((open) => !open)}
                     horizonReturns={horizonReturns}
+                    isFavorite={isSelectedFavorite}
+                    favoritePending={
+                      selectedInstrumentId != null && favoritePendingIds.includes(selectedInstrumentId)
+                    }
+                    favoriteDisabled={selectedInstrumentId == null}
+                    onToggleFavorite={() => void toggleSelectedFavorite()}
                   />
                 ) : deepLinkLoading && selectedSymbol ? (
                   <p className="fi-empty">{t('common:loading')}</p>
