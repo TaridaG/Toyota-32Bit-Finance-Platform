@@ -115,20 +115,13 @@ export function PnlSplitDonut({
     loseRows.sort((a, b) => a.pnl - b.pnl)
     const winMag = Math.max(winPnl, 0)
     const loseMag = Math.max(-losePnl, 0)
-    /** Kar/zarar oranı büyüklükleri (maliyete göre); halka bunlara göre bölünür — varlık değeri ağırlığı değil */
-    const winRateW = winCost > eps ? winPnl / winCost : 0
-    const loseRateW = loseCost > eps ? (-losePnl) / loseCost : 0
-    const denomRate = Math.max(winRateW, 0) + Math.max(loseRateW, 0)
+    /** Halka: mutlak gerçekleşmemiş kar/zarar tutarının payı (ortadaki totalPnl ile tutarlı) */
     const denomMag = winMag + loseMag
     if (denomMag <= eps) {
       return { segments: [] as Segment[], hasData: false }
     }
-    const missingCostWin = winMag > eps && winCost <= eps
-    const missingCostLose = loseMag > eps && loseCost <= eps
-    const useRateSplit = denomRate > eps && !missingCostWin && !missingCostLose
-    const denomSplit = useRateSplit ? denomRate : denomMag
-    let winPct = useRateSplit ? (Math.max(winRateW, 0) / denomSplit) * 100 : (winMag / denomSplit) * 100
-    let losePct = useRateSplit ? (Math.max(loseRateW, 0) / denomSplit) * 100 : (loseMag / denomSplit) * 100
+    let winPct = (winMag / denomMag) * 100
+    let losePct = (loseMag / denomMag) * 100
     if (winPct > 0 && winPct < SLIVER) winPct = SLIVER
     if (losePct > 0 && losePct < SLIVER) losePct = SLIVER
     const norm = winPct + losePct

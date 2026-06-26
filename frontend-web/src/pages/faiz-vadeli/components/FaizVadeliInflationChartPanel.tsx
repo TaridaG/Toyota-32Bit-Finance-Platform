@@ -113,7 +113,7 @@ export function FaizVadeliInflationChartPanel({
 
     const textMuted = isDark ? '#94a3b8' : '#64748b'
     const gridH = isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(100, 116, 139, 0.14)'
-    const labelBg = isDark ? '#334155' : '#e2e8f0'
+    const labelBg = isDark ? '#3a3a3a' : '#e2e8f0'
     const border = isDark ? 'rgba(148,163,184,0.2)' : 'rgba(100,116,139,0.25)'
 
     const w = Math.max(outer.clientWidth, 200)

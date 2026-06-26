@@ -186,15 +186,6 @@ export function AnalysisInvestmentSimulationCard({
         <small>{t('simulation.subtitle', { symbol: asset.symbol })}</small>
       </div>
 
-      {chartPickActive ? (
-        <div className="fi-analysis-sim-pick-banner" role="status">
-          <span>{t('simulation.chartPickHint')}</span>
-          <button type="button" className="fi-analysis-sim-pick-cancel" onClick={() => onChartPickActiveChange(false)}>
-            {t('simulation.chartPickCancel')}
-          </button>
-        </div>
-      ) : null}
-
       <div className="fi-analysis-sim-columns">
         <section className="fi-analysis-sim-col fi-analysis-sim-col--inputs" aria-label={t('simulation.inputsSectionAria')}>
           <label className="fi-analysis-sim-label">

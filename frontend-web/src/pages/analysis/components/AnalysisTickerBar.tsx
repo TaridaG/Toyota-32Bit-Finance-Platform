@@ -28,6 +28,10 @@ export type AnalysisTickerBarProps = {
   assetType: AssetType
   instrumentPickerOpen: boolean
   onInstrumentTriggerClick: () => void
+  isFavorite?: boolean
+  favoritePending?: boolean
+  favoriteDisabled?: boolean
+  onToggleFavorite?: () => void
   /** Wide grid (legacy). */
   layout?: 'banner' | 'terminal'
   /** Terminal strip: performance % by horizon (API + candle fallback from page). */
@@ -80,6 +84,10 @@ export function AnalysisTickerBar({
   assetType,
   instrumentPickerOpen,
   onInstrumentTriggerClick,
+  isFavorite = false,
+  favoritePending = false,
+  favoriteDisabled = false,
+  onToggleFavorite,
   layout = 'banner',
   horizonReturns = null,
 }: AnalysisTickerBarProps) {
@@ -132,8 +140,15 @@ export function AnalysisTickerBar({
               <span className="fi-analysis-ticker-tag">{scopeTag}</span>
             </span>
           </button>
-          <button type="button" className="fi-analysis-ticker-star" disabled title={t('ticker.favoriteSoon')}>
-            ★
+          <button
+            type="button"
+            className={`fi-analysis-ticker-star${isFavorite ? ' fi-analysis-ticker-star--active' : ''}`}
+            disabled={favoriteDisabled || favoritePending}
+            aria-label={isFavorite ? t('ticker.unfavorite') : t('ticker.favorite')}
+            title={isFavorite ? t('ticker.unfavorite') : t('ticker.favorite')}
+            onClick={() => onToggleFavorite?.()}
+          >
+            {isFavorite ? '★' : '☆'}
           </button>
         </div>
       </div>

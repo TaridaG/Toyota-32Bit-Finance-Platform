@@ -32,17 +32,11 @@ export function useCompareSeries(chart: IChartApi | null, lines: ComparisonLine[
         lineWidth: 2,
         priceLineVisible: false,
         lastValueVisible: false,
-        priceScaleId: 'compare',
+        priceScaleId: 'right',
       })
       series.setData(line.data)
       lineRefs.current.push(series)
     })
-
-    if (lineRefs.current.length > 0) {
-      chart.priceScale('compare').applyOptions({
-        scaleMargins: { top: 0.05, bottom: 0.05 },
-      })
-    }
 
     return () => {
       lineRefs.current.forEach((s) => safeRemove(chart, s))
