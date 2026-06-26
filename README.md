@@ -118,166 +118,135 @@
 
 <p align="center"><sub>Specific portal capabilities — full page tour above; individual features here</sub></p>
 
-<style>
-  .readme-stack img { max-width: 100%; height: auto; }
-  @media (max-width: 720px) {
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) { display: block; }
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td {
-      display: block;
-      width: 100% !important;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td[width] {
-      width: 100% !important;
-      text-align: center;
-      padding-bottom: 10px;
-    }
-    .readme-stack table table table tr { display: block; }
-    .readme-stack table table table td {
-      display: block;
-      width: 100% !important;
-      padding: 2px 0;
-    }
-  }
-</style>
+<img src="docs/assets/features/f1-markets.webp" alt="Portfolio simulation — asset picker and return analysis" width="172" loading="lazy" align="left">
 
-<div class="readme-stack">
+<sub>Portfolio simulation</sub>
 
-<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
-  <tr>
-    <td>
-      <table border="0" cellpadding="14" cellspacing="0" width="100%">
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f1-markets.webp" alt="Portfolio simulation — asset picker and return analysis" width="172" loading="lazy">
-            <br><sub>Portfolio simulation</sub>
-          </td>
-          <td valign="top">
-            <h4>① Portfolio simulation</h4>
-            <p>Pick any asset from the markets table and add it to the simulator. With your chosen holdings you can explore <strong>portfolio return from a start date to today</strong>, <strong>per-asset returns</strong>, and how <strong>overall portfolio return</strong> shifts when you change weights.</p>
-            <p><strong>Currency:</strong> compare TRY vs USD investment bases — see how FX affects the same allocation. Start date, weight tools (equal split / normalize to 100%), and parity + FX components on one screen.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f2-treasury-bond-simulator.webp" alt="TR Treasury bill yield chart and bond simulator" width="172" loading="lazy">
-            <br><sub>Interest / Deposits</sub>
-          </td>
-          <td valign="top">
-            <h4>② TR Treasury bills — Yield chart &amp; simulator</h4>
-            <p>Track the <strong>1Y / 2Y / 3Y</strong> Turkish Treasury yield curve and the <strong>historical yield series</strong> for your selected maturity, powered by TCMB EVDS secondary-market data. Switching maturity refreshes both the live curve and the time series.</p>
-            <p><strong>Bond simulator:</strong> enter today’s investment and annual yield — estimated clean price, proceeds at maturity, and total return update instantly. Model an approximate yield-to-maturity under a discounted-bill assumption; jump to the policy-rate chart in one click.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f3-eurobond-simulator.webp" alt="TR USD Eurobond coupon and yield charts with cash-flow simulator" width="172" loading="lazy">
-            <br><sub>Interest / Deposits · Eurobond</sub>
-          </td>
-          <td valign="top">
-            <h4>③ TR USD Eurobond — Coupon &amp; yield simulator</h4>
-            <p>Per-ISIN eurobond table with <strong>clean price</strong>, <strong>coupon rate</strong>, and <strong>yield to maturity (YTM)</strong>; separate <strong>price</strong> and <strong>yield</strong> history charts for the selected bond (1Y / 5Y / all).</p>
-            <p><strong>Cash-flow view:</strong> enter nominal (USD) to see annual and semi-annual coupon amounts, approximate purchase cost, and principal at maturity.</p>
-            <p><strong>Historical buy scenario:</strong> pick purchase date and clean price on the chart — closing price and date auto-fill. View estimated <strong>coupon cash</strong>, sale proceeds, net P&amp;L (USD), and return % on purchase; optionally pin the exit to the latest chart date.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f4-inflation-simulator.webp" alt="CPI inflation chart and purchasing-power simulator" width="172" loading="lazy">
-            <br><sub>Interest / Deposits · CPI</sub>
-          </td>
-          <td valign="top">
-            <h4>④ CPI inflation — Purchasing-power simulator</h4>
-            <p>Track Turkish headline CPI (TCMB general index, 2003=100) as <strong>annual %</strong>, <strong>monthly %</strong>, or <strong>index level</strong>. Mark the start date on the chart.</p>
-            <p><strong>Real erosion:</strong> enter a nominal TRY amount and period — compound inflation (I<sub>end</sub>/I<sub>start</sub>), <strong>purchasing-power loss</strong> (TRY and %), today’s real equivalent, and <strong>annualized inflation</strong> are computed.</p>
-            <p><strong>Break-even hurdle:</strong> see the <strong>nominal amount required</strong> at period-end to preserve starting purchasing power — i.e. the minimum return your investment must target in real terms (informational; excludes tax and personal consumption baskets).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f5-chart-drawing.webp" alt="Analysis page — on-chart technical drawing tools" width="172" loading="lazy">
-            <br><sub>Analysis · Chart drawings</sub>
-          </td>
-          <td valign="top">
-            <h4>⑤ Technical analysis — Chart drawings &amp; saved setups</h4>
-            <p>On the selected instrument’s candle/line chart, draw with a <strong>distinct color per tool</strong>: <strong>trend line</strong>, <strong>ray</strong>, <strong>horizontal support/resistance</strong>, <strong>vertical time marker</strong>, <strong>consolidation box (rectangle)</strong>, <strong>Fibonacci retracement</strong>, and <strong>anchor point</strong>. Use <strong>price-range measure</strong> for bar count and return between two points.</p>
-            <p><strong>Overlays:</strong> MA20 / MA50, RSI, volume, and up to three-symbol <strong>comparison overlay</strong> on one time axis.</p>
-            <p><strong>Save &amp; learn:</strong> name and store a drawing set; reopen <strong>past drawings</strong> per asset to review prior support/resistance and scenarios. Build technical literacy over time and shape trades from your own annotated history (sign-in required).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f6-my-analysis.webp" alt="Portfolio — My Analysis: saved drawings with live price overlay" width="172" loading="lazy">
-            <br><sub>Portfolio · My Analysis</sub>
-          </td>
-          <td valign="top">
-            <h4>⑥ My Analysis — Saved drawings &amp; live outcome tracking</h4>
-            <p>Under <strong>My Analysis</strong> in the portfolio menu, browse every drawing set you saved on the analysis page. Each entry summarizes symbol, date, <strong>drawing count</strong>, tool badges, and <strong>price range</strong>.</p>
-            <p>Expand a card to reload drawings on <strong>fresh candle data</strong> and read how Fibonacci levels, support/resistance boxes, and trend lines relate to <strong>today’s price</strong> — tracking whether your setup still holds. Continue editing via <strong>Open in analysis page</strong> (sign-in required).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f7-chart-news.webp" alt="Analysis page — on-chart news markers and next-day price impact" width="172" loading="lazy">
-            <br><sub>Analysis · Chart news</sub>
-          </td>
-          <td valign="top">
-            <h4>⑦ Analysis — On-chart news &amp; impact review</h4>
-            <p>Enable the <strong>News</strong> layer on the analysis page to plot headlines for the selected asset on the price timeline. Click a marker for title, summary, source, and match reason (asset / category / <strong>favorite</strong>).</p>
-            <p><strong>Next-day change:</strong> read the <strong>% price move</strong> from the news-day close to the following session to gauge short-term market reaction. Use the <strong>star filter</strong> to show only favorited headlines and isolate their real impact on the chart.</p>
-            <p><strong>Favorites:</strong> starred articles also appear on the <strong>News</strong> page (favorites filter) and under <strong>My News</strong> in the portfolio (sign-in required).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f8-info-cards-literacy.webp" alt="Financial literacy — info cards and term glossary" width="172" loading="lazy">
-            <br><sub>Info cards · Literacy</sub>
-          </td>
-          <td valign="top">
-            <h4>⑧ Info cards &amp; financial literacy</h4>
-            <p>Use the header <strong>? (hint mode)</strong> button to reach info cards admins bound to portal elements: <strong>click a button or term</strong> for a short definition, interpretation hint, and link to the full entry.</p>
-            <p><strong>Financial literacy glossary:</strong> terms, chart types, macro indicators, and analysis tools in a filterable catalog — search by difficulty, content type, and portal page.</p>
-            <p><strong>Admin &amp; AI:</strong> admins create content by picking on-page elements or adding glossary cards; <strong>AI field completion</strong> and <strong>TR / EN / DE translation</strong> speed publishing — convenience for admins, plain-language learning for users.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f9-admin-add-asset.webp" alt="Admin — add new asset with market segment selection" width="172" loading="lazy">
-            <br><sub>Admin · Add asset</sub>
-          </td>
-          <td valign="top">
-            <h4>⑨ Admin — Dynamic asset onboarding &amp; data triggers</h4>
-            <p>Use <strong>Add new asset</strong> in the admin panel to register a newly listed or custom instrument by choosing a <strong>Crypto / BIST / NASDAQ</strong> segment; <strong>type and exchange</strong> are set automatically from the preset.</p>
-            <p>After save you land on the <strong>Data fetch registry</strong>: enable or disable each row, <strong>pull historical data</strong> or <strong>pull live data</strong> on demand — coverage (30 / 365 days) and last error status in one table.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f10-admin-user-management.webp" alt="Admin — user directory: message, freeze, and delete actions" width="172" loading="lazy">
-            <br><sub>Admin · User management</sub>
-          </td>
-          <td valign="top">
-            <h4>⑩ Admin — User management &amp; account enforcement</h4>
-            <p>In the <strong>Total users</strong> directory, send a per-user <strong>Message</strong> (portal inbox + email), <strong>Freeze</strong> the account, or <strong>delete permanently</strong>. Freeze accepts an optional reason; delete can block the email from re-registering.</p>
-            <p><strong>Immediate effect:</strong> frozen or removed accounts are detected while browsing via API responses; the session is cleared and the user is redirected to login with an <strong>informative banner</strong>. Freeze can be reversed; deletion is irreversible.</p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+#### ① Portfolio simulation
 
-</div>
+Pick any asset from the markets table and add it to the simulator. With your chosen holdings you can explore **portfolio return from a start date to today**, **per-asset returns**, and how **overall portfolio return** shifts when you change weights.
+
+**Currency:** compare TRY vs USD investment bases — see how FX affects the same allocation. Start date, weight tools (equal split / normalize to 100%), and parity + FX components on one screen.
+
+<br clear="left">
+
+<img src="docs/assets/features/f2-treasury-bond-simulator.webp" alt="TR Treasury bill yield chart and bond simulator" width="172" loading="lazy" align="left">
+
+<sub>Interest / Deposits</sub>
+
+#### ② TR Treasury bills — Yield chart &amp; simulator
+
+Track the **1Y / 2Y / 3Y** Turkish Treasury yield curve and the **historical yield series** for your selected maturity, powered by TCMB EVDS secondary-market data. Switching maturity refreshes both the live curve and the time series.
+
+**Bond simulator:** enter today’s investment and annual yield — estimated clean price, proceeds at maturity, and total return update instantly. Model an approximate yield-to-maturity under a discounted-bill assumption; jump to the policy-rate chart in one click.
+
+<br clear="left">
+
+<img src="docs/assets/features/f3-eurobond-simulator.webp" alt="TR USD Eurobond coupon and yield charts with cash-flow simulator" width="172" loading="lazy" align="left">
+
+<sub>Interest / Deposits · Eurobond</sub>
+
+#### ③ TR USD Eurobond — Coupon &amp; yield simulator
+
+Per-ISIN eurobond table with **clean price**, **coupon rate**, and **yield to maturity (YTM)**; separate **price** and **yield** history charts for the selected bond (1Y / 5Y / all).
+
+**Cash-flow view:** enter nominal (USD) to see annual and semi-annual coupon amounts, approximate purchase cost, and principal at maturity.
+
+**Historical buy scenario:** pick purchase date and clean price on the chart — closing price and date auto-fill. View estimated **coupon cash**, sale proceeds, net P&amp;L (USD), and return % on purchase; optionally pin the exit to the latest chart date.
+
+<br clear="left">
+
+<img src="docs/assets/features/f4-inflation-simulator.webp" alt="CPI inflation chart and purchasing-power simulator" width="172" loading="lazy" align="left">
+
+<sub>Interest / Deposits · CPI</sub>
+
+#### ④ CPI inflation — Purchasing-power simulator
+
+Track Turkish headline CPI (TCMB general index, 2003=100) as **annual %**, **monthly %**, or **index level**. Mark the start date on the chart.
+
+**Real erosion:** enter a nominal TRY amount and period — compound inflation (I<sub>end</sub>/I<sub>start</sub>), **purchasing-power loss** (TRY and %), today’s real equivalent, and **annualized inflation** are computed.
+
+**Break-even hurdle:** see the **nominal amount required** at period-end to preserve starting purchasing power — i.e. the minimum return your investment must target in real terms (informational; excludes tax and personal consumption baskets).
+
+<br clear="left">
+
+<img src="docs/assets/features/f5-chart-drawing.webp" alt="Analysis page — on-chart technical drawing tools" width="172" loading="lazy" align="left">
+
+<sub>Analysis · Chart drawings</sub>
+
+#### ⑤ Technical analysis — Chart drawings &amp; saved setups
+
+On the selected instrument’s candle/line chart, draw with a **distinct color per tool**: **trend line**, **ray**, **horizontal support/resistance**, **vertical time marker**, **consolidation box (rectangle)**, **Fibonacci retracement**, and **anchor point**. Use **price-range measure** for bar count and return between two points.
+
+**Overlays:** MA20 / MA50, RSI, volume, and up to three-symbol **comparison overlay** on one time axis.
+
+**Save &amp; learn:** name and store a drawing set; reopen **past drawings** per asset to review prior support/resistance and scenarios. Build technical literacy over time and shape trades from your own annotated history (sign-in required).
+
+<br clear="left">
+
+<img src="docs/assets/features/f6-my-analysis.webp" alt="Portfolio — My Analysis: saved drawings with live price overlay" width="172" loading="lazy" align="left">
+
+<sub>Portfolio · My Analysis</sub>
+
+#### ⑥ My Analysis — Saved drawings &amp; live outcome tracking
+
+Under **My Analysis** in the portfolio menu, browse every drawing set you saved on the analysis page. Each entry summarizes symbol, date, **drawing count**, tool badges, and **price range**.
+
+Expand a card to reload drawings on **fresh candle data** and read how Fibonacci levels, support/resistance boxes, and trend lines relate to **today’s price** — tracking whether your setup still holds. Continue editing via **Open in analysis page** (sign-in required).
+
+<br clear="left">
+
+<img src="docs/assets/features/f7-chart-news.webp" alt="Analysis page — on-chart news markers and next-day price impact" width="172" loading="lazy" align="left">
+
+<sub>Analysis · Chart news</sub>
+
+#### ⑦ Analysis — On-chart news &amp; impact review
+
+Enable the **News** layer on the analysis page to plot headlines for the selected asset on the price timeline. Click a marker for title, summary, source, and match reason (asset / category / **favorite**).
+
+**Next-day change:** read the **% price move** from the news-day close to the following session to gauge short-term market reaction. Use the **star filter** to show only favorited headlines and isolate their real impact on the chart.
+
+**Favorites:** starred articles also appear on the **News** page (favorites filter) and under **My News** in the portfolio (sign-in required).
+
+<br clear="left">
+
+<img src="docs/assets/features/f8-info-cards-literacy.webp" alt="Financial literacy — info cards and term glossary" width="172" loading="lazy" align="left">
+
+<sub>Info cards · Literacy</sub>
+
+#### ⑧ Info cards &amp; financial literacy
+
+Use the header **? (hint mode)** button to reach info cards admins bound to portal elements: **click a button or term** for a short definition, interpretation hint, and link to the full entry.
+
+**Financial literacy glossary:** terms, chart types, macro indicators, and analysis tools in a filterable catalog — search by difficulty, content type, and portal page.
+
+**Admin &amp; AI:** admins create content by picking on-page elements or adding glossary cards; **AI field completion** and **TR / EN / DE translation** speed publishing — convenience for admins, plain-language learning for users.
+
+<br clear="left">
+
+<img src="docs/assets/features/f9-admin-add-asset.webp" alt="Admin — add new asset with market segment selection" width="172" loading="lazy" align="left">
+
+<sub>Admin · Add asset</sub>
+
+#### ⑨ Admin — Dynamic asset onboarding &amp; data triggers
+
+Use **Add new asset** in the admin panel to register a newly listed or custom instrument by choosing a **Crypto / BIST / NASDAQ** segment; **type and exchange** are set automatically from the preset.
+
+After save you land on the **Data fetch registry**: enable or disable each row, **pull historical data** or **pull live data** on demand — coverage (30 / 365 days) and last error status in one table.
+
+<br clear="left">
+
+<img src="docs/assets/features/f10-admin-user-management.webp" alt="Admin — user directory: message, freeze, and delete actions" width="172" loading="lazy" align="left">
+
+<sub>Admin · User management</sub>
+
+#### ⑩ Admin — User management &amp; account enforcement
+
+In the **Total users** directory, send a per-user **Message** (portal inbox + email), **Freeze** the account, or **delete permanently**. Freeze accepts an optional reason; delete can block the email from re-registering.
+
+**Immediate effect:** frozen or removed accounts are detected while browsing via API responses; the session is cleared and the user is redirected to login with an **informative banner**. Freeze can be reversed; deletion is irreversible.
+
+<br clear="left">
 
 ## Project structure
 
@@ -382,178 +351,83 @@ Shared components brought up with Docker Compose (`Docker/`):
 
 <p align="center"><sub>Where to enable or disable live and historical market data in the Docker demo stack</sub></p>
 
-<div class="readme-stack">
+<a href="Docker/.env.example"><img src="docs/assets/config/v1-docker-env.webp" alt="Docker .env.example — market data block" width="172" loading="lazy" align="left"></a>
 
-<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
-  <tr>
-    <td>
-      <table border="0" cellpadding="14" cellspacing="0" width="100%">
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="Docker/.env.example" title="Open Docker/.env.example">
-              <img src="docs/assets/config/v1-docker-env.webp" alt="Docker .env.example — market data block" width="172" loading="lazy">
-            </a>
-            <br><sub><code>Docker/.env.example</code></sub>
-          </td>
-          <td valign="top">
-            <h4>① Docker/.env — Market data toggles</h4>
-            <p>In the demo stack, <strong>live ingest</strong> and <strong>historical backfill</strong> pipelines are controlled from one file. Create it with <code>cp .env.example .env</code> and edit this block. Precedence: <code>docker-compose.yml</code> → <code>Docker/.env</code> → <code>application.yml</code>.</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>MARKET_HISTORY_BACKFILL_*</code></td>
-                <td valign="top">BIST, NASDAQ, and crypto <strong>historical prices</strong>; run on startup</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>PROVIDERS_FINNHUB_ENABLED</code></td>
-                <td valign="top">NASDAQ live prices and history (Finnhub)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_FUND_*</code></td>
-                <td valign="top">TEFAS fund NAV updates and history bootstrap</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_BOND_*</code> · <code>MARKET_TRGOVUSD_*</code></td>
-                <td valign="top">TCMB bond yields and TR USD eurobond charts</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_VIOP_ENABLED</code></td>
-                <td valign="top">VIOP derivatives (Interest / Deposits card)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_*_SYNC_ENABLED</code></td>
-                <td valign="top">Policy rate, repo, TL deposit, CPI macro sync</td>
-              </tr>
-            </table>
-            <p><strong>After changes:</strong> <code>docker compose up -d --force-recreate market-data-service</code><br>
-            <strong>Monitor:</strong> <code>docker compose logs -f market-data-service</code> · Details: <a href="docs/english/configuration.md">docs/english/configuration.md</a></p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="market-data-service/src/main/resources/application.yml" title="Open application.yml">
-              <img src="docs/assets/config/v2-scheduler-live.webp" alt="application.yml — scheduler.live cron settings" width="172" loading="lazy">
-            </a>
-            <br><sub><code>market-data-service/.../application.yml</code></sub>
-          </td>
-          <td valign="top">
-            <h4>② application.yml — Live data scheduler</h4>
-            <p>Crypto, BIST, NASDAQ, FX, fund, and bond <strong>live price</strong> schedulers share one cron expression. Default: <strong>3 times per day</strong> — 09:00, 13:00, 17:00 (<code>Europe/Istanbul</code>).</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>SCHEDULER_LIVE_CRON</code></td>
-                <td valign="top">Live ingest schedule (cron); e.g. <code>0 0 9,13,17 * * *</code></td>
-              </tr>
-              <tr>
-                <td valign="top"><code>SCHEDULER_LIVE_ZONE</code></td>
-                <td valign="top">Time zone; default <code>Europe/Istanbul</code></td>
-              </tr>
-              <tr>
-                <td valign="top"><code>market.scheduler.enabled</code></td>
-                <td valign="top">Crypto live ingest (default: on)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>market.stock.scheduler.enabled</code></td>
-                <td valign="top">BIST + NASDAQ live ingest (default: on)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>market.fx.scheduler-enabled</code></td>
-                <td valign="top">FX rates live ingest (default: on)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>scheduler.*.delay-ms</code></td>
-                <td valign="top">Bootstrap / helper task intervals (fx 5 min, stock 1 min, bond 5 min)</td>
-              </tr>
-            </table>
-            <p><strong>Note:</strong> VIOP and macro rates (policy rate, CPI) use their own crons — see <code>market.viop.cron</code> and <code>market.*.weekly-sync</code> blocks in the same file.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="market-data-service/src/main/resources/application.yml#L150" title="application.yml — history.backfill block">
-              <img src="docs/assets/config/v3-history-backfill.webp" alt="application.yml — market.history.backfill settings" width="172" loading="lazy">
-            </a>
-            <br><sub><code>market.history.backfill</code></sub>
-          </td>
-          <td valign="top">
-            <h4>③ application.yml — Historical data (backfill)</h4>
-            <p>Central orchestrator for <strong>historical price</strong> series (BIST, NASDAQ, crypto, FX). <strong>Off</strong> by default for local dev; <strong>on</strong> in the Docker demo via <code>Docker/.env</code>.</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>MARKET_HISTORY_BACKFILL_ENABLED</code></td>
-                <td valign="top">Enable or disable historical ingest</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP</code></td>
-                <td valign="top">Start immediately when the stack comes up</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>years</code> · <code>chunk-days</code></td>
-                <td valign="top">Lookback (5 years) and chunk size (90 days)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>schedule-delay-ms</code></td>
-                <td valign="top">Periodic rerun: every 15 minutes (900000 ms)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>gate-live-until-history-ready</code></td>
-                <td valign="top"><code>true</code> → delays live prices until history is ready</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>kafka.enabled</code></td>
-                <td valign="top">Kafka publish during backfill (default: off, writes to DB)</td>
-              </tr>
-            </table>
-            <p><strong>Tip:</strong> For a quick demo, <code>Docker/.env</code> is enough; tune depth and retry in this YAML block. Bond, fund NAV, and eurobond history use separate bootstrap flags (<code>market.bond.history-bootstrap</code>, <code>market.fund.nav-history-bootstrap</code>).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="Docker/docker-compose.yml#L220" title="docker-compose.yml — market-data-service">
-              <img src="docs/assets/config/v4-docker-compose.webp" alt="docker-compose.yml — market-data-service environment block" width="172" loading="lazy">
-            </a>
-            <br><sub><code>Docker/docker-compose.yml</code></sub>
-          </td>
-          <td valign="top">
-            <h4>④ docker-compose.yml — Docker demo overrides</h4>
-            <p>Environment variables passed to the <code>market-data-service</code> container; they <strong>merge</strong> <code>Docker/.env</code> values with inline defaults. Many pipelines <strong>off</strong> in <code>application.yml</code> are <strong>on</strong> here for the demo.</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>SPRING_PROFILES_ACTIVE=docker</code></td>
-                <td valign="top">Loads <code>application-docker.yml</code> (fund scheduler, etc.)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>TCMB_API_KEY=${...:?}</code></td>
-                <td valign="top">Required — EVDS bonds, macro, FX data</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_HISTORY_BACKFILL_*:-true</code></td>
-                <td valign="top">Historical prices: off locally → on in Docker</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_FUND_*:-true</code></td>
-                <td valign="top">TEFAS NAV scheduler + history bootstrap</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_VIOP_CRON:-0 */2 * * * *</code></td>
-                <td valign="top">VIOP: every 2 min in demo (weekdays 19:40 locally)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>${VAR:-default}</code> syntax</td>
-                <td valign="top">Uses the right-hand default when <code>.env</code> is unset</td>
-              </tr>
-            </table>
-            <p><strong>Precedence:</strong> compose line → <code>Docker/.env</code> → <code>application.yml</code>. After changes: <code>docker compose up -d --force-recreate market-data-service</code></p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+<sub><code>Docker/.env.example</code></sub>
 
-</div>
+#### ① Docker/.env — Market data toggles
+
+In the demo stack, **live ingest** and **historical backfill** pipelines are controlled from one file. Create it with `cp .env.example .env` and edit this block. Precedence: `docker-compose.yml` → `Docker/.env` → `application.yml`.
+
+- `MARKET_HISTORY_BACKFILL_*` — BIST, NASDAQ, and crypto **historical prices**; run on startup
+- `PROVIDERS_FINNHUB_ENABLED` — NASDAQ live prices and history (Finnhub)
+- `MARKET_FUND_*` — TEFAS fund NAV updates and history bootstrap
+- `MARKET_BOND_*` · `MARKET_TRGOVUSD_*` — TCMB bond yields and TR USD eurobond charts
+- `MARKET_VIOP_ENABLED` — VIOP derivatives (Interest / Deposits card)
+- `MARKET_*_SYNC_ENABLED` — Policy rate, repo, TL deposit, CPI macro sync
+
+**After changes:** `docker compose up -d --force-recreate market-data-service`
+
+**Monitor:** `docker compose logs -f market-data-service` · Details: [docs/english/configuration.md](docs/english/configuration.md)
+
+<br clear="left">
+
+<a href="market-data-service/src/main/resources/application.yml"><img src="docs/assets/config/v2-scheduler-live.webp" alt="application.yml — scheduler.live cron settings" width="172" loading="lazy" align="left"></a>
+
+<sub><code>market-data-service/.../application.yml</code></sub>
+
+#### ② application.yml — Live data scheduler
+
+Crypto, BIST, NASDAQ, FX, fund, and bond **live price** schedulers share one cron expression. Default: **3 times per day** — 09:00, 13:00, 17:00 (`Europe/Istanbul`).
+
+- `SCHEDULER_LIVE_CRON` — Live ingest schedule (cron); e.g. `0 0 9,13,17 * * *`
+- `SCHEDULER_LIVE_ZONE` — Time zone; default `Europe/Istanbul`
+- `market.scheduler.enabled` — Crypto live ingest (default: on)
+- `market.stock.scheduler.enabled` — BIST + NASDAQ live ingest (default: on)
+- `market.fx.scheduler-enabled` — FX rates live ingest (default: on)
+- `scheduler.*.delay-ms` — Bootstrap / helper task intervals (fx 5 min, stock 1 min, bond 5 min)
+
+**Note:** VIOP and macro rates (policy rate, CPI) use their own crons — see `market.viop.cron` and `market.*.weekly-sync` blocks in the same file.
+
+<br clear="left">
+
+<a href="market-data-service/src/main/resources/application.yml#L150"><img src="docs/assets/config/v3-history-backfill.webp" alt="application.yml — market.history.backfill settings" width="172" loading="lazy" align="left"></a>
+
+<sub><code>market.history.backfill</code></sub>
+
+#### ③ application.yml — Historical data (backfill)
+
+Central orchestrator for **historical price** series (BIST, NASDAQ, crypto, FX). **Off** by default for local dev; **on** in the Docker demo via `Docker/.env`.
+
+- `MARKET_HISTORY_BACKFILL_ENABLED` — Enable or disable historical ingest
+- `MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP` — Start immediately when the stack comes up
+- `years` · `chunk-days` — Lookback (5 years) and chunk size (90 days)
+- `schedule-delay-ms` — Periodic rerun: every 15 minutes (900000 ms)
+- `gate-live-until-history-ready` — `true` → delays live prices until history is ready
+- `kafka.enabled` — Kafka publish during backfill (default: off, writes to DB)
+
+**Tip:** For a quick demo, `Docker/.env` is enough; tune depth and retry in this YAML block. Bond, fund NAV, and eurobond history use separate bootstrap flags (`market.bond.history-bootstrap`, `market.fund.nav-history-bootstrap`).
+
+<br clear="left">
+
+<a href="Docker/docker-compose.yml#L220"><img src="docs/assets/config/v4-docker-compose.webp" alt="docker-compose.yml — market-data-service environment block" width="172" loading="lazy" align="left"></a>
+
+<sub><code>Docker/docker-compose.yml</code></sub>
+
+#### ④ docker-compose.yml — Docker demo overrides
+
+Environment variables passed to the `market-data-service` container; they **merge** `Docker/.env` values with inline defaults. Many pipelines **off** in `application.yml` are **on** here for the demo.
+
+- `SPRING_PROFILES_ACTIVE=docker` — Loads `application-docker.yml` (fund scheduler, etc.)
+- `TCMB_API_KEY=${...:?}` — Required — EVDS bonds, macro, FX data
+- `MARKET_HISTORY_BACKFILL_*:-true` — Historical prices: off locally → on in Docker
+- `MARKET_FUND_*:-true` — TEFAS NAV scheduler + history bootstrap
+- `MARKET_VIOP_CRON:-0 */2 * * * *` — VIOP: every 2 min in demo (weekdays 19:40 locally)
+- `${VAR:-default}` syntax — Uses the right-hand default when `.env` is unset
+
+**Precedence:** compose line → `Docker/.env` → `application.yml`. After changes: `docker compose up -d --force-recreate market-data-service`
+
+<br clear="left">
 
 ## Adding instruments
 

@@ -120,166 +120,135 @@
 
 <p align="center"><sub>Konkrete Portal-Funktionen — Seiten-Tour oben; hier einzelne Features</sub></p>
 
-<style>
-  .readme-stack img { max-width: 100%; height: auto; }
-  @media (max-width: 720px) {
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) { display: block; }
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td {
-      display: block;
-      width: 100% !important;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-    .readme-stack table table > tbody > tr:not(:has(td[colspan])) > td[width] {
-      width: 100% !important;
-      text-align: center;
-      padding-bottom: 10px;
-    }
-    .readme-stack table table table tr { display: block; }
-    .readme-stack table table table td {
-      display: block;
-      width: 100% !important;
-      padding: 2px 0;
-    }
-  }
-</style>
+<img src="docs/assets/features/f1-markets.webp" alt="Portfolio-Simulation — Asset-Auswahl und Renditeanalyse" width="172" loading="lazy" align="left">
 
-<div class="readme-stack">
+<sub>Portfolio-Simulation</sub>
 
-<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
-  <tr>
-    <td>
-      <table border="0" cellpadding="14" cellspacing="0" width="100%">
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f1-markets.webp" alt="Portfolio-Simulation — Asset-Auswahl und Renditeanalyse" width="172" loading="lazy">
-            <br><sub>Portfolio-Simulation</sub>
-          </td>
-          <td valign="top">
-            <h4>① Portfolio-Simulation</h4>
-            <p>Wählen Sie ein beliebiges Asset aus der Markttabelle und fügen Sie es dem Simulator hinzu. Mit Ihrer Zusammenstellung sehen Sie <strong>Portfolio-Rendite vom Startdatum bis heute</strong>, <strong>Einzel-Asset-Renditen</strong> und wie sich die <strong>Gesamtrendite</strong> ändert, wenn Sie die Gewichtung anpassen.</p>
-            <p><strong>Währung:</strong> TRY- vs. USD-Basis vergleichen — wie Wechselkurse dieselbe Allokation beeinflussen. Startdatum, Gewichtung (gleich verteilen / auf 100 % normalisieren) sowie Parität + FX-Komponenten auf einem Bildschirm.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f2-treasury-bond-simulator.webp" alt="TR-Staatsanleihen-Renditechart und Anleihen-Simulator" width="172" loading="lazy">
-            <br><sub>Zinsen / Festgeld</sub>
-          </td>
-          <td valign="top">
-            <h4>② TR-Staatsanleihen — Renditechart &amp; Simulator</h4>
-            <p>Verfolgen Sie die <strong>1J / 2J / 3J</strong> türkische Renditekurve und die <strong>historische Renditeserie</strong> der gewählten Laufzeit — mit TCMB-EVDS-Sekundärmarktdaten. Laufzeitwechsel aktualisiert Kurve und Zeitreihe.</p>
-            <p><strong>Anleihen-Simulator:</strong> heutige Anlagesumme und Jahresrendite eingeben — geschätzter Clean Price, Fälligkeitserlös und Gesamtrendite sofort berechnet. Näherung an Rendite bis Fälligkeit unter Diskontierungsannahme; per Klick zur Leitzins-Grafik.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f3-eurobond-simulator.webp" alt="TR-USD-Eurobond Kupon- und Renditecharts mit Cashflow-Simulator" width="172" loading="lazy">
-            <br><sub>Zinsen / Festgeld · Eurobond</sub>
-          </td>
-          <td valign="top">
-            <h4>③ TR-USD-Eurobond — Kupon- &amp; Rendite-Simulator</h4>
-            <p>Eurobond-Tabelle je ISIN mit <strong>Clean Price</strong>, <strong>Kupon</strong> und <strong>Rendite bis Fälligkeit (YTM)</strong>; getrennte <strong>Preis-</strong> und <strong>Rendite-Historie</strong> für die gewählte Anleihe (1J / 5J / gesamt).</p>
-            <p><strong>Cashflow:</strong> Nominal (USD) eingeben — jährlicher und halbjährlicher Kupon, geschätzte Anschaffungskosten und Nennwert bei Fälligkeit werden berechnet.</p>
-            <p><strong>Historisches Kaufszenario:</strong> Kaufdatum und Clean Price im Chart markieren — Schlusskurs und Datum werden übernommen. Geschätzter <strong>Kupon-Cash</strong>, Verkaufserlös, Netto-P&amp;L (USD) und Rendite % auf den Kauf; optional Exit auf den letzten Chart-Tag fixieren.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f4-inflation-simulator.webp" alt="VPI-Inflationschart und Kaufkraft-Simulator" width="172" loading="lazy">
-            <br><sub>Zinsen / Festgeld · VPI</sub>
-          </td>
-          <td valign="top">
-            <h4>④ VPI-Inflation — Kaufkraft-Simulator</h4>
-            <p>Türkischer Gesamt-VPI (TCMB, 2003=100) als <strong>Jahres-%</strong>, <strong>Monats-%</strong> oder <strong>Indexstand</strong>; Startdatum im Chart markierbar.</p>
-            <p><strong>Realer Wertverlust:</strong> nominale TRY-Summe und Zeitraum — zusammengesetzte Inflation (I<sub>Ende</sub>/I<sub>Start</sub>), <strong>Kaufkraftverlust</strong> (TRY und %), heutiger realer Gegenwert und <strong>annualisierte Inflation</strong>.</p>
-            <p><strong>Erhaltungsschwelle:</strong> <strong>nominale Summe</strong> am Periodenende, um die Ausgangskaufkraft zu halten — Mindestrendite in realen Begriffen (Hinweis; ohne Steuern und persönlichen Warenkorb).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f5-chart-drawing.webp" alt="Analyse-Seite — technische Chart-Zeichnungen" width="172" loading="lazy">
-            <br><sub>Analyse · Chart-Zeichnungen</sub>
-          </td>
-          <td valign="top">
-            <h4>⑤ Technische Analyse — Chart-Zeichnungen &amp; gespeicherte Setups</h4>
-            <p>Am Kerzen-/Linienchart des gewählten Instruments mit <strong>eigener Farbe pro Werkzeug</strong>: <strong>Trendlinie</strong>, <strong>Strahl (Ray)</strong>, <strong>horizontale Unterstützung/Widerstand</strong>, <strong>vertikale Zeitmarke</strong>, <strong>Konsolidierungsbox (Rechteck)</strong>, <strong>Fibonacci-Retracement</strong> und <strong>Ankerpunkt</strong>. <strong>Preisspannen-Messung</strong> für Balkenanzahl und Rendite zwischen zwei Punkten.</p>
-            <p><strong>Overlays:</strong> MA20 / MA50, RSI, Volumen und <strong>Vergleichs-Overlay</strong> mit bis zu drei Symbolen auf einer Zeitachse.</p>
-            <p><strong>Speichern &amp; lernen:</strong> Zeichnungssatz benennen und speichern; <strong>frühere Zeichnungen</strong> je Asset öffnen und Support/Widerstand sowie Szenarien nachvollziehen. Technische Kompetenz aufbauen und Trades an der eigenen Annotationshistorie ausrichten (Anmeldung erforderlich).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f6-my-analysis.webp" alt="Portfolio — Meine Analyse: gespeicherte Zeichnungen mit Live-Preis-Overlay" width="172" loading="lazy">
-            <br><sub>Portfolio · Meine Analyse</sub>
-          </td>
-          <td valign="top">
-            <h4>⑥ Meine Analyse — Gespeicherte Zeichnungen &amp; Live-Nachverfolgung</h4>
-            <p>Unter <strong>Meine Analyse</strong> im Portfolio-Menü findest du alle auf der Analyse-Seite gespeicherten Zeichnungssätze. Jeder Eintrag fasst Symbol, Datum, <strong>Anzahl der Zeichnungen</strong>, Werkzeug-Badges und <strong>Preisspanne</strong> zusammen.</p>
-            <p>Karte aufklappen: Zeichnungen werden mit <strong>aktuellen Kerzendaten</strong> neu geladen — Fibonacci-Niveaus, Support/Widerstand-Boxen und Trendlinien im Verhältnis zum <strong>heutigen Kurs</strong> prüfen und das Szenario live verfolgen. Bearbeitung über <strong>In Analyse-Seite öffnen</strong> fortsetzen (Anmeldung erforderlich).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f7-chart-news.webp" alt="Analyse-Seite — Nachrichtenmarker im Chart und Kurswirkung am Folgetag" width="172" loading="lazy">
-            <br><sub>Analyse · Chart-Nachrichten</sub>
-          </td>
-          <td valign="top">
-            <h4>⑦ Analyse — Nachrichten im Chart &amp; Wirkungsanalyse</h4>
-            <p>Mit der <strong>Nachrichten</strong>-Ebene auf der Analyse-Seite Schlagzeilen zum gewählten Asset auf der Preis-Zeitachse markieren. Marker anklicken für Titel, Kurzfassung, Quelle und Zuordnung (Asset / Kategorie / <strong>Favorit</strong>).</p>
-            <p><strong>Veränderung am Folgetag:</strong> die <strong>% Kursbewegung</strong> vom Schluss des Nachrichtentags bis zur nächsten Session lesen — kurzfristige Marktreaktion messen. <strong>Stern-Filter</strong> zeigt nur favorisierte Meldungen im Chart für isolierte Wirkungsanalyse.</p>
-            <p><strong>Favoriten:</strong> mit Stern markierte Artikel erscheinen auch auf der <strong>Nachrichten</strong>-Seite (Favoritenfilter) und unter <strong>Meine Nachrichten</strong> im Portfolio (Anmeldung erforderlich).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f8-info-cards-literacy.webp" alt="Finanzielle Grundbildung — Infokarten und Begriffslexikon" width="172" loading="lazy">
-            <br><sub>Infokarten · Grundbildung</sub>
-          </td>
-          <td valign="top">
-            <h4>⑧ Infokarten &amp; finanzielle Grundbildung</h4>
-            <p>Über die <strong>? (Hinweis-Modus)</strong>-Schaltfläche in der Kopfzeile Infokarten öffnen, die Admins an Portalelemente gebunden haben: <strong>Button oder Begriff anklicken</strong> für Kurzdefinition, Deutungshinweis und Link zum vollständigen Eintrag.</p>
-            <p><strong>Finanzlexikon:</strong> Begriffe, Chart-Typen, Makroindikatoren und Analysewerkzeuge im filterbaren Katalog — Suche nach Schwierigkeit, Inhaltstyp und Portalseite.</p>
-            <p><strong>Admin &amp; KI:</strong> Admins erstellen Inhalte per Elementauswahl auf der Seite oder Lexikon-Karten; <strong>KI-Feldvervollständigung</strong> und <strong>TR / EN / DE Übersetzung</strong> beschleunigen die Pflege — Komfort für Admins, verständliche Bildung für Nutzer.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f9-admin-add-asset.webp" alt="Admin — neues Asset hinzufügen mit Marktsegment-Auswahl" width="172" loading="lazy">
-            <br><sub>Admin · Asset hinzufügen</sub>
-          </td>
-          <td valign="top">
-            <h4>⑨ Admin — Dynamisches Asset-Onboarding &amp; Daten-Trigger</h4>
-            <p>Über <strong>Neues Asset hinzufügen</strong> im Admin-Panel ein neu gelistetes oder anderes Instrument per <strong>Krypto / BIST / NASDAQ</strong>-Segment dynamisch anlegen; <strong>Typ und Börse</strong> werden aus dem Preset automatisch gesetzt.</p>
-            <p>Nach dem Speichern Weiterleitung zum <strong>Datenabruf-Register</strong>: Zeilen aktivieren/deaktivieren, <strong>historische Daten abrufen</strong> oder <strong>Live-Daten abrufen</strong> auslösen — Abdeckung (30 / 365 Tage) und letzter Fehlerstatus in einer Tabelle.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <img src="docs/assets/features/f10-admin-user-management.webp" alt="Admin — Benutzerverzeichnis: Nachricht, Sperren und Löschen" width="172" loading="lazy">
-            <br><sub>Admin · Benutzerverwaltung</sub>
-          </td>
-          <td valign="top">
-            <h4>⑩ Admin — Benutzerverwaltung &amp; Kontomaßnahmen</h4>
-            <p>Im Verzeichnis <strong>Gesamtbenutzer</strong> pro Nutzer eine <strong>Nachricht</strong> senden (Portal-Posteingang + E-Mail), Konto <strong>sperren</strong> oder <strong>endgültig löschen</strong>. Sperre mit optionalem Grund; beim Löschen E-Mail für Neuregistrierung sperrbar.</p>
-            <p><strong>Sofortige Wirkung:</strong> gesperrte oder gelöschte Konten werden beim Surfen per API erkannt; Sitzung wird beendet und Weiterleitung zur Anmeldung mit <strong>Hinweisbanner</strong>. Sperre aufhebbar; Löschung unwiderruflich.</p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+#### ① Portfolio-Simulation
 
-</div>
+Wählen Sie ein beliebiges Asset aus der Markttabelle und fügen Sie es dem Simulator hinzu. Mit Ihrer Zusammenstellung sehen Sie **Portfolio-Rendite vom Startdatum bis heute**, **Einzel-Asset-Renditen** und wie sich die **Gesamtrendite** ändert, wenn Sie die Gewichtung anpassen.
+
+**Währung:** TRY- vs. USD-Basis vergleichen — wie Wechselkurse dieselbe Allokation beeinflussen. Startdatum, Gewichtung (gleich verteilen / auf 100 % normalisieren) sowie Parität + FX-Komponenten auf einem Bildschirm.
+
+<br clear="left">
+
+<img src="docs/assets/features/f2-treasury-bond-simulator.webp" alt="TR-Staatsanleihen-Renditechart und Anleihen-Simulator" width="172" loading="lazy" align="left">
+
+<sub>Zinsen / Festgeld</sub>
+
+#### ② TR-Staatsanleihen — Renditechart &amp; Simulator
+
+Verfolgen Sie die **1J / 2J / 3J** türkische Renditekurve und die **historische Renditeserie** der gewählten Laufzeit — mit TCMB-EVDS-Sekundärmarktdaten. Laufzeitwechsel aktualisiert Kurve und Zeitreihe.
+
+**Anleihen-Simulator:** heutige Anlagesumme und Jahresrendite eingeben — geschätzter Clean Price, Fälligkeitserlös und Gesamtrendite sofort berechnet. Näherung an Rendite bis Fälligkeit unter Diskontierungsannahme; per Klick zur Leitzins-Grafik.
+
+<br clear="left">
+
+<img src="docs/assets/features/f3-eurobond-simulator.webp" alt="TR-USD-Eurobond Kupon- und Renditecharts mit Cashflow-Simulator" width="172" loading="lazy" align="left">
+
+<sub>Zinsen / Festgeld · Eurobond</sub>
+
+#### ③ TR-USD-Eurobond — Kupon- &amp; Rendite-Simulator
+
+Eurobond-Tabelle je ISIN mit **Clean Price**, **Kupon** und **Rendite bis Fälligkeit (YTM)**; getrennte **Preis-** und **Rendite-Historie** für die gewählte Anleihe (1J / 5J / gesamt).
+
+**Cashflow:** Nominal (USD) eingeben — jährlicher und halbjährlicher Kupon, geschätzte Anschaffungskosten und Nennwert bei Fälligkeit werden berechnet.
+
+**Historisches Kaufszenario:** Kaufdatum und Clean Price im Chart markieren — Schlusskurs und Datum werden übernommen. Geschätzter **Kupon-Cash**, Verkaufserlös, Netto-P&amp;L (USD) und Rendite % auf den Kauf; optional Exit auf den letzten Chart-Tag fixieren.
+
+<br clear="left">
+
+<img src="docs/assets/features/f4-inflation-simulator.webp" alt="VPI-Inflationschart und Kaufkraft-Simulator" width="172" loading="lazy" align="left">
+
+<sub>Zinsen / Festgeld · VPI</sub>
+
+#### ④ VPI-Inflation — Kaufkraft-Simulator
+
+Türkischer Gesamt-VPI (TCMB, 2003=100) als **Jahres-%**, **Monats-%** oder **Indexstand**; Startdatum im Chart markierbar.
+
+**Realer Wertverlust:** nominale TRY-Summe und Zeitraum — zusammengesetzte Inflation (I<sub>Ende</sub>/I<sub>Start</sub>), **Kaufkraftverlust** (TRY und %), heutiger realer Gegenwert und **annualisierte Inflation**.
+
+**Erhaltungsschwelle:** **nominale Summe** am Periodenende, um die Ausgangskaufkraft zu halten — Mindestrendite in realen Begriffen (Hinweis; ohne Steuern und persönlichen Warenkorb).
+
+<br clear="left">
+
+<img src="docs/assets/features/f5-chart-drawing.webp" alt="Analyse-Seite — technische Chart-Zeichnungen" width="172" loading="lazy" align="left">
+
+<sub>Analyse · Chart-Zeichnungen</sub>
+
+#### ⑤ Technische Analyse — Chart-Zeichnungen &amp; gespeicherte Setups
+
+Am Kerzen-/Linienchart des gewählten Instruments mit **eigener Farbe pro Werkzeug**: **Trendlinie**, **Strahl (Ray)**, **horizontale Unterstützung/Widerstand**, **vertikale Zeitmarke**, **Konsolidierungsbox (Rechteck)**, **Fibonacci-Retracement** und **Ankerpunkt**. **Preisspannen-Messung** für Balkenanzahl und Rendite zwischen zwei Punkten.
+
+**Overlays:** MA20 / MA50, RSI, Volumen und **Vergleichs-Overlay** mit bis zu drei Symbolen auf einer Zeitachse.
+
+**Speichern &amp; lernen:** Zeichnungssatz benennen und speichern; **frühere Zeichnungen** je Asset öffnen und Support/Widerstand sowie Szenarien nachvollziehen. Technische Kompetenz aufbauen und Trades an der eigenen Annotationshistorie ausrichten (Anmeldung erforderlich).
+
+<br clear="left">
+
+<img src="docs/assets/features/f6-my-analysis.webp" alt="Portfolio — Meine Analyse: gespeicherte Zeichnungen mit Live-Preis-Overlay" width="172" loading="lazy" align="left">
+
+<sub>Portfolio · Meine Analyse</sub>
+
+#### ⑥ Meine Analyse — Gespeicherte Zeichnungen &amp; Live-Nachverfolgung
+
+Unter **Meine Analyse** im Portfolio-Menü findest du alle auf der Analyse-Seite gespeicherten Zeichnungssätze. Jeder Eintrag fasst Symbol, Datum, **Anzahl der Zeichnungen**, Werkzeug-Badges und **Preisspanne** zusammen.
+
+Karte aufklappen: Zeichnungen werden mit **aktuellen Kerzendaten** neu geladen — Fibonacci-Niveaus, Support/Widerstand-Boxen und Trendlinien im Verhältnis zum **heutigen Kurs** prüfen und das Szenario live verfolgen. Bearbeitung über **In Analyse-Seite öffnen** fortsetzen (Anmeldung erforderlich).
+
+<br clear="left">
+
+<img src="docs/assets/features/f7-chart-news.webp" alt="Analyse-Seite — Nachrichtenmarker im Chart und Kurswirkung am Folgetag" width="172" loading="lazy" align="left">
+
+<sub>Analyse · Chart-Nachrichten</sub>
+
+#### ⑦ Analyse — Nachrichten im Chart &amp; Wirkungsanalyse
+
+Mit der **Nachrichten**-Ebene auf der Analyse-Seite Schlagzeilen zum gewählten Asset auf der Preis-Zeitachse markieren. Marker anklicken für Titel, Kurzfassung, Quelle und Zuordnung (Asset / Kategorie / **Favorit**).
+
+**Veränderung am Folgetag:** die **% Kursbewegung** vom Schluss des Nachrichtentags bis zur nächsten Session lesen — kurzfristige Marktreaktion messen. **Stern-Filter** zeigt nur favorisierte Meldungen im Chart für isolierte Wirkungsanalyse.
+
+**Favoriten:** mit Stern markierte Artikel erscheinen auch auf der **Nachrichten**-Seite (Favoritenfilter) und unter **Meine Nachrichten** im Portfolio (Anmeldung erforderlich).
+
+<br clear="left">
+
+<img src="docs/assets/features/f8-info-cards-literacy.webp" alt="Finanzielle Grundbildung — Infokarten und Begriffslexikon" width="172" loading="lazy" align="left">
+
+<sub>Infokarten · Grundbildung</sub>
+
+#### ⑧ Infokarten &amp; finanzielle Grundbildung
+
+Über die **? (Hinweis-Modus)**-Schaltfläche in der Kopfzeile Infokarten öffnen, die Admins an Portalelemente gebunden haben: **Button oder Begriff anklicken** für Kurzdefinition, Deutungshinweis und Link zum vollständigen Eintrag.
+
+**Finanzlexikon:** Begriffe, Chart-Typen, Makroindikatoren und Analysewerkzeuge im filterbaren Katalog — Suche nach Schwierigkeit, Inhaltstyp und Portalseite.
+
+**Admin &amp; KI:** Admins erstellen Inhalte per Elementauswahl auf der Seite oder Lexikon-Karten; **KI-Feldvervollständigung** und **TR / EN / DE Übersetzung** beschleunigen die Pflege — Komfort für Admins, verständliche Bildung für Nutzer.
+
+<br clear="left">
+
+<img src="docs/assets/features/f9-admin-add-asset.webp" alt="Admin — neues Asset hinzufügen mit Marktsegment-Auswahl" width="172" loading="lazy" align="left">
+
+<sub>Admin · Asset hinzufügen</sub>
+
+#### ⑨ Admin — Dynamisches Asset-Onboarding &amp; Daten-Trigger
+
+Über **Neues Asset hinzufügen** im Admin-Panel ein neu gelistetes oder anderes Instrument per **Krypto / BIST / NASDAQ**-Segment dynamisch anlegen; **Typ und Börse** werden aus dem Preset automatisch gesetzt.
+
+Nach dem Speichern Weiterleitung zum **Datenabruf-Register**: Zeilen aktivieren/deaktivieren, **historische Daten abrufen** oder **Live-Daten abrufen** auslösen — Abdeckung (30 / 365 Tage) und letzter Fehlerstatus in einer Tabelle.
+
+<br clear="left">
+
+<img src="docs/assets/features/f10-admin-user-management.webp" alt="Admin — Benutzerverzeichnis: Nachricht, Sperren und Löschen" width="172" loading="lazy" align="left">
+
+<sub>Admin · Benutzerverwaltung</sub>
+
+#### ⑩ Admin — Benutzerverwaltung &amp; Kontomaßnahmen
+
+Im Verzeichnis **Gesamtbenutzer** pro Nutzer eine **Nachricht** senden (Portal-Posteingang + E-Mail), Konto **sperren** oder **endgültig löschen**. Sperre mit optionalem Grund; beim Löschen E-Mail für Neuregistrierung sperrbar.
+
+**Sofortige Wirkung:** gesperrte oder gelöschte Konten werden beim Surfen per API erkannt; Sitzung wird beendet und Weiterleitung zur Anmeldung mit **Hinweisbanner**. Sperre aufhebbar; Löschung unwiderruflich.
+
+<br clear="left">
 
 ## Projektstruktur
 
@@ -384,178 +353,83 @@ Gemeinsame Komponenten via Docker Compose (`Docker/`):
 
 <p align="center"><sub>Wo Sie Live- und Historiendaten in der Docker-Demo aktivieren oder deaktivieren</sub></p>
 
-<div class="readme-stack">
+<a href="Docker/.env.example"><img src="docs/assets/config/v1-docker-env.webp" alt="Docker .env.example — Marktdaten-Block" width="172" loading="lazy" align="left"></a>
 
-<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
-  <tr>
-    <td>
-      <table border="0" cellpadding="14" cellspacing="0" width="100%">
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="Docker/.env.example" title="Docker/.env.example öffnen">
-              <img src="docs/assets/config/v1-docker-env.webp" alt="Docker .env.example — Marktdaten-Block" width="172" loading="lazy">
-            </a>
-            <br><sub><code>Docker/.env.example</code></sub>
-          </td>
-          <td valign="top">
-            <h4>① Docker/.env — Marktdaten-Schalter</h4>
-            <p>Im Demo-Stack steuern Sie <strong>Live-Ingest</strong> und <strong>Historien-Backfill</strong> aus einer Datei. Anlegen mit <code>cp .env.example .env</code>, dann diesen Block bearbeiten. Priorität: <code>docker-compose.yml</code> → <code>Docker/.env</code> → <code>application.yml</code>.</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>MARKET_HISTORY_BACKFILL_*</code></td>
-                <td valign="top">BIST-, NASDAQ- und Krypto-<strong>Historienkurse</strong>; Start beim Hochfahren</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>PROVIDERS_FINNHUB_ENABLED</code></td>
-                <td valign="top">NASDAQ Live-Preise und Historie (Finnhub)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_FUND_*</code></td>
-                <td valign="top">TEFAS-Fonds-NAV und Historien-Bootstrap</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_BOND_*</code> · <code>MARKET_TRGOVUSD_*</code></td>
-                <td valign="top">TCMB-Anleiherenditen und TR-USD-Eurobond-Charts</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_VIOP_ENABLED</code></td>
-                <td valign="top">VIOP-Derivate (Zinsen-/Festgeld-Karte)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_*_SYNC_ENABLED</code></td>
-                <td valign="top">Leitzins, Repo, TL-Einlagen, VPI-Makro-Sync</td>
-              </tr>
-            </table>
-            <p><strong>Nach Änderungen:</strong> <code>docker compose up -d --force-recreate market-data-service</code><br>
-            <strong>Fortschritt:</strong> <code>docker compose logs -f market-data-service</code> · Details: <a href="docs/deutsch/configuration.md">docs/deutsch/configuration.md</a></p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="market-data-service/src/main/resources/application.yml" title="application.yml öffnen">
-              <img src="docs/assets/config/v2-scheduler-live.webp" alt="application.yml — scheduler.live Cron-Einstellungen" width="172" loading="lazy">
-            </a>
-            <br><sub><code>market-data-service/.../application.yml</code></sub>
-          </td>
-          <td valign="top">
-            <h4>② application.yml — Live-Daten-Scheduler</h4>
-            <p>Krypto-, BIST-, NASDAQ-, FX-, Fonds- und Anleihen-<strong>Live-Preise</strong> nutzen denselben Cron-Ausdruck. Standard: <strong>3× täglich</strong> — 09:00, 13:00, 17:00 (<code>Europe/Istanbul</code>).</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>SCHEDULER_LIVE_CRON</code></td>
-                <td valign="top">Live-Ingest-Zeitplan (Cron); z. B. <code>0 0 9,13,17 * * *</code></td>
-              </tr>
-              <tr>
-                <td valign="top"><code>SCHEDULER_LIVE_ZONE</code></td>
-                <td valign="top">Zeitzone; Standard <code>Europe/Istanbul</code></td>
-              </tr>
-              <tr>
-                <td valign="top"><code>market.scheduler.enabled</code></td>
-                <td valign="top">Krypto-Live-Ingest (Standard: an)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>market.stock.scheduler.enabled</code></td>
-                <td valign="top">BIST + NASDAQ Live-Ingest (Standard: an)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>market.fx.scheduler-enabled</code></td>
-                <td valign="top">FX-Kurse Live-Ingest (Standard: an)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>scheduler.*.delay-ms</code></td>
-                <td valign="top">Bootstrap-/Hilfsaufgaben-Intervalle (FX 5 Min., Aktie 1 Min., Anleihe 5 Min.)</td>
-              </tr>
-            </table>
-            <p><strong>Hinweis:</strong> VIOP und Makroraten (Leitzins, VPI) haben eigene Crons — siehe <code>market.viop.cron</code> und <code>market.*.weekly-sync</code> im selben File.</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="market-data-service/src/main/resources/application.yml#L150" title="application.yml — history.backfill-Block">
-              <img src="docs/assets/config/v3-history-backfill.webp" alt="application.yml — market.history.backfill Einstellungen" width="172" loading="lazy">
-            </a>
-            <br><sub><code>market.history.backfill</code></sub>
-          </td>
-          <td valign="top">
-            <h4>③ application.yml — Historiendaten (Backfill)</h4>
-            <p>Zentraler Orchestrator für <strong>Historienkurse</strong> (BIST, NASDAQ, Krypto, FX). Lokal standardmäßig <strong>aus</strong>; in der Docker-Demo per <code>Docker/.env</code> <strong>an</strong>.</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>MARKET_HISTORY_BACKFILL_ENABLED</code></td>
-                <td valign="top">Historien-Ingest ein-/ausschalten</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP</code></td>
-                <td valign="top">Sofort beim Stack-Start ausführen</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>years</code> · <code>chunk-days</code></td>
-                <td valign="top">Rückblick (5 Jahre) und Chunk-Größe (90 Tage)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>schedule-delay-ms</code></td>
-                <td valign="top">Periodischer Lauf: alle 15 Minuten (900000 ms)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>gate-live-until-history-ready</code></td>
-                <td valign="top"><code>true</code> → Live-Preise warten auf fertige Historie</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>kafka.enabled</code></td>
-                <td valign="top">Kafka während Backfill (Standard: aus, Schreiben in DB)</td>
-              </tr>
-            </table>
-            <p><strong>Tipp:</strong> Für eine schnelle Demo reicht <code>Docker/.env</code>; Tiefe und Retry in diesem YAML-Block feinjustieren. Anleihen-, Fonds-NAV- und Eurobond-Historie haben eigene Bootstrap-Flags (<code>market.bond.history-bootstrap</code>, <code>market.fund.nav-history-bootstrap</code>).</p>
-          </td>
-        </tr>
-        <tr><td colspan="2" height="20"></td></tr>
-        <tr>
-          <td width="190" align="center" valign="top">
-            <a href="Docker/docker-compose.yml#L220" title="docker-compose.yml — market-data-service">
-              <img src="docs/assets/config/v4-docker-compose.webp" alt="docker-compose.yml — market-data-service environment-Block" width="172" loading="lazy">
-            </a>
-            <br><sub><code>Docker/docker-compose.yml</code></sub>
-          </td>
-          <td valign="top">
-            <h4>④ docker-compose.yml — Docker-Demo-Overrides</h4>
-            <p>Umgebungsvariablen für den <code>market-data-service</code>-Container; sie <strong>vereinen</strong> <code>Docker/.env</code> mit Inline-Defaults. Viele in <code>application.yml</code> <strong>aus</strong> geschaltete Pipelines sind hier für die Demo <strong>an</strong>.</p>
-            <table border="0" cellpadding="4" cellspacing="0">
-              <tr>
-                <td width="42%" valign="top"><code>SPRING_PROFILES_ACTIVE=docker</code></td>
-                <td valign="top">Lädt <code>application-docker.yml</code> (Fonds-Scheduler usw.)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>TCMB_API_KEY=${...:?}</code></td>
-                <td valign="top">Pflicht — EVDS-Anleihen, Makro, FX-Daten</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_HISTORY_BACKFILL_*:-true</code></td>
-                <td valign="top">Historienkurse: lokal aus → in Docker an</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_FUND_*:-true</code></td>
-                <td valign="top">TEFAS-NAV-Scheduler + Historien-Bootstrap</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>MARKET_VIOP_CRON:-0 */2 * * * *</code></td>
-                <td valign="top">VIOP: Demo alle 2 Min. (lokal werktags 19:40)</td>
-              </tr>
-              <tr>
-                <td valign="top"><code>${VAR:-default}</code>-Syntax</td>
-                <td valign="top">Rechter Default, wenn <code>.env</code> leer ist</td>
-              </tr>
-            </table>
-            <p><strong>Priorität:</strong> Compose-Zeile → <code>Docker/.env</code> → <code>application.yml</code>. Nach Änderung: <code>docker compose up -d --force-recreate market-data-service</code></p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
+<sub><code>Docker/.env.example</code></sub>
 
-</div>
+#### ① Docker/.env — Marktdaten-Schalter
+
+Im Demo-Stack steuern Sie **Live-Ingest** und **Historien-Backfill** aus einer Datei. Anlegen mit `cp .env.example .env`, dann diesen Block bearbeiten. Priorität: `docker-compose.yml` → `Docker/.env` → `application.yml`.
+
+- `MARKET_HISTORY_BACKFILL_*` — BIST-, NASDAQ- und Krypto-**Historienkurse**; Start beim Hochfahren
+- `PROVIDERS_FINNHUB_ENABLED` — NASDAQ Live-Preise und Historie (Finnhub)
+- `MARKET_FUND_*` — TEFAS-Fonds-NAV und Historien-Bootstrap
+- `MARKET_BOND_*` · `MARKET_TRGOVUSD_*` — TCMB-Anleiherenditen und TR-USD-Eurobond-Charts
+- `MARKET_VIOP_ENABLED` — VIOP-Derivate (Zinsen-/Festgeld-Karte)
+- `MARKET_*_SYNC_ENABLED` — Leitzins, Repo, TL-Einlagen, VPI-Makro-Sync
+
+**Nach Änderungen:** `docker compose up -d --force-recreate market-data-service`
+
+**Fortschritt:** `docker compose logs -f market-data-service` · Details: [docs/deutsch/configuration.md](docs/deutsch/configuration.md)
+
+<br clear="left">
+
+<a href="market-data-service/src/main/resources/application.yml"><img src="docs/assets/config/v2-scheduler-live.webp" alt="application.yml — scheduler.live Cron-Einstellungen" width="172" loading="lazy" align="left"></a>
+
+<sub><code>market-data-service/.../application.yml</code></sub>
+
+#### ② application.yml — Live-Daten-Scheduler
+
+Krypto-, BIST-, NASDAQ-, FX-, Fonds- und Anleihen-**Live-Preise** nutzen denselben Cron-Ausdruck. Standard: **3× täglich** — 09:00, 13:00, 17:00 (`Europe/Istanbul`).
+
+- `SCHEDULER_LIVE_CRON` — Live-Ingest-Zeitplan (Cron); z. B. `0 0 9,13,17 * * *`
+- `SCHEDULER_LIVE_ZONE` — Zeitzone; Standard `Europe/Istanbul`
+- `market.scheduler.enabled` — Krypto-Live-Ingest (Standard: an)
+- `market.stock.scheduler.enabled` — BIST + NASDAQ Live-Ingest (Standard: an)
+- `market.fx.scheduler-enabled` — FX-Kurse Live-Ingest (Standard: an)
+- `scheduler.*.delay-ms` — Bootstrap-/Hilfsaufgaben-Intervalle (FX 5 Min., Aktie 1 Min., Anleihe 5 Min.)
+
+**Hinweis:** VIOP und Makroraten (Leitzins, VPI) haben eigene Crons — siehe `market.viop.cron` und `market.*.weekly-sync` im selben File.
+
+<br clear="left">
+
+<a href="market-data-service/src/main/resources/application.yml#L150"><img src="docs/assets/config/v3-history-backfill.webp" alt="application.yml — market.history.backfill Einstellungen" width="172" loading="lazy" align="left"></a>
+
+<sub><code>market.history.backfill</code></sub>
+
+#### ③ application.yml — Historiendaten (Backfill)
+
+Zentraler Orchestrator für **Historienkurse** (BIST, NASDAQ, Krypto, FX). Lokal standardmäßig **aus**; in der Docker-Demo per `Docker/.env` **an**.
+
+- `MARKET_HISTORY_BACKFILL_ENABLED` — Historien-Ingest ein-/ausschalten
+- `MARKET_HISTORY_BACKFILL_RUN_ON_STARTUP` — Sofort beim Stack-Start ausführen
+- `years` · `chunk-days` — Rückblick (5 Jahre) und Chunk-Größe (90 Tage)
+- `schedule-delay-ms` — Periodischer Lauf: alle 15 Minuten (900000 ms)
+- `gate-live-until-history-ready` — `true` → Live-Preise warten auf fertige Historie
+- `kafka.enabled` — Kafka während Backfill (Standard: aus, Schreiben in DB)
+
+**Tipp:** Für eine schnelle Demo reicht `Docker/.env`; Tiefe und Retry in diesem YAML-Block feinjustieren. Anleihen-, Fonds-NAV- und Eurobond-Historie haben eigene Bootstrap-Flags (`market.bond.history-bootstrap`, `market.fund.nav-history-bootstrap`).
+
+<br clear="left">
+
+<a href="Docker/docker-compose.yml#L220"><img src="docs/assets/config/v4-docker-compose.webp" alt="docker-compose.yml — market-data-service environment-Block" width="172" loading="lazy" align="left"></a>
+
+<sub><code>Docker/docker-compose.yml</code></sub>
+
+#### ④ docker-compose.yml — Docker-Demo-Overrides
+
+Umgebungsvariablen für den `market-data-service`-Container; sie **vereinen** `Docker/.env` mit Inline-Defaults. Viele in `application.yml` **aus** geschaltete Pipelines sind hier für die Demo **an**.
+
+- `SPRING_PROFILES_ACTIVE=docker` — Lädt `application-docker.yml` (Fonds-Scheduler usw.)
+- `TCMB_API_KEY=${...:?}` — Pflicht — EVDS-Anleihen, Makro, FX-Daten
+- `MARKET_HISTORY_BACKFILL_*:-true` — Historienkurse: lokal aus → in Docker an
+- `MARKET_FUND_*:-true` — TEFAS-NAV-Scheduler + Historien-Bootstrap
+- `MARKET_VIOP_CRON:-0 */2 * * * *` — VIOP: Demo alle 2 Min. (lokal werktags 19:40)
+- `${VAR:-default}`-Syntax — Rechter Default, wenn `.env` leer ist
+
+**Priorität:** Compose-Zeile → `Docker/.env` → `application.yml`. Nach Änderung: `docker compose up -d --force-recreate market-data-service`
+
+<br clear="left">
 
 ## Instrumente hinzufügen
 
