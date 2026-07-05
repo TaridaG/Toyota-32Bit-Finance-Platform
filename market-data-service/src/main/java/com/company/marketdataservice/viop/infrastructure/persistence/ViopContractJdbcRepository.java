@@ -19,8 +19,8 @@ public class ViopContractJdbcRepository {
     private static final String UPSERT_SQL =
             """
             INSERT INTO mds_viop_contract_catalog
-              (contract_code, underlying, market_type, market_group, expiry_date, settlement_type, currency, is_active, source_file, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?)
+              (contract_code, underlying, market_type, market_group, expiry_date, settlement_type, currency, pazar, is_active, source_file, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?)
             ON CONFLICT (contract_code) DO UPDATE SET
               underlying = EXCLUDED.underlying,
               market_type = EXCLUDED.market_type,
@@ -28,6 +28,7 @@ public class ViopContractJdbcRepository {
               expiry_date = EXCLUDED.expiry_date,
               settlement_type = EXCLUDED.settlement_type,
               currency = EXCLUDED.currency,
+              pazar = EXCLUDED.pazar,
               is_active = TRUE,
               source_file = EXCLUDED.source_file,
               updated_at = EXCLUDED.updated_at
@@ -55,8 +56,9 @@ public class ViopContractJdbcRepository {
                     ps.setObject(5, row.expiryDate() == null ? null : Date.valueOf(row.expiryDate()));
                     ps.setString(6, row.settlementType());
                     ps.setString(7, row.currency());
-                    ps.setString(8, row.sourceFile());
-                    ps.setTimestamp(9, Timestamp.from(now));
+                    ps.setString(8, row.pazar());
+                    ps.setString(9, row.sourceFile());
+                    ps.setTimestamp(10, Timestamp.from(now));
                 });
     }
 

@@ -1,5 +1,6 @@
 package com.company.marketdataservice.viop.application;
 
+import com.company.marketdataservice.viop.domain.ViopContractSegment;
 import com.company.marketdataservice.viop.infrastructure.http.dto.ViopActiveContractDto;
 import com.company.marketdataservice.viop.infrastructure.http.dto.ViopSettlementHistoryPointDto;
 import com.company.marketdataservice.viop.infrastructure.persistence.ViopMarketReadJdbcRepository;
@@ -19,8 +20,8 @@ public class ViopMarketReadServiceImpl implements ViopMarketReadService {
     private final ViopMarketReadJdbcRepository readJdbcRepository;
 
     @Override
-    public List<ViopActiveContractDto> getActiveContracts() {
-        return readJdbcRepository.findActiveInterestContracts();
+    public List<ViopActiveContractDto> getActiveContracts(ViopContractSegment segment) {
+        return readJdbcRepository.findActiveContracts(segment);
     }
 
     @Override

@@ -15,6 +15,7 @@ public record ViopSettlementRow(
         BigDecimal volumeTl,
         BigDecimal volumeQty,
         BigDecimal openInterest,
+        String pazar,
         String sourceFile
 ) {}
 
