@@ -1,0 +1,72 @@
+name: Publish Docker Images to GHCR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: finance-api
+            context: .
+            dockerfile: finance-api/Dockerfile
+          - service: market-data-service
+            context: .
+            dockerfile: market-data-service/Dockerfile
+          - service: api-gateway
+            context: .
+            dockerfile: api-gateway/Dockerfile
+          - service: news-service
+            context: .
+            dockerfile: news-service/Dockerfile
+          - service: notification-service
+            context: .
+            dockerfile: notification-service/Dockerfile
+          - service: analytics-service
+            context: .
+            dockerfile: analytics-service/Dockerfile
+          - service: log-consumer-service
+            context: .
+            dockerfile: log-consumer-service/Dockerfile
+          - service: frontend-web
+            context: frontend-web
+            dockerfile: frontend-web/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set lowercase owner
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          provenance: false
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/toyota-32bit-finance-platform/${{ matrix.service }}:latest
+            ghcr.io/${{ env.OWNER_LC }}/toyota-32bit-finance-platform/${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
