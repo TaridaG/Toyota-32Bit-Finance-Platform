@@ -1,5 +1,8 @@
 import { apiClient } from '../../../shared/api/client'
 import { getCachedOrLoad } from './requestCache'
+import type { ViopSegment } from '../lib/viopSegment'
+
+export type { ViopSegment } from '../lib/viopSegment'
 
 const SUMMARY_TTL_MS = 30_000
 const HISTORY_TTL_MS = 5 * 60_000
@@ -68,9 +71,12 @@ export async function fetchTahvilHistory(symbol: string): Promise<MarketHistoryP
   })
 }
 
-export async function fetchViopActiveContracts(): Promise<ViopActiveContract[]> {
-  return getCachedOrLoad('faiz-vadeli:viop:contracts:active', SUMMARY_TTL_MS, async () => {
-    const { data } = await apiClient.get<ViopActiveContract[] | { data?: ViopActiveContract[] }>('/api/v1/market/viop/contracts/active')
+export async function fetchViopActiveContracts(segment: ViopSegment = 'rates_bonds'): Promise<ViopActiveContract[]> {
+  return getCachedOrLoad(`faiz-vadeli:viop:contracts:${segment}`, SUMMARY_TTL_MS, async () => {
+    const { data } = await apiClient.get<ViopActiveContract[] | { data?: ViopActiveContract[] }>(
+      '/api/v1/market/viop/contracts/active',
+      { params: { segment } },
+    )
     if (Array.isArray(data)) {
       return data
     }
