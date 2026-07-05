@@ -14,6 +14,7 @@ export function InfoCardsPagination({
   onPageChange,
 }: InfoCardsPaginationProps) {
   const { t } = useTranslation('common')
+  const { t: tPagination } = useTranslation('markets')
 
   if (totalElements === 0) {
     return null
@@ -27,10 +28,10 @@ export function InfoCardsPagination({
         disabled={page <= 0}
         onClick={() => onPageChange(page - 1)}
       >
-        {t('pagination.prev')}
+        {tPagination('pagination.prev')}
       </button>
       <span className="fi-pagination-summary">
-        {t('pagination.summary', {
+        {tPagination('pagination.summary', {
           page: page + 1,
           totalPages: Math.max(1, totalPages),
           totalElements,
@@ -42,7 +43,7 @@ export function InfoCardsPagination({
         disabled={page >= totalPages - 1}
         onClick={() => onPageChange(page + 1)}
       >
-        {t('pagination.next')}
+        {tPagination('pagination.next')}
       </button>
     </nav>
   )

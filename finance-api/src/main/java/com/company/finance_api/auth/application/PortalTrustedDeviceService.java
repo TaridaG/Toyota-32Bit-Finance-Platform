@@ -161,11 +161,11 @@ public class PortalTrustedDeviceService {
       return Optional.empty();
     }
     String[] parts = raw.split("\\.");
-    if (parts.length != 5 || !COOKIE_VERSION.equals(parts[0])) {
+    if (parts.length != 4 || !COOKIE_VERSION.equals(parts[0])) {
       return Optional.empty();
     }
     String payload = parts[1] + "." + parts[2];
-    String signature = parts[4];
+    String signature = parts[3];
     if (!constantTimeEquals(sign(payload), signature)) {
       return Optional.empty();
     }

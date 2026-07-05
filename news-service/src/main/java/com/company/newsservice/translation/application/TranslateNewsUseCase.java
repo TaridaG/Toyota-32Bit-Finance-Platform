@@ -89,9 +89,11 @@ public class TranslateNewsUseCase {
     }
 
     /**
-     * Makale koleksiyonu için dil bazlı çeviri projection'larını toplu çözümler (cache hit/miss ve provider fallback ile).
+     * Makale koleksiyonu için dil bazlı çeviri projection'larını DB'den okur.
+     * Çeviri üretimi yalnızca ingest ({@link #pretranslateForArticle}) ve backfill job'ında yapılır;
+     * kullanıcı isteğinde provider çağrılmaz.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public Map<Long, NewsTextProjection> resolveBatch(Collection<NewsArticle> articles, String requestedLanguage) {
         if (articles == null || articles.isEmpty()) {
             return Map.of();
@@ -109,29 +111,12 @@ public class TranslateNewsUseCase {
                 .stream()
                 .collect(Collectors.toMap(item -> item.getNewsArticle().getId(), Function.identity()));
 
-        NewsTranslationProvider provider = resolveProvider();
         for (NewsArticle article : articleList) {
             if (existingByArticleId.containsKey(article.getId())) {
                 cacheHitCounter.increment();
-                continue;
-            }
-            cacheMissCounter.increment();
-            NewsArticleTranslation created = translateAndPersist(article, language, provider);
-            if (created != null) {
-                providerSuccessCounter.increment();
-                existingByArticleId.put(article.getId(), created);
             } else {
-                providerFallbackCounter.increment();
+                cacheMissCounter.increment();
             }
-        }
-
-        List<Long> idsStillWithoutRow = articleList.stream()
-                .map(NewsArticle::getId)
-                .filter(id -> !existingByArticleId.containsKey(id))
-                .toList();
-        if (!idsStillWithoutRow.isEmpty()) {
-            translationRepository.findByNewsArticleIdInAndLanguageCode(idsStillWithoutRow, language).forEach(
-                    row -> existingByArticleId.put(row.getNewsArticle().getId(), row));
         }
 
         return articleList.stream().collect(Collectors.toMap(
@@ -142,7 +127,6 @@ public class TranslateNewsUseCase {
                         return asOriginalProjection(article);
                     }
                     if (isLikelyFailedTranslationCopy(article, tr.getTitleTranslated(), tr.getSummaryTranslated(), language)) {
-                        translationRepository.delete(tr);
                         return asOriginalProjection(article);
                     }
                     return new NewsTextProjection(
