@@ -28,7 +28,7 @@ public class ViopContractJdbcRepository {
               expiry_date = EXCLUDED.expiry_date,
               settlement_type = EXCLUDED.settlement_type,
               currency = EXCLUDED.currency,
-              pazar = EXCLUDED.pazar,
+              pazar = COALESCE(EXCLUDED.pazar, mds_viop_contract_catalog.pazar),
               is_active = TRUE,
               source_file = EXCLUDED.source_file,
               updated_at = EXCLUDED.updated_at

@@ -46,6 +46,7 @@ public class ViopIngestService {
     private final ViopSettlementJdbcRepository settlementRepository;
     private final ViopIngestRunJdbcRepository runRepository;
     private final ViopAliasResolver aliasResolver;
+    private final ViopPazarInferrer pazarInferrer;
     private final InstrumentMappingService instrumentMappingService;
     private final MarketHistoryWriteService marketHistoryWriteService;
 
@@ -60,6 +61,7 @@ public class ViopIngestService {
             List<ViopContractRow> contracts = loadContracts();
             List<ViopSettlementRow> settlements = loadSettlements(tradeDate);
             contracts = mergePazarFromSettlements(contracts, settlements);
+            contracts = pazarInferrer.inferMissing(contracts);
 
             if (!contracts.isEmpty()) {
                 contractRepository.upsertAll(contracts);
