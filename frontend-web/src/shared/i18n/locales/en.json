@@ -667,7 +667,19 @@
         "chartError": "Could not load history.",
         "chartRetry": "Retry",
         "chartEmpty": "No data in this range.",
-        "chartFoot": "The line shows near-contract alias pricing built from BIST VIOP daily settlement files."
+        "chartFoot": "The line shows near-contract alias pricing built from BIST VIOP daily settlement files.",
+        "segmentTabsAria": "VIOP market segment",
+        "segment": {
+          "rates": "Rates",
+          "bonds": "Bonds",
+          "equity": "Equity",
+          "commodity": "Commodity",
+          "all": "All"
+        },
+        "cardTlrefLabel": "TLREF",
+        "cardDibsLabel": "DIBS",
+        "cardDibsNoData": "No DIBS data",
+        "allSegmentLimitHint": "Showing top 300 contracts by traded value."
       },
       "bond": {
         "tenorSelectAria": "Select treasury bond tenor",

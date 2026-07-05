@@ -117,6 +117,29 @@ class TranslateNewsUseCaseTest {
     }
 
     @Test
+    void resolveBatch_returnsOriginalWhenEnabledButNoCachedRow() {
+        newsProperties.getTranslation().setEnabled(true);
+        newsProperties.getTranslation().setProvider("noop");
+
+        NewsArticle article = new NewsArticle();
+        article.setId(21L);
+        article.setTitle("Original title");
+        article.setSummary("Original summary");
+
+        when(translationRepository.findByNewsArticleIdInAndLanguageCode(List.of(21L), "tr"))
+                .thenReturn(List.of());
+
+        Map<Long, TranslateNewsUseCase.NewsTextProjection> batch =
+                useCase.resolveBatch(List.of(article), "tr");
+
+        TranslateNewsUseCase.NewsTextProjection projection = batch.get(21L);
+        assertEquals("Original title", projection.titleTranslated());
+        assertEquals("Original summary", projection.summaryTranslated());
+        assertFalse(projection.translated());
+        verify(translationRepository).findByNewsArticleIdInAndLanguageCode(List.of(21L), "tr");
+    }
+
+    @Test
     void backfillMissingTranslations_returnsZeroWhenDisabled() {
         assertEquals(0, useCase.backfillMissingTranslations(50));
     }

@@ -662,7 +662,19 @@
         "chartError": "Historie konnte nicht geladen werden.",
         "chartRetry": "Erneut versuchen",
         "chartEmpty": "Keine Daten in diesem Zeitraum.",
-        "chartFoot": "Die Linie zeigt Near-Contract-Alias-Preise aus den taeglichen BIST-VIOP-Settlement-Dateien."
+        "chartFoot": "Die Linie zeigt Near-Contract-Alias-Preise aus den taeglichen BIST-VIOP-Settlement-Dateien.",
+        "segmentTabsAria": "VIOP Marktsegment",
+        "segment": {
+          "rates": "Zins",
+          "bonds": "Anleihe",
+          "equity": "Aktie",
+          "commodity": "Rohstoff",
+          "all": "Alle"
+        },
+        "cardTlrefLabel": "TLREF",
+        "cardDibsLabel": "DIBS",
+        "cardDibsNoData": "Keine DIBS-Daten",
+        "allSegmentLimitHint": "Es werden die 300 Kontrakte mit dem höchsten Handelsvolumen angezeigt."
       },
       "bond": {
         "tenorSelectAria": "Anleihelaufzeit wählen",

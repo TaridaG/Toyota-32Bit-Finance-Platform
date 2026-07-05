@@ -15,8 +15,11 @@ import {
   fetchViopContractHistory,
   type ViopActiveContract,
 } from '../api/tahvilMarketApi'
+import { VIOP_PANEL_SEGMENTS, type ViopPanelSegment } from '../lib/viopSegment'
 
-type AliasSummary = { symbol: string; price?: number | null; change1D?: number | null }
+type ChipRow =
+  | { kind: 'alias'; symbol: string; price?: number | null; change1D?: number | null }
+  | { kind: 'contract'; contractCode: string; price?: number | null; change1D?: number | null }
 
 function fmtNum(value: number | null | undefined, locale: string, digits = 2): string {
   if (value == null || Number.isNaN(value)) return '—'
@@ -38,17 +41,51 @@ function toLine(points: Array<{ time?: string | null; value?: number | null }>):
   return [...m.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([time, value]) => ({ time: time as Time, value }))
 }
 
+function pickContractChips(contracts: ViopActiveContract[], limit = 3): ChipRow[] {
+  const sorted = [...contracts].sort((a, b) => {
+    const volA = a.volumeTl ?? 0
+    const volB = b.volumeTl ?? 0
+    if (volB !== volA) return volB - volA
+    return (a.expiryDate ?? '').localeCompare(b.expiryDate ?? '')
+  })
+  return sorted.slice(0, limit).map((row) => ({
+    kind: 'contract',
+    contractCode: row.contractCode,
+    price: row.settlementPrice ?? null,
+    change1D: row.changePercent ?? null,
+  }))
+}
+
+async function loadAliasChips(segment: ViopPanelSegment): Promise<ChipRow[]> {
+  if (segment === 'rates') {
+    const symbols = ['VIOP_TLREF_NEAR', 'VIOP_DIBS_NEAR', 'VIOP_FAIZ_NEAR'] as const
+    const rows = await Promise.all(symbols.map(async (symbol) => ({ symbol, ...(await fetchTahvilSummary(symbol)) })))
+    return rows.map((row) => ({
+      kind: 'alias',
+      symbol: row.symbol,
+      price: row.price ?? null,
+      change1D: row.change1D ?? null,
+    }))
+  }
+  if (segment === 'bonds') {
+    const row = await fetchTahvilSummary('VIOP_DIBS_NEAR')
+    return [{ kind: 'alias', symbol: 'VIOP_DIBS_NEAR', price: row?.price ?? null, change1D: row?.change1D ?? null }]
+  }
+  return []
+}
+
 export function FaizVadeliViopDetailPanel({ onBack }: { onBack: () => void }) {
   const { t, i18n } = useTranslation('common')
   const { theme } = useTheme()
   const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en'
   const isDark = theme === 'dark'
 
+  const [activeSegment, setActiveSegment] = useState<ViopPanelSegment>('rates')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [contracts, setContracts] = useState<ViopActiveContract[]>([])
+  const [chipRows, setChipRows] = useState<ChipRow[]>([])
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
-  const [aliasRows, setAliasRows] = useState<AliasSummary[]>([])
   const [history, setHistory] = useState<Array<{ time?: string | null; value?: number | null }>>([])
   const [historyState, setHistoryState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [query, setQuery] = useState('')
@@ -57,14 +94,12 @@ export function FaizVadeliViopDetailPanel({ onBack }: { onBack: () => void }) {
     let cancelled = false
     setLoading(true)
     setError(null)
-    Promise.all([
-      fetchViopActiveContracts(),
-      Promise.all(['VIOP_TLREF_NEAR', 'VIOP_DIBS_NEAR', 'VIOP_FAIZ_NEAR'].map(async (symbol) => ({ symbol, ...(await fetchTahvilSummary(symbol)) }))),
-    ])
+    setQuery('')
+    Promise.all([fetchViopActiveContracts(activeSegment), loadAliasChips(activeSegment)])
       .then(([rows, aliases]) => {
         if (cancelled) return
         setContracts(rows)
-        setAliasRows(aliases)
+        setChipRows(aliases.length > 0 ? aliases : pickContractChips(rows))
         setSelectedCode(rows[0]?.contractCode ?? null)
       })
       .catch(() => {
@@ -76,7 +111,7 @@ export function FaizVadeliViopDetailPanel({ onBack }: { onBack: () => void }) {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [activeSegment, t])
 
   useEffect(() => {
     if (!selectedCode) {
@@ -156,15 +191,50 @@ export function FaizVadeliViopDetailPanel({ onBack }: { onBack: () => void }) {
         </button>
       </div>
 
-      <div className="fi-viop-alias-strip">
-        {aliasRows.map((row) => (
-          <div key={row.symbol} className="fi-viop-alias-chip">
-            <strong>{t(`faizVadeliPage.tahvil.symbolLabel.${row.symbol}`)}</strong>
-            <span>{fmtNum(row.price ?? null, locale, 2)}</span>
-            <small>{toPct(row.change1D ?? null, locale)}</small>
-          </div>
+      <div className="fi-viop-segment-tabs" role="tablist" aria-label={t('faizVadeliPage.tahvil.segmentTabsAria')}>
+        {VIOP_PANEL_SEGMENTS.map((segment) => (
+          <button
+            key={segment}
+            type="button"
+            role="tab"
+            aria-selected={activeSegment === segment}
+            className={`fi-viop-segment-tab${activeSegment === segment ? ' is-active' : ''}`}
+            onClick={() => setActiveSegment(segment)}
+          >
+            {t(`faizVadeliPage.tahvil.segment.${segment}`)}
+          </button>
         ))}
       </div>
+
+      {chipRows.length > 0 ? (
+        <div className="fi-viop-alias-strip">
+          {chipRows.map((row) => (
+            <div
+              key={row.kind === 'alias' ? row.symbol : row.contractCode}
+              className="fi-viop-alias-chip"
+              onClick={() => {
+                if (row.kind === 'contract') setSelectedCode(row.contractCode)
+              }}
+              onKeyDown={(e) => {
+                if (row.kind === 'contract' && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault()
+                  setSelectedCode(row.contractCode)
+                }
+              }}
+              role={row.kind === 'contract' ? 'button' : undefined}
+              tabIndex={row.kind === 'contract' ? 0 : undefined}
+            >
+              <strong>
+                {row.kind === 'alias'
+                  ? t(`faizVadeliPage.tahvil.symbolLabel.${row.symbol}`)
+                  : row.contractCode}
+              </strong>
+              <span>{fmtNum(row.price ?? null, locale, 2)}</span>
+              <small>{toPct(row.change1D ?? null, locale)}</small>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {loading ? <p className="fi-faiz-policy-panel-state">{t('faizVadeliPage.tahvil.detailLoading')}</p> : null}
       {error ? <p className="fi-faiz-policy-panel-state">{error}</p> : null}
@@ -180,6 +250,9 @@ export function FaizVadeliViopDetailPanel({ onBack }: { onBack: () => void }) {
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
+            {activeSegment === 'all' ? (
+              <p className="fi-faiz-policy-panel-state fi-viop-all-hint">{t('faizVadeliPage.tahvil.allSegmentLimitHint')}</p>
+            ) : null}
             <div className="fi-viop-table-wrap">
               <table className="fi-viop-table">
                 <thead>
@@ -226,4 +299,3 @@ export function FaizVadeliViopDetailPanel({ onBack }: { onBack: () => void }) {
     </div>
   )
 }
-

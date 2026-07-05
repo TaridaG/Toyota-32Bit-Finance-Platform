@@ -13,6 +13,7 @@ public record ViopContractRow(
         LocalDate expiryDate,
         String settlementType,
         String currency,
+        String pazar,
         String sourceFile
 ) {}
 

@@ -2786,17 +2786,6 @@ export function MyPortfolioPage() {
               </button>
             ))}
           </nav>
-
-          <button type="button" className="my-portfolio-sidebar-logout">
-            <span className="my-portfolio-sidebar-item-icon" aria-hidden>
-              <svg viewBox="0 0 24 24" aria-hidden>
-                <path d="M10 6H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3" />
-                <path d="M14 16l4-4-4-4" />
-                <path d="M18 12H9" />
-              </svg>
-            </span>
-            {isMobileNav || sidebarOpen ? <span>{t('sidebar.logout')}</span> : null}
-          </button>
         </aside>
 
         <div className="my-portfolio-content">
@@ -2856,15 +2845,6 @@ export function MyPortfolioPage() {
                 {isSellFlow && effectiveTradePortfolioId == null ? (
                   <p className="my-portfolio-trade-note my-portfolio-sell-empty-state" role="status">
                     {t('marketsAdd.sellPickPortfolio')}
-                  </p>
-                ) : isSellFlow &&
-                  !sellHoldingsLoading &&
-                  sellHoldingOptions.length === 0 &&
-                  !(purchaseMode === 'PAST' && !toUtcStartOfDay(acquiredAt)) ? (
-                  <p className="my-portfolio-trade-note my-portfolio-sell-empty-state" role="status">
-                    {purchaseMode === 'PAST'
-                      ? t('marketsAdd.errors.noHoldingsOnDate')
-                      : t('marketsAdd.sellHoldingsEmpty')}
                   </p>
                 ) : (
                 <>

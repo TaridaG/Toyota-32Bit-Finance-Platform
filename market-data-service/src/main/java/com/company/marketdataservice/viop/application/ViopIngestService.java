@@ -18,9 +18,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +59,7 @@ public class ViopIngestService {
             LocalDate tradeDate = LocalDate.now(resolveZone());
             List<ViopContractRow> contracts = loadContracts();
             List<ViopSettlementRow> settlements = loadSettlements(tradeDate);
+            contracts = mergePazarFromSettlements(contracts, settlements);
 
             if (!contracts.isEmpty()) {
                 contractRepository.upsertAll(contracts);
@@ -168,6 +171,53 @@ public class ViopIngestService {
         }
         marketHistoryWriteService.saveBatch(events);
         return events.size();
+    }
+
+    private List<ViopContractRow> mergePazarFromSettlements(
+            List<ViopContractRow> contracts, List<ViopSettlementRow> settlements) {
+        if (contracts == null || contracts.isEmpty()) {
+            return contracts == null ? List.of() : contracts;
+        }
+        if (settlements == null || settlements.isEmpty()) {
+            return contracts;
+        }
+        Map<String, String> pazarByCode = new HashMap<>();
+        for (ViopSettlementRow settlement : settlements) {
+            if (settlement.contractCode() == null || settlement.contractCode().isBlank()) {
+                continue;
+            }
+            if (settlement.pazar() == null || settlement.pazar().isBlank()) {
+                continue;
+            }
+            pazarByCode.put(settlement.contractCode().toUpperCase(Locale.ROOT), settlement.pazar().trim());
+        }
+        if (pazarByCode.isEmpty()) {
+            return contracts;
+        }
+        List<ViopContractRow> merged = new ArrayList<>(contracts.size());
+        for (ViopContractRow contract : contracts) {
+            if (contract.pazar() != null && !contract.pazar().isBlank()) {
+                merged.add(contract);
+                continue;
+            }
+            String pazar = pazarByCode.get(contract.contractCode().toUpperCase(Locale.ROOT));
+            if (pazar == null) {
+                merged.add(contract);
+                continue;
+            }
+            merged.add(
+                    new ViopContractRow(
+                            contract.contractCode(),
+                            contract.underlying(),
+                            contract.marketType(),
+                            contract.marketGroup(),
+                            contract.expiryDate(),
+                            contract.settlementType(),
+                            contract.currency(),
+                            pazar,
+                            contract.sourceFile()));
+        }
+        return merged;
     }
 
     private List<ViopContractRow> dedupeContracts(List<ViopContractRow> rows) {

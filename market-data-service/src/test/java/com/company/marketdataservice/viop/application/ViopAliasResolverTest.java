@@ -18,13 +18,13 @@ class ViopAliasResolverTest {
         LocalDate tradeDate = LocalDate.of(2026, 6, 1);
 
         List<ViopContractRow> contracts = List.of(
-                new ViopContractRow("F_TLREF0626", "TLREF", "FUTURE", "FAIZ", LocalDate.of(2026, 6, 30), null, "TRY", "x"),
-                new ViopContractRow("F_TLREF0726", "TLREF", "FUTURE", "FAIZ", LocalDate.of(2026, 7, 31), null, "TRY", "x"),
-                new ViopContractRow("F_DIBS0626", "DIBS", "FUTURE", "TAHVIL", LocalDate.of(2026, 6, 30), null, "TRY", "x"));
+                new ViopContractRow("F_TLREF0626", "TLREF", "FUTURE", "FAIZ", LocalDate.of(2026, 6, 30), null, "TRY", "D_FI", "x"),
+                new ViopContractRow("F_TLREF0726", "TLREF", "FUTURE", "FAIZ", LocalDate.of(2026, 7, 31), null, "TRY", "D_FI", "x"),
+                new ViopContractRow("F_DIBS0626", "DIBS", "FUTURE", "TAHVIL", LocalDate.of(2026, 6, 30), null, "TRY", "D_BO", "x"));
         List<ViopSettlementRow> rows = List.of(
-                new ViopSettlementRow(tradeDate, "F_TLREF0626", new BigDecimal("42.10"), null, null, null, null, null, "x"),
-                new ViopSettlementRow(tradeDate, "F_TLREF0726", new BigDecimal("43.10"), null, null, null, null, null, "x"),
-                new ViopSettlementRow(tradeDate, "F_DIBS0626", new BigDecimal("38.55"), null, null, null, null, null, "x"));
+                new ViopSettlementRow(tradeDate, "F_TLREF0626", new BigDecimal("42.10"), null, null, null, null, null, null, "x"),
+                new ViopSettlementRow(tradeDate, "F_TLREF0726", new BigDecimal("43.10"), null, null, null, null, null, null, "x"),
+                new ViopSettlementRow(tradeDate, "F_DIBS0626", new BigDecimal("38.55"), null, null, null, null, null, null, "x"));
 
         var aliases = resolver.resolve(contracts, rows, tradeDate);
         assertThat(aliases).extracting(a -> a.aliasSymbol()).contains("VIOP_TLREF_NEAR", "VIOP_DIBS_NEAR");

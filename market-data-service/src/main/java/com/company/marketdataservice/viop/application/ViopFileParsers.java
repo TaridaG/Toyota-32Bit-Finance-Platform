@@ -98,7 +98,9 @@ public final class ViopFileParsers {
             String expiryRaw = first(row, "vadetarihi", "expiry", "maturitydate", "maturity_date");
             LocalDate expiryDate = parseDate(expiryRaw);
             String marketType = inferMarketType(contractCode, first(row, "opsiyonturu", "optiontype"));
-            String marketGroup = first(row, "grup", "marketgroup", "pazar", "market");
+            String marketGroup =
+                    first(row, "pazarsegmenti", "marketsegment", "grup", "marketgroup", "pazarsegmenti");
+            String pazar = trimOrNull(first(row, "pazar", "market"));
             String settlementType = first(row, "uzlasmatipi", "settlementtype");
             String currency = first(row, "parabirimi", "currency");
             out.add(
@@ -110,6 +112,7 @@ public final class ViopFileParsers {
                             expiryDate,
                             trimOrNull(settlementType),
                             trimOrNull(currency),
+                            pazar,
                             sourceFile));
         }
         return out;
@@ -143,10 +146,11 @@ public final class ViopFileParsers {
                                 normalizeCode(contractCode),
                                 trimOrNull(first(row, "dayanakvarlik", "underlying")),
                                 inferMarketType(contractCode, first(row, "opsiyonturu", "optiontype")),
-                                trimOrNull(first(row, "grup", "marketgroup", "pazar", "market")),
+                                trimOrNull(first(row, "pazarsegmenti", "marketsegment", "grup", "marketgroup")),
                                 parseDate(first(row, "vadetarihi", "expiry", "maturitydate")),
                                 trimOrNull(first(row, "uzlasmatipi", "settlementtype")),
                                 trimOrNull(first(row, "parabirimi", "currency")),
+                                trimOrNull(first(row, "pazar", "market")),
                                 sourceFile));
             }
         }
@@ -387,6 +391,7 @@ public final class ViopFileParsers {
                 parseDecimal(volumeTlRaw(row)),
                 parseDecimal(volumeQtyRaw(row)),
                 parseDecimal(openInterestRaw(row)),
+                trimOrNull(first(row, "pazar", "market")),
                 sourceFile);
     }
 

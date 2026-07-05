@@ -661,7 +661,19 @@
         "chartError": "Geçmiş veri yüklenemedi.",
         "chartRetry": "Tekrar dene",
         "chartEmpty": "Bu aralıkta kayıtlı veri yok.",
-        "chartFoot": "Çizgi, BIST VIOP günlük uzlaşma verisinden oluşturulan near-contract alias fiyatını gösterir."
+        "chartFoot": "Çizgi, BIST VIOP günlük uzlaşma verisinden oluşturulan near-contract alias fiyatını gösterir.",
+        "segmentTabsAria": "VIOP pazar segmenti",
+        "segment": {
+          "rates": "Faiz",
+          "bonds": "Tahvil",
+          "equity": "Hisse",
+          "commodity": "Emtia",
+          "all": "Tümü"
+        },
+        "cardTlrefLabel": "TLREF",
+        "cardDibsLabel": "DİBS",
+        "cardDibsNoData": "DİBS verisi yok",
+        "allSegmentLimitHint": "En yüksek hacimli 300 kontrat gösteriliyor."
       },
       "bond": {
         "tenorSelectAria": "Hazine bono vadesi seçin",

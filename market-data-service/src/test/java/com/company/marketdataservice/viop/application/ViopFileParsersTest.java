@@ -71,4 +71,34 @@ class ViopFileParsersTest {
         assertThat(akbnk.volumeQty()).isEqualByComparingTo(new BigDecimal("434560"));
         assertThat(akbnk.openInterest()).isEqualByComparingTo(new BigDecimal("612860"));
     }
+
+    @Test
+    void parsesContractsWithPazarColumn() {
+        String csv = "SozlesmeKodu;DayanakVarlik;VadeTarihi;ParaBirimi;Pazar;PazarSegmenti\n"
+                + "F_TLREF0626;TLREF;28.06.2026;TRY;D_FI;TRF\n"
+                + "F_AKBNK0626;AKBNK.E;30.06.2026;TRY;D_EQ;SSF\n";
+        DownloadedFile file = new DownloadedFile("x", "viopms.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+        var rows = ViopFileParsers.parseContracts(file);
+        assertThat(rows).hasSize(2);
+        assertThat(rows.get(0).pazar()).isEqualTo("D_FI");
+        assertThat(rows.get(0).marketGroup()).isEqualTo("TRF");
+        assertThat(rows.get(1).pazar()).isEqualTo("D_EQ");
+    }
+
+    @Test
+    void parsesSettlementsWithPazarFromExtendedBistCsv() {
+        String csv =
+                "TARIH;SOZLESME KODU;PAZAR;UZLASMA FIYATI;UZLASMA FIYATI DEGISIMI (%);ISLEM HACMI;ISLEM MIKTARI;ACIK POZISYON\n"
+                        + "TRADE DATE;INSTRUMENT SERIES;MARKET;SETTLEMENT PRICE;CHANGE OF SETTLEMENT PRICE (%);TRADED VALUE;TRADE VOLUME;OPEN POSITION\n"
+                        + "2025-07-04;F_TLREF1M0725;D_FI;48.99;0;0;0;0\n"
+                        + "2025-07-04;F_AEFES0725N1;D_EQ;16.49;-0.48;449565940;27398;54716\n";
+        DownloadedFile file =
+                new DownloadedFile("x", "viop_20250704.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8));
+        List<ViopSettlementRow> rows = ViopFileParsers.parseSettlements(file, LocalDate.of(2025, 7, 4));
+        assertThat(rows).hasSize(2);
+        assertThat(rows.stream().filter(r -> "F_TLREF1M0725".equals(r.contractCode())).findFirst().orElseThrow().pazar())
+                .isEqualTo("D_FI");
+        assertThat(rows.stream().filter(r -> "F_AEFES0725N1".equals(r.contractCode())).findFirst().orElseThrow().pazar())
+                .isEqualTo("D_EQ");
+    }
 }
